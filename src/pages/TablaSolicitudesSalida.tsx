@@ -94,7 +94,7 @@ export default function TablaSolicitudesSalida() {
             const to = from + ITEMS_PER_PAGE - 1;
 
             const { data, error, count } = await query
-                .order('fecha_solicitud', { ascending: false })
+                .order('numero_solicitud', { ascending: false })
                 .range(from, to);
 
             if (error) throw error;
@@ -118,7 +118,7 @@ export default function TablaSolicitudesSalida() {
         if (searchNum) query = query.eq('numero_solicitud', searchNum);
         if (searchDesc) query = query.ilike('descripcion_solicitud', `%${searchDesc}%`);
 
-        const { data } = await query.order('fecha_solicitud', { ascending: false });
+        const { data } = await query.order('numero_solicitud', { ascending: false });
 
         if (!data) return;
 
@@ -140,7 +140,7 @@ export default function TablaSolicitudesSalida() {
         if (searchNum) query = query.eq('numero_solicitud', searchNum);
         if (searchDesc) query = query.ilike('descripcion_solicitud', `%${searchDesc}%`);
 
-        const { data } = await query.order('fecha_solicitud', { ascending: false });
+        const { data } = await query.order('numero_solicitud', { ascending: false });
 
         if (!data) return;
 
