@@ -18,13 +18,11 @@ import {
     Crosshair
 } from 'lucide-react';
 
-// Declare Google Maps types for TypeScript (keeping for legacy/fallback types if needed)
+// Declare Google Maps types for TypeScript
 declare global {
     interface Window {
         google: any;
         initMap: () => void;
-        gm_authFailure: () => void;
-        L: any; // Leaflet
     }
 }
 
@@ -59,8 +57,6 @@ export default function IngresarSolicitudExterno() {
     const mapRef = useRef<HTMLDivElement>(null);
     const mapInstanceRef = useRef<any>(null);
     const markerInstanceRef = useRef<any>(null);
-    const leafletRef = useRef<any>(null);
-    const customIconRef = useRef<any>(null);
 
     // Map Search State
     const [mapSearchQuery, setMapSearchQuery] = useState('');
@@ -145,90 +141,83 @@ export default function IngresarSolicitudExterno() {
         loadCatalogs();
     }, []);
 
-    // Initialize Leaflet Map
+    // Initialize Google Maps
     useEffect(() => {
-        const loadLeaflet = () => {
-            if (document.getElementById('leaflet-css')) {
-                initLeafletMap();
+        const loadGoogleMaps = () => {
+            if (window.google && window.google.maps) {
+                initMap();
                 return;
             }
 
-            // Load CSS
-            const link = document.createElement('link');
-            link.id = 'leaflet-css';
-            link.rel = 'stylesheet';
-            link.href = 'https://unpkg.com/leaflet@1.9.4/dist/leaflet.css';
-            document.head.appendChild(link);
+            if (document.getElementById('google-maps-script')) {
+                return;
+            }
 
-            // Load JS
             const script = document.createElement('script');
-            script.src = 'https://unpkg.com/leaflet@1.9.4/dist/leaflet.js';
+            script.id = 'google-maps-script';
+            script.src = `https://maps.googleapis.com/maps/api/js?key=AIzaSyAJCP3haDL2PFfD7-opPCVINqFbFxsirlc`;
             script.async = true;
-            script.onload = initLeafletMap;
+            script.defer = true;
+            script.onload = () => {
+                initMap();
+            };
+            script.onerror = () => {
+                showNotification("Error al cargar Google Maps. Verifique su conexión o la API Key.", "error");
+            };
             document.head.appendChild(script);
         };
 
-        const initLeafletMap = () => {
-            if (!mapRef.current || mapInstanceRef.current) return;
+        const initMap = () => {
+            if (!mapRef.current) return;
 
             // @ts-ignore
-            if (!window.L) return;
+            const google = window.google;
 
-            // @ts-ignore
-            const L = window.L;
-            leafletRef.current = L;
-
-            const map = L.map(mapRef.current).setView([9.9333, -84.077], 13);
-
-            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-                attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
-            }).addTo(map);
-
-            // Custom Icon
-            const icon = L.icon({
-                iconUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon.png',
-                iconRetinaUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon-2x.png',
-                shadowUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-shadow.png',
-                iconSize: [25, 41],
-                iconAnchor: [12, 41],
-                popupAnchor: [1, -34],
-                shadowSize: [41, 41]
-            });
-            customIconRef.current = icon;
-
-            map.on('click', (e: any) => {
-                const { lat, lng } = e.latlng;
-                handleMapClick(lat, lng);
+            // Initial center (San José, Costa Rica)
+            const map = new google.maps.Map(mapRef.current, {
+                center: { lat: 9.9333, lng: -84.077 },
+                zoom: 13,
+                mapTypeId: google.maps.MapTypeId.ROADMAP,
+                streetViewControl: false,
+                mapTypeControl: false,
+                fullscreenControl: false
             });
 
             mapInstanceRef.current = map;
+
+            map.addListener('click', (e: any) => {
+                const lat = e.latLng.lat();
+                const lng = e.latLng.lng();
+                handleMapClick(lat, lng);
+            });
         };
 
-        loadLeaflet();
+        loadGoogleMaps();
 
         return () => {
-            if (mapInstanceRef.current) {
-                mapInstanceRef.current.remove();
-                mapInstanceRef.current = null;
-            }
+            // Cleanup if needed? Usually Google Maps sticks around on the window
         };
     }, []);
 
     const handleMapClick = async (lat: number, lng: number) => {
-        const L = leafletRef.current;
+        // @ts-ignore
+        const google = window.google;
         const map = mapInstanceRef.current;
-        const icon = customIconRef.current;
 
-        if (!L || !map || !icon) return;
+        if (!map || !google) return;
 
         setFormData(prev => ({ ...prev, latitud: lat, longitud: lng }));
 
         // Update Marker
         if (markerInstanceRef.current) {
-            markerInstanceRef.current.remove();
+            markerInstanceRef.current.setMap(null);
         }
 
-        const newMarker = L.marker([lat, lng], { icon }).addTo(map);
+        const newMarker = new google.maps.Marker({
+            position: { lat, lng },
+            map: map,
+            animation: google.maps.Animation.DROP
+        });
         markerInstanceRef.current = newMarker;
 
         // Update Messages
@@ -252,8 +241,12 @@ export default function IngresarSolicitudExterno() {
             (position) => {
                 const { latitude, longitude } = position.coords;
 
-                if (mapInstanceRef.current) {
-                    mapInstanceRef.current.setView([latitude, longitude], 16);
+                if (mapInstanceRef.current && window.google) {
+                    // @ts-ignore
+                    const google = window.google;
+                    const latLng = new google.maps.LatLng(latitude, longitude);
+                    mapInstanceRef.current.setCenter(latLng);
+                    mapInstanceRef.current.setZoom(16);
                     handleMapClick(latitude, longitude);
                 }
                 setIsSearchingMap(false);
@@ -272,7 +265,6 @@ export default function IngresarSolicitudExterno() {
 
         setIsSearchingMap(true);
         try {
-            // Use Nominatim for geocoding, bounded roughly to Costa Rica/San Jose
             const response = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(mapSearchQuery + ' San Jose Costa Rica')}&limit=1`);
             const data = await response.json();
 
@@ -281,9 +273,14 @@ export default function IngresarSolicitudExterno() {
                 const latitude = parseFloat(lat);
                 const longitude = parseFloat(lon);
 
-                if (mapInstanceRef.current) {
-                    mapInstanceRef.current.setView([latitude, longitude], 16);
-                    handleMapClick(latitude, longitude);
+                if (mapInstanceRef.current && window.google) {
+                    // @ts-ignore
+                    const google = window.google;
+                    const latLng = new google.maps.LatLng(latitude, longitude);
+                    mapInstanceRef.current.setCenter(latLng);
+                    mapInstanceRef.current.setZoom(16);
+                    // Do NOT auto click, just move there
+                    // handleMapClick(latitude, longitude); 
                 }
             } else {
                 showNotification("No se encontraron resultados para la búsqueda", "warning");
@@ -296,40 +293,37 @@ export default function IngresarSolicitudExterno() {
         }
     };
 
-    // Detect Barrio Logic
+    // Detect Barrio Logic (USER APPROVED LOGIC)
     const detectBarrio = async (lat: number, lng: number) => {
         setBarrioMessage({ text: 'Detectando barrio...', type: 'loading' });
 
         try {
             const url = `https://mapas.msj.go.cr/server/rest/services/SIG_BASE/SIG_SER_Barrios_SJ/MapServer/0/query?geometry=${lng},${lat}&geometryType=esriGeometryPoint&inSR=4326&spatialRel=esriSpatialRelIntersects&outFields=NOMBRE&returnGeometry=false&f=json`;
+
             const response = await fetch(url);
+
+            if (!response.ok) {
+                throw new Error(`Error HTTP: ${response.status}`);
+            }
+
             const data = await response.json();
 
             if (data.features && data.features.length > 0) {
-                const nombreBarrioMapa = data.features[0].attributes.NOMBRE; // e.g., "MERCED"
+                const nombreBarrioMapa = data.features[0].attributes.NOMBRE; // e.g., "SILOS (UNR)"
 
-                // Helper to normalize text: Remove accents, uppercase
-                const normalize = (str: string) =>
-                    str.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toUpperCase();
-
-                const normalizedMapa = normalize(nombreBarrioMapa);
-
-                // Find in catalog with flexible matching
-                const barrioEncontrado = catalogs.barrios.find(b => {
-                    const normalizedCatalogo = normalize(b.label);
-                    // Match if map name is contained in catalog name OR catalog name in map name
-                    // e.g. "MERCED" in "DISTRITO MERCED" or "MERCED NORTE" in "MERCED"
-                    return normalizedCatalogo.includes(normalizedMapa) || normalizedMapa.includes(normalizedCatalogo);
-                });
+                // Buscar el barrio en nuestros datos locales
+                const barrioEncontrado = catalogs.barrios.find(b =>
+                    b.label.toLowerCase().includes(nombreBarrioMapa.toLowerCase()) ||
+                    nombreBarrioMapa.toLowerCase().includes(b.label.toLowerCase())
+                );
 
                 if (barrioEncontrado) {
                     setFormData(prev => ({ ...prev, barrio: barrioEncontrado.id.toString() }));
-                    setBarrioMessage({ text: `Barrio detectado: ${barrioEncontrado.label}`, type: 'success' });
-                    showNotification(`Barrio detectado automáticamente: ${barrioEncontrado.label}`, 'success');
+                    setBarrioMessage({ text: `Barrio detectado: ${nombreBarrioMapa}`, type: 'success' });
+                    showNotification(`Barrio detectado automáticamente: ${nombreBarrioMapa}`, 'success');
                 } else {
-                    setBarrioMessage({ text: `Barrio detectado (${nombreBarrioMapa}) no coincide con la lista. Seleccione manualmente.`, type: 'warning' });
-                    console.warn(`Barrio map: ${nombreBarrioMapa} vs Catalog:`, catalogs.barrios.map(b => b.label));
-                    showNotification(`Barrio detectado: ${nombreBarrioMapa}, pero no se encontró coincidencia exacta.`, 'warning');
+                    setBarrioMessage({ text: `Barrio detectado (${nombreBarrioMapa}) no está en la lista. Seleccione manualmente.`, type: 'warning' });
+                    showNotification(`Barrio detectado: ${nombreBarrioMapa}, pero no está en la lista. Seleccione manualmente.`, 'warning');
                 }
             } else {
                 setBarrioMessage({ text: 'No se pudo detectar el barrio. Seleccione manualmente.', type: 'warning' });
@@ -450,9 +444,9 @@ export default function IngresarSolicitudExterno() {
                 longitud: null
             });
 
-            // Remove marker from Leaflet map
+            // Remove marker from Google Map
             if (markerInstanceRef.current) {
-                markerInstanceRef.current.remove();
+                markerInstanceRef.current.setMap(null);
                 markerInstanceRef.current = null;
             }
 
@@ -693,7 +687,7 @@ export default function IngresarSolicitudExterno() {
                                     </label>
                                     <div className="relative w-full h-[400px] rounded-xl border border-white/10 shadow-2xl overflow-hidden bg-white/5">
                                         {/* Map Container */}
-                                        <div ref={mapRef} className="w-full h-full z-0" />
+                                        <div ref={mapRef} id="map" className="w-full h-full z-0" />
 
                                         {/* Map Controls Overlay */}
                                         <div className="absolute top-4 left-4 right-4 z-[1000] flex gap-2">
