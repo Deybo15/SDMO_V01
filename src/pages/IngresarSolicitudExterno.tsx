@@ -306,21 +306,30 @@ export default function IngresarSolicitudExterno() {
             const data = await response.json();
 
             if (data.features && data.features.length > 0) {
-                const nombreBarrio = data.features[0].attributes.NOMBRE;
+                const nombreBarrioMapa = data.features[0].attributes.NOMBRE; // e.g., "MERCED"
 
-                // Find in catalog
-                const barrioEncontrado = catalogs.barrios.find(b =>
-                    b.label.toLowerCase().includes(nombreBarrio.toLowerCase()) ||
-                    nombreBarrio.toLowerCase().includes(b.label.toLowerCase())
-                );
+                // Helper to normalize text: Remove accents, uppercase
+                const normalize = (str: string) =>
+                    str.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toUpperCase();
+
+                const normalizedMapa = normalize(nombreBarrioMapa);
+
+                // Find in catalog with flexible matching
+                const barrioEncontrado = catalogs.barrios.find(b => {
+                    const normalizedCatalogo = normalize(b.label);
+                    // Match if map name is contained in catalog name OR catalog name in map name
+                    // e.g. "MERCED" in "DISTRITO MERCED" or "MERCED NORTE" in "MERCED"
+                    return normalizedCatalogo.includes(normalizedMapa) || normalizedMapa.includes(normalizedCatalogo);
+                });
 
                 if (barrioEncontrado) {
                     setFormData(prev => ({ ...prev, barrio: barrioEncontrado.id.toString() }));
-                    setBarrioMessage({ text: `Barrio detectado: ${nombreBarrio}`, type: 'success' });
-                    showNotification(`Barrio detectado automáticamente: ${nombreBarrio}`, 'success');
+                    setBarrioMessage({ text: `Barrio detectado: ${barrioEncontrado.label}`, type: 'success' });
+                    showNotification(`Barrio detectado automáticamente: ${barrioEncontrado.label}`, 'success');
                 } else {
-                    setBarrioMessage({ text: `Barrio detectado (${nombreBarrio}) no está en la lista. Seleccione manualmente.`, type: 'warning' });
-                    showNotification(`Barrio detectado: ${nombreBarrio}, pero no está en la lista.`, 'warning');
+                    setBarrioMessage({ text: `Barrio detectado (${nombreBarrioMapa}) no coincide con la lista. Seleccione manualmente.`, type: 'warning' });
+                    console.warn(`Barrio map: ${nombreBarrioMapa} vs Catalog:`, catalogs.barrios.map(b => b.label));
+                    showNotification(`Barrio detectado: ${nombreBarrioMapa}, pero no se encontró coincidencia exacta.`, 'warning');
                 }
             } else {
                 setBarrioMessage({ text: 'No se pudo detectar el barrio. Seleccione manualmente.', type: 'warning' });
