@@ -1,9 +1,9 @@
-import { Link, useLocation, useNavigate } from 'react-router-dom';
+import { Link, useLocation, useNavigate, Outlet } from 'react-router-dom';
 import { LayoutDashboard, Package, Users, Building2, ClipboardList, Settings2, Wrench, LogOut, UserCircle2 } from 'lucide-react';
 import { cn } from '../lib/utils';
 import { supabase } from '../lib/supabase';
 
-export default function Layout({ children }: { children: React.ReactNode }) {
+export default function Layout() {
     const location = useLocation();
     const navigate = useNavigate();
 
@@ -96,7 +96,7 @@ export default function Layout({ children }: { children: React.ReactNode }) {
             {/* Main Content */}
             <main className="flex-1 overflow-y-auto bg-slate-50 dark:bg-slate-900">
                 <div className="p-8 max-w-7xl mx-auto">
-                    {children}
+                    <Outlet />
                 </div>
             </main>
         </div>
