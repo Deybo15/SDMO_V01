@@ -293,7 +293,7 @@ export default function IngresarSolicitudExterno() {
         }
     };
 
-    // Detect Barrio Logic (SMART MATCH - Tokens & Normalization)
+    // Detect Barrio Logic (ULTRA ROBUST with Debug)
     const detectBarrio = async (lat: number, lng: number) => {
         setBarrioMessage({ text: 'Detectando barrio...', type: 'loading' });
 
@@ -309,64 +309,64 @@ export default function IngresarSolicitudExterno() {
             const data = await response.json();
 
             if (data.features && data.features.length > 0) {
-                const nombreBarrioMapa = data.features[0].attributes.NOMBRE; // e.g., "SILOS (UNR)", "PITAHAYA"
+                const nombreBarrioMapa = data.features[0].attributes.NOMBRE; // e.g., "GONZÁLEZ LAHMANN"
 
-                // Helper: Normalize text (Uppercase, remove accents, remove (), remove special chars)
+                // 1. Normalization Level 1 (Standard): "GONZÁLEZ LAHMANN" -> "GONZALEZ LAHMANN"
                 const normalize = (str: string) =>
-                    str.normalize("NFD").replace(/[\u0300-\u036f]/g, "") // Remove accents
+                    str.normalize("NFD").replace(/[\u0300-\u036f]/g, "")
                         .toUpperCase()
-                        .replace(/\(.*\)/g, "") // Remove text inside parentheses e.g. (UNR)
-                        .replace(/[^A-Z0-9 ]/g, " ") // Keep only alphanumeric and space
+                        .replace(/\(.*\)/g, "") // Remove identifiers like (UNR)
+                        .replace(/[^A-Z0-9 ]/g, " ")
                         .trim();
 
+                // 2. Normalization Level 2 (Slug): "GONZALEZ LAHMANN" -> "GONZALEZLAHMANN"
+                const toSlug = (str: string) => normalize(str).replace(/\s+/g, "");
+
                 const normalizedMapa = normalize(nombreBarrioMapa);
-                const tokensMapa = normalizedMapa.split(/\s+/).filter(t => t.length > 2); // Ignore short words like "LA", "EL"
+                const slugMapa = toSlug(nombreBarrioMapa);
+                const tokensMapa = normalizedMapa.split(/\s+/).filter(t => t.length > 2);
 
                 let mejorCoincidencia: CatalogItem | null = null;
                 let maxPuntaje = 0;
 
-                catalogs.barrios.forEach(barrio => {
+                for (const barrio of catalogs.barrios) {
                     const normalizedCatalogo = normalize(barrio.label);
+                    const slugCatalogo = toSlug(barrio.label);
 
-                    // 1. Direct Inclusion (Strongest Match)
-                    if (normalizedCatalogo === normalizedMapa ||
-                        normalizedCatalogo.includes(normalizedMapa) ||
-                        normalizedMapa.includes(normalizedCatalogo)) {
+                    let puntajeLocal = 0;
 
-                        // Give max score for direct match
-                        // But prefer exact length match if possible
-                        const puntajeLocal = 100 - (Math.abs(normalizedCatalogo.length - normalizedMapa.length));
-
-                        if (puntajeLocal > maxPuntaje) {
-                            maxPuntaje = puntajeLocal;
-                            mejorCoincidencia = barrio;
-                        }
-                        return;
+                    // Match Level 1: Exact Slug Match (Ignore spaces/dashes)
+                    if (slugCatalogo === slugMapa || slugCatalogo.includes(slugMapa) || slugMapa.includes(slugCatalogo)) {
+                        puntajeLocal = 100;
+                        // Boost for exact length equality
+                        if (slugCatalogo === slugMapa) puntajeLocal += 10;
                     }
-
-                    // 2. Token Overlap (Fuzzy Match)
-                    const tokensCatalogo = normalizedCatalogo.split(/\s+/).filter(t => t.length > 2);
-
-                    const matches = tokensMapa.filter(tm => tokensCatalogo.includes(tm)).length;
-
-                    if (matches > 0) {
-                        // Score based on percentage of map words found in catalog name
-                        const puntajeLocal = (matches / tokensMapa.length) * 50;
-
-                        if (puntajeLocal > maxPuntaje) {
-                            maxPuntaje = puntajeLocal;
-                            mejorCoincidencia = barrio;
+                    // Match Level 2: Token Overlap
+                    else {
+                        const tokensCatalogo = normalizedCatalogo.split(/\s+/).filter(t => t.length > 2);
+                        const matches = tokensMapa.filter(tm => tokensCatalogo.includes(tm)).length;
+                        if (matches > 0) {
+                            puntajeLocal = (matches / tokensMapa.length) * 60;
                         }
                     }
-                });
 
-                if (mejorCoincidencia && maxPuntaje > 0) {
-                    setFormData(prev => ({ ...prev, barrio: mejorCoincidencia.id.toString() }));
+                    if (puntajeLocal > maxPuntaje) {
+                        maxPuntaje = puntajeLocal;
+                        mejorCoincidencia = barrio;
+                    }
+                }
+
+                if (mejorCoincidencia && maxPuntaje > 50) { // Threshold
+                    setFormData(prev => ({ ...prev, barrio: mejorCoincidencia!.id.toString() }));
                     setBarrioMessage({ text: `Barrio detectado: ${mejorCoincidencia.label}`, type: 'success' });
                     showNotification(`Barrio detectado automáticamente: ${mejorCoincidencia.label}`, 'success');
                 } else {
-                    setBarrioMessage({ text: `Barrio detectado (${nombreBarrioMapa}) no coincide con la lista. Seleccione manualmente.`, type: 'warning' });
-                    showNotification(`Barrio detectado: ${nombreBarrioMapa}, pero no está en la lista. Seleccione manualmente.`, 'warning');
+                    // DEBUG INFO IN WARNING
+                    console.log('No match found. Map:', nombreBarrioMapa, 'Best:', mejorCoincidencia?.label, 'Score:', maxPuntaje);
+                    setBarrioMessage({ text: `Barrio detectado (${nombreBarrioMapa}) no coincide. Seleccione manualmente.`, type: 'warning' });
+                    // Show debug info only if score > 0 to imply we tried
+                    const debugText = mejorCoincidencia ? ` (Sugerido: ${mejorCoincidencia.label})` : '';
+                    showNotification(`Barrio detectado: ${nombreBarrioMapa}${debugText} - No coincide con la lista`, 'warning');
                 }
             } else {
                 setBarrioMessage({ text: 'No se pudo detectar el barrio. Seleccione manualmente.', type: 'warning' });
