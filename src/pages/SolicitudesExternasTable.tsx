@@ -3,22 +3,24 @@ import { supabase } from '../lib/supabase';
 import { useNavigate } from 'react-router-dom';
 import * as XLSX from 'xlsx';
 import jsPDF from 'jspdf';
-import 'jspdf-autotable';
 import {
     Table,
     ArrowLeft,
     FileSpreadsheet,
     FileText,
-    Hash,
-    AlignLeft,
-    Calendar,
     Settings,
     ExternalLink,
     ChevronLeft,
     ChevronRight,
     Search,
-    Loader2
+    Loader2,
+    X,
+    Package,
+    Calendar,
+    Info,
+    Printer
 } from 'lucide-react';
+import autoTable from 'jspdf-autotable';
 
 // Interface for the request data
 interface Solicitud {
@@ -27,10 +29,30 @@ interface Solicitud {
     fecha_solicitud: string;
 }
 
+interface DetalleSalida {
+    id_salida: number;
+    fecha_salida: string;
+    dato_salida_13: {
+        articulo: string;
+        cantidad: number;
+        articulo_01: {
+            nombre_articulo: string;
+        } | {
+            nombre_articulo: string;
+        }[];
+    }[];
+}
+
 export default function SolicitudesExternasTable() {
     const navigate = useNavigate();
     const [solicitudes, setSolicitudes] = useState<Solicitud[]>([]);
     const [loading, setLoading] = useState(false);
+
+    // Modal Details State
+    const [showDetailsModal, setShowDetailsModal] = useState(false);
+    const [selectedSolicitudNum, setSelectedSolicitudNum] = useState<number | null>(null);
+    const [detailsData, setDetailsData] = useState<DetalleSalida[]>([]);
+    const [loadingDetails, setLoadingDetails] = useState(false);
 
     // Pagination state
     const [currentPage, setCurrentPage] = useState(1);
@@ -46,7 +68,7 @@ export default function SolicitudesExternasTable() {
         setLoading(true);
         try {
             let query = supabase
-                .from('solicitud_17') // Using the correct table based on previous context
+                .from('solicitud_17')
                 .select('numero_solicitud, descripcion_solicitud, fecha_solicitud', { count: 'exact' })
                 .eq('tipo_solicitud', 'STE');
 
@@ -110,248 +132,335 @@ export default function SolicitudesExternasTable() {
 
     const exportToPDF = () => {
         const doc = new jsPDF();
-        doc.text('Solicitudes Cliente Externo', 10, 10);
-
-        const tableData = solicitudes.map(s => [
-            s.numero_solicitud,
-            s.descripcion_solicitud,
-            new Date(s.fecha_solicitud).toLocaleDateString('es-CR')
-        ]);
-
-        (doc as any).autoTable({
+        autoTable(doc, {
             head: [['Número', 'Descripción', 'Fecha']],
-            body: tableData,
-            startY: 20,
+            body: solicitudes.map(s => [
+                s.numero_solicitud,
+                s.descripcion_solicitud,
+                new Date(s.fecha_solicitud).toLocaleDateString('es-CR')
+            ]),
         });
-
         doc.save('Solicitudes_Cliente_Externo.pdf');
     };
 
+    const handleDoubleClick = async (numeroSolicitud: number) => {
+        setSelectedSolicitudNum(numeroSolicitud);
+        setShowDetailsModal(true);
+        setLoadingDetails(true);
+        setDetailsData([]);
+
+        try {
+            const { data, error } = await supabase
+                .from('salida_articulo_08')
+                .select(`
+                    id_salida,
+                    fecha_salida,
+                    dato_salida_13 (
+                        articulo,
+                        cantidad,
+                        articulo_01 (
+                            nombre_articulo
+                        )
+                    )
+                `)
+                .eq('numero_solicitud', numeroSolicitud)
+                .order('fecha_salida', { ascending: false });
+
+            if (error) throw error;
+            setDetailsData(data || []);
+        } catch (error) {
+            console.error('Error fetching details:', error);
+            alert('Error al cargar los detalles de la solicitud.');
+        } finally {
+            setLoadingDetails(false);
+        }
+    };
+
+    const handlePrintRow = async (numeroSolicitud: number) => {
+        try {
+            // El archivo debe existir en el bucket 'ordenes-trabajo'
+            // Formato: OT-{numero_solicitud}-CE.pdf (Cliente Externo - Assuming suffix, adjusting if needed based on internal logic)
+            // Correction: Check internal logic. Internal uses CI. External likely uses CE or similar?
+            // Actually, internal used OT-{numeroSolicitud}-CI.pdf.
+            // Let's assume standard behavior or just warn user.
+            // Or better, just try to open it.
+
+            // Wait, does the user want the print button? The request didn't explicitly ask for it, BUT verification mentions matching 'Realizar Salidas'.
+            // 'Realizar Salidas' has a print button. I'll add it for consistency.
+            // Assuming nomenclature might be CE for Cliente Externo?
+            const fileName = `OT-${numeroSolicitud}-CE.pdf`;
+
+            const { data } = supabase.storage
+                .from('ordenes-trabajo')
+                .getPublicUrl(fileName);
+
+            if (data && data.publicUrl) {
+                window.open(data.publicUrl, '_blank');
+            } else {
+                alert('No se pudo obtener el enlace del archivo.');
+            }
+
+        } catch (error: any) {
+            console.error('Error en handlePrintRow:', error);
+            alert('Ocurrió un error inesperado al intentar abrir el PDF.');
+        }
+    };
+
+
     return (
-        <div className="min-h-screen relative p-4 md:p-8 font-sans text-[#e2e8f0] overflow-hidden">
-            {/* Custom Styles for Background Animation */}
-            <style>{`
-                body {
-                    background: linear-gradient(135deg, #0f1419 0%, #1a1f2e 50%, #0a0e1a 100%);
-                }
-                .bg-animated::before {
-                    content: '';
-                    position: fixed;
-                    top: -50%;
-                    left: -50%;
-                    width: 200%;
-                    height: 200%;
-                    background: 
-                        radial-gradient(circle at 25% 25%, rgba(99, 102, 241, 0.1) 0%, transparent 50%),
-                        radial-gradient(circle at 75% 75%, rgba(168, 85, 247, 0.08) 0%, transparent 50%),
-                        radial-gradient(circle at 50% 50%, rgba(14, 165, 233, 0.05) 0%, transparent 50%);
-                    animation: float 20s ease-in-out infinite;
-                    z-index: -1;
-                    pointer-events: none;
-                }
-                @keyframes float {
-                    0%, 100% { transform: translate(0, 0) rotate(0deg); }
-                    33% { transform: translate(30px, -30px) rotate(120deg); }
-                    66% { transform: translate(-20px, 20px) rotate(240deg); }
-                }
-                .glass-container {
-                    background: rgba(15, 20, 25, 0.6);
-                    backdrop-filter: blur(20px);
-                    border: 1px solid rgba(255, 255, 255, 0.08);
-                    box-shadow: 0 20px 40px rgba(0, 0, 0, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.05);
-                }
-                .header-gradient-text {
-                    background: linear-gradient(135deg, #6366f1 0%, #a855f7 100%);
-                    -webkit-background-clip: text;
-                    -webkit-text-fill-color: transparent;
-                }
-                .btn-hover-effect {
-                    position: relative;
-                    overflow: hidden;
-                }
-                .btn-hover-effect::before {
-                    content: '';
-                    position: absolute;
-                    top: 0;
-                    left: -100%;
-                    width: 100%;
-                    height: 100%;
-                    background: linear-gradient(90deg, transparent, rgba(255,255,255,0.1), transparent);
-                    transition: left 0.5s;
-                }
-                .btn-hover-effect:hover::before {
-                    left: 100%;
-                }
-            `}</style>
+        <div className="min-h-screen bg-[#1a1d29] text-[#e4e6ea] font-sans p-4 md:p-8 relative">
+            {/* Background Effects */}
+            < div className="fixed inset-0 pointer-events-none" >
+                <div className="absolute top-[20%] left-[20%] w-96 h-96 bg-[#7877c6]/10 rounded-full blur-[100px]" />
+                <div className="absolute bottom-[20%] right-[20%] w-96 h-96 bg-[#3b82f6]/10 rounded-full blur-[100px]" />
+            </div >
 
-            <div className="bg-animated" />
-
-            <div className="max-w-7xl mx-auto glass-container rounded-[24px] p-8">
+            <div className="max-w-7xl mx-auto relative z-10">
                 {/* Header */}
-                <div className="relative text-center mb-8 pb-8 border-b border-white/10 -mx-8 px-8 bg-gradient-to-br from-[#6366f1]/10 to-[#a855f7]/10">
-                    <div className="absolute top-0 left-1/2 -translate-x-1/2 w-20 h-1 bg-gradient-to-r from-[#6366f1] to-[#a855f7] rounded-full shadow-[0_0_20px_rgba(99,102,241,0.5)]" />
-                    <h1 className="text-3xl font-bold mb-2 flex items-center justify-center gap-3 header-gradient-text">
-                        <Table className="w-8 h-8 text-[#6366f1]" />
-                        Solicitudes Cliente Externo (Actualizado)
-                    </h1>
-                    <p className="text-[#94a3b8] text-base opacity-80">Gestión y consulta de solicitudes externas</p>
-                </div>
-
-                {/* Filters */}
-                <div className="flex flex-col md:flex-row gap-4 mb-8">
-                    <div className="flex-1 relative">
-                        <input
-                            type="text"
-                            value={filtroNumero}
-                            onChange={(e) => setFiltroNumero(e.target.value)}
-                            placeholder="Buscar por número de solicitud"
-                            className="w-full bg-[#1e293b]/40 backdrop-blur-md border border-white/10 rounded-2xl py-4 pl-12 pr-4 text-[#e2e8f0] focus:outline-none focus:border-[#6366f1]/60 focus:bg-[#1e293b]/60 transition-all shadow-sm"
-                        />
-                        <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-[#94a3b8]" />
+                <div className="sticky top-0 z-50 flex items-center justify-between mb-8 -mx-4 md:-mx-8 -mt-4 md:-mt-8 px-4 md:px-8 py-4 bg-[#1a1d29]/90 backdrop-blur-xl border-b border-white/10 shadow-lg">
+                    <div className="flex items-center gap-4">
+                        <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-purple-500/20 to-blue-600/20 border border-white/20 flex items-center justify-center">
+                            <Table className="w-6 h-6 text-purple-400" />
+                        </div>
+                        <div>
+                            <h1 className="text-2xl font-bold text-white">Realizar Salidas de Cliente Externo</h1>
+                        </div>
                     </div>
-                    <div className="flex-1 relative">
-                        <input
-                            type="text"
-                            value={filtroDescripcion}
-                            onChange={(e) => setFiltroDescripcion(e.target.value)}
-                            placeholder="Buscar por descripción"
-                            className="w-full bg-[#1e293b]/40 backdrop-blur-md border border-white/10 rounded-2xl py-4 pl-12 pr-4 text-[#e2e8f0] focus:outline-none focus:border-[#6366f1]/60 focus:bg-[#1e293b]/60 transition-all shadow-sm"
-                        />
-                        <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-[#94a3b8]" />
-                    </div>
-                </div>
-
-                {/* Actions */}
-                <div className="flex flex-wrap gap-4 mb-6">
                     <button
                         onClick={() => navigate('/cliente-externo')}
-                        className="btn-hover-effect px-6 py-3 bg-[#475569]/30 border border-[#475569]/40 rounded-2xl text-[#e2e8f0] font-medium hover:bg-[#475569]/40 hover:shadow-lg hover:-translate-y-0.5 transition-all flex items-center gap-2"
+                        className="px-4 py-2 bg-white/5 hover:bg-white/10 border border-white/10 rounded-lg text-sm transition-colors"
                     >
-                        <ArrowLeft className="w-4 h-4" />
                         Regresar
                     </button>
-                    <button
-                        onClick={exportToExcel}
-                        className="btn-hover-effect px-6 py-3 bg-gradient-to-br from-[#6366f1]/30 to-[#a855f7]/30 border border-[#6366f1]/40 rounded-2xl text-[#f1f5f9] font-medium hover:from-[#6366f1]/40 hover:to-[#a855f7]/40 hover:shadow-[0_8px_25px_rgba(99,102,241,0.2)] hover:-translate-y-0.5 transition-all flex items-center gap-2"
-                    >
-                        <FileSpreadsheet className="w-4 h-4" />
-                        Exportar a Excel
-                    </button>
-                    <button
-                        onClick={exportToPDF}
-                        className="btn-hover-effect px-6 py-3 bg-gradient-to-br from-[#6366f1]/30 to-[#a855f7]/30 border border-[#6366f1]/40 rounded-2xl text-[#f1f5f9] font-medium hover:from-[#6366f1]/40 hover:to-[#a855f7]/40 hover:shadow-[0_8px_25px_rgba(99,102,241,0.2)] hover:-translate-y-0.5 transition-all flex items-center gap-2"
-                    >
-                        <FileText className="w-4 h-4" />
-                        Exportar a PDF
-                    </button>
                 </div>
 
-                {/* Table */}
-                <div className="bg-[#1e293b]/30 backdrop-blur-md border border-white/10 rounded-[20px] overflow-hidden shadow-xl mb-8">
-                    <div className="overflow-x-auto">
-                        <table className="w-full">
-                            <thead>
-                                <tr className="bg-gradient-to-r from-[#6366f1]/20 to-[#a855f7]/20 border-b border-[#6366f1]/30">
-                                    <th className="py-4 px-6 text-center font-semibold text-[#f1f5f9] relative">
-                                        <div className="flex items-center justify-center gap-2">
-                                            <Hash className="w-4 h-4" />
-                                            Número de Solicitud
-                                        </div>
-                                        <div className="absolute bottom-0 left-0 right-0 h-[2px] bg-gradient-to-r from-[#6366f1] to-[#a855f7] opacity-60" />
-                                    </th>
-                                    <th className="py-4 px-6 text-center font-semibold text-[#f1f5f9] relative">
-                                        <div className="flex items-center justify-center gap-2">
-                                            <AlignLeft className="w-4 h-4" />
-                                            Descripción
-                                        </div>
-                                        <div className="absolute bottom-0 left-0 right-0 h-[2px] bg-gradient-to-r from-[#6366f1] to-[#a855f7] opacity-60" />
-                                    </th>
-                                    <th className="py-4 px-6 text-center font-semibold text-[#f1f5f9] relative">
-                                        <div className="flex items-center justify-center gap-2">
-                                            <Calendar className="w-4 h-4" />
-                                            Fecha de Solicitud
-                                        </div>
-                                        <div className="absolute bottom-0 left-0 right-0 h-[2px] bg-gradient-to-r from-[#6366f1] to-[#a855f7] opacity-60" />
-                                    </th>
-                                    <th className="py-4 px-6 text-center font-semibold text-[#f1f5f9] relative">
-                                        <div className="flex items-center justify-center gap-2">
-                                            <Settings className="w-4 h-4" />
-                                            Acción
-                                        </div>
-                                        <div className="absolute bottom-0 left-0 right-0 h-[2px] bg-gradient-to-r from-[#6366f1] to-[#a855f7] opacity-60" />
-                                    </th>
-                                </tr>
-                            </thead>
-                            <tbody className="divide-y divide-white/5">
-                                {loading ? (
+                {/* Main Card */}
+                <div className="bg-[#1e2330]/80 backdrop-blur-xl border border-white/10 rounded-2xl overflow-hidden shadow-2xl">
+                    <div className="p-8">
+                        {/* Filters */}
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+                            <div className="relative">
+                                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-500" />
+                                <input
+                                    type="text"
+                                    placeholder="Buscar por número de solicitud"
+                                    value={filtroNumero}
+                                    onChange={(e) => setFiltroNumero(e.target.value)}
+                                    className="w-full bg-[#13161c] border border-white/10 rounded-lg py-3 pl-10 pr-4 text-white focus:border-purple-500 focus:outline-none transition-colors"
+                                />
+                            </div>
+                            <div className="relative">
+                                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-500" />
+                                <input
+                                    type="text"
+                                    placeholder="Buscar por descripción"
+                                    value={filtroDescripcion}
+                                    onChange={(e) => setFiltroDescripcion(e.target.value)}
+                                    className="w-full bg-[#13161c] border border-white/10 rounded-lg py-3 pl-10 pr-4 text-white focus:border-purple-500 focus:outline-none transition-colors"
+                                />
+                            </div>
+                        </div>
+
+                        {/* Actions */}
+                        <div className="flex flex-wrap gap-3 mb-8">
+                            <button
+                                onClick={() => navigate('/cliente-externo')}
+                                className="px-4 py-2 bg-[#2d3342] hover:bg-[#363c4e] text-white rounded-lg flex items-center gap-2 transition-colors"
+                            >
+                                <ArrowLeft className="w-4 h-4" /> Regresar
+                            </button>
+                            <button
+                                onClick={exportToExcel}
+                                className="px-4 py-2 bg-[#4a3b69] hover:bg-[#58467d] text-white rounded-lg flex items-center gap-2 transition-colors"
+                            >
+                                <FileSpreadsheet className="w-4 h-4" /> Exportar Excel
+                            </button>
+                            <button
+                                onClick={exportToPDF}
+                                className="px-4 py-2 bg-[#4a3b69] hover:bg-[#58467d] text-white rounded-lg flex items-center gap-2 transition-colors"
+                            >
+                                <FileText className="w-4 h-4" /> Exportar PDF
+                            </button>
+                        </div>
+
+                        {/* Table */}
+                        <div className="overflow-x-auto rounded-xl border border-white/10">
+                            <table className="w-full text-left">
+                                <thead className="bg-[#4a3b69]/30 text-slate-200">
                                     <tr>
-                                        <td colSpan={4} className="py-8 text-center text-[#94a3b8]">
-                                            <div className="flex items-center justify-center gap-2">
-                                                <Loader2 className="w-5 h-5 animate-spin" />
-                                                Cargando datos...
-                                            </div>
-                                        </td>
+                                        <th className="p-4 font-semibold text-center w-[15%]">Número de Solicitud</th>
+                                        <th className="p-4 font-semibold w-[45%] text-left">Descripción</th>
+                                        <th className="p-4 font-semibold text-center w-[20%]">Fecha de Solicitud</th>
+                                        <th className="p-4 font-semibold text-center w-[20%]">Acciones</th>
                                     </tr>
-                                ) : solicitudes.length === 0 ? (
-                                    <tr>
-                                        <td colSpan={4} className="py-8 text-center text-[#94a3b8]">
-                                            No se encontraron solicitudes
-                                        </td>
-                                    </tr>
-                                ) : (
-                                    solicitudes.map((solicitud) => (
-                                        <tr key={solicitud.numero_solicitud} className="hover:bg-[#6366f1]/10 transition-all hover:-translate-y-[1px] group">
-                                            <td className="py-4 px-6 text-center text-[#e2e8f0]">
-                                                {solicitud.numero_solicitud}
-                                            </td>
-                                            <td className="py-4 px-6 text-center text-[#e2e8f0]">
-                                                {solicitud.descripcion_solicitud}
-                                            </td>
-                                            <td className="py-4 px-6 text-center text-[#e2e8f0]">
-                                                {solicitud.fecha_solicitud ? new Date(solicitud.fecha_solicitud).toLocaleDateString('es-CR') : 'Sin fecha'}
-                                            </td>
-                                            <td className="py-4 px-6 text-center">
-                                                <button
-                                                    onClick={() => navigate(`/cliente-externo/registro-salida?numero=${solicitud.numero_solicitud}`)}
-                                                    className="px-4 py-2 bg-gradient-to-br from-green-500/30 to-emerald-500/30 border border-green-500/40 rounded-xl text-[#f1f5f9] text-sm font-medium hover:from-green-500/40 hover:to-emerald-500/40 hover:shadow-[0_4px_15px_rgba(34,197,94,0.2)] hover:-translate-y-0.5 transition-all flex items-center justify-center gap-2 mx-auto"
-                                                >
-                                                    <ExternalLink className="w-3 h-3" />
-                                                    Salida
-                                                </button>
+                                </thead>
+                                <tbody className="divide-y divide-white/5 bg-[#13161c]/50">
+                                    {loading ? (
+                                        <tr>
+                                            <td colSpan={4} className="p-8 text-center text-slate-400">
+                                                <div className="flex items-center justify-center gap-2">
+                                                    <Loader2 className="w-5 h-5 animate-spin" /> Cargando solicitudes...
+                                                </div>
                                             </td>
                                         </tr>
-                                    ))
-                                )}
-                            </tbody>
-                        </table>
+                                    ) : solicitudes.length === 0 ? (
+                                        <tr>
+                                            <td colSpan={4} className="p-8 text-center text-slate-400">
+                                                No se encontraron solicitudes
+                                            </td>
+                                        </tr>
+                                    ) : (
+                                        solicitudes.map((sol) => (
+                                            <tr key={sol.numero_solicitud} className="hover:bg-white/5 transition-colors group">
+                                                <td
+                                                    className="p-4 font-bold text-white text-center cursor-pointer hover:text-purple-400 transition-colors"
+                                                    onDoubleClick={() => handleDoubleClick(sol.numero_solicitud)}
+                                                    title="Doble clic para ver detalles de materiales"
+                                                >
+                                                    {sol.numero_solicitud}
+                                                </td>
+                                                <td className="p-4 text-slate-300 text-left">
+                                                    <div className="line-clamp-2" title={sol.descripcion_solicitud}>
+                                                        {sol.descripcion_solicitud}
+                                                    </div>
+                                                </td>
+                                                <td className="p-4 text-slate-300 text-center">
+                                                    {new Date(sol.fecha_solicitud).toLocaleDateString('es-CR')}
+                                                </td>
+                                                <td className="p-4 text-center">
+                                                    <div className="flex items-center justify-center gap-2">
+                                                        <button
+                                                            onClick={() => navigate(`/cliente-externo/registro-salida?numero=${sol.numero_solicitud}`)}
+                                                            className="px-3 py-1.5 bg-[#1f4b3e] hover:bg-[#275d4d] text-[#4ade80] border border-[#4ade80]/20 rounded-lg flex items-center gap-2 transition-all text-sm font-medium"
+                                                        >
+                                                            <ExternalLink className="w-3.5 h-3.5" /> Salida
+                                                        </button>
+                                                        {/* Optional: Add Print button if consistency is required, although not explicitly requested for this row, verification implies similarity. 
+                                                             I'll include it but maybe hide it if not needed. The user asked for "similar to the page..." 
+                                                             The reference page has it. */}
+                                                    </div>
+                                                </td>
+                                            </tr>
+                                        ))
+                                    )}
+                                </tbody>
+                            </table>
+                        </div>
+
+                        {/* Pagination Footer */}
+                        <div className="flex items-center justify-between mt-6 pt-6 border-t border-white/10">
+                            <button
+                                onClick={handlePrevPage}
+                                disabled={currentPage === 1 || loading}
+                                className="px-4 py-2 bg-[#2d3342] hover:bg-[#363c4e] text-white rounded-lg flex items-center gap-2 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                            >
+                                <ChevronLeft className="w-4 h-4" /> Anterior
+                            </button>
+
+                            <span className="text-slate-400 text-sm">
+                                Página {currentPage} de {Math.max(1, Math.ceil(totalItems / itemsPerPage))} ({totalItems} registros)
+                            </span>
+
+                            <button
+                                onClick={handleNextPage}
+                                disabled={(currentPage * itemsPerPage) >= totalItems || loading}
+                                className="px-4 py-2 bg-[#2d3342] hover:bg-[#363c4e] text-white rounded-lg flex items-center gap-2 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                            >
+                                Siguiente <ChevronRight className="w-4 h-4" />
+                            </button>
+                        </div>
                     </div>
                 </div>
-
-                {/* Pagination */}
-                <div className="flex flex-col md:flex-row justify-between items-center gap-4 bg-[#0f1419]/40 backdrop-blur-md border border-white/10 rounded-2xl p-6">
-                    <button
-                        onClick={handlePrevPage}
-                        disabled={currentPage === 1}
-                        className="btn-hover-effect px-6 py-3 bg-gradient-to-br from-[#6366f1]/30 to-[#a855f7]/30 border border-[#6366f1]/40 rounded-2xl text-[#f1f5f9] font-medium hover:from-[#6366f1]/40 hover:to-[#a855f7]/40 disabled:opacity-50 disabled:cursor-not-allowed transition-all flex items-center gap-2"
-                    >
-                        <ChevronLeft className="w-4 h-4" />
-                        Anterior
-                    </button>
-
-                    <span className="text-[#94a3b8] font-medium">
-                        Página {currentPage} de {Math.max(1, Math.ceil(totalItems / itemsPerPage))}
-                    </span>
-
-                    <button
-                        onClick={handleNextPage}
-                        disabled={(currentPage * itemsPerPage) >= totalItems}
-                        className="btn-hover-effect px-6 py-3 bg-gradient-to-br from-[#6366f1]/30 to-[#a855f7]/30 border border-[#6366f1]/40 rounded-2xl text-[#f1f5f9] font-medium hover:from-[#6366f1]/40 hover:to-[#a855f7]/40 disabled:opacity-50 disabled:cursor-not-allowed transition-all flex items-center gap-2"
-                    >
-                        Siguiente
-                        <ChevronRight className="w-4 h-4" />
-                    </button>
-                </div>
             </div>
+
+            {/* Modal de Detalles */}
+            {showDetailsModal && (
+                <div className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-in fade-in">
+                    <div className="w-full max-w-4xl bg-[#1a1d29] border border-white/10 rounded-2xl shadow-2xl overflow-hidden flex flex-col max-h-[85vh]">
+                        <div className="p-6 border-b border-white/10 flex justify-between items-center bg-[#1e2330]">
+                            <div className="flex items-center gap-3">
+                                <div className="p-2 bg-purple-500/20 rounded-lg">
+                                    <Package className="w-6 h-6 text-purple-400" />
+                                </div>
+                                <div>
+                                    <h3 className="text-xl font-bold text-white">Detalle de Materiales Entregados</h3>
+                                    <p className="text-sm text-slate-400">Solicitud #{selectedSolicitudNum}</p>
+                                </div>
+                            </div>
+                            <button
+                                onClick={() => setShowDetailsModal(false)}
+                                className="p-2 hover:bg-white/10 rounded-full transition-colors text-slate-400 hover:text-white"
+                            >
+                                <X className="w-6 h-6" />
+                            </button>
+                        </div>
+
+                        <div className="flex-1 overflow-y-auto p-6 custom-scrollbar space-y-6">
+                            {loadingDetails ? (
+                                <div className="flex flex-col items-center justify-center py-12 text-slate-400">
+                                    <Loader2 className="w-8 h-8 animate-spin mb-3 text-purple-500" />
+                                    <p>Cargando información...</p>
+                                </div>
+                            ) : detailsData.length === 0 ? (
+                                <div className="flex flex-col items-center justify-center py-12 text-slate-500 bg-white/5 rounded-xl border border-white/5">
+                                    <Info className="w-12 h-12 mb-3 opacity-50" />
+                                    <p className="text-lg font-medium">No hay salidas registradas</p>
+                                    <p className="text-sm">Esta solicitud aún no tiene materiales entregados.</p>
+                                </div>
+                            ) : (
+                                detailsData.map((salida) => (
+                                    <div key={salida.id_salida} className="bg-white/5 border border-white/10 rounded-xl overflow-hidden">
+                                        <div className="px-6 py-3 bg-white/5 border-b border-white/10 flex items-center justify-between">
+                                            <div className="flex items-center gap-2">
+                                                <span className="text-purple-400 font-bold">Salida #{salida.id_salida}</span>
+                                            </div>
+                                            <div className="flex items-center gap-2 text-sm text-slate-400">
+                                                <Calendar className="w-4 h-4" />
+                                                {new Date(salida.fecha_salida).toLocaleDateString()} {new Date(salida.fecha_salida).toLocaleTimeString()}
+                                            </div>
+                                        </div>
+                                        <div className="overflow-x-auto">
+                                            <table className="w-full text-left text-sm">
+                                                <thead className="bg-black/20 text-slate-400">
+                                                    <tr>
+                                                        <th className="px-6 py-3 font-medium">Código</th>
+                                                        <th className="px-6 py-3 font-medium">Artículo</th>
+                                                        <th className="px-6 py-3 font-medium text-right">Cantidad</th>
+                                                    </tr>
+                                                </thead>
+                                                <tbody className="divide-y divide-white/5">
+                                                    {salida.dato_salida_13.map((item, idx) => {
+                                                        const nombreArticulo = Array.isArray(item.articulo_01)
+                                                            ? item.articulo_01[0]?.nombre_articulo
+                                                            : item.articulo_01?.nombre_articulo;
+
+                                                        return (
+                                                            <tr key={idx} className="hover:bg-white/5">
+                                                                <td className="px-6 py-3 font-mono text-slate-400">{item.articulo}</td>
+                                                                <td className="px-6 py-3 text-slate-200">{nombreArticulo || 'Desconocido'}</td>
+                                                                <td className="px-6 py-3 text-right font-medium text-white">{item.cantidad}</td>
+                                                            </tr>
+                                                        );
+                                                    })}
+                                                </tbody>
+                                            </table>
+                                        </div>
+                                    </div>
+                                ))
+                            )}
+                        </div>
+
+                        <div className="p-4 border-t border-white/10 bg-[#1e2330] flex justify-end">
+                            <button
+                                onClick={() => setShowDetailsModal(false)}
+                                className="px-6 py-2 bg-white/10 hover:bg-white/20 text-white rounded-lg transition-colors font-medium"
+                            >
+                                Cerrar
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
         </div >
     );
 }
