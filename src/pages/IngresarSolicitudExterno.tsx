@@ -86,6 +86,14 @@ export default function IngresarSolicitudExterno() {
         clientesInternos: []
     });
 
+    // Ref to access current catalogs inside stale closures (Map Listeners)
+    const catalogsRef = useRef(catalogs);
+
+    // Keep ref updated
+    useEffect(() => {
+        catalogsRef.current = catalogs;
+    }, [catalogs]);
+
     // Search Modal State
     const [searchModal, setSearchModal] = useState<SearchModalState>({
         isOpen: false,
@@ -329,7 +337,14 @@ export default function IngresarSolicitudExterno() {
                 let mejorCoincidencia: CatalogItem | null = null;
                 let maxPuntaje = 0;
 
-                for (const barrio of catalogs.barrios) {
+                // USE REF TO AVOID STALE CLOSURE
+                const currentBarrios = catalogsRef.current.barrios;
+
+                if (currentBarrios.length === 0) {
+                    console.warn("Catalogs.barrios is empty in detectBarrio!");
+                }
+
+                for (const barrio of currentBarrios) {
                     const normalizedCatalogo = normalize(barrio.label);
                     const slugCatalogo = toSlug(barrio.label);
 
