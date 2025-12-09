@@ -232,7 +232,7 @@ export default function TablaSolicitudesSalida() {
                             <FileText className="w-6 h-6 text-purple-400" />
                         </div>
                         <div>
-                            <h1 className="text-2xl font-bold text-white">Realizar Salidas</h1>
+                            <h1 className="text-2xl font-bold text-white">Realizar Salidas de Cliente Interno</h1>
                         </div>
                     </div>
                     <button

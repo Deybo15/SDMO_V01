@@ -87,7 +87,9 @@ export default function Layout() {
                 {/* Navigation */}
                 <nav className="flex-1 px-4 py-4 space-y-1.5 overflow-y-auto scrollbar-thin scrollbar-thumb-slate-800 scrollbar-track-transparent">
                     {navItems.map((item) => {
-                        const isActive = location.pathname === item.path;
+                        const isActive = item.path === '/'
+                            ? location.pathname === '/'
+                            : location.pathname.startsWith(item.path);
                         return (
                             <Link
                                 key={item.path}
