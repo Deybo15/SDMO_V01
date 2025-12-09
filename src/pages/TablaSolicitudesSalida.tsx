@@ -78,7 +78,8 @@ export default function TablaSolicitudesSalida() {
         try {
             let query = supabase
                 .from('solicitud_17')
-                .select('numero_solicitud, fecha_solicitud, descripcion_solicitud', { count: 'exact' });
+                .select('numero_solicitud, fecha_solicitud, descripcion_solicitud', { count: 'exact' })
+                .eq('tipo_solicitud', 'STI');
 
             // Apply filters
             if (searchNum) {
@@ -113,7 +114,8 @@ export default function TablaSolicitudesSalida() {
         // Fetch all matching records for export
         let query = supabase
             .from('solicitud_17')
-            .select('numero_solicitud, fecha_solicitud, descripcion_solicitud');
+            .select('numero_solicitud, fecha_solicitud, descripcion_solicitud')
+            .eq('tipo_solicitud', 'STI');
 
         if (searchNum) query = query.eq('numero_solicitud', searchNum);
         if (searchDesc) query = query.ilike('descripcion_solicitud', `%${searchDesc}%`);
@@ -135,7 +137,8 @@ export default function TablaSolicitudesSalida() {
     const handleExportPDF = async () => {
         let query = supabase
             .from('solicitud_17')
-            .select('numero_solicitud, fecha_solicitud, descripcion_solicitud');
+            .select('numero_solicitud, fecha_solicitud, descripcion_solicitud')
+            .eq('tipo_solicitud', 'STI');
 
         if (searchNum) query = query.eq('numero_solicitud', searchNum);
         if (searchDesc) query = query.ilike('descripcion_solicitud', `%${searchDesc}%`);
