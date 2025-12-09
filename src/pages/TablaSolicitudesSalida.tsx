@@ -25,6 +25,10 @@ interface Solicitud {
     numero_solicitud: string;
     fecha_solicitud: string;
     descripcion_solicitud: string;
+    instalacion_municipal?: string; // Mapped from join
+    instalaciones_municipales_16?: {
+        instalacion_municipal: string;
+    };
 }
 
 interface DetalleSalida {
@@ -78,7 +82,7 @@ export default function TablaSolicitudesSalida() {
         try {
             let query = supabase
                 .from('solicitud_17')
-                .select('numero_solicitud, fecha_solicitud, descripcion_solicitud', { count: 'exact' })
+                .select('numero_solicitud, fecha_solicitud, descripcion_solicitud, instalaciones_municipales_16(instalacion_municipal)', { count: 'exact' })
                 .eq('tipo_solicitud', 'STI');
 
             // Apply filters
@@ -100,7 +104,13 @@ export default function TablaSolicitudesSalida() {
 
             if (error) throw error;
 
-            setSolicitudes(data || []);
+            // Flatten/Map data for easier usage
+            const mappedData = (data || []).map((item: any) => ({
+                ...item,
+                instalacion_municipal: item.instalaciones_municipales_16?.instalacion_municipal || 'N/A'
+            }));
+
+            setSolicitudes(mappedData);
             setTotalRecords(count || 0);
             setCurrentPage(page);
         } catch (error) {
@@ -114,7 +124,7 @@ export default function TablaSolicitudesSalida() {
         // Fetch all matching records for export
         let query = supabase
             .from('solicitud_17')
-            .select('numero_solicitud, fecha_solicitud, descripcion_solicitud')
+            .select('numero_solicitud, fecha_solicitud, descripcion_solicitud, instalaciones_municipales_16(instalacion_municipal)')
             .eq('tipo_solicitud', 'STI');
 
         if (searchNum) query = query.eq('numero_solicitud', searchNum);
@@ -124,9 +134,10 @@ export default function TablaSolicitudesSalida() {
 
         if (!data) return;
 
-        const ws = XLSX.utils.json_to_sheet(data.map(s => ({
+        const ws = XLSX.utils.json_to_sheet(data.map((s: any) => ({
             'Número': s.numero_solicitud,
             'Descripción': s.descripcion_solicitud,
+            'Instalación': s.instalaciones_municipales_16?.instalacion_municipal || 'N/A',
             'Fecha': new Date(s.fecha_solicitud).toLocaleDateString()
         })));
         const wb = XLSX.utils.book_new();
@@ -137,7 +148,7 @@ export default function TablaSolicitudesSalida() {
     const handleExportPDF = async () => {
         let query = supabase
             .from('solicitud_17')
-            .select('numero_solicitud, fecha_solicitud, descripcion_solicitud')
+            .select('numero_solicitud, fecha_solicitud, descripcion_solicitud, instalaciones_municipales_16(instalacion_municipal)')
             .eq('tipo_solicitud', 'STI');
 
         if (searchNum) query = query.eq('numero_solicitud', searchNum);
@@ -149,10 +160,11 @@ export default function TablaSolicitudesSalida() {
 
         const doc = new jsPDF();
         autoTable(doc, {
-            head: [['Número', 'Descripción', 'Fecha']],
-            body: data.map(s => [
+            head: [['Número', 'Descripción', 'Instalación', 'Fecha']],
+            body: data.map((s: any) => [
                 s.numero_solicitud,
                 s.descripcion_solicitud,
+                s.instalaciones_municipales_16?.instalacion_municipal || 'N/A',
                 new Date(s.fecha_solicitud).toLocaleDateString()
             ]),
         });
@@ -294,19 +306,20 @@ export default function TablaSolicitudesSalida() {
 
                         {/* Table */}
                         <div className="overflow-x-auto rounded-xl border border-white/10">
-                            <table className="w-full text-left">
-                                <thead className="bg-[#4a3b69]/30 text-slate-200">
+                            <table className="w-full text-left border-collapse">
+                                <thead className="bg-[#4a3b69]/30 text-slate-200 text-sm">
                                     <tr>
-                                        <th className="p-4 font-semibold text-center w-[15%]">Número de Solicitud</th>
-                                        <th className="p-4 font-semibold w-[45%]">Descripción</th>
-                                        <th className="p-4 font-semibold text-center w-[20%]">Fecha de Solicitud</th>
-                                        <th className="p-4 font-semibold text-center w-[20%]">Acciones</th>
+                                        <th className="p-3 font-semibold text-center w-[12%] border-b border-white/10">Número</th>
+                                        <th className="p-3 font-semibold w-[38%] border-b border-white/10">Descripción</th>
+                                        <th className="p-3 font-semibold w-[20%] border-b border-white/10">Instalación</th>
+                                        <th className="p-3 font-semibold text-center w-[15%] border-b border-white/10">Fecha</th>
+                                        <th className="p-3 font-semibold text-center w-[15%] border-b border-white/10">Acciones</th>
                                     </tr>
                                 </thead>
-                                <tbody className="divide-y divide-white/5 bg-[#13161c]/50">
+                                <tbody className="divide-y divide-white/5 bg-[#13161c]/50 text-sm">
                                     {loading ? (
                                         <tr>
-                                            <td colSpan={4} className="p-8 text-center text-slate-400">
+                                            <td colSpan={5} className="p-8 text-center text-slate-400">
                                                 <div className="flex items-center justify-center gap-2">
                                                     <Loader2 className="w-5 h-5 animate-spin" /> Cargando solicitudes...
                                                 </div>
@@ -314,7 +327,7 @@ export default function TablaSolicitudesSalida() {
                                         </tr>
                                     ) : solicitudes.length === 0 ? (
                                         <tr>
-                                            <td colSpan={4} className="p-8 text-center text-slate-400">
+                                            <td colSpan={5} className="p-8 text-center text-slate-400">
                                                 No se encontraron solicitudes
                                             </td>
                                         </tr>
@@ -322,33 +335,38 @@ export default function TablaSolicitudesSalida() {
                                         solicitudes.map((sol) => (
                                             <tr key={sol.numero_solicitud} className="hover:bg-white/5 transition-colors group">
                                                 <td
-                                                    className="p-4 font-bold text-white text-center cursor-pointer hover:text-purple-400 transition-colors"
+                                                    className="p-3 font-bold text-white text-center cursor-pointer hover:text-purple-400 transition-colors"
                                                     onDoubleClick={() => handleDoubleClick(sol.numero_solicitud)}
                                                     title="Doble clic para ver detalles de materiales"
                                                 >
                                                     {sol.numero_solicitud}
                                                 </td>
-                                                <td className="p-4 text-slate-300">
+                                                <td className="p-3 text-slate-300">
                                                     <div className="line-clamp-2" title={sol.descripcion_solicitud}>
                                                         {sol.descripcion_solicitud}
                                                     </div>
                                                 </td>
-                                                <td className="p-4 text-slate-300 text-center">
+                                                <td className="p-3 text-slate-300">
+                                                    <div className="line-clamp-2" title={sol.instalacion_municipal}>
+                                                        {sol.instalacion_municipal}
+                                                    </div>
+                                                </td>
+                                                <td className="p-3 text-slate-300 text-center">
                                                     {new Date(sol.fecha_solicitud).toLocaleDateString()}
                                                 </td>
-                                                <td className="p-4 text-center">
+                                                <td className="p-3 text-center">
                                                     <div className="flex items-center justify-center gap-2">
                                                         <button
                                                             onClick={() => navigate(`/cliente-interno/realizar-salidas/formulario?numero=${sol.numero_solicitud}`)}
-                                                            className="px-3 py-1.5 bg-[#1f4b3e] hover:bg-[#275d4d] text-[#4ade80] border border-[#4ade80]/20 rounded-lg flex items-center gap-2 transition-all text-sm font-medium"
+                                                            className="px-2 py-1 bg-[#1f4b3e] hover:bg-[#275d4d] text-[#4ade80] border border-[#4ade80]/20 rounded-md flex items-center gap-1.5 transition-all text-xs font-medium"
                                                         >
-                                                            <ExternalLink className="w-3.5 h-3.5" /> Salida
+                                                            <ExternalLink className="w-3 h-3" /> Salida
                                                         </button>
                                                         <button
                                                             onClick={() => handlePrintRow(sol.numero_solicitud, sol.descripcion_solicitud)}
-                                                            className="px-3 py-1.5 bg-[#4a2b2b] hover:bg-[#5d3636] text-[#f87171] border border-[#f87171]/20 rounded-lg flex items-center gap-2 transition-all text-sm font-medium"
+                                                            className="px-2 py-1 bg-[#4a2b2b] hover:bg-[#5d3636] text-[#f87171] border border-[#f87171]/20 rounded-md flex items-center gap-1.5 transition-all text-xs font-medium"
                                                         >
-                                                            <Printer className="w-3.5 h-3.5" /> Imprimir
+                                                            <Printer className="w-3 h-3" /> Imprimir
                                                         </button>
                                                     </div>
                                                 </td>
