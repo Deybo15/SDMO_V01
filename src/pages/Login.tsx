@@ -42,7 +42,7 @@ export default function Login() {
             <div className="bg-slate-800/50 backdrop-blur-xl border border-slate-700/50 rounded-2xl shadow-2xl w-full max-w-md p-8 relative z-10">
                 <div className="text-center mb-8">
                     <img
-                        src="/login-logo.png"
+                        src="/login-logo-new.png"
                         alt="Logo Municipalidad de San José"
                         className="w-full max-w-[320px] mx-auto mb-6 h-auto object-contain"
                     />

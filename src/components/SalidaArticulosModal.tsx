@@ -8,7 +8,6 @@ import {
     Trash2,
     Save,
     Printer,
-    ArrowLeft,
     MessageSquare,
     CheckCircle,
     AlertTriangle,
@@ -17,6 +16,7 @@ import {
     Hash,
     Loader2
 } from 'lucide-react';
+import { ColaboradorSearchModal } from '../pages/Activos/components/ColaboradorSearchModal';
 
 interface SalidaArticulosModalProps {
     isOpen: boolean;
@@ -35,16 +35,18 @@ interface Articulo {
 
 interface Colaborador {
     identificacion: string;
-    alias?: string;
-    colaborador?: string;
+    alias: string;
+    colaborador: string;
+    autorizado: boolean;
 }
 
 interface DetalleSalida {
     codigo_articulo: string;
     articulo: string;
-    cantidad: number;
+    cantidad: number | string;
     unidad: string;
     precio_unitario: number;
+    cantidad_disponible?: number;
 }
 
 export default function SalidaArticulosModal({ isOpen, onClose, solicitudId }: SalidaArticulosModalProps) {
@@ -57,7 +59,13 @@ export default function SalidaArticulosModal({ isOpen, onClose, solicitudId }: S
     const [retira, setRetira] = useState('');
     const [numeroSolicitud, setNumeroSolicitud] = useState<number | string>('');
     const [comentarios, setComentarios] = useState('');
-    const [detalles, setDetalles] = useState<DetalleSalida[]>([]);
+    const [detalles, setDetalles] = useState<DetalleSalida[]>([{
+        codigo_articulo: '',
+        articulo: '',
+        cantidad: 0,
+        unidad: '',
+        precio_unitario: 0
+    }]);
 
     // Lists & Options
     const [responsables, setResponsables] = useState<Colaborador[]>([]);
@@ -68,6 +76,11 @@ export default function SalidaArticulosModal({ isOpen, onClose, solicitudId }: S
     const [showArticuloModal, setShowArticuloModal] = useState(false);
     const [activeRowIndex, setActiveRowIndex] = useState<number | null>(null);
     const [previewImage, setPreviewImage] = useState<string | null>(null);
+
+    // Search Modal States
+    const [showBusquedaModal, setShowBusquedaModal] = useState(false);
+    const [busquedaTipo, setBusquedaTipo] = useState<'autoriza' | 'retira'>('autoriza');
+    const [busquedaColaboradores, setBusquedaColaboradores] = useState<Colaborador[]>([]);
 
     // Inventory Search
     const [inventario, setInventario] = useState<Articulo[]>([]);
@@ -88,10 +101,14 @@ export default function SalidaArticulosModal({ isOpen, onClose, solicitudId }: S
             } else {
                 generarNumeroSolicitud();
             }
-            // Add initial empty row
-            if (detalles.length === 0) {
-                // setDetalles([{ codigo_articulo: '', articulo: '', cantidad: 0, unidad: '', precio_unitario: 0 }]);
-            }
+            // Ensure at least one row
+            setDetalles(prev => prev.length === 0 ? [{
+                codigo_articulo: '',
+                articulo: '',
+                cantidad: 0,
+                unidad: '',
+                precio_unitario: 0
+            }] : prev);
         }
     }, [isOpen, solicitudId]);
 
@@ -103,11 +120,19 @@ export default function SalidaArticulosModal({ isOpen, onClose, solicitudId }: S
     const loadColaboradores = async () => {
         try {
             const [{ data: autorizados }, { data: retirados }] = await Promise.all([
-                supabase.from('colaboradores_06').select('identificacion, alias').eq('autorizado', true),
-                supabase.from('colaboradores_06').select('identificacion, colaborador').eq('condicion_laboral', false)
+                supabase.from('colaboradores_06').select('identificacion, alias, colaborador, autorizado').eq('autorizado', true),
+                supabase.from('colaboradores_06').select('identificacion, colaborador, alias, autorizado').eq('condicion_laboral', false)
             ]);
-            setResponsables(autorizados || []);
-            setRetirantes(retirados || []);
+
+            // Map to ensure alias/colaborador are populated
+            const safeAutorizados = (autorizados || []).map(c => ({
+                ...c,
+                alias: c.alias || c.colaborador, // Fallback if alias missing
+                colaborador: c.colaborador || c.alias // Fallback
+            }));
+
+            setResponsables(safeAutorizados as Colaborador[]);
+            setRetirantes((retirados || []) as Colaborador[]);
         } catch (error) {
             console.error('Error loading colaboradores:', error);
         }
@@ -127,6 +152,22 @@ export default function SalidaArticulosModal({ isOpen, onClose, solicitudId }: S
             console.error('Error generating number:', error);
             setNumeroSolicitud(Date.now());
         }
+    };
+
+    // Handlers for Search Modal
+    const handleOpenBusqueda = (tipo: 'autoriza' | 'retira') => {
+        setBusquedaTipo(tipo);
+        setBusquedaColaboradores(tipo === 'autoriza' ? responsables : retirantes);
+        setShowBusquedaModal(true);
+    };
+
+    const handleSelectColaborador = (colaborador: Colaborador) => {
+        if (busquedaTipo === 'autoriza') {
+            setAutoriza(colaborador.identificacion);
+        } else {
+            setRetira(colaborador.identificacion);
+        }
+        setShowBusquedaModal(false);
     };
 
     // Inventory Logic
@@ -161,6 +202,7 @@ export default function SalidaArticulosModal({ isOpen, onClose, solicitudId }: S
 
     useEffect(() => {
         if (showArticuloModal) {
+            // Reset search when opening
             const delayDebounceFn = setTimeout(() => {
                 setInventoryPage(1);
                 loadInventario(1, articuloSearchTerm);
@@ -198,13 +240,15 @@ export default function SalidaArticulosModal({ isOpen, onClose, solicitudId }: S
             newDetalles[activeRowIndex] = {
                 codigo_articulo: articulo.codigo_articulo,
                 articulo: articulo.nombre_articulo,
-                cantidad: 1,
+                cantidad: 0, // Reset quantity for input
                 unidad: articulo.unidad || 'Unidad',
-                precio_unitario: articulo.precio_unitario
+                precio_unitario: articulo.precio_unitario,
+                cantidad_disponible: articulo.cantidad_disponible
             };
             setDetalles(newDetalles);
             setShowArticuloModal(false);
             setActiveRowIndex(null);
+            setArticuloSearchTerm(''); // Clear search
         }
     };
 
@@ -219,9 +263,11 @@ export default function SalidaArticulosModal({ isOpen, onClose, solicitudId }: S
             return;
         }
 
+
         // Validate details
         for (const d of detalles) {
-            if (!d.codigo_articulo || d.cantidad <= 0) {
+            const qty = typeof d.cantidad === 'string' ? parseFloat(d.cantidad) : d.cantidad;
+            if (!d.codigo_articulo || qty <= 0) {
                 showNotify('Verifique que todos los artículos tengan código y cantidad válida', 'error');
                 return;
             }
@@ -251,7 +297,7 @@ export default function SalidaArticulosModal({ isOpen, onClose, solicitudId }: S
             const detallesToInsert = detalles.map(d => ({
                 id_salida: newId,
                 articulo: d.codigo_articulo,
-                cantidad: d.cantidad,
+                cantidad: typeof d.cantidad === 'string' ? parseFloat(d.cantidad) : d.cantidad,
                 precio_unitario: d.precio_unitario
             }));
 
@@ -299,7 +345,7 @@ export default function SalidaArticulosModal({ isOpen, onClose, solicitudId }: S
 
     return (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm overflow-y-auto">
-            <div className="bg-[#0f0f23] w-full max-w-5xl rounded-2xl shadow-2xl border border-white/10 flex flex-col max-h-[90vh] overflow-hidden relative">
+            <div className="bg-[#0f0f23] w-full max-w-7xl rounded-2xl shadow-2xl border border-white/10 flex flex-col max-h-[90vh] overflow-hidden relative">
 
                 {/* Background Effects */}
                 <div className="absolute top-0 left-0 w-full h-full overflow-hidden pointer-events-none z-0">
@@ -342,7 +388,7 @@ export default function SalidaArticulosModal({ isOpen, onClose, solicitudId }: S
                             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                                 <div>
                                     <label className="block text-xs text-gray-400 mb-1">Responsable que autoriza *</label>
-                                    <div className="relative">
+                                    <div className="relative flex gap-2">
                                         <select
                                             value={autoriza}
                                             onChange={(e) => setAutoriza(e.target.value)}
@@ -353,12 +399,18 @@ export default function SalidaArticulosModal({ isOpen, onClose, solicitudId }: S
                                                 <option key={r.identificacion} value={r.identificacion}>{r.alias}</option>
                                             ))}
                                         </select>
-                                        <Search className="absolute right-3 top-2.5 w-4 h-4 text-gray-500 pointer-events-none" />
+                                        <button
+                                            onClick={() => handleOpenBusqueda('autoriza')}
+                                            className="px-3 bg-blue-600/20 border border-blue-600/30 text-blue-400 hover:bg-blue-600/40 rounded-lg transition-colors"
+                                            title="Buscar Responsable"
+                                        >
+                                            <Search className="w-4 h-4" />
+                                        </button>
                                     </div>
                                 </div>
                                 <div>
                                     <label className="block text-xs text-gray-400 mb-1">Persona que retira *</label>
-                                    <div className="relative">
+                                    <div className="relative flex gap-2">
                                         <select
                                             value={retira}
                                             onChange={(e) => setRetira(e.target.value)}
@@ -369,7 +421,13 @@ export default function SalidaArticulosModal({ isOpen, onClose, solicitudId }: S
                                                 <option key={r.identificacion} value={r.identificacion}>{r.colaborador}</option>
                                             ))}
                                         </select>
-                                        <Search className="absolute right-3 top-2.5 w-4 h-4 text-gray-500 pointer-events-none" />
+                                        <button
+                                            onClick={() => handleOpenBusqueda('retira')}
+                                            className="px-3 bg-blue-600/20 border border-blue-600/30 text-blue-400 hover:bg-blue-600/40 rounded-lg transition-colors"
+                                            title="Buscar Persona"
+                                        >
+                                            <Search className="w-4 h-4" />
+                                        </button>
                                     </div>
                                 </div>
                                 <div>
@@ -451,20 +509,45 @@ export default function SalidaArticulosModal({ isOpen, onClose, solicitudId }: S
                                                     </button>
                                                 </div>
                                                 {detalle.codigo_articulo && (
-                                                    <div className="text-xs text-gray-500 mt-1 ml-1">
-                                                        Código: {detalle.codigo_articulo}
+                                                    <div className="text-xs text-gray-500 mt-1 ml-1 flex justify-between">
+                                                        <span>Código: {detalle.codigo_articulo}</span>
+                                                        {detalle.cantidad_disponible !== undefined && (
+                                                            <span className="text-blue-400">Disp: {detalle.cantidad_disponible}</span>
+                                                        )}
                                                     </div>
                                                 )}
                                             </td>
                                             <td className="px-4 py-2">
-                                                <input
-                                                    type="number"
-                                                    min="0"
-                                                    step="0.01"
-                                                    value={detalle.cantidad}
-                                                    onChange={(e) => updateRow(index, 'cantidad', parseFloat(e.target.value))}
-                                                    className="w-full bg-[#1a1d29] border border-gray-700 rounded-lg px-3 py-2 text-sm text-white focus:border-blue-500 outline-none"
-                                                />
+                                                <div className="relative">
+                                                    <input
+                                                        type="text" // Changet to text to control input formatted
+                                                        value={detalle.cantidad}
+                                                        onChange={(e) => {
+                                                            const val = e.target.value;
+                                                            // Allow numbers and one decimal point, max 3 decimals
+                                                            if (/^\d*\.?\d{0,3}$/.test(val)) {
+                                                                updateRow(index, 'cantidad', val);
+                                                            }
+                                                        }}
+                                                        onBlur={(e) => {
+                                                            let val = parseFloat(e.target.value) || 0;
+                                                            // Validate against available stock
+                                                            if (detalle.cantidad_disponible !== undefined && val > detalle.cantidad_disponible) {
+                                                                showNotify(`La cantidad no puede exceder el disponible (${detalle.cantidad_disponible})`, 'error');
+                                                                val = detalle.cantidad_disponible;
+                                                            }
+                                                            updateRow(index, 'cantidad', val);
+                                                        }}
+                                                        placeholder="0"
+                                                        className="w-full bg-[#1a1d29] border border-gray-700 rounded-lg px-3 py-2 text-sm text-white focus:border-blue-500 outline-none"
+                                                        disabled={!detalle.codigo_articulo}
+                                                    />
+                                                    {detalle.cantidad_disponible !== undefined && (
+                                                        <div className="text-[10px] text-gray-500 mt-0.5 text-right">
+                                                            Máx: {detalle.cantidad_disponible}
+                                                        </div>
+                                                    )}
+                                                </div>
                                             </td>
                                             <td className="px-4 py-2">
                                                 <input
@@ -498,14 +581,7 @@ export default function SalidaArticulosModal({ isOpen, onClose, solicitudId }: S
                 </div>
 
                 {/* Footer */}
-                <div className="relative z-10 p-6 bg-[#1a1d29] border-t border-white/10 flex justify-between items-center">
-                    <button
-                        onClick={onClose}
-                        className="px-4 py-2 rounded-xl border border-gray-600 text-gray-300 hover:bg-gray-800 transition-colors flex items-center gap-2"
-                    >
-                        <ArrowLeft className="w-4 h-4" /> Regresar
-                    </button>
-
+                <div className="relative z-10 p-6 bg-[#1a1d29] border-t border-white/10 flex justify-end items-center">
                     <div className="flex gap-3">
                         {step === 'form' ? (
                             <button
@@ -559,6 +635,14 @@ export default function SalidaArticulosModal({ isOpen, onClose, solicitudId }: S
                         </div>
                     </div>
                 )}
+
+                {/* Colaborador Search Modal */}
+                <ColaboradorSearchModal
+                    isOpen={showBusquedaModal}
+                    onClose={() => setShowBusquedaModal(false)}
+                    onSelect={handleSelectColaborador}
+                    colaboradores={busquedaColaboradores}
+                />
 
                 {/* Articulo Search Modal */}
                 {showArticuloModal && (
