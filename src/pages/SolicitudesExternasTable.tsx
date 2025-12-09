@@ -8,7 +8,6 @@ import {
     ArrowLeft,
     FileSpreadsheet,
     FileText,
-    Settings,
     ExternalLink,
     ChevronLeft,
     ChevronRight,
@@ -335,9 +334,13 @@ export default function SolicitudesExternasTable() {
                                                         >
                                                             <ExternalLink className="w-3.5 h-3.5" /> Salida
                                                         </button>
-                                                        {/* Optional: Add Print button if consistency is required, although not explicitly requested for this row, verification implies similarity. 
-                                                             I'll include it but maybe hide it if not needed. The user asked for "similar to the page..." 
-                                                             The reference page has it. */}
+                                                        <button
+                                                            onClick={() => handlePrintRow(sol.numero_solicitud)}
+                                                            className="px-3 py-1.5 bg-[#4a2b2b] hover:bg-[#5d3636] text-[#f87171] border border-[#f87171]/20 rounded-lg flex items-center gap-2 transition-all text-sm font-medium"
+                                                        >
+                                                            <Printer className="w-3.5 h-3.5" /> Imprimir
+                                                        </button>
+
                                                     </div>
                                                 </td>
                                             </tr>
