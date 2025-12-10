@@ -621,36 +621,26 @@ export default function RealizarSalida() {
                                                                     const val = detalle.cantidad;
                                                                     let finalVal = val;
 
-                                                                    // Handle empty or invalid
                                                                     if (val === '' || val === undefined || val === '.') {
                                                                         finalVal = 0;
                                                                     } else if (String(val).endsWith('.')) {
                                                                         finalVal = String(val).slice(0, -1);
                                                                     }
 
-                                                                    // Validate max quantity on blur - REMOVED to allow 3 decimals input without auto-clamping
-                                                                    // const numVal = parseFloat(String(finalVal));
-                                                                    // if (!isNaN(numVal) && detalle.cantidad_disponible !== undefined && numVal > detalle.cantidad_disponible) {
-                                                                    //     finalVal = detalle.cantidad_disponible;
-                                                                    // }
-
                                                                     updateDetalle(index, 'cantidad', finalVal);
                                                                 }}
                                                                 onChange={(e) => {
                                                                     const rawVal = e.target.value;
 
-                                                                    // Permitir vacío
                                                                     if (rawVal === '') {
                                                                         updateDetalle(index, 'cantidad', '');
                                                                         return;
                                                                     }
 
-                                                                    // Validar formato: Solo números y un punto, máx 3 decimales
                                                                     if (!/^\d*\.?\d{0,3}$/.test(rawVal)) {
                                                                         return;
                                                                     }
 
-                                                                    // Manejo especial para punto inicial
                                                                     if (rawVal === '.') {
                                                                         updateDetalle(index, 'cantidad', '0.');
                                                                         return;
