@@ -122,6 +122,12 @@ export default function ConsultarSalidas() {
         return salida.dato_salida_13.reduce((sum, item) => sum + (Number(item.subtotal) || 0), 0);
     };
 
+    const formatDate = (dateStr: string) => {
+        if (!dateStr) return '';
+        // Handle YYYY-MM-DD or ISO string safely without timezone conversion
+        return dateStr.split('T')[0].split('-').reverse().join('/');
+    };
+
     const toggleSalidaDetails = (id: number) => {
         setExpandedSalidas(prev =>
             prev.includes(id) ? prev.filter(sid => sid !== id) : [...prev, id]
@@ -309,8 +315,9 @@ export default function ConsultarSalidas() {
             doc.text(`Total de registros: ${resumen.length}`, 20, 40);
 
             const columnas = ['Fecha', 'Código', 'Artículo', 'Solicitud', 'Instalación', 'Área', 'Cantidad'];
+
             const filas = sortedResumen.map(item => [
-                format(new Date(item.fecha), 'dd/MM/yyyy'),
+                formatDate(item.fecha),
                 item.codigo_articulo || '',
                 item.nombre_articulo || '',
                 item.numero_solicitud || '',
@@ -357,7 +364,7 @@ export default function ConsultarSalidas() {
 
         try {
             const dataToExport = sortedResumen.map(item => ({
-                'Fecha': format(new Date(item.fecha), 'dd/MM/yyyy'),
+                'Fecha': formatDate(item.fecha),
                 'Código': item.codigo_articulo,
                 'Artículo': item.nombre_articulo,
                 'Solicitud': item.numero_solicitud,
@@ -722,7 +729,7 @@ export default function ConsultarSalidas() {
                                                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
                                                     <div className="flex items-center space-x-2 text-sm text-white/70">
                                                         <Calendar className="w-4 h-4" />
-                                                        <span>{format(new Date(salida.fecha_salida), 'dd/MM/yyyy')}</span>
+                                                        <span>{formatDate(salida.fecha_salida)}</span>
                                                     </div>
                                                     <div className="flex items-center space-x-2 text-sm text-white/70">
                                                         <Hash className="w-4 h-4" />
@@ -745,6 +752,18 @@ export default function ConsultarSalidas() {
                                                                         <th className="px-4 py-3 text-right font-medium">Cantidad</th>
                                                                         <th className="px-4 py-3 text-right font-medium">Subtotal</th>
                                                                     </tr>
+                                                                </thead>
+                                                                <tbody>
+                                                                    {salida.dato_salida_13?.map((item, idx) => (
+                                                                        <tr key={idx} className="border-b border-white/5 hover:bg-white/5">
+                                                                            <td className="px-4 py-2 font-mono text-xs text-white/70">{item.articulo}</td>
+                                                                            <td className="px-4 py-2 text-white/90">{item.articulo_01?.nombre_articulo}</td>
+                                                                            <td className="px-4 py-2 text-right text-white/90">{item.cantidad}</td>
+                                                                            <td className="px-4 py-2 text-right text-white/90">{formatearMoneda(item.subtotal)}</td>
+                                                                        </tr>
+                                                                    ))}
+                                                                </tbody>
+                                                                <tfoot>
                                                                     <tr>
                                                                         <td colSpan={3} className="px-4 py-3 text-right font-semibold text-white">Total:</td>
                                                                         <td className="px-4 py-3 text-right font-bold text-lg text-white">{formatearMoneda(totalSalida)}</td>
@@ -813,7 +832,7 @@ export default function ConsultarSalidas() {
                                             {sortedResumen.map((item, idx) => (
                                                 <tr key={idx} className="hover:bg-white/5 transition-colors duration-200">
                                                     <td className="px-4 py-3 text-white/80 font-medium">
-                                                        {format(new Date(item.fecha), 'dd/MM/yyyy')}
+                                                        {formatDate(item.fecha)}
                                                     </td>
                                                     <td className="px-4 py-3 font-mono text-xs text-white/80">{item.codigo_articulo}</td>
                                                     <td className="px-4 py-3 text-white whitespace-normal break-words" title={item.nombre_articulo}>
