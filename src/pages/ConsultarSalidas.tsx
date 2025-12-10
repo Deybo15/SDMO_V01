@@ -59,6 +59,7 @@ interface ResumenDiario {
     nombre_dependencia: string;
     area_mantenimiento: string;
     cantidad_total: number;
+    instalacion_municipal?: string;
 }
 
 type SortConfig = {
@@ -247,11 +248,39 @@ export default function ConsultarSalidas() {
                 .order("codigo_articulo", { ascending: true });
 
             if (error) throw error;
-            setResumen(data || []);
-            if (!data || data.length === 0) {
+
+            let finalData = data || [];
+
+            // Fetch installations for the fetched records
+            if (finalData.length > 0) {
+                const solicitudes = [...new Set(finalData.map(d => d.numero_solicitud).filter(Boolean))];
+
+                if (solicitudes.length > 0) {
+                    const { data: instData, error: instError } = await supabase
+                        .from('solicitud_17')
+                        .select('numero_solicitud, instalaciones_municipales_16(instalacion_municipal)')
+                        .in('numero_solicitud', solicitudes);
+
+                    if (!instError && instData) {
+                        const instMap = new Map(instData.map((s: any) => [
+                            s.numero_solicitud,
+                            s.instalaciones_municipales_16?.instalacion_municipal || 'N/A'
+                        ]));
+
+                        finalData = finalData.map(item => ({
+                            ...item,
+                            instalacion_municipal: instMap.get(item.numero_solicitud) || 'N/A'
+                        }));
+                    }
+                }
+            }
+
+            setResumen(finalData);
+
+            if (!finalData || finalData.length === 0) {
                 showFeedback("No se encontraron registros en el período seleccionado.", 'info');
             } else {
-                showFeedback(`Se cargaron ${data.length} registros exitosamente.`, 'success');
+                showFeedback(`Se cargaron ${finalData.length} registros exitosamente.`, 'success');
             }
         } catch (error: any) {
             console.error("Error al obtener resumen diario:", error);
@@ -279,13 +308,13 @@ export default function ConsultarSalidas() {
             doc.text(`Generado: ${format(new Date(), 'dd/MM/yyyy HH:mm')}`, 20, 35);
             doc.text(`Total de registros: ${resumen.length}`, 20, 40);
 
-            const columnas = ['Fecha', 'Código', 'Artículo', 'Solicitud', 'Dependencia', 'Área', 'Cantidad'];
+            const columnas = ['Fecha', 'Código', 'Artículo', 'Solicitud', 'Instalación', 'Área', 'Cantidad'];
             const filas = sortedResumen.map(item => [
                 format(new Date(item.fecha), 'dd/MM/yyyy'),
                 item.codigo_articulo || '',
                 item.nombre_articulo || '',
                 item.numero_solicitud || '',
-                item.nombre_dependencia || '',
+                item.instalacion_municipal || '',
                 item.area_mantenimiento || '',
                 Number(item.cantidad_total || 0).toFixed(2)
             ]);
@@ -332,7 +361,7 @@ export default function ConsultarSalidas() {
                 'Código': item.codigo_articulo,
                 'Artículo': item.nombre_articulo,
                 'Solicitud': item.numero_solicitud,
-                'Dependencia': item.nombre_dependencia,
+                'Instalación': item.instalacion_municipal,
                 'Área': item.area_mantenimiento,
                 'Cantidad': Number(item.cantidad_total)
             }));
@@ -345,7 +374,7 @@ export default function ConsultarSalidas() {
                 { wch: 10 }, // Código
                 { wch: 40 }, // Artículo
                 { wch: 15 }, // Solicitud
-                { wch: 30 }, // Dependencia
+                { wch: 30 }, // Instalación
                 { wch: 25 }, // Área
                 { wch: 10 }  // Cantidad
             ];
@@ -716,18 +745,6 @@ export default function ConsultarSalidas() {
                                                                         <th className="px-4 py-3 text-right font-medium">Cantidad</th>
                                                                         <th className="px-4 py-3 text-right font-medium">Subtotal</th>
                                                                     </tr>
-                                                                </thead>
-                                                                <tbody className="divide-y divide-white/10">
-                                                                    {salida.dato_salida_13?.map((item, idx) => (
-                                                                        <tr key={idx} className="hover:bg-white/5 transition-colors duration-200">
-                                                                            <td className="px-4 py-3 font-mono text-xs text-white/80">{item.articulo}</td>
-                                                                            <td className="px-4 py-3 text-white">{item.articulo_01?.nombre_articulo || 'N/A'}</td>
-                                                                            <td className="px-4 py-3 text-right text-white/80">{item.cantidad}</td>
-                                                                            <td className="px-4 py-3 text-right font-medium text-white">{formatearMoneda(item.subtotal)}</td>
-                                                                        </tr>
-                                                                    ))}
-                                                                </tbody>
-                                                                <tfoot className="bg-black/20 border-t-2 border-white/20">
                                                                     <tr>
                                                                         <td colSpan={3} className="px-4 py-3 text-right font-semibold text-white">Total:</td>
                                                                         <td className="px-4 py-3 text-right font-bold text-lg text-white">{formatearMoneda(totalSalida)}</td>
@@ -769,7 +786,7 @@ export default function ConsultarSalidas() {
                                                     { key: 'codigo_articulo', label: 'Código' },
                                                     { key: 'nombre_articulo', label: 'Artículo' },
                                                     { key: 'numero_solicitud', label: 'Solicitud' },
-                                                    { key: 'nombre_dependencia', label: 'Dependencia' },
+                                                    { key: 'instalacion_municipal', label: 'Instalación' },
                                                     { key: 'area_mantenimiento', label: 'Área' },
                                                     { key: 'cantidad_total', label: 'Cantidad', align: 'right' }
                                                 ].map((col) => (
@@ -803,8 +820,8 @@ export default function ConsultarSalidas() {
                                                         {item.nombre_articulo}
                                                     </td>
                                                     <td className="px-4 py-3 text-white/80">{item.numero_solicitud}</td>
-                                                    <td className="px-4 py-3 text-white/80 whitespace-normal break-words" title={item.nombre_dependencia}>
-                                                        {item.nombre_dependencia}
+                                                    <td className="px-4 py-3 text-white/80 whitespace-normal break-words" title={item.instalacion_municipal}>
+                                                        {item.instalacion_municipal || 'N/A'}
                                                     </td>
                                                     <td className="px-4 py-3 text-white/80 whitespace-normal break-words" title={item.area_mantenimiento}>
                                                         {item.area_mantenimiento}
