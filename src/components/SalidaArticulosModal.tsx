@@ -344,9 +344,9 @@ export default function SalidaArticulosModal({ isOpen, onClose, solicitudId }: S
 
     if (!isOpen) return null;
 
-    return (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm overflow-y-auto">
-            <div className="bg-[#0f0f23] w-full max-w-7xl rounded-2xl shadow-2xl border border-white/10 flex flex-col max-h-[90vh] overflow-hidden relative">
+    return createPortal(
+        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm overflow-y-auto">
+            <div className="bg-[#0f0f23] w-full max-w-6xl rounded-2xl shadow-2xl border border-white/10 flex flex-col max-h-[90vh] overflow-hidden relative">
 
                 {/* Background Effects */}
                 <div className="absolute top-0 left-0 w-full h-full overflow-hidden pointer-events-none z-0">
@@ -649,7 +649,7 @@ export default function SalidaArticulosModal({ isOpen, onClose, solicitudId }: S
 
             {/* Comentarios Modal */}
             {showComentariosModal && createPortal(
-                <div className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm">
+                <div className="fixed inset-0 z-[120] flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm">
                     <div className="bg-[#1e2235] w-full max-w-lg rounded-xl border border-white/10 shadow-2xl p-6">
                         <h3 className="text-lg font-bold text-white mb-4">Comentarios Adicionales</h3>
                         <textarea
@@ -679,7 +679,7 @@ export default function SalidaArticulosModal({ isOpen, onClose, solicitudId }: S
 
             {/* Articulo Search Modal */}
             {showArticuloModal && createPortal(
-                <div className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm">
+                <div className="fixed inset-0 z-[120] flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm">
                     <div className="bg-[#1e2235] w-full max-w-3xl rounded-xl border border-white/10 shadow-2xl flex flex-col max-h-[85vh]">
                         <div className="p-4 border-b border-white/10 flex justify-between items-center bg-blue-900/20">
                             <h3 className="text-lg font-bold text-white">Buscar Artículo</h3>
@@ -757,6 +757,7 @@ export default function SalidaArticulosModal({ isOpen, onClose, solicitudId }: S
                 </div>,
                 document.body
             )}
-        </div>
+        </div>,
+        document.body
     );
 }
