@@ -22,12 +22,12 @@ export function ColaboradorSearchModal({ isOpen, onClose, onSelect, colaboradore
 
     const filteredColaboradores = colaboradores.filter(c =>
         !searchTerm ||
-        c.colaborador.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        c.identificacion.includes(searchTerm)
+        (c.colaborador || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
+        (c.identificacion || '').includes(searchTerm)
     );
 
     return (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4 animate-fade-in">
+        <div className="fixed inset-0 z-[99999] flex items-center justify-center bg-black/50 backdrop-blur-sm p-4 animate-fade-in">
             <div className="bg-slate-800 border border-slate-700 rounded-2xl shadow-2xl w-full max-w-2xl max-h-[80vh] flex flex-col animate-scale-up">
                 <div className="p-6 border-b border-slate-700 flex justify-between items-center">
                     <h3 className="text-xl font-bold text-white">Buscar Colaborador</h3>

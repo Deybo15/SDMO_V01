@@ -649,7 +649,7 @@ export default function SalidaArticulosModal({ isOpen, onClose, solicitudId }: S
 
             {/* Comentarios Modal */}
             {showComentariosModal && createPortal(
-                <div className="fixed inset-0 z-[120] flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm">
+                <div className="fixed inset-0 z-[99999] flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm">
                     <div className="bg-[#1e2235] w-full max-w-lg rounded-xl border border-white/10 shadow-2xl p-6">
                         <h3 className="text-lg font-bold text-white mb-4">Comentarios Adicionales</h3>
                         <textarea
@@ -679,7 +679,7 @@ export default function SalidaArticulosModal({ isOpen, onClose, solicitudId }: S
 
             {/* Articulo Search Modal */}
             {showArticuloModal && createPortal(
-                <div className="fixed inset-0 z-[120] flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm">
+                <div className="fixed inset-0 z-[99999] flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm">
                     <div className="bg-[#1e2235] w-full max-w-3xl rounded-xl border border-white/10 shadow-2xl flex flex-col max-h-[85vh]">
                         <div className="p-4 border-b border-white/10 flex justify-between items-center bg-blue-900/20">
                             <h3 className="text-lg font-bold text-white">Buscar Artículo</h3>
