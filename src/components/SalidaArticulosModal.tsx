@@ -345,7 +345,7 @@ export default function SalidaArticulosModal({ isOpen, onClose, solicitudId }: S
     if (!isOpen) return null;
 
     return createPortal(
-        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm overflow-y-auto">
+        <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm overflow-y-auto">
             <div className="bg-[#0f0f23] w-full max-w-6xl rounded-2xl shadow-2xl border border-white/10 flex flex-col max-h-[90vh] overflow-hidden relative">
 
                 {/* Background Effects */}

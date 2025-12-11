@@ -1,6 +1,7 @@
 import { useState, useEffect, useMemo } from 'react';
 import { supabase } from '../lib/supabase';
 import { useNavigate } from 'react-router-dom';
+import { createPortal } from 'react-dom';
 import {
     Calendar,
     Hash,
@@ -626,8 +627,8 @@ export default function IngresarArticulo() {
             </div>
 
             {/* General Search Modal */}
-            {modalSearchType && (
-                <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-in fade-in duration-200">
+            {modalSearchType && createPortal(
+                <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-in fade-in duration-200">
                     <div className="bg-slate-900 border border-white/10 rounded-2xl w-full max-w-md shadow-2xl overflow-hidden">
                         <div className="p-4 bg-slate-800 border-b border-white/10 flex justify-between items-center">
                             <h3 className="text-white font-bold text-lg capitalize">
@@ -666,12 +667,13 @@ export default function IngresarArticulo() {
                             </div>
                         </div>
                     </div>
-                </div>
+                </div>,
+                document.body
             )}
 
             {/* Article Search Modal */}
-            {showArticleModal && (
-                <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-in fade-in duration-200">
+            {showArticleModal && createPortal(
+                <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-in fade-in duration-200">
                     <div className="bg-slate-900 border border-white/10 rounded-2xl w-full max-w-5xl shadow-2xl overflow-hidden flex flex-col max-h-[90vh]">
                         <div className="p-4 bg-slate-800 border-b border-white/10 flex justify-between items-center shrink-0">
                             <div className="flex items-center gap-3">
@@ -779,13 +781,14 @@ export default function IngresarArticulo() {
                             )}
                         </div>
                     </div>
-                </div>
+                </div>,
+                document.body
             )}
 
             {/* Image Preview Modal */}
-            {previewImage && (
+            {previewImage && createPortal(
                 <div
-                    className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-black/80 backdrop-blur-md animate-in fade-in duration-200"
+                    className="fixed inset-0 z-[110] flex items-center justify-center p-4 bg-black/80 backdrop-blur-md animate-in fade-in duration-200"
                     onClick={() => setPreviewImage(null)}
                 >
                     <div className="relative max-w-4xl max-h-[90vh] w-full flex items-center justify-center">
@@ -802,7 +805,8 @@ export default function IngresarArticulo() {
                             onClick={(e) => e.stopPropagation()}
                         />
                     </div>
-                </div>
+                </div>,
+                document.body
             )}
         </div>
     );
