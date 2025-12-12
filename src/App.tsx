@@ -1,6 +1,6 @@
 import { Routes, Route } from 'react-router-dom';
 import Layout from './components/Layout';
-import Dashboard from './pages/Dashboard';
+import MaintenanceDashboard from './pages/MaintenanceDashboard';
 import Articulos from './pages/Articulos';
 import ConsultarInventario from './pages/ConsultarInventario';
 import EscanerQR from './pages/EscanerQR';
@@ -43,6 +43,8 @@ import AccesoriosActivos from './pages/Activos/AccesoriosActivos';
 import { ThemeProvider } from './context/ThemeContext';
 import { ProtectedRoute } from './components/ProtectedRoute';
 
+import ProyeccionCompras from './pages/ProyeccionCompras';
+
 function App() {
     return (
         <ThemeProvider>
@@ -50,7 +52,7 @@ function App() {
                 <Route path="/login" element={<Login />} />
                 <Route element={<ProtectedRoute />}>
                     <Route element={<Layout />}>
-                        <Route path="/" element={<Dashboard />} />
+                        <Route path="/" element={<MaintenanceDashboard />} />
                         <Route path="/articulos" element={<Articulos />} />
                         <Route path="/articulos/consultar-inventario" element={<ConsultarInventario />} />
                         <Route path="/articulos/escaner-qr" element={<EscanerQR />} />
@@ -87,6 +89,7 @@ function App() {
                         <Route path="/otras-solicitudes/limpieza-aseo" element={<LimpiezaAseo />} />
                         <Route path="/gestion-interna" element={<GestionInterna />} />
                         <Route path="/gestion-interna/colaboradores" element={<InformeColaboradores />} />
+                        <Route path="/gestion-interna/proyeccion-compras" element={<ProyeccionCompras />} />
 
                         {/* Gestión de Activos */}
                         <Route path="/activos" element={<Activos />} />

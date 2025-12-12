@@ -841,7 +841,7 @@ export default function MaintenanceDashboard() {
                                     <tr key={item.numero_solicitud} className="hover:bg-slate-700/50 transition-colors">
                                         <td className="p-3 font-medium text-white truncate">{item.numero_solicitud}</td>
                                         <td className="p-3 truncate">{item.fecha_solicitud}</td>
-                                        <td className="p-3 truncate" title={item.baseLocation}>{item.baseLocation}</td>
+                                        <td className="p-3 truncate" title={item.base_location}>{item.base_location}</td>
                                         <td className="p-3 truncate" title={item.descripcion_area || ''}>{item.descripcion_area || '-'}</td>
                                         <td className="p-3 truncate" title={item.supervisor_asignado_alias || ''}>
                                             {item.supervisor_asignado_alias || <span className="text-slate-500 italic">Sin Asignar</span>}

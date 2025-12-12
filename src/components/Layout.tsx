@@ -1,6 +1,6 @@
 import React from 'react';
 import { Link, useLocation, useNavigate, Outlet } from 'react-router-dom';
-import { LayoutDashboard, Package, Users, Building2, ClipboardList, Settings2, Wrench, LogOut, UserCircle2, Menu, X } from 'lucide-react';
+import { LayoutDashboard, Package, Users, Building2, ClipboardList, Settings2, Wrench, LogOut, UserCircle2, Menu, X, Calculator } from 'lucide-react';
 import { cn } from '../lib/utils';
 import { supabase } from '../lib/supabase';
 
@@ -20,6 +20,7 @@ export default function Layout() {
         { icon: Building2, label: 'Cliente Externo', path: '/cliente-externo' },
         { icon: ClipboardList, label: 'Otras Solicitudes', path: '/otras-solicitudes' },
         { icon: Settings2, label: 'Gestión Interna', path: '/gestion-interna' },
+        { icon: Calculator, label: 'Proyección Compras', path: '/gestion-interna/proyeccion-compras' },
         { icon: Wrench, label: 'Gestión de Activos', path: '/activos' },
 
     ];
@@ -87,9 +88,16 @@ export default function Layout() {
                 {/* Navigation */}
                 <nav className="flex-1 px-4 py-4 space-y-1.5 overflow-y-auto scrollbar-thin scrollbar-thumb-slate-800 scrollbar-track-transparent">
                     {navItems.map((item) => {
-                        const isActive = item.path === '/'
-                            ? location.pathname === '/'
-                            : location.pathname.startsWith(item.path);
+                        // Find the best matching item based on the longest path that matches the current location
+                        const matchingItems = navItems.filter(navItem =>
+                            navItem.path === '/'
+                                ? location.pathname === '/'
+                                : location.pathname.startsWith(navItem.path)
+                        );
+
+                        const bestMatch = matchingItems.sort((a, b) => b.path.length - a.path.length)[0];
+                        const isActive = bestMatch?.path === item.path;
+
                         return (
                             <Link
                                 key={item.path}
