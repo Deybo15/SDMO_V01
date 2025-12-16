@@ -601,6 +601,10 @@ export default function MaintenanceDashboard() {
                                 <Tooltip
                                     cursor={{ fill: '#334155', opacity: 0.2 }}
                                     contentStyle={{ backgroundColor: '#1e293b', borderColor: '#334155', color: '#f8fafc' }}
+                                    formatter={(value: number, name: string) => {
+                                        if (name === '% Ejecutado') return [`${value.toFixed(2)}%`, name];
+                                        return [value, name];
+                                    }}
                                 />
                                 <Legend wrapperStyle={{ paddingTop: '20px' }} />
                                 <Bar
