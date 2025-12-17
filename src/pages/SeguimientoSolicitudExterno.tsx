@@ -454,7 +454,7 @@ export default function SeguimientoSolicitudExterno() {
 
             {/* Notification Toast */}
             {notification && (
-                <div className={`fixed top-24 right-6 z-[60] flex items-center gap-3 px-6 py-4 rounded-xl shadow-2xl border backdrop-blur-xl animate-in slide-in-from-right duration-300 ${notification.type === 'success' ? 'bg-green-500/20 border-green-500/30 text-green-400' :
+                <div className={`fixed top-24 right-6 z-[110] flex items-center gap-3 px-6 py-4 rounded-xl shadow-2xl border backdrop-blur-xl animate-in slide-in-from-right duration-300 ${notification.type === 'success' ? 'bg-green-500/20 border-green-500/30 text-green-400' :
                     notification.type === 'error' ? 'bg-red-500/20 border-red-500/30 text-red-400' :
                         'bg-blue-500/20 border-blue-500/30 text-blue-400'
                     }`}>
@@ -608,8 +608,8 @@ export default function SeguimientoSolicitudExterno() {
                                             </td>
                                             <td className="px-6 py-4">
                                                 <span className={`px-3 py-1 rounded-full text-xs font-semibold border ${sol.estado_actual === 'ACTIVA' ? 'bg-green-500/20 text-green-400 border-green-500/30' :
-                                                        sol.estado_actual === 'EJECUTADA' ? 'bg-blue-500/20 text-blue-400 border-blue-500/30' :
-                                                            'bg-red-500/20 text-red-400 border-red-500/30'
+                                                    sol.estado_actual === 'EJECUTADA' ? 'bg-blue-500/20 text-blue-400 border-blue-500/30' :
+                                                        'bg-red-500/20 text-red-400 border-red-500/30'
                                                     }`}>
                                                     {sol.estado_actual}
                                                 </span>
@@ -634,7 +634,7 @@ export default function SeguimientoSolicitudExterno() {
 
             {/* Modal Seguimiento */}
             {showModalSeguimiento && selectedSolicitud && (
-                <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm overflow-y-auto">
+                <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm overflow-y-auto">
                     <div className="bg-[#1a1d29] border border-white/10 rounded-2xl shadow-2xl w-full max-w-5xl my-8 flex flex-col max-h-[90vh]">
                         {/* Modal Header */}
                         <div className="p-6 border-b border-white/10 flex justify-between items-center bg-white/5 rounded-t-2xl">
@@ -662,8 +662,8 @@ export default function SeguimientoSolicitudExterno() {
                                     <div>
                                         <span className="text-gray-400 block">Estado:</span>
                                         <span className={`inline-block px-2 py-0.5 rounded-full text-xs font-bold border mt-1 ${seguimientoData.estado_actual === 'ACTIVA' ? 'bg-green-500/20 text-green-400 border-green-500/30' :
-                                                seguimientoData.estado_actual === 'EJECUTADA' ? 'bg-blue-500/20 text-blue-400 border-blue-500/30' :
-                                                    'bg-red-500/20 text-red-400 border-red-500/30'
+                                            seguimientoData.estado_actual === 'EJECUTADA' ? 'bg-blue-500/20 text-blue-400 border-blue-500/30' :
+                                                'bg-red-500/20 text-red-400 border-red-500/30'
                                             }`}>
                                             {seguimientoData.estado_actual}
                                         </span>
