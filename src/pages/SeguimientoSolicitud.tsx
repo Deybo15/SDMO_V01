@@ -550,7 +550,10 @@ export default function SeguimientoSolicitud() {
 
             showNotification('Seguimiento actualizado correctamente', 'success');
             setIsModalOpen(false);
-            loadData(); // Recargar tabla principal
+            showNotification('Seguimiento actualizado correctamente', 'success');
+            setIsModalOpen(false);
+            fetchSolicitudes(); // Recargar tabla principal
+            loadStats();        // Recargar estadísticas
 
         } catch (error: any) {
             showNotification('Error al guardar: ' + error.message, 'error');
