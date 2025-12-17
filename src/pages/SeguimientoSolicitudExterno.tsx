@@ -634,202 +634,217 @@ export default function SeguimientoSolicitudExterno() {
 
             {/* Modal Seguimiento */}
             {showModalSeguimiento && selectedSolicitud && (
-                <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm overflow-y-auto">
-                    <div className="bg-[#1a1d29] border border-white/10 rounded-2xl shadow-2xl w-full max-w-5xl my-8 flex flex-col max-h-[90vh]">
-                        {/* Modal Header */}
-                        <div className="p-6 border-b border-white/10 flex justify-between items-center bg-white/5 rounded-t-2xl">
-                            <h2 className="text-xl font-bold flex items-center gap-3 text-white">
-                                <FileText className="text-[#8e44ad]" />
-                                Seguimiento de Solicitud #{selectedSolicitud.numero_solicitud}
-                            </h2>
-                            <button onClick={() => setShowModalSeguimiento(false)} className="text-gray-400 hover:text-white transition-colors">
-                                <X size={24} />
-                            </button>
-                        </div>
+                <>
+                    {/* Backdrop: Z-60 (Debajo del Sidebar Z-70) para que el menú se vea claro */}
+                    <div
+                        className="fixed inset-0 z-[60] bg-black/80 backdrop-blur-sm"
+                        onClick={() => setShowModalSeguimiento(false)}
+                    />
 
-                        {/* Modal Body */}
-                        <div className="p-6 overflow-y-auto custom-scrollbar space-y-8">
-                            {/* Info Card */}
-                            <div className="bg-blue-500/10 border border-blue-500/20 rounded-xl p-5">
-                                <h3 className="text-blue-400 font-semibold flex items-center gap-2 mb-3">
-                                    <Info size={18} /> Información
-                                </h3>
-                                <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm">
-                                    <div>
-                                        <span className="text-gray-400 block">Fecha:</span>
-                                        <span className="text-white font-medium">{new Date(selectedSolicitud.fecha_solicitud).toLocaleDateString('es-ES')}</span>
-                                    </div>
-                                    <div>
-                                        <span className="text-gray-400 block">Estado:</span>
-                                        <span className={`inline-block px-2 py-0.5 rounded-full text-xs font-bold border mt-1 ${seguimientoData.estado_actual === 'ACTIVA' ? 'bg-green-500/20 text-green-400 border-green-500/30' :
-                                            seguimientoData.estado_actual === 'EJECUTADA' ? 'bg-blue-500/20 text-blue-400 border-blue-500/30' :
-                                                'bg-red-500/20 text-red-400 border-red-500/30'
-                                            }`}>
-                                            {seguimientoData.estado_actual}
-                                        </span>
-                                    </div>
-                                    <div className="md:col-span-3">
-                                        <span className="text-gray-400 block">Descripción:</span>
-                                        <span className="text-white">{selectedSolicitud.descripcion_solicitud}</span>
-                                    </div>
-                                </div>
+                    {/* Modal Wrapper: Z-100 (Encima del Sidebar) para que el modal no se corte */}
+                    <div
+                        className="fixed inset-0 z-[100] flex items-center justify-center p-4 overflow-y-auto"
+                        onClick={(e) => {
+                            // Close if clicking the empty space (wrapper), but ensuring standard modal behavior
+                            if (e.target === e.currentTarget) setShowModalSeguimiento(false);
+                        }}
+                    >
+                        <div className="bg-[#1a1d29] border border-white/10 rounded-2xl shadow-2xl w-full max-w-5xl my-8 flex flex-col max-h-[90vh]">
+                            {/* Modal Header */}
+                            <div className="p-6 border-b border-white/10 flex justify-between items-center bg-white/5 rounded-t-2xl">
+                                <h2 className="text-xl font-bold flex items-center gap-3 text-white">
+                                    <FileText className="text-[#8e44ad]" />
+                                    Seguimiento de Solicitud #{selectedSolicitud.numero_solicitud}
+                                </h2>
+                                <button onClick={() => setShowModalSeguimiento(false)} className="text-gray-400 hover:text-white transition-colors">
+                                    <X size={24} />
+                                </button>
                             </div>
 
-                            {/* Form */}
-                            <div>
-                                <h3 className="text-lg font-bold text-white border-b border-white/10 pb-2 mb-4 flex items-center gap-2">
-                                    <RotateCw size={20} className="text-[#8e44ad]" /> Datos de Seguimiento
-                                </h3>
-                                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                                    <div className="space-y-2">
-                                        <label className="text-sm font-medium text-gray-300">Estado Actual *</label>
-                                        <select
-                                            className="w-full bg-[#1e2230] border border-white/10 rounded-lg p-2.5 text-white focus:border-[#8e44ad] outline-none"
-                                            value={seguimientoData.estado_actual || ''}
-                                            onChange={(e) => setSeguimientoData({ ...seguimientoData, estado_actual: e.target.value })}
-                                        >
-                                            <option value="">Seleccionar estado...</option>
-                                            <option value="ACTIVA">ACTIVA</option>
-                                            <option value="EJECUTADA">EJECUTADA</option>
-                                            <option value="CANCELADA">CANCELADA</option>
-                                        </select>
-                                    </div>
-                                    <div className="space-y-2">
-                                        <label className="text-sm font-medium text-gray-300">Fecha Ingreso</label>
-                                        <input type="date" className="w-full bg-[#1e2230] border border-white/10 rounded-lg p-2.5 text-white focus:border-[#8e44ad] outline-none" value={seguimientoData.fecha_ingreso || ''} onChange={(e) => setSeguimientoData({ ...seguimientoData, fecha_ingreso: e.target.value })} />
-                                    </div>
-                                    <div className="space-y-2">
-                                        <label className="text-sm font-medium text-gray-300">Fecha Inicio</label>
-                                        <input type="date" className="w-full bg-[#1e2230] border border-white/10 rounded-lg p-2.5 text-white focus:border-[#8e44ad] outline-none" value={seguimientoData.fecha_inicio || ''} onChange={(e) => setSeguimientoData({ ...seguimientoData, fecha_inicio: e.target.value })} />
-                                    </div>
-                                    <div className="space-y-2">
-                                        <label className="text-sm font-medium text-gray-300">Fecha Asignación</label>
-                                        <input type="date" className="w-full bg-[#1e2230] border border-white/10 rounded-lg p-2.5 text-white focus:border-[#8e44ad] outline-none" value={seguimientoData.fecha_asignacion || ''} onChange={(e) => setSeguimientoData({ ...seguimientoData, fecha_asignacion: e.target.value })} />
-                                    </div>
-                                    <div className="space-y-2">
-                                        <label className="text-sm font-medium text-gray-300">Fecha Valoración</label>
-                                        <input type="date" className="w-full bg-[#1e2230] border border-white/10 rounded-lg p-2.5 text-white focus:border-[#8e44ad] outline-none" value={seguimientoData.fecha_valoracion || ''} onChange={(e) => setSeguimientoData({ ...seguimientoData, fecha_valoracion: e.target.value })} />
-                                    </div>
-                                    <div className="space-y-2">
-                                        <label className="text-sm font-medium text-gray-300">Fecha Finalización</label>
-                                        <input type="date" className="w-full bg-[#1e2230] border border-white/10 rounded-lg p-2.5 text-white focus:border-[#8e44ad] outline-none" value={seguimientoData.fecha_finalizacion || ''} onChange={(e) => setSeguimientoData({ ...seguimientoData, fecha_finalizacion: e.target.value })} />
-                                    </div>
-                                </div>
-                            </div>
-
-                            {/* Images */}
-                            <div>
-                                <h3 className="text-lg font-bold text-white border-b border-white/10 pb-2 mb-4 flex items-center gap-2">
-                                    <ImageIcon size={20} className="text-[#8e44ad]" /> Imágenes
-                                </h3>
-                                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                                    <div className="space-y-3">
-                                        <label className="text-sm font-medium text-gray-300 block">Condición Actual</label>
-                                        <div className="relative group">
-                                            <input type="file" className="hidden" id="file-actual" accept="image/*" onChange={(e) => handleImageChange(e, 'actual')} />
-                                            <label htmlFor="file-actual" className="flex items-center justify-center w-full px-4 py-2 bg-[#1e2230] border border-white/10 rounded-lg cursor-pointer hover:bg-white/5 transition-colors gap-2 text-sm text-gray-300">
-                                                <Upload size={16} /> Seleccionar Imagen
-                                            </label>
-                                        </div>
-                                        {imgActualPreview ? (
-                                            <div className="relative rounded-xl overflow-hidden border border-white/10 group">
-                                                <img src={imgActualPreview} alt="Actual" className="w-full h-48 object-cover cursor-pointer hover:scale-105 transition-transform" onClick={() => setShowModalImagen({ url: imgActualPreview, title: 'Condición Actual' })} />
-                                                <button onClick={() => eliminarImagen('actual')} className="absolute top-2 right-2 p-1.5 bg-red-500/80 text-white rounded-full hover:bg-red-600 transition-colors">
-                                                    <Trash2 size={16} />
-                                                </button>
-                                                <div className="absolute bottom-0 left-0 w-full bg-black/50 p-2 text-xs text-white text-center backdrop-blur-sm">
-                                                    Condición Actual
-                                                </div>
-                                            </div>
-                                        ) : (
-                                            <div className="h-48 border-2 border-dashed border-white/10 rounded-xl flex flex-col items-center justify-center text-gray-500 bg-white/5">
-                                                <ImageIcon size={32} className="mb-2 opacity-50" />
-                                                <span className="text-sm">Sin imagen</span>
-                                            </div>
-                                        )}
-                                    </div>
-
-                                    <div className="space-y-3">
-                                        <label className="text-sm font-medium text-gray-300 block">Condición Final</label>
-                                        <div className="relative group">
-                                            <input type="file" className="hidden" id="file-final" accept="image/*" onChange={(e) => handleImageChange(e, 'final')} />
-                                            <label htmlFor="file-final" className="flex items-center justify-center w-full px-4 py-2 bg-[#1e2230] border border-white/10 rounded-lg cursor-pointer hover:bg-white/5 transition-colors gap-2 text-sm text-gray-300">
-                                                <Upload size={16} /> Seleccionar Imagen
-                                            </label>
-                                        </div>
-                                        {imgFinalPreview ? (
-                                            <div className="relative rounded-xl overflow-hidden border border-white/10 group">
-                                                <img src={imgFinalPreview} alt="Final" className="w-full h-48 object-cover cursor-pointer hover:scale-105 transition-transform" onClick={() => setShowModalImagen({ url: imgFinalPreview, title: 'Condición Final' })} />
-                                                <button onClick={() => eliminarImagen('final')} className="absolute top-2 right-2 p-1.5 bg-red-500/80 text-white rounded-full hover:bg-red-600 transition-colors">
-                                                    <Trash2 size={16} />
-                                                </button>
-                                                <div className="absolute bottom-0 left-0 w-full bg-black/50 p-2 text-xs text-white text-center backdrop-blur-sm">
-                                                    Condición Final
-                                                </div>
-                                            </div>
-                                        ) : (
-                                            <div className="h-48 border-2 border-dashed border-white/10 rounded-xl flex flex-col items-center justify-center text-gray-500 bg-white/5">
-                                                <ImageIcon size={32} className="mb-2 opacity-50" />
-                                                <span className="text-sm">Sin imagen</span>
-                                            </div>
-                                        )}
-                                    </div>
-                                </div>
-                            </div>
-
-                            {/* Registros */}
-                            <div>
-                                <div className="flex justify-between items-center border-b border-white/10 pb-2 mb-4">
-                                    <h3 className="text-lg font-bold text-white flex items-center gap-2">
-                                        <FileText size={20} className="text-[#8e44ad]" /> Registros
+                            {/* Modal Body */}
+                            <div className="p-6 overflow-y-auto custom-scrollbar space-y-8">
+                                {/* Info Card */}
+                                <div className="bg-blue-500/10 border border-blue-500/20 rounded-xl p-5">
+                                    <h3 className="text-blue-400 font-semibold flex items-center gap-2 mb-3">
+                                        <Info size={18} /> Información
                                     </h3>
-                                    <button
-                                        onClick={() => {
-                                            setNuevoRegistro({ fecha: new Date().toISOString().split('T')[0], texto: '', tipo: 'General' });
-                                            setShowModalRegistro(true);
-                                        }}
-                                        className="flex items-center gap-2 px-3 py-1.5 bg-green-500/20 text-green-400 hover:bg-green-500/30 rounded-lg transition-colors border border-green-500/30 text-sm font-medium"
-                                    >
-                                        <PlusCircle size={16} /> Agregar
-                                    </button>
+                                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm">
+                                        <div>
+                                            <span className="text-gray-400 block">Fecha:</span>
+                                            <span className="text-white font-medium">{new Date(selectedSolicitud.fecha_solicitud).toLocaleDateString('es-ES')}</span>
+                                        </div>
+                                        <div>
+                                            <span className="text-gray-400 block">Estado:</span>
+                                            <span className={`inline-block px-2 py-0.5 rounded-full text-xs font-bold border mt-1 ${seguimientoData.estado_actual === 'ACTIVA' ? 'bg-green-500/20 text-green-400 border-green-500/30' :
+                                                seguimientoData.estado_actual === 'EJECUTADA' ? 'bg-blue-500/20 text-blue-400 border-blue-500/30' :
+                                                    'bg-red-500/20 text-red-400 border-red-500/30'
+                                                }`}>
+                                                {seguimientoData.estado_actual}
+                                            </span>
+                                        </div>
+                                        <div className="md:col-span-3">
+                                            <span className="text-gray-400 block">Descripción:</span>
+                                            <span className="text-white">{selectedSolicitud.descripcion_solicitud}</span>
+                                        </div>
+                                    </div>
                                 </div>
 
-                                <div className="space-y-3 max-h-60 overflow-y-auto custom-scrollbar pr-2">
-                                    {registros.length > 0 ? (
-                                        registros.map((reg, idx) => (
-                                            <div key={idx} className="bg-[#1e2230] border border-white/10 rounded-xl p-4 hover:bg-white/5 transition-colors">
-                                                <div className="flex items-center gap-2 mb-2 text-[#8e44ad] text-sm font-semibold">
-                                                    <Calendar size={14} />
-                                                    {new Date(reg.fecha_registro).toLocaleDateString('es-ES')}
-                                                </div>
-                                                <p className="text-gray-300 text-sm whitespace-pre-wrap">{reg.registro_seguimiento}</p>
-                                            </div>
-                                        ))
-                                    ) : (
-                                        <div className="text-center py-8 text-gray-500 bg-white/5 rounded-xl border border-dashed border-white/10">
-                                            <p>No hay registros de seguimiento.</p>
+                                {/* Form */}
+                                <div>
+                                    <h3 className="text-lg font-bold text-white border-b border-white/10 pb-2 mb-4 flex items-center gap-2">
+                                        <RotateCw size={20} className="text-[#8e44ad]" /> Datos de Seguimiento
+                                    </h3>
+                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                        <div className="space-y-2">
+                                            <label className="text-sm font-medium text-gray-300">Estado Actual *</label>
+                                            <select
+                                                className="w-full bg-[#1e2230] border border-white/10 rounded-lg p-2.5 text-white focus:border-[#8e44ad] outline-none"
+                                                value={seguimientoData.estado_actual || ''}
+                                                onChange={(e) => setSeguimientoData({ ...seguimientoData, estado_actual: e.target.value })}
+                                            >
+                                                <option value="">Seleccionar estado...</option>
+                                                <option value="ACTIVA">ACTIVA</option>
+                                                <option value="EJECUTADA">EJECUTADA</option>
+                                                <option value="CANCELADA">CANCELADA</option>
+                                            </select>
                                         </div>
-                                    )}
+                                        <div className="space-y-2">
+                                            <label className="text-sm font-medium text-gray-300">Fecha Ingreso</label>
+                                            <input type="date" className="w-full bg-[#1e2230] border border-white/10 rounded-lg p-2.5 text-white focus:border-[#8e44ad] outline-none" value={seguimientoData.fecha_ingreso || ''} onChange={(e) => setSeguimientoData({ ...seguimientoData, fecha_ingreso: e.target.value })} />
+                                        </div>
+                                        <div className="space-y-2">
+                                            <label className="text-sm font-medium text-gray-300">Fecha Inicio</label>
+                                            <input type="date" className="w-full bg-[#1e2230] border border-white/10 rounded-lg p-2.5 text-white focus:border-[#8e44ad] outline-none" value={seguimientoData.fecha_inicio || ''} onChange={(e) => setSeguimientoData({ ...seguimientoData, fecha_inicio: e.target.value })} />
+                                        </div>
+                                        <div className="space-y-2">
+                                            <label className="text-sm font-medium text-gray-300">Fecha Asignación</label>
+                                            <input type="date" className="w-full bg-[#1e2230] border border-white/10 rounded-lg p-2.5 text-white focus:border-[#8e44ad] outline-none" value={seguimientoData.fecha_asignacion || ''} onChange={(e) => setSeguimientoData({ ...seguimientoData, fecha_asignacion: e.target.value })} />
+                                        </div>
+                                        <div className="space-y-2">
+                                            <label className="text-sm font-medium text-gray-300">Fecha Valoración</label>
+                                            <input type="date" className="w-full bg-[#1e2230] border border-white/10 rounded-lg p-2.5 text-white focus:border-[#8e44ad] outline-none" value={seguimientoData.fecha_valoracion || ''} onChange={(e) => setSeguimientoData({ ...seguimientoData, fecha_valoracion: e.target.value })} />
+                                        </div>
+                                        <div className="space-y-2">
+                                            <label className="text-sm font-medium text-gray-300">Fecha Finalización</label>
+                                            <input type="date" className="w-full bg-[#1e2230] border border-white/10 rounded-lg p-2.5 text-white focus:border-[#8e44ad] outline-none" value={seguimientoData.fecha_finalizacion || ''} onChange={(e) => setSeguimientoData({ ...seguimientoData, fecha_finalizacion: e.target.value })} />
+                                        </div>
+                                    </div>
+                                </div>
+
+                                {/* Images */}
+                                <div>
+                                    <h3 className="text-lg font-bold text-white border-b border-white/10 pb-2 mb-4 flex items-center gap-2">
+                                        <ImageIcon size={20} className="text-[#8e44ad]" /> Imágenes
+                                    </h3>
+                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                        <div className="space-y-3">
+                                            <label className="text-sm font-medium text-gray-300 block">Condición Actual</label>
+                                            <div className="relative group">
+                                                <input type="file" className="hidden" id="file-actual" accept="image/*" onChange={(e) => handleImageChange(e, 'actual')} />
+                                                <label htmlFor="file-actual" className="flex items-center justify-center w-full px-4 py-2 bg-[#1e2230] border border-white/10 rounded-lg cursor-pointer hover:bg-white/5 transition-colors gap-2 text-sm text-gray-300">
+                                                    <Upload size={16} /> Seleccionar Imagen
+                                                </label>
+                                            </div>
+                                            {imgActualPreview ? (
+                                                <div className="relative rounded-xl overflow-hidden border border-white/10 group">
+                                                    <img src={imgActualPreview} alt="Actual" className="w-full h-48 object-cover cursor-pointer hover:scale-105 transition-transform" onClick={() => setShowModalImagen({ url: imgActualPreview, title: 'Condición Actual' })} />
+                                                    <button onClick={() => eliminarImagen('actual')} className="absolute top-2 right-2 p-1.5 bg-red-500/80 text-white rounded-full hover:bg-red-600 transition-colors">
+                                                        <Trash2 size={16} />
+                                                    </button>
+                                                    <div className="absolute bottom-0 left-0 w-full bg-black/50 p-2 text-xs text-white text-center backdrop-blur-sm">
+                                                        Condición Actual
+                                                    </div>
+                                                </div>
+                                            ) : (
+                                                <div className="h-48 border-2 border-dashed border-white/10 rounded-xl flex flex-col items-center justify-center text-gray-500 bg-white/5">
+                                                    <ImageIcon size={32} className="mb-2 opacity-50" />
+                                                    <span className="text-sm">Sin imagen</span>
+                                                </div>
+                                            )}
+                                        </div>
+
+                                        <div className="space-y-3">
+                                            <label className="text-sm font-medium text-gray-300 block">Condición Final</label>
+                                            <div className="relative group">
+                                                <input type="file" className="hidden" id="file-final" accept="image/*" onChange={(e) => handleImageChange(e, 'final')} />
+                                                <label htmlFor="file-final" className="flex items-center justify-center w-full px-4 py-2 bg-[#1e2230] border border-white/10 rounded-lg cursor-pointer hover:bg-white/5 transition-colors gap-2 text-sm text-gray-300">
+                                                    <Upload size={16} /> Seleccionar Imagen
+                                                </label>
+                                            </div>
+                                            {imgFinalPreview ? (
+                                                <div className="relative rounded-xl overflow-hidden border border-white/10 group">
+                                                    <img src={imgFinalPreview} alt="Final" className="w-full h-48 object-cover cursor-pointer hover:scale-105 transition-transform" onClick={() => setShowModalImagen({ url: imgFinalPreview, title: 'Condición Final' })} />
+                                                    <button onClick={() => eliminarImagen('final')} className="absolute top-2 right-2 p-1.5 bg-red-500/80 text-white rounded-full hover:bg-red-600 transition-colors">
+                                                        <Trash2 size={16} />
+                                                    </button>
+                                                    <div className="absolute bottom-0 left-0 w-full bg-black/50 p-2 text-xs text-white text-center backdrop-blur-sm">
+                                                        Condición Final
+                                                    </div>
+                                                </div>
+                                            ) : (
+                                                <div className="h-48 border-2 border-dashed border-white/10 rounded-xl flex flex-col items-center justify-center text-gray-500 bg-white/5">
+                                                    <ImageIcon size={32} className="mb-2 opacity-50" />
+                                                    <span className="text-sm">Sin imagen</span>
+                                                </div>
+                                            )}
+                                        </div>
+                                    </div>
+                                </div>
+
+                                {/* Registros */}
+                                <div>
+                                    <div className="flex justify-between items-center border-b border-white/10 pb-2 mb-4">
+                                        <h3 className="text-lg font-bold text-white flex items-center gap-2">
+                                            <FileText size={20} className="text-[#8e44ad]" /> Registros
+                                        </h3>
+                                        <button
+                                            onClick={() => {
+                                                setNuevoRegistro({ fecha: new Date().toISOString().split('T')[0], texto: '', tipo: 'General' });
+                                                setShowModalRegistro(true);
+                                            }}
+                                            className="flex items-center gap-2 px-3 py-1.5 bg-green-500/20 text-green-400 hover:bg-green-500/30 rounded-lg transition-colors border border-green-500/30 text-sm font-medium"
+                                        >
+                                            <PlusCircle size={16} /> Agregar
+                                        </button>
+                                    </div>
+
+                                    <div className="space-y-3 max-h-60 overflow-y-auto custom-scrollbar pr-2">
+                                        {registros.length > 0 ? (
+                                            registros.map((reg, idx) => (
+                                                <div key={idx} className="bg-[#1e2230] border border-white/10 rounded-xl p-4 hover:bg-white/5 transition-colors">
+                                                    <div className="flex items-center gap-2 mb-2 text-[#8e44ad] text-sm font-semibold">
+                                                        <Calendar size={14} />
+                                                        {new Date(reg.fecha_registro).toLocaleDateString('es-ES')}
+                                                    </div>
+                                                    <p className="text-gray-300 text-sm whitespace-pre-wrap">{reg.registro_seguimiento}</p>
+                                                </div>
+                                            ))
+                                        ) : (
+                                            <div className="text-center py-8 text-gray-500 bg-white/5 rounded-xl border border-dashed border-white/10">
+                                                <p>No hay registros de seguimiento.</p>
+                                            </div>
+                                        )}
+                                    </div>
                                 </div>
                             </div>
-                        </div>
 
-                        {/* Modal Footer */}
-                        <div className="p-6 border-t border-white/10 bg-white/5 rounded-b-2xl flex justify-end gap-3">
-                            <button onClick={() => setShowModalSeguimiento(false)} className="px-5 py-2.5 rounded-xl border border-white/10 text-gray-300 hover:bg-white/5 transition-colors font-medium">
-                                Cerrar
-                            </button>
-                            <button onClick={guardarSeguimiento} className="px-5 py-2.5 rounded-xl bg-[#8e44ad] text-white hover:bg-[#9b59b6] transition-all font-medium flex items-center gap-2">
-                                <Save size={18} /> Guardar Cambios
-                            </button>
+                            {/* Modal Footer */}
+                            <div className="p-6 border-t border-white/10 bg-white/5 rounded-b-2xl flex justify-end gap-3">
+                                <button onClick={() => setShowModalSeguimiento(false)} className="px-5 py-2.5 rounded-xl border border-white/10 text-gray-300 hover:bg-white/5 transition-colors font-medium">
+                                    Cerrar
+                                </button>
+                                <button onClick={guardarSeguimiento} className="px-5 py-2.5 rounded-xl bg-[#8e44ad] text-white hover:bg-[#9b59b6] transition-all font-medium flex items-center gap-2">
+                                    <Save size={18} /> Guardar Cambios
+                                </button>
+                            </div>
                         </div>
                     </div>
-                </div>
+                </>
             )}
 
             {/* Modal Agregar Registro */}
             {showModalRegistro && (
-                <div className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm">
+                <div className="fixed inset-0 z-[110] flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm">
                     <div className="bg-[#1a1d29] border border-white/10 rounded-2xl shadow-2xl w-full max-w-lg">
                         <div className="p-5 border-b border-white/10 flex justify-between items-center">
                             <h3 className="text-lg font-bold text-white flex items-center gap-2">
@@ -871,7 +886,7 @@ export default function SeguimientoSolicitudExterno() {
 
             {/* Modal Imagen Full */}
             {showModalImagen && (
-                <div className="fixed inset-0 z-[70] flex items-center justify-center bg-black/90 backdrop-blur-md p-4" onClick={() => setShowModalImagen(null)}>
+                <div className="fixed inset-0 z-[120] flex items-center justify-center bg-black/90 backdrop-blur-md p-4" onClick={() => setShowModalImagen(null)}>
                     <div className="relative max-w-4xl max-h-[90vh]" onClick={e => e.stopPropagation()}>
                         <button onClick={() => setShowModalImagen(null)} className="absolute -top-4 -right-4 w-8 h-8 bg-[#8e44ad] text-white rounded-full flex items-center justify-center font-bold hover:scale-110 transition-transform shadow-lg">
                             <X size={16} />
