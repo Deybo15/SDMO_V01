@@ -828,218 +828,227 @@ export default function SeguimientoSolicitud() {
             {/* Modal de Detalle */}
             {
                 isModalOpen && selectedSolicitud && (
-                    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-in fade-in duration-200">
-                        <div className="w-full max-w-5xl bg-[#1e2230] border border-white/10 rounded-2xl shadow-2xl overflow-hidden flex flex-col max-h-[90vh] animate-in zoom-in-95 duration-200">
-                            {/* Modal Header */}
-                            <div className="p-6 border-b border-white/10 bg-gradient-to-r from-[#1e2230] to-[#2d3241] flex items-center justify-between shrink-0">
-                                <div className="flex items-center gap-3">
-                                    <div className="p-2 bg-[#8e44ad]/20 rounded-lg">
-                                        <Wrench className="w-6 h-6 text-[#8e44ad]" />
-                                    </div>
-                                    <div>
-                                        <h2 className="text-xl font-bold text-white">Seguimiento de Solicitud #{selectedSolicitud.numero_solicitud}</h2>
-                                        <p className="text-sm text-gray-400">Detalles y gestión de estado</p>
-                                    </div>
-                                </div>
-                                <button onClick={() => setIsModalOpen(false)} className="text-gray-400 hover:text-white transition-colors">
-                                    <X className="w-6 h-6" />
-                                </button>
-                            </div>
+                    <>
+                        {/* Backdrop: Z-60 (Debajo del Sidebar Z-70) */}
+                        <div
+                            className="fixed inset-0 z-[60] bg-black/80 backdrop-blur-sm animate-in fade-in duration-200"
+                            onClick={() => setIsModalOpen(false)}
+                        />
 
-                            {/* Modal Body - Scrollable */}
-                            <div className="flex-1 overflow-y-auto p-6 space-y-8 custom-scrollbar">
-
-                                {/* Info General */}
-                                <div className="bg-blue-500/10 border border-blue-500/20 rounded-xl p-4">
-                                    <h3 className="text-blue-400 font-semibold flex items-center gap-2 mb-3">
-                                        <Info className="w-5 h-5" />
-                                        Información General
-                                    </h3>
-                                    <div className="grid grid-cols-1 md:grid-cols-4 gap-4 text-sm">
-                                        <div>
-                                            <span className="block text-gray-400">Fecha Solicitud</span>
-                                            <span className="text-white font-medium">{new Date(selectedSolicitud.fecha_solicitud).toLocaleDateString()}</span>
+                        {/* Wrapper: Z-100 (Encima del Sidebar) */}
+                        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4" onClick={(e) => { if (e.target === e.currentTarget) setIsModalOpen(false); }}>
+                            <div className="w-full max-w-5xl bg-[#1e2230] border border-white/10 rounded-2xl shadow-2xl overflow-hidden flex flex-col max-h-[90vh] animate-in zoom-in-95 duration-200">
+                                {/* Modal Header */}
+                                <div className="p-6 border-b border-white/10 bg-gradient-to-r from-[#1e2230] to-[#2d3241] flex items-center justify-between shrink-0">
+                                    <div className="flex items-center gap-3">
+                                        <div className="p-2 bg-[#8e44ad]/20 rounded-lg">
+                                            <Wrench className="w-6 h-6 text-[#8e44ad]" />
                                         </div>
                                         <div>
-                                            <span className="block text-gray-400">Tipo</span>
-                                            <span className="text-white font-medium">STI</span>
-                                        </div>
-                                        <div>
-                                            <span className="block text-gray-400">Supervisor</span>
-                                            <span className="text-white font-medium">{selectedSolicitud.supervisor_alias || 'Cargando...'}</span>
-                                        </div>
-                                        <div className="md:col-span-4">
-                                            <span className="block text-gray-400">Descripción</span>
-                                            <p className="text-white mt-1">{selectedSolicitud.descripcion_solicitud}</p>
+                                            <h2 className="text-xl font-bold text-white">Seguimiento de Solicitud #{selectedSolicitud.numero_solicitud}</h2>
+                                            <p className="text-sm text-gray-400">Detalles y gestión de estado</p>
                                         </div>
                                     </div>
+                                    <button onClick={() => setIsModalOpen(false)} className="text-gray-400 hover:text-white transition-colors">
+                                        <X className="w-6 h-6" />
+                                    </button>
                                 </div>
 
-                                {/* Artículos Asociados */}
-                                <div>
-                                    <h3 className="text-lg font-semibold text-white mb-4 flex items-center gap-2">
-                                        <Package className="w-5 h-5 text-[#8e44ad]" />
-                                        Artículos Asociados
-                                    </h3>
-                                    <div className="bg-[#1a1d29]/50 border border-white/10 rounded-xl overflow-hidden">
-                                        <table className="w-full text-sm">
-                                            <thead>
-                                                <tr className="bg-white/5 border-b border-white/5">
-                                                    <th className="px-4 py-3 text-left text-gray-400">ID Salida</th>
-                                                    <th className="px-4 py-3 text-left text-gray-400">Fecha</th>
-                                                    <th className="px-4 py-3 text-left text-gray-400">Artículo</th>
-                                                    <th className="px-4 py-3 text-right text-gray-400">Cantidad</th>
-                                                </tr>
-                                            </thead>
-                                            <tbody className="divide-y divide-white/5">
-                                                {articulosLoading ? (
-                                                    <tr><td colSpan={4} className="p-4 text-center text-gray-500">Cargando artículos...</td></tr>
-                                                ) : articulos.length === 0 ? (
-                                                    <tr><td colSpan={4} className="p-4 text-center text-gray-500">No hay artículos asociados</td></tr>
-                                                ) : (
-                                                    articulos.map((art, idx) => (
-                                                        <tr key={idx}>
-                                                            <td className="px-4 py-3 text-white">#{art.id_salida}</td>
-                                                            <td className="px-4 py-3 text-gray-400">{new Date(art.fecha_salida).toLocaleDateString()}</td>
-                                                            <td className="px-4 py-3">
-                                                                <div className="text-white">{art.nombre_articulo}</div>
-                                                                <div className="text-xs text-gray-500">{art.codigo_articulo}</div>
-                                                            </td>
-                                                            <td className="px-4 py-3 text-right">
-                                                                <span className="px-2 py-1 bg-white/10 rounded text-white font-medium">{art.cantidad}</span>
-                                                            </td>
-                                                        </tr>
-                                                    ))
-                                                )}
-                                            </tbody>
-                                        </table>
-                                    </div>
-                                </div>
+                                {/* Modal Body - Scrollable */}
+                                <div className="flex-1 overflow-y-auto p-6 space-y-8 custom-scrollbar">
 
-                                {/* Formulario Seguimiento */}
-                                <div>
-                                    <h3 className="text-lg font-semibold text-white mb-4 flex items-center gap-2">
-                                        <Wrench className="w-5 h-5 text-[#8e44ad]" />
-                                        Estado y Fechas
-                                    </h3>
-                                    <div className="grid grid-cols-1 md:grid-cols-3 gap-6 bg-[#1a1d29]/50 p-6 rounded-xl border border-white/10">
-                                        <div className="space-y-2">
-                                            <label className="text-sm text-gray-400">Estado Actual</label>
-                                            <select
-                                                value={seguimientoData?.estado_actual || ''}
-                                                onChange={(e) => setSeguimientoData(prev => prev ? ({ ...prev, estado_actual: e.target.value }) : null)}
-                                                className="w-full bg-[#2d3241] border border-white/10 rounded-lg px-3 py-2 text-white focus:border-[#8e44ad]"
-                                            >
-                                                <option value="ACTIVA">ACTIVA</option>
-                                                <option value="EJECUTADA">EJECUTADA</option>
-                                                <option value="CANCELADA">CANCELADA</option>
-                                            </select>
-                                        </div>
-                                        <div className="space-y-2">
-                                            <label className="text-sm text-gray-400">Fecha Inicio</label>
-                                            <input
-                                                type="date"
-                                                value={seguimientoData?.fecha_inicio || ''}
-                                                onChange={(e) => setSeguimientoData(prev => prev ? ({ ...prev, fecha_inicio: e.target.value }) : null)}
-                                                className="w-full bg-[#2d3241] border border-white/10 rounded-lg px-3 py-2 text-white focus:border-[#8e44ad]"
-                                            />
-                                        </div>
-                                        <div className="space-y-2">
-                                            <label className="text-sm text-gray-400">Fecha Finalización</label>
-                                            <input
-                                                type="date"
-                                                value={seguimientoData?.fecha_finalizacion || ''}
-                                                onChange={(e) => setSeguimientoData(prev => prev ? ({ ...prev, fecha_finalizacion: e.target.value }) : null)}
-                                                className="w-full bg-[#2d3241] border border-white/10 rounded-lg px-3 py-2 text-white focus:border-[#8e44ad]"
-                                            />
-                                        </div>
-                                    </div>
-                                </div>
-
-                                {/* Bitácora / Registros */}
-                                <div>
-                                    <div className="flex items-center justify-between mb-4">
-                                        <h3 className="text-lg font-semibold text-white flex items-center gap-2">
-                                            <History className="w-5 h-5 text-[#8e44ad]" />
-                                            Bitácora de Seguimiento
+                                    {/* Info General */}
+                                    <div className="bg-blue-500/10 border border-blue-500/20 rounded-xl p-4">
+                                        <h3 className="text-blue-400 font-semibold flex items-center gap-2 mb-3">
+                                            <Info className="w-5 h-5" />
+                                            Información General
                                         </h3>
-                                        <button
-                                            onClick={() => setShowNuevoRegistro(!showNuevoRegistro)}
-                                            className="px-3 py-1.5 bg-green-500/20 hover:bg-green-500/30 text-green-400 rounded-lg text-sm font-medium transition-colors flex items-center gap-2"
-                                        >
-                                            <PlusCircle className="w-4 h-4" />
-                                            Agregar Registro
-                                        </button>
-                                    </div>
-
-                                    {showNuevoRegistro && (
-                                        <div className="bg-[#2d3241] p-4 rounded-xl border border-white/10 mb-4 animate-in slide-in-from-top-2">
-                                            <div className="grid gap-4">
-                                                <div>
-                                                    <label className="text-sm text-gray-400 mb-1 block">Fecha</label>
-                                                    <input
-                                                        type="date"
-                                                        value={nuevoRegistro.fecha}
-                                                        onChange={(e) => setNuevoRegistro(prev => ({ ...prev, fecha: e.target.value }))}
-                                                        className="bg-[#1a1d29] border border-white/10 rounded-lg px-3 py-2 text-white w-full"
-                                                    />
-                                                </div>
-                                                <div>
-                                                    <label className="text-sm text-gray-400 mb-1 block">Descripción</label>
-                                                    <textarea
-                                                        value={nuevoRegistro.texto}
-                                                        onChange={(e) => setNuevoRegistro(prev => ({ ...prev, texto: e.target.value }))}
-                                                        placeholder="Detalles del avance..."
-                                                        className="bg-[#1a1d29] border border-white/10 rounded-lg px-3 py-2 text-white w-full min-h-[80px]"
-                                                    />
-                                                </div>
-                                                <div className="flex justify-end gap-2">
-                                                    <button onClick={() => setShowNuevoRegistro(false)} className="px-3 py-1.5 text-gray-400 hover:text-white">Cancelar</button>
-                                                    <button onClick={handleAddRegistro} className="px-3 py-1.5 bg-green-500 hover:bg-green-600 text-white rounded-lg">Guardar Registro</button>
-                                                </div>
+                                        <div className="grid grid-cols-1 md:grid-cols-4 gap-4 text-sm">
+                                            <div>
+                                                <span className="block text-gray-400">Fecha Solicitud</span>
+                                                <span className="text-white font-medium">{new Date(selectedSolicitud.fecha_solicitud).toLocaleDateString()}</span>
+                                            </div>
+                                            <div>
+                                                <span className="block text-gray-400">Tipo</span>
+                                                <span className="text-white font-medium">STI</span>
+                                            </div>
+                                            <div>
+                                                <span className="block text-gray-400">Supervisor</span>
+                                                <span className="text-white font-medium">{selectedSolicitud.supervisor_alias || 'Cargando...'}</span>
+                                            </div>
+                                            <div className="md:col-span-4">
+                                                <span className="block text-gray-400">Descripción</span>
+                                                <p className="text-white mt-1">{selectedSolicitud.descripcion_solicitud}</p>
                                             </div>
                                         </div>
-                                    )}
-
-                                    <div className="space-y-3">
-                                        {registros.length === 0 ? (
-                                            <div className="text-center py-8 text-gray-500 bg-[#1a1d29]/30 rounded-xl border border-white/5">
-                                                No hay registros de seguimiento
-                                            </div>
-                                        ) : (
-                                            registros.map((reg) => (
-                                                <div key={reg.id_registro} className="bg-[#1a1d29]/50 border border-white/5 rounded-xl p-4 border-l-4 border-l-[#8e44ad]">
-                                                    <div className="flex items-center gap-2 text-sm text-[#8e44ad] font-medium mb-1">
-                                                        <Calendar className="w-4 h-4" />
-                                                        {new Date(reg.fecha_registro).toLocaleDateString()}
-                                                    </div>
-                                                    <p className="text-gray-300 text-sm">{reg.registro_seguimiento}</p>
-                                                </div>
-                                            ))
-                                        )}
                                     </div>
+
+                                    {/* Artículos Asociados */}
+                                    <div>
+                                        <h3 className="text-lg font-semibold text-white mb-4 flex items-center gap-2">
+                                            <Package className="w-5 h-5 text-[#8e44ad]" />
+                                            Artículos Asociados
+                                        </h3>
+                                        <div className="bg-[#1a1d29]/50 border border-white/10 rounded-xl overflow-hidden">
+                                            <table className="w-full text-sm">
+                                                <thead>
+                                                    <tr className="bg-white/5 border-b border-white/5">
+                                                        <th className="px-4 py-3 text-left text-gray-400">ID Salida</th>
+                                                        <th className="px-4 py-3 text-left text-gray-400">Fecha</th>
+                                                        <th className="px-4 py-3 text-left text-gray-400">Artículo</th>
+                                                        <th className="px-4 py-3 text-right text-gray-400">Cantidad</th>
+                                                    </tr>
+                                                </thead>
+                                                <tbody className="divide-y divide-white/5">
+                                                    {articulosLoading ? (
+                                                        <tr><td colSpan={4} className="p-4 text-center text-gray-500">Cargando artículos...</td></tr>
+                                                    ) : articulos.length === 0 ? (
+                                                        <tr><td colSpan={4} className="p-4 text-center text-gray-500">No hay artículos asociados</td></tr>
+                                                    ) : (
+                                                        articulos.map((art, idx) => (
+                                                            <tr key={idx}>
+                                                                <td className="px-4 py-3 text-white">#{art.id_salida}</td>
+                                                                <td className="px-4 py-3 text-gray-400">{new Date(art.fecha_salida).toLocaleDateString()}</td>
+                                                                <td className="px-4 py-3">
+                                                                    <div className="text-white">{art.nombre_articulo}</div>
+                                                                    <div className="text-xs text-gray-500">{art.codigo_articulo}</div>
+                                                                </td>
+                                                                <td className="px-4 py-3 text-right">
+                                                                    <span className="px-2 py-1 bg-white/10 rounded text-white font-medium">{art.cantidad}</span>
+                                                                </td>
+                                                            </tr>
+                                                        ))
+                                                    )}
+                                                </tbody>
+                                            </table>
+                                        </div>
+                                    </div>
+
+                                    {/* Formulario Seguimiento */}
+                                    <div>
+                                        <h3 className="text-lg font-semibold text-white mb-4 flex items-center gap-2">
+                                            <Wrench className="w-5 h-5 text-[#8e44ad]" />
+                                            Estado y Fechas
+                                        </h3>
+                                        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 bg-[#1a1d29]/50 p-6 rounded-xl border border-white/10">
+                                            <div className="space-y-2">
+                                                <label className="text-sm text-gray-400">Estado Actual</label>
+                                                <select
+                                                    value={seguimientoData?.estado_actual || ''}
+                                                    onChange={(e) => setSeguimientoData(prev => prev ? ({ ...prev, estado_actual: e.target.value }) : null)}
+                                                    className="w-full bg-[#2d3241] border border-white/10 rounded-lg px-3 py-2 text-white focus:border-[#8e44ad]"
+                                                >
+                                                    <option value="ACTIVA">ACTIVA</option>
+                                                    <option value="EJECUTADA">EJECUTADA</option>
+                                                    <option value="CANCELADA">CANCELADA</option>
+                                                </select>
+                                            </div>
+                                            <div className="space-y-2">
+                                                <label className="text-sm text-gray-400">Fecha Inicio</label>
+                                                <input
+                                                    type="date"
+                                                    value={seguimientoData?.fecha_inicio || ''}
+                                                    onChange={(e) => setSeguimientoData(prev => prev ? ({ ...prev, fecha_inicio: e.target.value }) : null)}
+                                                    className="w-full bg-[#2d3241] border border-white/10 rounded-lg px-3 py-2 text-white focus:border-[#8e44ad]"
+                                                />
+                                            </div>
+                                            <div className="space-y-2">
+                                                <label className="text-sm text-gray-400">Fecha Finalización</label>
+                                                <input
+                                                    type="date"
+                                                    value={seguimientoData?.fecha_finalizacion || ''}
+                                                    onChange={(e) => setSeguimientoData(prev => prev ? ({ ...prev, fecha_finalizacion: e.target.value }) : null)}
+                                                    className="w-full bg-[#2d3241] border border-white/10 rounded-lg px-3 py-2 text-white focus:border-[#8e44ad]"
+                                                />
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    {/* Bitácora / Registros */}
+                                    <div>
+                                        <div className="flex items-center justify-between mb-4">
+                                            <h3 className="text-lg font-semibold text-white flex items-center gap-2">
+                                                <History className="w-5 h-5 text-[#8e44ad]" />
+                                                Bitácora de Seguimiento
+                                            </h3>
+                                            <button
+                                                onClick={() => setShowNuevoRegistro(!showNuevoRegistro)}
+                                                className="px-3 py-1.5 bg-green-500/20 hover:bg-green-500/30 text-green-400 rounded-lg text-sm font-medium transition-colors flex items-center gap-2"
+                                            >
+                                                <PlusCircle className="w-4 h-4" />
+                                                Agregar Registro
+                                            </button>
+                                        </div>
+
+                                        {showNuevoRegistro && (
+                                            <div className="bg-[#2d3241] p-4 rounded-xl border border-white/10 mb-4 animate-in slide-in-from-top-2">
+                                                <div className="grid gap-4">
+                                                    <div>
+                                                        <label className="text-sm text-gray-400 mb-1 block">Fecha</label>
+                                                        <input
+                                                            type="date"
+                                                            value={nuevoRegistro.fecha}
+                                                            onChange={(e) => setNuevoRegistro(prev => ({ ...prev, fecha: e.target.value }))}
+                                                            className="bg-[#1a1d29] border border-white/10 rounded-lg px-3 py-2 text-white w-full"
+                                                        />
+                                                    </div>
+                                                    <div>
+                                                        <label className="text-sm text-gray-400 mb-1 block">Descripción</label>
+                                                        <textarea
+                                                            value={nuevoRegistro.texto}
+                                                            onChange={(e) => setNuevoRegistro(prev => ({ ...prev, texto: e.target.value }))}
+                                                            placeholder="Detalles del avance..."
+                                                            className="bg-[#1a1d29] border border-white/10 rounded-lg px-3 py-2 text-white w-full min-h-[80px]"
+                                                        />
+                                                    </div>
+                                                    <div className="flex justify-end gap-2">
+                                                        <button onClick={() => setShowNuevoRegistro(false)} className="px-3 py-1.5 text-gray-400 hover:text-white">Cancelar</button>
+                                                        <button onClick={handleAddRegistro} className="px-3 py-1.5 bg-green-500 hover:bg-green-600 text-white rounded-lg">Guardar Registro</button>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        )}
+
+                                        <div className="space-y-3">
+                                            {registros.length === 0 ? (
+                                                <div className="text-center py-8 text-gray-500 bg-[#1a1d29]/30 rounded-xl border border-white/5">
+                                                    No hay registros de seguimiento
+                                                </div>
+                                            ) : (
+                                                registros.map((reg) => (
+                                                    <div key={reg.id_registro} className="bg-[#1a1d29]/50 border border-white/5 rounded-xl p-4 border-l-4 border-l-[#8e44ad]">
+                                                        <div className="flex items-center gap-2 text-sm text-[#8e44ad] font-medium mb-1">
+                                                            <Calendar className="w-4 h-4" />
+                                                            {new Date(reg.fecha_registro).toLocaleDateString()}
+                                                        </div>
+                                                        <p className="text-gray-300 text-sm">{reg.registro_seguimiento}</p>
+                                                    </div>
+                                                ))
+                                            )}
+                                        </div>
+                                    </div>
+
                                 </div>
 
-                            </div>
-
-                            {/* Modal Footer */}
-                            <div className="p-6 border-t border-white/10 bg-[#1e2230] flex justify-end gap-3 shrink-0">
-                                <button
-                                    onClick={() => setIsModalOpen(false)}
-                                    className="px-6 py-2.5 bg-white/5 hover:bg-white/10 text-white rounded-xl transition-colors"
-                                >
-                                    Cerrar
-                                </button>
-                                <button
-                                    onClick={handleSaveSeguimiento}
-                                    className="px-6 py-2.5 bg-[#8e44ad] hover:bg-[#9b59b6] text-white font-medium rounded-xl shadow-lg shadow-[#8e44ad]/20 transition-all flex items-center gap-2"
-                                >
-                                    <Save className="w-4 h-4" />
-                                    Guardar Cambios
-                                </button>
+                                {/* Modal Footer */}
+                                <div className="p-6 border-t border-white/10 bg-[#1e2230] flex justify-end gap-3 shrink-0">
+                                    <button
+                                        onClick={() => setIsModalOpen(false)}
+                                        className="px-6 py-2.5 bg-white/5 hover:bg-white/10 text-white rounded-xl transition-colors"
+                                    >
+                                        Cerrar
+                                    </button>
+                                    <button
+                                        onClick={handleSaveSeguimiento}
+                                        className="px-6 py-2.5 bg-[#8e44ad] hover:bg-[#9b59b6] text-white font-medium rounded-xl shadow-lg shadow-[#8e44ad]/20 transition-all flex items-center gap-2"
+                                    >
+                                        <Save className="w-4 h-4" />
+                                        Guardar Cambios
+                                    </button>
+                                </div>
                             </div>
                         </div>
-                    </div>
+                    </>
                 )
             }
 
