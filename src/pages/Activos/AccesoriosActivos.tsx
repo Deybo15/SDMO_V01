@@ -117,9 +117,18 @@ export default function AccesoriosActivos() {
                 videoRef.current.srcObject = newStream;
             }
             setShowCamera(true);
-        } catch (err) {
+        } catch (err: any) {
             console.error("Error accessing camera:", err);
-            showToast("No se pudo acceder a la cámara", "error");
+
+            if (err.name === 'NotAllowedError' || err.name === 'PermissionDeniedError') {
+                showToast("Acceso denegado: Por favor habilite la cámara en su navegador.", "error");
+            } else if (err.name === 'NotFoundError' || err.name === 'DevicesNotFoundError') {
+                showToast("No se encontró ninguna cámara disponible.", "error");
+            } else if (err.name === 'NotReadableError' || err.name === 'TrackStartError') {
+                showToast("La cámara está en uso por otra aplicación.", "error");
+            } else {
+                showToast("Error al acceder a la cámara: " + (err.message || "Desconocido"), "error");
+            }
         }
     };
 
