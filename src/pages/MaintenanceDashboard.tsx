@@ -334,10 +334,10 @@ export default function MaintenanceDashboard() {
     };
 
     // Pagination Logic
-    const indexOfLastItem = currentPage * itemsPerPage;
-    const indexOfFirstItem = indexOfLastItem - itemsPerPage;
-    const currentTableItems = tableData.slice(indexOfFirstItem, indexOfLastItem);
-    const totalPages = Math.ceil(tableData.length / itemsPerPage);
+    // Since fetchTableData handles server-side pagination, tableData contains only the current page items.
+    // No need to slice locally again.
+    const currentTableItems = tableData;
+    const totalPages = Math.ceil(totalItems / itemsPerPage);
 
     const TrendBadge = ({ value, isPercentage = false }: { value?: number, isPercentage?: boolean }) => {
         if (value === undefined) return null;
