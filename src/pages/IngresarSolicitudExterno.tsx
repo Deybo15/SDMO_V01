@@ -4,7 +4,6 @@ import { useNavigate } from 'react-router-dom';
 import SearchModal from '../components/SearchModal';
 import {
     Save,
-    ArrowLeft,
     FileText,
     Edit,
     CheckCircle,
@@ -15,8 +14,14 @@ import {
     Search,
     MapPin,
     Table,
-    Crosshair
+    Crosshair,
+    Briefcase,
+    Shield,
+    Users,
+    Calendar
 } from 'lucide-react';
+import FormSelect from '../components/FormSelect';
+import { PageHeader } from '../components/ui/PageHeader';
 
 // Declare Google Maps types for TypeScript
 declare global {
@@ -50,7 +55,6 @@ interface SearchModalState {
 
 export default function IngresarSolicitudExterno() {
     const navigate = useNavigate();
-    const [loading, setLoading] = useState(false);
     const [saving, setSaving] = useState(false);
 
     // Map State
@@ -115,7 +119,6 @@ export default function IngresarSolicitudExterno() {
     // Load Data
     useEffect(() => {
         const loadCatalogs = async () => {
-            setLoading(true);
             try {
                 const [tipologias, barrios, supervisores, profesionales, clientesExt, clientesInt] = await Promise.all([
                     supabase.from("tipologia_obra").select("id_tipologia_obra, descripcion_tipologia_obra"),
@@ -142,7 +145,7 @@ export default function IngresarSolicitudExterno() {
                 console.error("Unexpected error loading catalogs:", error);
                 showNotification("Error al cargar algunos datos de los catálogos", "error");
             } finally {
-                setLoading(false);
+                // Done
             }
         };
 
@@ -520,11 +523,11 @@ export default function IngresarSolicitudExterno() {
     };
 
     return (
-        <div className="min-h-screen bg-[#0a0a0a] text-white font-sans p-4 md:p-8 relative overflow-hidden">
+        <div className="min-h-screen bg-[#0a0a0a] text-white font-sans relative overflow-hidden">
             {/* Background Effects */}
-            <div className="fixed inset-0 pointer-events-none">
-                <div className="absolute top-[20%] left-[20%] w-96 h-96 bg-[#00d4ff]/10 rounded-full blur-[100px]" />
-                <div className="absolute bottom-[20%] right-[20%] w-96 h-96 bg-[#00fff0]/10 rounded-full blur-[100px]" />
+            <div className="fixed inset-0 pointer-events-none z-0">
+                <div className="absolute top-[85%] left-[20%] w-[80rem] h-[80rem] bg-cyan-500/10 rounded-full blur-[100px] -translate-x-1/2 -translate-y-1/2 animate-pulse"></div>
+                <div className="absolute top-[15%] right-[20%] w-[80rem] h-[80rem] bg-teal-600/5 rounded-full blur-[100px] translate-x-1/2 -translate-y-1/2"></div>
             </div>
 
             {/* Notification Toast */}
@@ -545,273 +548,222 @@ export default function IngresarSolicitudExterno() {
                 </div>
             )}
 
-            <div className="max-w-6xl mx-auto relative z-10">
-                {/* Header Card */}
-                <div className="bg-white/5 backdrop-blur-xl border border-white/10 rounded-2xl overflow-hidden mb-8 shadow-2xl">
-                    <div className="p-6 border-b border-white/10 bg-gradient-to-r from-[#00d4ff]/10 to-[#00fff0]/10 flex items-center justify-center relative">
-                        <div className="absolute top-0 left-0 right-0 h-[2px] bg-gradient-to-r from-[#00d4ff] to-[#00fff0]" />
-                        <h2 className="text-2xl font-bold flex items-center gap-3 text-white">
-                            <FileText className="w-6 h-6 text-[#00d4ff]" />
-                            REGISTRO DE SOLICITUDES EXTERNAS
-                        </h2>
-                        <button
-                            onClick={() => navigate('/cliente-externo')}
-                            className="absolute right-6 top-1/2 -translate-y-1/2 p-2 text-gray-400 hover:text-white hover:bg-white/10 rounded-full transition-all"
-                            title="Regresar"
-                        >
-                            <ArrowLeft className="w-6 h-6" />
-                        </button>
-                    </div>
+            {/* Header Content */}
+            <div className="max-w-7xl mx-auto px-6 pt-6 flex flex-col gap-6 relative z-10">
+                <PageHeader
+                    title="REGISTRO DE SOLICITUDES EXTERNAS"
+                    icon={FileText}
+                    themeColor="cyan"
+                    backRoute="/cliente-externo"
+                />
 
-                    <div className="p-6 md:p-8">
-                        {/* Form Section */}
-                        <div className="bg-white/5 border border-white/10 rounded-xl p-6 mb-6">
-                            <h3 className="text-lg font-semibold mb-6 flex items-center gap-2 border-b border-white/10 pb-3">
-                                <Edit className="w-5 h-5 text-[#00d4ff]" />
-                                Información de la Solicitud
-                            </h3>
+                {/* Date Display */}
+                <div className="flex items-center gap-2 text-cyan-400 font-bold text-xs uppercase tracking-widest bg-cyan-500/10 w-fit px-4 py-2 rounded-full border border-cyan-500/20 shadow-[0_0_15px_rgba(6,182,212,0.15)]">
+                    <Calendar className="w-3.5 h-3.5" />
+                    {new Date().toLocaleDateString('es-ES', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })}
+                </div>
+            </div>
 
-                            <div className="space-y-6">
-                                {/* Description */}
-                                <div>
-                                    <label className="block text-sm font-medium text-gray-300 mb-2">
-                                        Descripción de la solicitud <span className="text-red-400">*</span>
-                                    </label>
-                                    <textarea
-                                        value={formData.descripcion}
-                                        onChange={(e) => setFormData(prev => ({ ...prev, descripcion: e.target.value }))}
-                                        className="w-full bg-white/5 border border-white/10 rounded-lg py-3 px-4 text-white focus:border-[#00d4ff] focus:outline-none min-h-[120px]"
-                                        placeholder="Describa detalladamente la solicitud..."
+            <div className="max-w-6xl mx-auto relative z-10 px-6 pb-8">
+                {/* Content Card */}
+                <div className="bg-[#1E293B]/40 backdrop-blur-3xl border border-white/10 rounded-[2.5rem] overflow-hidden shadow-2xl transition-all duration-500 hover:border-cyan-500/20 mt-8">
+
+                    <div className="p-8 md:p-12 relative">
+                        {/* Section Title */}
+                        <div className="relative flex items-center gap-3 mb-12">
+                            <div className="w-10 h-10 rounded-xl bg-cyan-500/10 border border-cyan-500/20 flex items-center justify-center text-cyan-400">
+                                <Edit className="w-5 h-5" />
+                            </div>
+                            <div>
+                                <h3 className="text-xl font-black text-white uppercase tracking-tight">Información de la Solicitud</h3>
+                                <p className="text-[10px] font-black text-cyan-400/60 uppercase tracking-widest mt-0.5">Complete todos los campos requeridos</p>
+                            </div>
+                        </div>
+
+                        <div className="space-y-8">
+                            {/* Description */}
+                            <div className="space-y-2">
+                                <label className="block text-xs font-black text-cyan-400/80 uppercase tracking-widest ml-1">
+                                    Descripción de la solicitud <span className="text-red-500">*</span>
+                                </label>
+                                <textarea
+                                    value={formData.descripcion}
+                                    onChange={(e) => setFormData(prev => ({ ...prev, descripcion: e.target.value }))}
+                                    className="w-full bg-[#0f172a]/40 backdrop-blur-sm border border-white/5 rounded-2xl py-4 px-5 text-white placeholder:text-slate-500 focus:border-cyan-500/50 focus:ring-4 focus:ring-cyan-500/10 focus:outline-none min-h-[140px] transition-all duration-300"
+                                    placeholder="Describa detalladamente la solicitud..."
+                                />
+                            </div>
+
+                            {/* Row 1 */}
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                                <FormSelect
+                                    label="Tipología de Trabajo"
+                                    value={formData.tipologia}
+                                    displayValue={getSelectedLabel('tipologias', formData.tipologia)}
+                                    onOpenSearch={() => handleOpenSearch('tipologias', 'Buscar Tipología de Trabajo')}
+                                    onClear={() => setFormData(prev => ({ ...prev, tipologia: '' }))}
+                                    required
+                                    icon={Briefcase}
+                                />
+
+                                <div className="space-y-2">
+                                    <FormSelect
+                                        label="Barrio"
+                                        value={formData.barrio}
+                                        displayValue={getSelectedLabel('barrios', formData.barrio)}
+                                        onOpenSearch={() => handleOpenSearch('barrios', 'Buscar Barrio')}
+                                        onClear={() => setFormData(prev => ({ ...prev, barrio: '' }))}
+                                        required
+                                        icon={MapPin}
                                     />
+                                    <div className={`text-[10px] font-bold px-3 py-1.5 rounded-lg flex items-center gap-2 transition-all duration-300 ${barrioMessage.type === 'success' ? 'bg-green-500/10 text-green-400 border border-green-500/20' :
+                                        barrioMessage.type === 'warning' ? 'bg-yellow-500/10 text-yellow-400 border border-yellow-500/20' :
+                                            barrioMessage.type === 'loading' ? 'bg-cyan-500/10 text-cyan-400 border border-cyan-500/20' :
+                                                'bg-white/5 text-slate-400 border border-white/5'
+                                        }`}>
+                                        {barrioMessage.type === 'loading' ? <Loader2 className="w-3 h-3 animate-spin" /> :
+                                            barrioMessage.type === 'success' ? <CheckCircle className="w-3 h-3" /> :
+                                                barrioMessage.type === 'warning' ? <AlertTriangle className="w-3 h-3" /> :
+                                                    <Info className="w-3 h-3" />}
+                                        {barrioMessage.text}
+                                    </div>
                                 </div>
+                            </div>
 
-                                {/* Row 1 */}
-                                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                                    {/* Tipología */}
-                                    <div>
-                                        <label className="block text-sm font-medium text-gray-300 mb-2">
-                                            Tipología de Trabajo <span className="text-red-400">*</span>
-                                        </label>
-                                        <div className="relative">
-                                            <div
-                                                onClick={() => handleOpenSearch('tipologias', 'Buscar Tipología de Trabajo')}
-                                                className="w-full bg-white/5 border border-white/10 rounded-lg py-3 px-4 text-white cursor-pointer flex items-center justify-between hover:bg-white/10 transition-all"
-                                            >
-                                                <span className={formData.tipologia ? 'text-white' : 'text-gray-400'}>
-                                                    {getSelectedLabel('tipologias', formData.tipologia) || '-- Seleccione una opción --'}
-                                                </span>
-                                                <div className="absolute right-0 top-0 bottom-0 px-4 bg-[#00d4ff]/20 hover:bg-[#00d4ff]/30 text-[#00d4ff] rounded-r-lg border-l border-white/10 flex items-center justify-center transition-colors">
-                                                    <Search className="w-4 h-4" />
+                            {/* Dirección Exacta */}
+                            <div className="space-y-2">
+                                <label className="block text-xs font-black text-cyan-400/80 uppercase tracking-widest ml-1">
+                                    Dirección Exacta <span className="text-red-500">*</span>
+                                </label>
+                                <textarea
+                                    value={formData.direccion}
+                                    onChange={(e) => setFormData(prev => ({ ...prev, direccion: e.target.value }))}
+                                    className="w-full bg-[#0f172a]/40 backdrop-blur-sm border border-white/5 rounded-2xl py-4 px-5 text-white placeholder:text-slate-500 focus:border-cyan-500/50 focus:ring-4 focus:ring-cyan-500/10 focus:outline-none min-h-[100px] transition-all duration-300"
+                                    placeholder="Indique la dirección lo más detallada posible..."
+                                />
+                            </div>
+
+                            {/* Row 2 */}
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                                <FormSelect
+                                    label="Supervisor Asignado"
+                                    value={formData.supervisor}
+                                    displayValue={getSelectedLabel('supervisores', formData.supervisor)}
+                                    onOpenSearch={() => handleOpenSearch('supervisores', 'Buscar Supervisor')}
+                                    onClear={() => setFormData(prev => ({ ...prev, supervisor: '' }))}
+                                    required
+                                    icon={Shield}
+                                />
+
+                                <FormSelect
+                                    label="Profesional Responsable"
+                                    value={formData.profesional}
+                                    displayValue={getSelectedLabel('profesionales', formData.profesional)}
+                                    onOpenSearch={() => handleOpenSearch('profesionales', 'Buscar Profesional')}
+                                    onClear={() => setFormData(prev => ({ ...prev, profesional: '' }))}
+                                    required
+                                    icon={Users}
+                                />
+                            </div>
+
+                            {/* Row 3 */}
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                                <FormSelect
+                                    label="Cliente Externo"
+                                    value={formData.clienteExterno}
+                                    displayValue={getSelectedLabel('clientesExternos', formData.clienteExterno)}
+                                    onOpenSearch={() => handleOpenSearch('clientesExternos', 'Buscar Cliente Externo')}
+                                    onClear={() => setFormData(prev => ({ ...prev, clienteExterno: '' }))}
+                                    required
+                                    icon={Users}
+                                />
+
+                                <FormSelect
+                                    label="Cliente Interno"
+                                    value={formData.clienteInterno}
+                                    displayValue={getSelectedLabel('clientesInternos', formData.clienteInterno)}
+                                    onOpenSearch={() => handleOpenSearch('clientesInternos', 'Buscar Cliente Interno')}
+                                    onClear={() => setFormData(prev => ({ ...prev, clienteInterno: '' }))}
+                                    icon={Users}
+                                />
+                            </div>
+
+                            {/* Map */}
+                            <div className="space-y-4">
+                                <label className="block text-xs font-black text-cyan-400/80 uppercase tracking-widest ml-1">
+                                    Ubicación en el Mapa <span className="text-slate-400 font-bold text-[10px] ml-2 tracking-normal lowercase">(Haga clic para seleccionar)</span> <span className="text-red-500">*</span>
+                                </label>
+                                <div className="relative w-full h-[450px] rounded-[2rem] border border-white/10 shadow-2xl overflow-hidden bg-[#0f172a]/40 backdrop-blur-md group">
+                                    {/* Map Container */}
+                                    <div ref={mapRef} id="map" className="w-full h-full z-0 group-hover:scale-[1.01] transition-transform duration-700" />
+
+                                    {/* Map Controls Overlay */}
+                                    <div className="absolute top-6 left-6 right-6 z-[1000] flex gap-3">
+                                        <form onSubmit={handleMapSearch} className="flex-1 relative">
+                                            <input
+                                                type="text"
+                                                value={mapSearchQuery}
+                                                onChange={(e) => setMapSearchQuery(e.target.value)}
+                                                placeholder="Buscar lugar (ej: Parque Central)..."
+                                                className="w-full bg-[#0a0a0a]/80 backdrop-blur-xl border border-white/10 text-white rounded-2xl pl-12 pr-4 py-3.5 shadow-2xl focus:outline-none focus:border-cyan-500/50 transition-all text-sm font-medium"
+                                            />
+                                            <Search className="absolute left-4 top-4 w-4.5 h-4.5 text-cyan-400/60" />
+                                            {isSearchingMap && (
+                                                <div className="absolute right-4 top-4">
+                                                    <Loader2 className="w-4.5 h-4.5 animate-spin text-cyan-400" />
                                                 </div>
-                                            </div>
-                                        </div>
+                                            )}
+                                        </form>
+                                        <button
+                                            type="button"
+                                            onClick={handleLocateMe}
+                                            className="bg-[#0a0a0a]/80 backdrop-blur-xl border border-white/10 text-cyan-400 p-3.5 rounded-2xl shadow-2xl hover:bg-cyan-500/10 hover:border-cyan-400/30 transition-all duration-300 active:scale-95"
+                                            title="Mi Ubicación"
+                                        >
+                                            <Crosshair className="w-6 h-6" />
+                                        </button>
                                     </div>
 
-                                    {/* Barrio */}
-                                    <div>
-                                        <label className="block text-sm font-medium text-gray-300 mb-2">
-                                            Barrio <span className="text-red-400">*</span>
-                                        </label>
-                                        <div className="relative">
-                                            <div
-                                                onClick={() => handleOpenSearch('barrios', 'Buscar Barrio')}
-                                                className="w-full bg-white/5 border border-white/10 rounded-lg py-3 px-4 text-white cursor-pointer flex items-center justify-between hover:bg-white/10 transition-all"
-                                            >
-                                                <span className={formData.barrio ? 'text-white' : 'text-gray-400'}>
-                                                    {getSelectedLabel('barrios', formData.barrio) || '-- Seleccione una opción --'}
-                                                </span>
-                                                <div className="absolute right-0 top-0 bottom-0 px-4 bg-[#00d4ff]/20 hover:bg-[#00d4ff]/30 text-[#00d4ff] rounded-r-lg border-l border-white/10 flex items-center justify-center transition-colors">
-                                                    <Search className="w-4 h-4" />
-                                                </div>
-                                            </div>
-                                        </div>
-                                        <div className={`text-xs mt-2 flex items-center gap-1.5 ${barrioMessage.type === 'success' ? 'text-green-400' :
-                                            barrioMessage.type === 'warning' ? 'text-yellow-400' :
-                                                barrioMessage.type === 'loading' ? 'text-blue-400' :
-                                                    'text-slate-400'
-                                            }`}>
-                                            {barrioMessage.type === 'loading' ? <Loader2 className="w-3 h-3 animate-spin" /> :
-                                                barrioMessage.type === 'success' ? <CheckCircle className="w-3 h-3" /> :
-                                                    barrioMessage.type === 'warning' ? <AlertTriangle className="w-3 h-3" /> :
-                                                        <Info className="w-3 h-3" />}
-                                            {barrioMessage.text}
-                                        </div>
-                                    </div>
+                                    {/* Subtle Gradient Overlay */}
+                                    <div className="absolute inset-x-0 bottom-0 h-24 bg-gradient-to-t from-[#0a0a0a]/60 to-transparent pointer-events-none" />
                                 </div>
-
-                                {/* Dirección Exacta */}
-                                <div>
-                                    <label className="block text-sm font-medium text-gray-300 mb-2">
-                                        Dirección Exacta <span className="text-red-400">*</span>
-                                    </label>
-                                    <textarea
-                                        value={formData.direccion}
-                                        onChange={(e) => setFormData(prev => ({ ...prev, direccion: e.target.value }))}
-                                        className="w-full bg-white/5 border border-white/10 rounded-lg py-3 px-4 text-white focus:border-[#00d4ff] focus:outline-none min-h-[80px]"
-                                        placeholder="Indique la dirección lo más detallada posible..."
-                                    />
+                                <div className={`text-[10px] font-bold px-3 py-1.5 rounded-lg w-fit flex items-center gap-2 transition-all duration-300 ${locationMessage.type === 'success' ? 'bg-green-500/10 text-green-400 border border-green-500/20' : 'bg-white/5 text-slate-400 border border-white/5'}`}>
+                                    {locationMessage.type === 'success' ? <MapPin className="w-3.5 h-3.5" /> : <Info className="w-3.5 h-3.5" />}
+                                    {locationMessage.text}
                                 </div>
+                            </div>
 
-                                {/* Row 2 */}
-                                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                                    {/* Supervisor */}
-                                    <div>
-                                        <label className="block text-sm font-medium text-gray-300 mb-2">
-                                            Supervisor Asignado <span className="text-red-400">*</span>
-                                        </label>
-                                        <div className="relative">
-                                            <div
-                                                onClick={() => handleOpenSearch('supervisores', 'Buscar Supervisor')}
-                                                className="w-full bg-white/5 border border-white/10 rounded-lg py-3 px-4 text-white cursor-pointer flex items-center justify-between hover:bg-white/10 transition-all"
-                                            >
-                                                <span className={formData.supervisor ? 'text-white' : 'text-gray-400'}>
-                                                    {getSelectedLabel('supervisores', formData.supervisor) || '-- Seleccione una opción --'}
-                                                </span>
-                                                <div className="absolute right-0 top-0 bottom-0 px-4 bg-[#00d4ff]/20 hover:bg-[#00d4ff]/30 text-[#00d4ff] rounded-r-lg border-l border-white/10 flex items-center justify-center transition-colors">
-                                                    <Search className="w-4 h-4" />
-                                                </div>
-                                            </div>
-                                        </div>
-                                    </div>
-
-                                    {/* Profesional */}
-                                    <div>
-                                        <label className="block text-sm font-medium text-gray-300 mb-2">
-                                            Profesional Responsable <span className="text-red-400">*</span>
-                                        </label>
-                                        <div className="relative">
-                                            <div
-                                                onClick={() => handleOpenSearch('profesionales', 'Buscar Profesional')}
-                                                className="w-full bg-white/5 border border-white/10 rounded-lg py-3 px-4 text-white cursor-pointer flex items-center justify-between hover:bg-white/10 transition-all"
-                                            >
-                                                <span className={formData.profesional ? 'text-white' : 'text-gray-400'}>
-                                                    {getSelectedLabel('profesionales', formData.profesional) || '-- Seleccione una opción --'}
-                                                </span>
-                                                <div className="absolute right-0 top-0 bottom-0 px-4 bg-[#00d4ff]/20 hover:bg-[#00d4ff]/30 text-[#00d4ff] rounded-r-lg border-l border-white/10 flex items-center justify-center transition-colors">
-                                                    <Search className="w-4 h-4" />
-                                                </div>
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
-
-                                {/* Row 3 */}
-                                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                                    {/* Cliente Externo */}
-                                    <div>
-                                        <label className="block text-sm font-medium text-gray-300 mb-2">
-                                            Cliente Externo <span className="text-red-400">*</span>
-                                        </label>
-                                        <div className="relative">
-                                            <div
-                                                onClick={() => handleOpenSearch('clientesExternos', 'Buscar Cliente Externo')}
-                                                className="w-full bg-white/5 border border-white/10 rounded-lg py-3 px-4 text-white cursor-pointer flex items-center justify-between hover:bg-white/10 transition-all"
-                                            >
-                                                <span className={formData.clienteExterno ? 'text-white' : 'text-gray-400'}>
-                                                    {getSelectedLabel('clientesExternos', formData.clienteExterno) || '-- Seleccione una opción --'}
-                                                </span>
-                                                <div className="absolute right-0 top-0 bottom-0 px-4 bg-[#00d4ff]/20 hover:bg-[#00d4ff]/30 text-[#00d4ff] rounded-r-lg border-l border-white/10 flex items-center justify-center transition-colors">
-                                                    <Search className="w-4 h-4" />
-                                                </div>
-                                            </div>
-                                        </div>
-                                    </div>
-
-                                    {/* Cliente Interno */}
-                                    <div>
-                                        <label className="block text-sm font-medium text-gray-300 mb-2">
-                                            Cliente Interno
-                                        </label>
-                                        <div className="relative">
-                                            <div
-                                                onClick={() => handleOpenSearch('clientesInternos', 'Buscar Cliente Interno')}
-                                                className="w-full bg-white/5 border border-white/10 rounded-lg py-3 px-4 text-white cursor-pointer flex items-center justify-between hover:bg-white/10 transition-all"
-                                            >
-                                                <span className={formData.clienteInterno ? 'text-white' : 'text-gray-400'}>
-                                                    {getSelectedLabel('clientesInternos', formData.clienteInterno) || '-- Seleccione una opción --'}
-                                                </span>
-                                                <div className="absolute right-0 top-0 bottom-0 px-4 bg-[#00d4ff]/20 hover:bg-[#00d4ff]/30 text-[#00d4ff] rounded-r-lg border-l border-white/10 flex items-center justify-center transition-colors">
-                                                    <Search className="w-4 h-4" />
-                                                </div>
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
-
-                                {/* Map */}
-                                <div>
-                                    <label className="block text-sm font-medium text-gray-300 mb-2">
-                                        Ubicación en el Mapa <span className="text-gray-500 font-normal text-xs ml-1">(Haga clic para seleccionar)</span> <span className="text-red-400">*</span>
-                                    </label>
-                                    <div className="relative w-full h-[400px] rounded-xl border border-white/10 shadow-2xl overflow-hidden bg-white/5">
-                                        {/* Map Container */}
-                                        <div ref={mapRef} id="map" className="w-full h-full z-0" />
-
-                                        {/* Map Controls Overlay */}
-                                        <div className="absolute top-4 left-4 right-4 z-[1000] flex gap-2">
-                                            <form onSubmit={handleMapSearch} className="flex-1 relative">
-                                                <input
-                                                    type="text"
-                                                    value={mapSearchQuery}
-                                                    onChange={(e) => setMapSearchQuery(e.target.value)}
-                                                    placeholder="Buscar lugar (ej: Parque Central)..."
-                                                    className="w-full bg-[#0a0a0a]/90 backdrop-blur-md border border-white/20 text-white rounded-lg pl-10 pr-4 py-2.5 shadow-lg focus:outline-none focus:border-[#00d4ff] transition-all text-sm"
-                                                />
-                                                <Search className="absolute left-3 top-2.5 w-4 h-4 text-slate-400" />
-                                                {isSearchingMap && (
-                                                    <div className="absolute right-3 top-2.5">
-                                                        <Loader2 className="w-4 h-4 animate-spin text-[#00d4ff]" />
-                                                    </div>
-                                                )}
-                                            </form>
-                                            <button
-                                                type="button"
-                                                onClick={handleLocateMe}
-                                                className="bg-[#0a0a0a]/90 backdrop-blur-md border border-white/20 text-white p-2.5 rounded-lg shadow-lg hover:bg-white/10 transition-all"
-                                                title="Mi Ubicación"
-                                            >
-                                                <Crosshair className="w-5 h-5 text-[#00d4ff]" />
-                                            </button>
-                                        </div>
-                                    </div>
-                                    <div className={`text-xs mt-2 flex items-center gap-1.5 ${locationMessage.type === 'success' ? 'text-green-400' : 'text-slate-400'}`}>
-                                        {locationMessage.type === 'success' ? <MapPin className="w-3 h-3" /> : <Info className="w-3 h-3" />}
-                                        {locationMessage.text}
-                                    </div>
-                                </div>
-
-                                {/* Footer Buttons */}
-                                <div className="flex justify-end items-center gap-4 mt-8 pt-6 border-t border-white/10">
-                                    <button
-                                        onClick={() => navigate('/cliente-externo/seguimiento')}
-                                        className="px-6 py-3 bg-transparent border border-[#00d4ff] text-[#00d4ff] font-semibold rounded-xl hover:bg-[#00d4ff] hover:text-black transition-all flex items-center gap-2"
-                                    >
-                                        <Table className="w-4 h-4" />
-                                        Ver Solicitudes
-                                    </button>
-                                    <button
-                                        onClick={handleSave}
-                                        disabled={saving}
-                                        className="px-8 py-3 bg-gradient-to-r from-[#00d4ff] to-[#00fff0] text-black font-bold rounded-xl hover:shadow-[0_0_25px_rgba(0,212,255,0.4)] transition-all flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
-                                    >
-                                        {saving ? <Loader2 className="w-5 h-5 animate-spin" /> : <Save className="w-5 h-5" />}
-                                        Guardar Solicitud
-                                    </button>
-                                </div>
+                            {/* Footer Buttons */}
+                            <div className="flex flex-col md:flex-row justify-end items-center gap-4 mt-12 pt-8 border-t border-white/5">
+                                <button
+                                    onClick={() => navigate('/cliente-externo/seguimiento')}
+                                    className="w-full md:w-auto px-8 py-4 bg-white/5 border border-white/10 text-slate-300 font-bold rounded-[1.25rem] hover:bg-white/10 hover:text-white transition-all duration-300 flex items-center justify-center gap-2 group active:scale-95"
+                                >
+                                    <Table className="w-5 h-5 group-hover:rotate-6 transition-transform" />
+                                    Ver Solicitudes
+                                </button>
+                                <button
+                                    onClick={handleSave}
+                                    disabled={saving}
+                                    className="w-full md:w-auto px-10 py-4 bg-gradient-to-r from-cyan-500 to-teal-500 text-black font-black rounded-[1.25rem] hover:shadow-[0_0_30px_rgba(6,182,212,0.4)] transition-all duration-300 flex items-center justify-center gap-3 disabled:opacity-50 disabled:cursor-not-allowed group active:scale-95"
+                                >
+                                    {saving ? <Loader2 className="w-5 h-5 animate-spin" /> : <Save className="w-5 h-5 group-hover:translate-x-0.5 transition-transform" />}
+                                    <span className="uppercase tracking-tight">Guardar Solicitud</span>
+                                </button>
                             </div>
                         </div>
                     </div>
                 </div>
-            </div>
 
-            {/* Search Modal Component */}
-            <SearchModal
-                isOpen={searchModal.isOpen}
-                onClose={() => setSearchModal({ isOpen: false, type: null, title: '' })}
-                title={searchModal.title}
-                options={searchModal.type ? catalogs[searchModal.type] : []}
-                onSelect={handleSelectOption}
-            />
+                {/* Search Modal Component */}
+                <SearchModal
+                    isOpen={searchModal.isOpen}
+                    onClose={() => setSearchModal({ isOpen: false, type: null, title: '' })}
+                    title={searchModal.title}
+                    options={searchModal.type ? catalogs[searchModal.type] : []}
+                    onSelect={handleSelectOption}
+                />
+            </div>
         </div>
     );
 }

@@ -24,7 +24,20 @@ export interface Equipo {
 
 export interface DetalleSalida {
     codigo_articulo: string;
-    articulo: string;
+    articulo: string; // nombre_articulo
     cantidad: number | string;
+    unidad: string;
     precio_unitario: number;
+    marca: string;
+    cantidad_disponible?: number;
+    imagen_url?: string | null;
+}
+
+export interface TransactionHeader {
+    autoriza: string;
+    retira: string;
+    numero_solicitud?: string | number;
+    comentarios?: string;
+    fecha_solicitud?: string;
+    destino?: string;
 }

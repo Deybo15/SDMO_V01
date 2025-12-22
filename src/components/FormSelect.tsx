@@ -1,4 +1,4 @@
-import { Search, X, Loader2 } from 'lucide-react';
+import { Search, X, LucideIcon } from 'lucide-react';
 
 interface FormSelectProps {
     label: string;
@@ -10,6 +10,7 @@ interface FormSelectProps {
     loading?: boolean;
     disabled?: boolean;
     required?: boolean;
+    icon?: LucideIcon;
 }
 
 export default function FormSelect({
@@ -19,46 +20,50 @@ export default function FormSelect({
     placeholder = '-- Seleccione una opción --',
     onOpenSearch,
     onClear,
+    icon: Icon,
     loading = false,
     disabled = false,
     required = false
 }: FormSelectProps) {
     return (
         <div className="space-y-2">
-            <label className={`block text-sm font-medium text-[#e4e6ea] ${required ? "after:content-['_*'] after:text-red-500 after:font-bold" : ''}`}>
+            <label className={`block text-[11px] font-black uppercase tracking-wider text-purple-400 opacity-80 ${required ? "after:content-['_*'] after:text-rose-500 after:font-bold" : ''}`}>
                 {label}
             </label>
-            <div className="relative group">
+            <div className="relative group/field">
+                {/* Visual Glow Effect */}
+                <div className="absolute -inset-1 bg-gradient-to-r from-purple-500/10 to-violet-500/10 rounded-xl blur opacity-0 group-hover/field:opacity-100 transition duration-500"></div>
+
                 <div
                     onClick={() => !disabled && !loading && onOpenSearch()}
-                    className={`w-full bg-[#2d3241]/60 backdrop-blur-sm border border-white/10 rounded-xl px-4 py-3.5 text-[#e4e6ea] transition-all flex items-center justify-between ${disabled || loading ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer hover:bg-[#373c4b]/80'
+                    className={`relative w-full bg-[#1E293B]/40 backdrop-blur-xl border border-white/10 rounded-xl px-4 py-3.5 text-[#e4e6ea] transition-all flex items-center justify-between ${disabled || loading ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer group-hover/field:border-purple-500/40 group-hover/field:bg-white/5'
                         }`}
                 >
-                    <span className={!value ? 'text-[#9ca3af]/70' : ''}>
-                        {loading ? 'Cargando datos...' : (value ? displayValue : placeholder)}
-                    </span>
+                    <div className="flex items-center gap-3 flex-1 min-w-0">
+                        {Icon && <Icon className={`w-4 h-4 ${value ? 'text-purple-400' : 'text-slate-500'}`} />}
+                        <span className={`truncate text-sm ${!value ? 'text-slate-500 font-medium' : 'text-white font-semibold'}`}>
+                            {loading ? 'Cargando datos...' : (value ? displayValue : placeholder)}
+                        </span>
+                    </div>
 
-                    {/* Clear Button */}
-                    {value && !disabled && !loading && (
-                        <button
-                            onClick={(e) => {
-                                e.stopPropagation();
-                                onClear();
-                            }}
-                            className="mr-12 p-1 hover:bg-white/10 rounded-full transition-colors text-[#9ca3af] hover:text-white"
-                        >
-                            <X className="w-4 h-4" />
-                        </button>
-                    )}
+                    {/* Action Group */}
+                    <div className="flex items-center gap-2">
+                        {value && !disabled && !loading && (
+                            <button
+                                onClick={(e) => {
+                                    e.stopPropagation();
+                                    onClear();
+                                }}
+                                className="p-1 px-2 hover:bg-white/10 rounded-lg transition-colors text-slate-500 hover:text-white flex items-center gap-1 border border-white/5 hover:border-white/10"
+                            >
+                                <X className="w-3.5 h-3.5" />
+                                <span className="text-[10px] font-black uppercase tracking-tighter">Limpiar</span>
+                            </button>
+                        )}
+                        <div className="w-px h-4 bg-white/10 mx-1"></div>
+                        <Search className={`w-4 h-4 transition-transform duration-300 group-hover/field:scale-110 ${value ? 'text-purple-400' : 'text-slate-400'}`} />
+                    </div>
                 </div>
-
-                <button
-                    onClick={() => !disabled && !loading && onOpenSearch()}
-                    disabled={disabled || loading}
-                    className="absolute right-0 top-0 h-full w-12 flex items-center justify-center bg-gradient-to-br from-[#8e44ad]/30 to-[#9b59b6]/30 text-[#8e44ad] rounded-r-xl border-l border-white/10 hover:from-[#8e44ad]/40 hover:to-[#9b59b6]/40 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
-                >
-                    {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Search className="w-4 h-4" />}
-                </button>
             </div>
         </div>
     );

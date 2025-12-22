@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '../lib/supabase';
 import { useNavigate } from 'react-router-dom';
-import { Articulo, Colaborador, DetalleSalida } from '../types/inventory';
+import { Articulo, Colaborador, DetalleSalida, TransactionHeader } from '../types/inventory';
 
 interface UseTransactionManagerProps {
     tipoSalidaId?: string; // e.g. 'equipos', 'herramientas' for fetching type ID
@@ -57,64 +57,93 @@ export const useTransactionManager = ({
         setTimeout(() => setFeedback(null), 3000);
     };
 
-    // Item Management
-    const addItem = (articulo: Articulo) => {
-        if (items.find(i => i.codigo_articulo === articulo.codigo_articulo)) {
-            showFeedback('El artículo ya está en la lista', 'warning');
+    // Item Management is now handled by Row Actions
+
+
+    // Actions
+    const addEmptyRow = () => {
+        setItems(prev => [...prev, {
+            codigo_articulo: '',
+            articulo: '',
+            cantidad: 0,
+            unidad: '',
+            precio_unitario: 0,
+            marca: '',
+            cantidad_disponible: 0,
+            imagen_url: null
+        }]);
+    };
+
+    // Update a specific row (by index) with an article
+    const updateRowWithArticle = (index: number, article: Articulo) => {
+        // Check for duplicates
+        const exists = items.some((item, i) => i !== index && item.codigo_articulo === article.codigo_articulo);
+        if (exists) {
+            setFeedback({ message: 'El artículo ya está en la lista', type: 'warning' });
+            setTimeout(() => setFeedback(null), 3000);
             return;
         }
 
-        const newItem: DetalleSalida = {
-            codigo_articulo: articulo.codigo_articulo,
-            articulo: articulo.nombre_articulo,
-            cantidad: 1, // Default to 1
-            precio_unitario: articulo.precio_unitario
-        };
-
-        // Check stock immediately? Optional.
-        if (articulo.cantidad_disponible <= 0) {
-            showFeedback('No hay stock disponible', 'error');
-            return;
-        }
-
-        setItems([...items, newItem]);
+        setItems(prev => {
+            const newItems = [...prev];
+            newItems[index] = {
+                codigo_articulo: article.codigo_articulo,
+                articulo: article.nombre_articulo,
+                cantidad: 0, // Reset quantity
+                unidad: article.unidad,
+                precio_unitario: article.precio_unitario,
+                marca: article.marca || 'Sin Marca',
+                cantidad_disponible: article.cantidad_disponible,
+                imagen_url: article.imagen_url
+            };
+            return newItems;
+        });
     };
 
-    const updateItemQuantity = (codigo: string, cantidad: number, max: number) => {
-        if (cantidad > max) {
-            showFeedback(`Solo hay ${max} disponibles`, 'warning');
-            cantidad = max;
-        }
-        if (cantidad < 0) cantidad = 0;
-
-        setItems(prev => prev.map(i => i.codigo_articulo === codigo ? { ...i, cantidad } : i));
+    const updateRow = (index: number, field: keyof DetalleSalida, value: any) => {
+        setItems(prev => {
+            const newItems = [...prev];
+            newItems[index] = { ...newItems[index], [field]: value };
+            return newItems;
+        });
     };
 
-    const removeItem = (codigo: string) => {
-        setItems(prev => prev.filter(i => i.codigo_articulo !== codigo));
+    const removeRow = (index: number) => {
+        setItems(prev => prev.filter((_, i) => i !== index));
     };
 
-    // Submit Transaction
-    const processTransaction = async (
-        header: { autoriza: string, retira: string, comentarios?: string, destino?: string, fecha_solicitud?: string, numero_solicitud?: string | number },
-        extraLogic?: (idSalida: number, numeroSolicitud: number) => Promise<void>
-    ) => {
 
+    const processTransaction = async (header: TransactionHeader, extraLogic?: (idSalida: number, validItems: DetalleSalida[]) => Promise<void>) => {
+        // Validate Header (basic)
         if (!header.autoriza || !header.retira) {
-            showFeedback('Seleccione Responsable y Receptor', 'warning');
+            setFeedback({ message: 'Debe seleccionar responsables', type: 'error' });
+            setTimeout(() => setFeedback(null), 3000);
             return;
         }
 
-        const validItems = items.filter(i => Number(i.cantidad) > 0);
+        // Validate Items
+        // Filter valid items (must have code and quantity > 0)
+        const validItems = items.filter(i => i.codigo_articulo && Number(i.cantidad) > 0);
+
         if (validItems.length === 0) {
-            showFeedback('Agregue artículos con cantidad válida', 'warning');
+            setFeedback({ message: 'Debe agregar al menos un artículo válido con cantidad mayor a 0', type: 'error' });
+            setTimeout(() => setFeedback(null), 3000);
             return;
+        }
+
+        // Check stock limits locally first
+        for (const item of validItems) {
+            if (item.cantidad_disponible !== undefined && Number(item.cantidad) > item.cantidad_disponible) {
+                setFeedback({ message: `La cantidad para ${item.articulo} excede el disponible (${item.cantidad_disponible})`, type: 'error' });
+                setTimeout(() => setFeedback(null), 3000);
+                return;
+            }
         }
 
         setLoading(true);
         try {
-            // 1. Create Request (Solicitud)
-            let solicitudId = 0;
+            // 1. Create Request (Solicitud) - if tipoSalidaId is provided
+            let solicitudId: number | string = header.numero_solicitud || 'S/N'; // Default to S/N if not provided
 
             if (tipoSalidaId) {
                 const { data: tipoData } = await supabase
@@ -143,50 +172,67 @@ export const useTransactionManager = ({
             }
 
             // 2. Create Output Header (Salida)
-            const { data: outData, error: outError } = await supabase
+            const { data: headerData, error: headerError } = await supabase
                 .from('salida_articulo_08')
-                .insert([{
+                .insert({
                     fecha_salida: new Date().toISOString(),
                     autoriza: header.autoriza,
                     retira: header.retira,
-                    numero_solicitud: solicitudId > 0 ? solicitudId : header.numero_solicitud, // Use created ID or passed one
+                    numero_solicitud: solicitudId, // Use created ID or passed one
                     comentarios: header.comentarios,
-                    finalizada: true
-                }])
+                    finalizada: true // Assuming it's finalized upon creation
+                })
                 .select('id_salida')
                 .single();
 
-            if (outError) throw outError;
+            if (headerError) throw headerError;
+            const newId = headerData.id_salida;
 
-            // 3. Insert Details
-            const detailsPayload = validItems.map(d => ({
-                id_salida: outData.id_salida,
+            // Extra Logic (e.g., specific table updates)
+            if (extraLogic) {
+                await extraLogic(newId, validItems);
+            }
+
+            // Insert Details (Standard)
+            // Construct details for `dato_salida_13`
+            const detallesToInsert = validItems.map(d => ({
+                id_salida: newId,
                 articulo: d.codigo_articulo,
                 cantidad: Number(d.cantidad),
                 precio_unitario: d.precio_unitario
             }));
 
-            const { error: detError } = await supabase
+            const { error: detailsError } = await supabase
                 .from('dato_salida_13')
-                .insert(detailsPayload);
+                .insert(detallesToInsert);
 
-            if (detError) throw detError;
+            if (detailsError) throw detailsError;
 
-            // 4. Extra Logic (e.g. Navigation)
-            if (extraLogic) await extraLogic(outData.id_salida, solicitudId);
+            setFeedback({ message: 'Solicitud procesada correctamente', type: 'success' });
 
-            showFeedback('Transacción procesada correctamente', 'success');
-
+            // Redirect
             if (onSuccessRoute) {
-                setTimeout(() => navigate(onSuccessRoute), 1500);
+                setTimeout(() => {
+                    navigate(onSuccessRoute);
+                }, 1500);
             } else {
-                // Reset?
-                setItems([]);
+                // Reset
+                setItems([{
+                    codigo_articulo: '',
+                    articulo: '',
+                    cantidad: 0,
+                    unidad: '',
+                    precio_unitario: 0,
+                    marca: '',
+                    cantidad_disponible: 0,
+                    imagen_url: null
+                }]);
             }
 
-        } catch (error) {
-            console.error('Error processing transaction:', error);
-            showFeedback('Error al procesar la solicitud', 'error');
+        } catch (error: any) {
+            console.error(error);
+            setFeedback({ message: error.message || 'Error al procesar solicitud', type: 'error' });
+            setTimeout(() => setFeedback(null), 5000);
         } finally {
             setLoading(false);
         }
@@ -197,9 +243,11 @@ export const useTransactionManager = ({
         feedback,
         items,
         colaboradores,
-        addItem,
-        updateItemQuantity,
-        removeItem,
-        processTransaction
+        addEmptyRow,
+        updateRow,
+        updateRowWithArticle,
+        removeRow,
+        processTransaction,
+        showAlert: showFeedback
     };
 };

@@ -2,101 +2,74 @@ import { useState, useEffect } from 'react';
 import { supabase } from '../lib/supabase';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import {
+    Box,
+    Calendar,
+    User,
     Search,
     PlusCircle,
-    ArrowLeft,
     Save,
     Printer,
-    MessageSquare,
-    CheckCircle,
-    Trash2,
-    AlertTriangle,
-    Box,
-    User,
-    FileText,
-    Calendar,
     X,
-    Loader2
+    CheckCircle,
+    AlertTriangle,
+    Info,
+    Loader2,
+    ArrowLeft
 } from 'lucide-react';
 
-// Types
-interface Colaborador {
-    identificacion: string;
-    alias?: string;
-    colaborador?: string;
-}
-
-interface InventarioItem {
-    codigo_articulo: string;
-    nombre_articulo: string;
-    cantidad_disponible: number;
-    unidad: string;
-    imagen_url?: string;
-    precio_unitario: number;
-    marca?: string;
-}
-
-interface DetalleSalida {
-    id: string; // temporary id for the row
-    codigo_articulo: string;
-    articulo: string;
-    marca: string;
-    cantidad: number | string;
-    unidad: string;
-    precio_unitario: number;
-    max_disponible: number;
-}
+import { PageHeader } from '../components/ui/PageHeader';
+import { TransactionTable } from '../components/ui/TransactionTable';
+import ColaboradorSearchModal from '../components/ColaboradorSearchModal';
+import { Articulo, DetalleSalida, Colaborador } from '../types/inventory';
 
 export default function RegistroSalidaExterno() {
     const navigate = useNavigate();
     const [searchParams] = useSearchParams();
     const numeroSolicitudParam = searchParams.get('numero');
 
-    // State
+    // 1. Transaction State
     const [loading, setLoading] = useState(false);
-    const [responsables, setResponsables] = useState<Colaborador[]>([]);
-    const [retirantes, setRetirantes] = useState<Colaborador[]>([]);
-    const [inventario, setInventario] = useState<InventarioItem[]>([]);
-    const [detalles, setDetalles] = useState<DetalleSalida[]>([{
-        id: Math.random().toString(36).substr(2, 9),
+    const [feedback, setFeedback] = useState<{ message: string, type: 'success' | 'error' | 'warning' | 'info' } | null>(null);
+    const [items, setItems] = useState<DetalleSalida[]>([{
         codigo_articulo: '',
         articulo: '',
-        marca: '',
         cantidad: 0,
         unidad: '',
         precio_unitario: 0,
-        max_disponible: 0
+        marca: '',
+        cantidad_disponible: 0
     }]);
+
+    // 2. Header State
+    const [autoriza, setAutoriza] = useState('');
+    const [retira, setRetira] = useState('');
+    const [numeroSolicitud] = useState(numeroSolicitudParam || '');
     const [comentarios, setComentarios] = useState('');
+    const [finalizado, setFinalizado] = useState(false);
     const [ultimoIdSalida, setUltimoIdSalida] = useState<number | null>(null);
+
+    // 3. Data State
+    const [colaboradores, setColaboradores] = useState<{ autorizados: Colaborador[], retirantes: Colaborador[] }>({
+        autorizados: [],
+        retirantes: []
+    });
+    const [inventario, setInventario] = useState<Articulo[]>([]);
     const [fechaActual, setFechaActual] = useState('');
 
-    // Form State
-    const [formData, setFormData] = useState({
-        autoriza: '',
-        retira: '',
-        numero_solicitud: numeroSolicitudParam || ''
-    });
-
-    // Modals State
+    // 4. Modals State
     const [showBusquedaModal, setShowBusquedaModal] = useState(false);
-    const [busquedaType, setBusquedaType] = useState<'autoriza' | 'retira' | null>(null);
-    const [busquedaQuery, setBusquedaQuery] = useState('');
-
-    const [showArticuloModal, setShowArticuloModal] = useState(false);
-    const [articuloQuery, setArticuloQuery] = useState('');
-    const [currentRowId, setCurrentRowId] = useState<string | null>(null);
-    const [loadingInventario, setLoadingInventario] = useState(false);
-    const [inventoryPage, setInventoryPage] = useState(1);
-    const [totalInventory, setTotalInventory] = useState(0);
-
-    const [showComentariosModal, setShowComentariosModal] = useState(false);
-    const [tempComentarios, setTempComentarios] = useState('');
-
+    const [busquedaTipo, setBusquedaTipo] = useState<'autoriza' | 'retira'>('autoriza');
+    const [showArticulosModal, setShowArticulosModal] = useState(false);
+    const [currentRowIndex, setCurrentRowIndex] = useState<number>(0);
     const [showImageModal, setShowImageModal] = useState(false);
     const [selectedImage, setSelectedImage] = useState<{ src: string, alt: string } | null>(null);
+    const [articuloTermino, setArticuloTermino] = useState('');
 
-    const [alert, setAlert] = useState<{ type: 'success' | 'danger', message: string } | null>(null);
+    // Inventory Controls
+    const [inventoryPage, setInventoryPage] = useState(1);
+    const [inventoryLoading, setInventoryLoading] = useState(false);
+    const [totalInventory, setTotalInventory] = useState(0);
+    const ITEMS_PER_PAGE = 1000;
 
     // Effects
     useEffect(() => {
@@ -111,7 +84,7 @@ export default function RegistroSalidaExterno() {
         // Removed agregarFila() to prevent duplicate rows in strict mode
     }, []);
 
-    // Data Loading
+    // Load Data
     const cargarColaboradores = async () => {
         try {
             const { data } = await supabase
@@ -120,171 +93,241 @@ export default function RegistroSalidaExterno() {
                 .or('autorizado.eq.true,condicion_laboral.eq.false');
 
             if (data) {
-                setResponsables(data.filter((c: any) => c.autorizado) || []);
-                setRetirantes(data.filter((c: any) => c.condicion_laboral === false) || []);
+                setColaboradores({
+                    autorizados: data.filter((c: any) => c.autorizado).map((c: any) => ({
+                        ...c,
+                        colaborador: c.colaborador || c.alias
+                    })),
+                    retirantes: data.filter((c: any) => !c.autorizado).map((c: any) => ({
+                        ...c,
+                        colaborador: c.colaborador || c.alias
+                    }))
+                });
             }
         } catch (error) {
             console.error('Error loading collaborators:', error);
+            showAlert('Error al cargar colaboradores', 'error');
         }
     };
 
     const cargarInventario = async (page = 1, append = false) => {
-        setLoadingInventario(true);
+        setInventoryLoading(true);
         try {
-            const itemsPerPage = 1000;
-            const { data, count, error } = await supabase
+            const from = (page - 1) * ITEMS_PER_PAGE;
+            const to = page * ITEMS_PER_PAGE - 1;
+
+            const { data, error, count } = await supabase
                 .from('inventario_actual')
                 .select('codigo_articulo, nombre_articulo, cantidad_disponible, unidad, imagen_url, precio_unitario', { count: 'exact' })
                 .order('nombre_articulo', { ascending: true })
-                .range((page - 1) * itemsPerPage, page * itemsPerPage - 1);
+                .range(from, to);
 
             if (error) throw error;
 
-            let newItems = data || [];
+            let fetchedItems = data || [];
 
-            if (newItems.length > 0) {
-                const codigos = newItems.map(i => i.codigo_articulo);
-                const { data: marcasData } = await supabase
+            // Fetch brands
+            if (fetchedItems.length > 0) {
+                const codigos = fetchedItems.map(i => i.codigo_articulo).filter(Boolean);
+                const { data: marcas } = await supabase
                     .from('articulo_01')
                     .select('codigo_articulo, marca')
                     .in('codigo_articulo', codigos);
 
-                const marcasMap: Record<string, string> = {};
-                marcasData?.forEach((m: any) => marcasMap[m.codigo_articulo] = m.marca);
+                const marcasMap = (marcas || []).reduce((acc: any, curr) => {
+                    acc[curr.codigo_articulo] = curr.marca;
+                    return acc;
+                }, {});
 
-                newItems = newItems.map(item => ({
+                fetchedItems = fetchedItems.map(item => ({
                     ...item,
                     marca: marcasMap[item.codigo_articulo] || 'Sin marca'
                 }));
             }
 
             setTotalInventory(count || 0);
-            if (append) {
-                setInventario(prev => [...prev, ...newItems]);
-            } else {
-                setInventario(newItems);
-            }
+            setInventario(prev => append ? [...prev, ...fetchedItems] : fetchedItems);
+
         } catch (error) {
             console.error('Error loading inventory:', error);
-            showAlert('Error al cargar inventario', 'danger');
+            showAlert('Error al cargar inventario', 'error');
         } finally {
-            setLoadingInventario(false);
+            setInventoryLoading(false);
         }
     };
 
-    // Actions
+    // Feedback Helper
+    const showAlert = (message: string, type: 'success' | 'error' | 'warning' | 'info') => {
+        setFeedback({ message, type });
+        setTimeout(() => setFeedback(null), 5000);
+    };
+
+    // Handlers
+    const handleOpenBusqueda = (tipo: 'autoriza' | 'retira') => {
+        setBusquedaTipo(tipo);
+        setShowBusquedaModal(true);
+    };
+
+    const handleSelectColaborador = (colaborador: Colaborador) => {
+        if (busquedaTipo === 'autoriza') setAutoriza(colaborador.identificacion);
+        else setRetira(colaborador.identificacion);
+        setShowBusquedaModal(false);
+    };
+
+    const handleOpenArticulos = async (index: number) => {
+        setCurrentRowIndex(index);
+        setShowArticulosModal(true);
+        if (inventario.length === 0) {
+            await cargarInventario(1);
+        }
+    };
+
+    const handleSelectArticulo = (article: Articulo) => {
+        if (currentRowIndex === null) return;
+
+        // Duplicate Detection
+        const exists = items.some((item, i) => i !== currentRowIndex && item.codigo_articulo === article.codigo_articulo);
+        if (exists) {
+            showAlert('Este artículo ya ha sido agregado a la lista.', 'warning');
+            return;
+        }
+
+        setItems(prev => {
+            const newItems = [...prev];
+            newItems[currentRowIndex] = {
+                codigo_articulo: article.codigo_articulo,
+                articulo: article.nombre_articulo,
+                cantidad: 0,
+                unidad: article.unidad || 'Unidad',
+                precio_unitario: article.precio_unitario,
+                marca: article.marca || 'Sin marca',
+                cantidad_disponible: article.cantidad_disponible
+            };
+            return newItems;
+        });
+        setShowArticulosModal(false);
+    };
+
     const agregarFila = () => {
-        const newRow: DetalleSalida = {
-            id: Math.random().toString(36).substr(2, 9),
+        setItems(prev => [...prev, {
             codigo_articulo: '',
             articulo: '',
-            marca: '',
             cantidad: 0,
             unidad: '',
             precio_unitario: 0,
-            max_disponible: 0
-        };
-        setDetalles(prev => [...prev, newRow]);
+            marca: '',
+            cantidad_disponible: 0
+        }]);
     };
 
-    const eliminarFila = (id: string) => {
-        setDetalles(prev => prev.filter(d => d.id !== id));
-    };
-
-    const updateDetalle = (id: string, field: keyof DetalleSalida, value: any) => {
-        setDetalles(prev => prev.map(d => {
-            if (d.id === id) {
-                return { ...d, [field]: value };
-            }
-            return d;
-        }));
-    };
-
-    const handleSearchArticulo = (rowId: string) => {
-        setCurrentRowId(rowId);
-        setArticuloQuery('');
-        setInventoryPage(1);
-        setShowArticuloModal(true);
-        cargarInventario(1, false);
-    };
-
-    const seleccionarArticulo = (item: InventarioItem) => {
-        if (currentRowId) {
-            setDetalles(prev => prev.map(d => {
-                if (d.id === currentRowId) {
-                    return {
-                        ...d,
-                        codigo_articulo: item.codigo_articulo,
-                        articulo: item.nombre_articulo,
-                        marca: item.marca || 'Sin marca',
-                        unidad: item.unidad,
-                        precio_unitario: item.precio_unitario,
-                        max_disponible: item.cantidad_disponible,
-                        cantidad: 0 // Reset quantity
-                    };
-                }
-                return d;
-            }));
+    const eliminarFila = (index: number) => {
+        if (items.length === 1) {
+            setItems([{
+                codigo_articulo: '',
+                articulo: '',
+                cantidad: 0,
+                unidad: '',
+                precio_unitario: 0,
+                marca: '',
+                cantidad_disponible: 0
+            }]);
+            return;
         }
-        setShowArticuloModal(false);
+        setItems(prev => prev.filter((_, i) => i !== index));
+    };
+
+    const updateDetalle = (index: number, field: keyof DetalleSalida, value: any) => {
+        setItems(prev => {
+            const newItems = [...prev];
+            newItems[index] = { ...newItems[index], [field]: value };
+            return newItems;
+        });
     };
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
 
-        // Validation
-        if (!formData.autoriza || !formData.retira) {
-            showAlert('Debe seleccionar responsable y persona que retira', 'danger');
+        if (!autoriza || !retira) {
+            showAlert('Debe seleccionar responsable y persona que retira', 'error');
             return;
         }
-        if (!formData.numero_solicitud) {
-            showAlert('Número de solicitud inválido', 'danger');
+
+        if (!numeroSolicitud) {
+            showAlert('Número de solicitud requerido', 'error');
             return;
         }
-        if (detalles.length === 0 || detalles.some(d => !d.codigo_articulo || Number(d.cantidad) <= 0)) {
-            showAlert('Revise los artículos y cantidades', 'danger');
+
+        const validItems = items.filter(d => d.codigo_articulo && Number(d.cantidad) > 0);
+        if (validItems.length === 0) {
+            showAlert('Debe agregar al menos un artículo válido con cantidad mayor a 0', 'error');
+            return;
+        }
+
+        // Validate limits
+        const exceedsLimit = validItems.some(d => d.cantidad_disponible !== undefined && Number(d.cantidad) > d.cantidad_disponible);
+        if (exceedsLimit) {
+            showAlert('La cantidad de uno o más artículos supera el disponible.', 'error');
             return;
         }
 
         setLoading(true);
         try {
-            // Insert Header
-            const { data: insertedEnc, error: errEnc } = await supabase
+            // Real-time Stock Validation
+            const { data: currentStock, error: stockError } = await supabase
+                .from('inventario_actual')
+                .select('codigo_articulo, cantidad_disponible')
+                .in('codigo_articulo', validItems.map(d => d.codigo_articulo));
+
+            if (stockError) throw stockError;
+
+            const stockMap = (currentStock || []).reduce((acc: any, curr) => {
+                acc[curr.codigo_articulo] = curr.cantidad_disponible;
+                return acc;
+            }, {});
+
+            for (const d of validItems) {
+                const available = stockMap[d.codigo_articulo];
+                if (available === undefined || Number(d.cantidad) > available) {
+                    throw new Error(`El artículo ${d.articulo} solo tiene ${available ?? 0} disponible(s).`);
+                }
+            }
+
+            // 1. Insert Header
+            const { data: headerData, error: headerError } = await supabase
                 .from('salida_articulo_08')
-                .insert([{
+                .insert({
                     fecha_salida: new Date().toISOString(),
-                    autoriza: formData.autoriza,
-                    retira: formData.retira,
-                    numero_solicitud: parseInt(formData.numero_solicitud),
-                    comentarios: comentarios
-                }])
+                    autoriza,
+                    retira,
+                    numero_solicitud: parseInt(numeroSolicitud),
+                    comentarios
+                })
                 .select('id_salida')
                 .single();
 
-            if (errEnc) throw errEnc;
+            if (headerError) throw headerError;
 
-            const newId = insertedEnc.id_salida;
-
-            // Insert Details
-            const detallesParaInsertar = detalles.map(d => ({
-                id_salida: newId,
-                articulo: d.codigo_articulo,
-                cantidad: d.cantidad,
-                precio_unitario: d.precio_unitario
-            }));
-
-            const { error: errDet } = await supabase
-                .from('dato_salida_13')
-                .insert(detallesParaInsertar);
-
-            if (errDet) throw errDet;
-
+            const newId = headerData.id_salida;
             setUltimoIdSalida(newId);
-            showAlert(`Salida registrada exitosamente con folio SA-${newId.toString().padStart(4, '0')}`, 'success');
+
+            // 2. Insert Details
+            const { error: detailsError } = await supabase
+                .from('dato_salida_13')
+                .insert(validItems.map(d => ({
+                    id_salida: newId,
+                    articulo: d.codigo_articulo,
+                    cantidad: Number(d.cantidad),
+                    precio_unitario: d.precio_unitario
+                })));
+
+            if (detailsError) throw detailsError;
+
+            showAlert(`Salida registrada (SA-${newId.toString().padStart(4, '0')})`, 'success');
+            setFinalizado(true);
 
         } catch (error: any) {
-            console.error('Error saving:', error);
-            showAlert(`Error al guardar: ${error.message}`, 'danger');
+            console.error('Error submitting:', error);
+            showAlert('Error al guardar: ' + error.message, 'error');
         } finally {
             setLoading(false);
         }
@@ -293,6 +336,7 @@ export default function RegistroSalidaExterno() {
     const handleFinalizar = async () => {
         if (!ultimoIdSalida) return;
 
+        setLoading(true);
         try {
             const { error } = await supabase
                 .from('salida_articulo_08')
@@ -302,564 +346,338 @@ export default function RegistroSalidaExterno() {
             if (error) throw error;
 
             showAlert('Registro finalizado correctamente', 'success');
-            setTimeout(() => {
-                navigate('/cliente-externo/realizar');
-            }, 2000);
+            setTimeout(() => navigate('/cliente-externo/realizar'), 1500);
+
         } catch (error: any) {
-            showAlert(`Error al finalizar: ${error.message}`, 'danger');
+            showAlert('Error al finalizar: ' + error.message, 'error');
+        } finally {
+            setLoading(false);
         }
     };
 
-    const showAlert = (msg: string, type: 'success' | 'danger') => {
-        setAlert({ type, message: msg });
-        setTimeout(() => setAlert(null), 5000);
-    };
-
     // Filtered lists
-    const filteredResponsables = responsables.filter(r =>
-        r.alias?.toLowerCase().includes(busquedaQuery.toLowerCase())
-    );
-    const filteredRetirantes = retirantes.filter(r =>
-        r.colaborador?.toLowerCase().includes(busquedaQuery.toLowerCase())
-    );
-    const filteredInventario = inventario.filter(i =>
-        i.nombre_articulo.toLowerCase().includes(articuloQuery.toLowerCase()) ||
-        i.codigo_articulo.toLowerCase().includes(articuloQuery.toLowerCase())
+    const filteredArticulos = inventario.filter(i =>
+        i.nombre_articulo.toLowerCase().includes(articuloTermino.toLowerCase()) ||
+        i.codigo_articulo.toLowerCase().includes(articuloTermino.toLowerCase())
     );
 
     return (
         <div className="min-h-screen bg-[#0a0a0a] text-white font-sans p-4 md:p-8 relative overflow-hidden">
             {/* Background Effects */}
             <div className="fixed inset-0 pointer-events-none">
-                <div className="absolute top-[20%] left-[20%] w-96 h-96 bg-[#00d4ff]/10 rounded-full blur-[100px]" />
-                <div className="absolute bottom-[20%] right-[20%] w-96 h-96 bg-[#00fff0]/10 rounded-full blur-[100px]" />
+                <div className="absolute top-[20%] left-[20%] w-96 h-96 bg-teal-500/10 rounded-full blur-[100px]" />
+                <div className="absolute bottom-[20%] right-[20%] w-96 h-96 bg-cyan-500/10 rounded-full blur-[100px]" />
             </div>
 
             {/* Alert/Feedback Toast */}
-            {alert && (
-                <div className="fixed top-6 left-1/2 transform -translate-x-1/2 z-[60] animate-in slide-in-from-top-4">
-                    <div className={`px-6 py-4 rounded-xl shadow-2xl border backdrop-blur-xl flex items-center gap-3 ${alert.type === 'success' ? 'bg-green-500/10 border-green-500/30 text-green-400' :
-                        'bg-red-500/10 border-red-500/30 text-red-400'
+            {feedback && (
+                <div className="fixed top-6 left-1/2 transform -translate-x-1/2 z-[100] animate-in slide-in-from-top-4 duration-300">
+                    <div className={`px-6 py-4 rounded-2xl shadow-2xl border backdrop-blur-xl flex items-center gap-3 ${feedback.type === 'success' ? 'bg-emerald-500/20 border-emerald-500/30 text-emerald-400' :
+                        feedback.type === 'error' ? 'bg-red-500/20 border-red-500/30 text-red-400' :
+                            feedback.type === 'warning' ? 'bg-amber-500/20 border-amber-500/30 text-amber-400' :
+                                'bg-blue-500/20 border-blue-500/30 text-blue-400'
                         }`}>
-                        {alert.type === 'success' ? <CheckCircle className="w-5 h-5" /> : <AlertTriangle className="w-5 h-5" />}
-                        <span className="font-medium">{alert.message}</span>
-                        <button onClick={() => setAlert(null)} className="ml-2 hover:text-white"><X className="w-4 h-4" /></button>
+                        {feedback.type === 'success' ? <CheckCircle className="w-5 h-5" /> :
+                            feedback.type === 'error' ? <AlertTriangle className="w-5 h-5" /> :
+                                <Info className="w-5 h-5" />}
+                        <span className="font-medium">{feedback.message}</span>
+                        <button onClick={() => setFeedback(null)} className="ml-2 hover:scale-110 transition-transform">
+                            <X className="w-4 h-4" />
+                        </button>
                     </div>
                 </div>
             )}
 
             <div className="max-w-6xl mx-auto relative z-10">
-                {/* Header Card */}
-                <div className="bg-white/5 backdrop-blur-xl border border-white/10 rounded-2xl overflow-hidden mb-8 shadow-2xl">
-                    <div className="p-6 border-b border-white/10 bg-gradient-to-r from-[#00d4ff]/10 to-[#00fff0]/10 flex items-center justify-center relative">
-                        <div className="absolute top-0 left-0 right-0 h-[2px] bg-gradient-to-r from-[#00d4ff] to-[#00fff0]" />
-                        <h2 className="text-2xl font-bold flex items-center gap-3 text-white">
-                            <Box className="w-6 h-6 text-[#00d4ff]" />
-                            REGISTRO DE SALIDA DE ARTÍCULOS
-                        </h2>
-                    </div>
+                <PageHeader
+                    title="REGISTRO DE SALIDA EXTERNO"
+                    icon={Box}
+                    themeColor="teal"
+                />
 
-                    <div className="p-6 md:p-8">
-                        {/* Info Bar */}
-                        <div className="flex flex-col md:flex-row justify-between items-center mb-8 gap-4">
-                            <div className="flex items-center gap-2 text-gray-300">
-                                <Calendar className="w-5 h-5 text-[#00d4ff]" />
-                                <span className="text-lg">{fechaActual}</span>
-                            </div>
-                            <div className="px-4 py-2 bg-white/5 border border-white/10 rounded-lg flex items-center gap-2">
-                                <FileText className="w-4 h-4 text-[#00fff0]" />
-                                <span className="text-sm font-medium">Nuevo registro</span>
-                            </div>
-                        </div>
+                <div className="flex items-center gap-2 text-gray-400 font-medium mt-2 mb-6 px-1">
+                    <Calendar className="w-4 h-4 text-teal-400" />
+                    {fechaActual}
+                </div>
 
-                        <form onSubmit={handleSubmit}>
-                            {/* Section 1: Info */}
-                            <div className="bg-white/5 border border-white/10 rounded-xl p-6 mb-6">
-                                <h3 className="text-lg font-semibold mb-6 flex items-center gap-2 border-b border-white/10 pb-3">
-                                    <User className="w-5 h-5 text-[#00d4ff]" />
-                                    Información de la Salida
-                                </h3>
+                <form onSubmit={handleSubmit} className="space-y-8">
+                    {/* Header Section */}
+                    <div className="bg-white/5 backdrop-blur-xl border border-white/10 rounded-3xl p-6 md:p-8 shadow-2xl relative overflow-hidden group">
+                        <div className="absolute top-0 left-0 w-2 h-full bg-teal-500/50" />
 
-                                <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
-                                    <div>
-                                        <label className="block text-sm font-medium text-gray-300 mb-2">
-                                            Responsable que autoriza <span className="text-red-400">*</span>
-                                        </label>
-                                        <div className="relative">
-                                            <select
-                                                value={formData.autoriza}
-                                                onChange={e => setFormData({ ...formData, autoriza: e.target.value })}
-                                                className="w-full bg-white/5 border border-white/10 rounded-lg py-3 pl-4 pr-12 text-white focus:border-[#00d4ff] focus:outline-none appearance-none"
-                                                required
-                                            >
-                                                <option value="" className="bg-[#1e2330]">-- Seleccione --</option>
-                                                {responsables.map(r => (
-                                                    <option key={r.identificacion} value={r.identificacion} className="bg-[#1e2330]">
-                                                        {r.alias}
-                                                    </option>
-                                                ))}
-                                            </select>
-                                            <button
-                                                type="button"
-                                                onClick={() => { setBusquedaType('autoriza'); setShowBusquedaModal(true); }}
-                                                className="absolute right-0 top-0 bottom-0 px-4 bg-[#00d4ff]/20 hover:bg-[#00d4ff]/30 text-[#00d4ff] rounded-r-lg border-l border-white/10 transition-colors"
-                                            >
-                                                <Search className="w-4 h-4" />
-                                            </button>
-                                        </div>
-                                    </div>
-
-                                    <div>
-                                        <label className="block text-sm font-medium text-gray-300 mb-2">
-                                            Persona que retira <span className="text-red-400">*</span>
-                                        </label>
-                                        <div className="relative">
-                                            <select
-                                                value={formData.retira}
-                                                onChange={e => setFormData({ ...formData, retira: e.target.value })}
-                                                className="w-full bg-white/5 border border-white/10 rounded-lg py-3 pl-4 pr-12 text-white focus:border-[#00d4ff] focus:outline-none appearance-none"
-                                                required
-                                            >
-                                                <option value="" className="bg-[#1e2330]">-- Seleccione --</option>
-                                                {retirantes.map(r => (
-                                                    <option key={r.identificacion} value={r.identificacion} className="bg-[#1e2330]">
-                                                        {r.colaborador}
-                                                    </option>
-                                                ))}
-                                            </select>
-                                            <button
-                                                type="button"
-                                                onClick={() => { setBusquedaType('retira'); setShowBusquedaModal(true); }}
-                                                className="absolute right-0 top-0 bottom-0 px-4 bg-[#00d4ff]/20 hover:bg-[#00d4ff]/30 text-[#00d4ff] rounded-r-lg border-l border-white/10 transition-colors"
-                                            >
-                                                <Search className="w-4 h-4" />
-                                            </button>
-                                        </div>
-                                    </div>
-
-                                    <div className="md:col-span-2">
-                                        <label className="block text-sm font-medium text-gray-300 mb-2">
-                                            Número de solicitud <span className="text-red-400">*</span>
-                                        </label>
-                                        <div className="relative">
-                                            <div className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400">#</div>
-                                            <input
-                                                type="number"
-                                                value={formData.numero_solicitud}
-                                                readOnly
-                                                className="w-full bg-white/5 border border-white/10 rounded-lg py-3 pl-10 pr-4 text-white focus:border-[#00d4ff] focus:outline-none opacity-75 cursor-not-allowed"
-                                            />
-                                        </div>
-                                    </div>
-                                </div>
-
-                                <div className="flex items-center gap-3">
-                                    <button
-                                        type="button"
-                                        onClick={() => { setTempComentarios(comentarios); setShowComentariosModal(true); }}
-                                        className="px-4 py-2 bg-transparent border border-[#00d4ff] text-[#00d4ff] rounded-lg hover:bg-[#00d4ff] hover:text-black transition-all flex items-center gap-2"
-                                    >
-                                        <MessageSquare className="w-4 h-4" />
-                                        Agregar Comentarios
-                                    </button>
-                                    {comentarios && (
-                                        <span className="px-3 py-1 bg-green-500/20 text-green-400 rounded-full text-xs font-medium flex items-center gap-1 animate-in fade-in">
-                                            <CheckCircle className="w-3 h-3" />
-                                            Comentarios agregados
-                                        </span>
-                                    )}
-                                </div>
-                            </div>
-
-                            {/* Section 2: Articles */}
-                            <div className="bg-white/5 border border-white/10 rounded-xl p-6 mb-8">
-                                <div className="flex justify-between items-center mb-6 border-b border-white/10 pb-3">
-                                    <h3 className="text-lg font-semibold flex items-center gap-2">
-                                        <Box className="w-5 h-5 text-[#00d4ff]" />
-                                        Artículos a Retirar
-                                    </h3>
-                                    <button
-                                        type="button"
-                                        onClick={agregarFila}
-                                        className="px-4 py-2 bg-gradient-to-r from-[#00d4ff] to-[#00fff0] text-black font-semibold rounded-lg hover:shadow-[0_0_20px_rgba(0,212,255,0.3)] transition-all flex items-center gap-2"
-                                    >
-                                        <PlusCircle className="w-4 h-4" />
-                                        Agregar Artículo
-                                    </button>
-                                </div>
-
-                                <div className="overflow-x-auto">
-                                    <table className="w-full">
-                                        <thead>
-                                            <tr className="text-left text-sm text-gray-400 border-b border-white/10">
-                                                <th className="pb-4 pl-2 w-[40%]">Artículo</th>
-                                                <th className="pb-4 w-[15%]">Marca</th>
-                                                <th className="pb-4 w-[15%]">Cantidad</th>
-                                                <th className="pb-4 w-[20%]">Unidad</th>
-                                                <th className="pb-4 w-[10%] text-center">Acción</th>
-                                            </tr>
-                                        </thead>
-                                        <tbody className="divide-y divide-white/5">
-                                            {detalles.map((detalle) => (
-                                                <tr key={detalle.id} className="group hover:bg-white/5 transition-colors">
-                                                    <td className="py-3 pl-2">
-                                                        <div className="flex gap-2">
-                                                            <div className="relative flex-1">
-                                                                <select
-                                                                    disabled
-                                                                    className="w-full bg-white/5 border border-white/10 rounded-lg py-2 px-3 text-white text-sm focus:outline-none appearance-none opacity-75"
-                                                                    value={detalle.codigo_articulo ? detalle.codigo_articulo : ""}
-                                                                >
-                                                                    <option value="">{detalle.articulo || "-- Seleccione --"}</option>
-                                                                </select>
-                                                                <button
-                                                                    type="button"
-                                                                    onClick={() => handleSearchArticulo(detalle.id)}
-                                                                    className="absolute right-0 top-0 bottom-0 px-3 text-[#00d4ff] hover:bg-[#00d4ff]/10 rounded-r-lg transition-colors"
-                                                                >
-                                                                    <Search className="w-4 h-4" />
-                                                                </button>
-                                                            </div>
-                                                        </div>
-                                                    </td>
-                                                    <td className="py-3">
-                                                        <input
-                                                            type="text"
-                                                            readOnly
-                                                            value={detalle.marca}
-                                                            className="w-full bg-transparent border-none text-gray-300 text-sm focus:ring-0"
-                                                        />
-                                                    </td>
-                                                    <td className="py-3">
-                                                        <div className="relative">
-                                                            <input
-                                                                type="text"
-                                                                inputMode="decimal"
-                                                                value={detalle.cantidad}
-                                                                onFocus={() => {
-                                                                    if (Number(detalle.cantidad) === 0) {
-                                                                        updateDetalle(detalle.id, 'cantidad', '');
-                                                                    }
-                                                                }}
-                                                                onBlur={() => {
-                                                                    const val = detalle.cantidad;
-                                                                    let finalVal = val;
-                                                                    if (val === '' || val === undefined || val === '.') {
-                                                                        finalVal = 0;
-                                                                    } else if (String(val).endsWith('.')) {
-                                                                        finalVal = String(val).slice(0, -1);
-                                                                    }
-                                                                    updateDetalle(detalle.id, 'cantidad', finalVal);
-                                                                }}
-                                                                onChange={(e) => {
-                                                                    const rawVal = e.target.value;
-                                                                    if (rawVal === '') {
-                                                                        updateDetalle(detalle.id, 'cantidad', '');
-                                                                        return;
-                                                                    }
-                                                                    // Regex: Optional sign, number, optional dot, max 3 decimals
-                                                                    if (!/^\d*\.?\d{0,3}$/.test(rawVal)) return;
-                                                                    if (rawVal === '.') {
-                                                                        updateDetalle(detalle.id, 'cantidad', '0.');
-                                                                        return;
-                                                                    }
-                                                                    updateDetalle(detalle.id, 'cantidad', rawVal);
-                                                                }}
-                                                                onKeyDown={(e) => {
-                                                                    if (e.key === 'Enter') {
-                                                                        e.preventDefault();
-                                                                        // Add row if last one
-                                                                        const idx = detalles.findIndex(d => d.id === detalle.id);
-                                                                        if (idx === detalles.length - 1) {
-                                                                            agregarFila();
-                                                                        }
-                                                                    }
-                                                                }}
-                                                                className="w-full bg-white/5 border border-white/10 rounded-lg py-2 px-3 text-white text-sm focus:border-[#00d4ff] focus:outline-none"
-                                                                placeholder="0"
-                                                            />
-                                                            {detalle.max_disponible > 0 && (
-                                                                <div className="text-xs text-gray-500 mt-1 text-right">
-                                                                    Máx: {detalle.max_disponible}
-                                                                </div>
-                                                            )}
-                                                        </div>
-                                                    </td>
-                                                    <td className="py-3">
-                                                        <input
-                                                            type="text"
-                                                            readOnly
-                                                            value={detalle.unidad}
-                                                            className="w-full bg-transparent border-none text-gray-300 text-sm focus:ring-0"
-                                                        />
-                                                    </td>
-                                                    <td className="py-3 text-center">
-                                                        <button
-                                                            type="button"
-                                                            onClick={() => eliminarFila(detalle.id)}
-                                                            className="p-2 text-red-400 hover:bg-red-500/20 rounded-lg transition-colors"
-                                                        >
-                                                            <Trash2 className="w-4 h-4" />
-                                                        </button>
-                                                    </td>
-                                                </tr>
-                                            ))}
-                                        </tbody>
-                                    </table>
-                                </div>
-                            </div>
-
-                            {/* Footer Actions */}
-                            <div className="flex justify-between items-center pt-4">
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                            {/* Responsable Selector */}
+                            <div className="space-y-3">
+                                <label className="flex items-center gap-2 text-sm font-semibold text-gray-400 ml-1">
+                                    <User className="w-4 h-4 text-teal-400" />
+                                    RESPONSABLE QUE AUTORIZA
+                                </label>
                                 <button
                                     type="button"
-                                    onClick={() => navigate('/cliente-externo/realizar')}
-                                    className="px-6 py-3 rounded-xl border border-white/30 text-white hover:bg-white/10 transition-all flex items-center gap-2"
+                                    onClick={() => handleOpenBusqueda('autoriza')}
+                                    className="w-full bg-black/40 border border-white/10 rounded-2xl p-4 flex items-center justify-between group hover:border-teal-500/50 transition-all text-left"
                                 >
-                                    <ArrowLeft className="w-4 h-4" />
-                                    Regresar
+                                    <span className={autoriza ? 'text-white font-medium' : 'text-gray-500'}>
+                                        {autoriza ? colaboradores.autorizados.find(c => c.identificacion === autoriza)?.colaborador : 'Seleccionar responsable...'}
+                                    </span>
+                                    <Search className="w-5 h-5 text-gray-500 group-hover:text-teal-400 transition-colors" />
                                 </button>
-
-                                <div className="flex gap-4">
-                                    {!ultimoIdSalida ? (
-                                        <button
-                                            type="submit"
-                                            disabled={loading}
-                                            className="px-8 py-3 bg-gradient-to-r from-[#00d4ff] to-[#00fff0] text-black font-bold rounded-xl hover:shadow-[0_0_25px_rgba(0,212,255,0.4)] transition-all flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
-                                        >
-                                            {loading ? <Loader2 className="w-5 h-5 animate-spin" /> : <Save className="w-5 h-5" />}
-                                            Guardar Salida
-                                        </button>
-                                    ) : (
-                                        <button
-                                            type="button"
-                                            onClick={handleFinalizar}
-                                            className="px-8 py-3 bg-gradient-to-r from-green-500 to-emerald-400 text-white font-bold rounded-xl hover:shadow-[0_0_25px_rgba(34,197,94,0.4)] transition-all flex items-center gap-2 animate-in zoom-in"
-                                        >
-                                            <Printer className="w-5 h-5" />
-                                            Imprimir y Finalizar
-                                        </button>
-                                    )}
-                                </div>
                             </div>
-                        </form>
+
+                            {/* Retira Selector */}
+                            <div className="space-y-3">
+                                <label className="flex items-center gap-2 text-sm font-semibold text-gray-400 ml-1">
+                                    <User className="w-4 h-4 text-cyan-400" />
+                                    PERSONA QUE RETIRA
+                                </label>
+                                <button
+                                    type="button"
+                                    onClick={() => handleOpenBusqueda('retira')}
+                                    className="w-full bg-black/40 border border-white/10 rounded-2xl p-4 flex items-center justify-between group hover:border-cyan-500/50 transition-all text-left"
+                                >
+                                    <span className={retira ? 'text-white font-medium' : 'text-gray-500'}>
+                                        {retira ? colaboradores.retirantes.find(c => c.identificacion === retira)?.colaborador : 'Seleccionar quien retira...'}
+                                    </span>
+                                    <Search className="w-5 h-5 text-gray-500 group-hover:text-cyan-400 transition-colors" />
+                                </button>
+                            </div>
+
+                            {/* Numero Solicitud */}
+                            <div className="space-y-3">
+                                <label className="text-sm font-semibold text-gray-400 ml-1">
+                                    NÚMERO DE SOLICITUD
+                                </label>
+                                <input
+                                    type="number"
+                                    value={numeroSolicitud}
+                                    readOnly
+                                    className="w-full bg-black/20 border border-white/10 rounded-2xl p-4 text-white opacity-60 cursor-not-allowed"
+                                />
+                            </div>
+
+                            {/* Comentarios Inline */}
+                            <div className="space-y-3">
+                                <label className="text-sm font-semibold text-gray-400 ml-1">
+                                    COMENTARIOS ADICIONALES
+                                </label>
+                                <textarea
+                                    value={comentarios}
+                                    onChange={(e) => setComentarios(e.target.value)}
+                                    placeholder="Ingrese detalles adicionales aquí..."
+                                    className="w-full bg-black/40 border border-white/10 rounded-2xl p-4 text-white focus:border-teal-500/50 focus:outline-none transition-all resize-none h-[58px]"
+                                />
+                            </div>
+                        </div>
                     </div>
-                </div>
-            </div>
 
-            {/* Modals */}
-
-            {/* Search Person Modal */}
-            {showBusquedaModal && (
-                <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-in fade-in">
-                    <div className="w-full max-w-md bg-[#1a1d29] border border-white/10 rounded-2xl shadow-2xl overflow-hidden">
-                        <div className="p-6 border-b border-white/10 flex justify-between items-center">
-                            <h3 className="text-xl font-bold text-white">
-                                Buscar {busquedaType === 'autoriza' ? 'Responsable' : 'Persona'}
+                    {/* Table Section */}
+                    <div className="bg-white/5 backdrop-blur-xl border border-white/10 rounded-3xl overflow-hidden shadow-2xl">
+                        <div className="p-6 border-b border-white/10 flex justify-between items-center bg-white/5">
+                            <h3 className="text-lg font-bold flex items-center gap-2">
+                                <Box className="w-5 h-5 text-teal-400" />
+                                LISTADO DE ARTÍCULOS
                             </h3>
-                            <button onClick={() => setShowBusquedaModal(false)} className="text-gray-400 hover:text-white">
-                                <X className="w-5 h-5" />
+                            <button
+                                type="button"
+                                onClick={agregarFila}
+                                className="px-5 py-2.5 bg-teal-500/10 hover:bg-teal-500/20 border border-teal-500/30 text-teal-400 rounded-xl font-bold transition-all flex items-center gap-2 group"
+                            >
+                                <PlusCircle className="w-5 h-5 group-hover:rotate-90 transition-transform" />
+                                AGREGAR FILA
                             </button>
                         </div>
-                        <div className="p-6">
-                            <input
-                                type="text"
-                                placeholder="Escriba para buscar..."
-                                className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white mb-4 focus:border-[#00d4ff] focus:outline-none"
-                                value={busquedaQuery}
-                                onChange={e => setBusquedaQuery(e.target.value)}
-                                autoFocus
-                            />
-                            <div className="max-h-60 overflow-y-auto space-y-2 custom-scrollbar">
-                                {(busquedaType === 'autoriza' ? filteredResponsables : filteredRetirantes).length === 0 ? (
-                                    <div className="text-center text-gray-500 py-4">No se encontraron resultados</div>
+
+                        <TransactionTable
+                            items={items}
+                            onUpdateRow={updateDetalle}
+                            onRemoveRow={eliminarFila}
+                            onOpenSearch={handleOpenArticulos}
+                            onAddRow={agregarFila}
+                            onWarning={(msg) => showAlert(msg, 'warning')}
+                            themeColor="teal"
+                        />
+
+                        {/* Summary / Actions */}
+                        <div className="p-8 bg-black/20 flex flex-col md:flex-row justify-between items-center gap-6">
+                            <button
+                                type="button"
+                                onClick={() => navigate('/cliente-externo/realizar')}
+                                className="flex items-center gap-2 text-gray-400 hover:text-white transition-colors font-medium"
+                            >
+                                <ArrowLeft className="w-5 h-5" />
+                                REGRESAR AL MENÚ
+                            </button>
+
+                            <div className="flex gap-4">
+                                {!finalizado ? (
+                                    <button
+                                        type="submit"
+                                        disabled={loading}
+                                        className="px-10 py-4 bg-gradient-to-r from-teal-500 to-cyan-500 text-black font-black rounded-2xl hover:shadow-[0_0_30px_rgba(20,184,166,0.4)] transition-all flex items-center gap-3 disabled:opacity-50"
+                                    >
+                                        {loading ? <Loader2 className="w-6 h-6 animate-spin" /> : <Save className="w-6 h-6" />}
+                                        GUARDAR REGISTRO
+                                    </button>
                                 ) : (
-                                    (busquedaType === 'autoriza' ? filteredResponsables : filteredRetirantes).map(item => (
-                                        <button
-                                            key={item.identificacion}
-                                            onClick={() => {
-                                                setFormData(prev => ({
-                                                    ...prev,
-                                                    [busquedaType!]: item.identificacion
-                                                }));
-                                                setShowBusquedaModal(false);
-                                                setBusquedaQuery('');
-                                            }}
-                                            className="w-full text-left p-3 rounded-lg hover:bg-white/5 transition-colors text-gray-300 hover:text-white"
-                                        >
-                                            {busquedaType === 'autoriza' ? item.alias : item.colaborador}
-                                        </button>
-                                    ))
+                                    <button
+                                        type="button"
+                                        onClick={handleFinalizar}
+                                        disabled={loading}
+                                        className="px-10 py-4 bg-gradient-to-r from-emerald-500 to-teal-500 text-white font-black rounded-2xl hover:shadow-[0_0_30px_rgba(16,185,129,0.4)] transition-all flex items-center gap-3 active:scale-95"
+                                    >
+                                        {loading ? <Loader2 className="w-6 h-6 animate-spin" /> : <Printer className="w-6 h-6" />}
+                                        IMPRIMIR Y FINALIZAR
+                                    </button>
                                 )}
                             </div>
                         </div>
                     </div>
-                </div>
-            )}
+                </form>
+            </div>
 
-            {/* Search Article Modal */}
-            {showArticuloModal && (
-                <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-in fade-in">
-                    <div className="w-full max-w-4xl bg-[#1a1d29] border border-white/10 rounded-2xl shadow-2xl overflow-hidden flex flex-col max-h-[90vh]">
-                        <div className="p-6 border-b border-white/10 flex justify-between items-center">
-                            <h3 className="text-xl font-bold text-white">Buscar Artículo</h3>
-                            <button onClick={() => setShowArticuloModal(false)} className="text-gray-400 hover:text-white">
-                                <X className="w-5 h-5" />
+            {/* Modals */}
+            <ColaboradorSearchModal
+                isOpen={showBusquedaModal}
+                onClose={() => setShowBusquedaModal(false)}
+                onSelect={handleSelectColaborador}
+                colaboradores={busquedaTipo === 'autoriza' ? colaboradores.autorizados : colaboradores.retirantes}
+                title={busquedaTipo === 'autoriza' ? 'Seleccionar Responsable' : 'Seleccionar Quien Retira'}
+            />
+
+            {/* Galaxy Article Modal */}
+            {showArticulosModal && (
+                <div className="fixed inset-0 z-[110] flex items-center justify-center p-4 bg-black/90 backdrop-blur-md animate-in fade-in duration-300">
+                    <div className="w-full max-w-6xl bg-[#0f1117] border border-white/10 rounded-[2.5rem] shadow-[0_0_100px_rgba(0,0,0,0.5)] overflow-hidden flex flex-col max-h-[90vh] relative">
+                        <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-teal-500 via-cyan-500 to-teal-500" />
+
+                        {/* Header */}
+                        <div className="px-8 py-6 border-b border-white/5 flex justify-between items-center bg-black/20">
+                            <div>
+                                <h3 className="text-2xl font-black text-white tracking-tight flex items-center gap-3">
+                                    <Box className="w-8 h-8 text-teal-400" />
+                                    CATÁLOGO GALÁCTICO
+                                </h3>
+                                <p className="text-gray-500 text-sm mt-1">Seleccione el artículo para añadir a la transacción</p>
+                            </div>
+                            <button
+                                onClick={() => setShowArticulosModal(false)}
+                                className="w-12 h-12 flex items-center justify-center rounded-2xl bg-white/5 text-gray-400 hover:bg-red-500/20 hover:text-red-400 transition-all group"
+                            >
+                                <X className="w-6 h-6 group-hover:rotate-90 transition-transform" />
                             </button>
                         </div>
-                        <div className="p-6 border-b border-white/10">
-                            <input
-                                type="text"
-                                placeholder="Buscar por nombre o código..."
-                                className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white focus:border-[#00d4ff] focus:outline-none"
-                                value={articuloQuery}
-                                onChange={e => setArticuloQuery(e.target.value)}
-                                autoFocus
-                            />
+
+                        {/* Search */}
+                        <div className="px-8 py-4 bg-black/20 border-b border-white/5">
+                            <div className="relative group">
+                                <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-500 group-focus-within:text-teal-400 transition-colors" />
+                                <input
+                                    type="text"
+                                    placeholder="Buscar por código o nombre del artículo..."
+                                    value={articuloTermino}
+                                    onChange={(e) => setArticuloTermino(e.target.value)}
+                                    className="w-full bg-white/5 border border-white/10 rounded-2xl py-4 pl-12 pr-6 text-white outline-none focus:border-teal-500/50 focus:ring-4 focus:ring-teal-500/5 transition-all"
+                                />
+                            </div>
                         </div>
-                        <div className="flex-1 overflow-y-auto p-6 custom-scrollbar">
-                            {loadingInventario && inventoryPage === 1 ? (
-                                <div className="text-center py-8 text-gray-400 flex flex-col items-center gap-2">
-                                    <Loader2 className="w-8 h-8 animate-spin text-[#00d4ff]" />
-                                    Cargando inventario...
-                                </div>
-                            ) : (
-                                <table className="w-full text-left border-collapse">
-                                    <thead>
-                                        <tr className="text-gray-400 text-sm border-b border-white/10">
-                                            <th className="pb-4 pl-2">Imagen</th>
-                                            <th className="pb-4">Artículo</th>
-                                            <th className="pb-4">Marca</th>
-                                            <th className="pb-4">Disponible</th>
-                                            <th className="pb-4 text-center">Acción</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody className="divide-y divide-white/5">
-                                        {filteredInventario.slice(0, 100).map(item => (
-                                            <tr key={item.codigo_articulo} className="hover:bg-white/5 transition-colors">
-                                                <td className="py-3 pl-2">
-                                                    <div
-                                                        className="w-12 h-12 rounded-lg bg-white/5 border border-white/10 overflow-hidden cursor-pointer hover:border-[#00d4ff]/50 transition-colors"
-                                                        onClick={() => {
-                                                            setSelectedImage({
-                                                                src: item.imagen_url || 'https://via.placeholder.com/150',
-                                                                alt: item.nombre_articulo
-                                                            });
+
+                        {/* Content */}
+                        <div className="flex-1 overflow-y-auto p-8 custom-scrollbar">
+                            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+                                {inventoryLoading && inventario.length === 0 ? (
+                                    <div className="col-span-full flex flex-col items-center justify-center py-20 gap-4">
+                                        <Loader2 className="w-12 h-12 text-teal-500 animate-spin" />
+                                        <p className="text-gray-400 animate-pulse text-lg">Cargando inventario...</p>
+                                    </div>
+                                ) : (
+                                    filteredArticulos.map((art) => (
+                                        <div
+                                            key={art.codigo_articulo}
+                                            onClick={() => handleSelectArticulo(art)}
+                                            className="group bg-white/5 border border-white/10 rounded-[2rem] p-4 hover:bg-white/[0.08] hover:border-teal-500/30 transition-all duration-500 cursor-pointer relative overflow-hidden flex flex-col h-full"
+                                        >
+                                            <div className="aspect-square rounded-2xl bg-black/40 border border-white/5 mb-4 overflow-hidden relative">
+                                                <img
+                                                    src={art.imagen_url || 'https://via.placeholder.com/150?text=No+Image'}
+                                                    alt={art.nombre_articulo}
+                                                    onClick={(e) => {
+                                                        if (art.imagen_url) {
+                                                            e.stopPropagation();
+                                                            setSelectedImage({ src: art.imagen_url, alt: art.nombre_articulo });
                                                             setShowImageModal(true);
-                                                        }}
-                                                    >
-                                                        <img
-                                                            src={item.imagen_url || 'https://via.placeholder.com/150'}
-                                                            alt={item.nombre_articulo}
-                                                            className="w-full h-full object-cover"
-                                                        />
+                                                        }
+                                                    }}
+                                                    className={`w-full h-full object-cover group-hover:scale-110 transition-transform duration-500 ${art.imagen_url ? 'cursor-zoom-in' : ''}`}
+                                                />
+                                                <div className="absolute top-2 right-2 px-2 py-1 bg-black/60 backdrop-blur-md rounded-lg text-[10px] font-bold text-teal-400 border border-teal-500/20">
+                                                    {art.codigo_articulo}
+                                                </div>
+                                            </div>
+
+                                            <div className="flex-1 flex flex-col">
+                                                <h4 className="text-white font-bold leading-tight group-hover:text-teal-300 transition-colors mb-2">
+                                                    {art.nombre_articulo}
+                                                </h4>
+                                                <div className="mt-auto pt-4 flex items-center justify-between border-t border-white/5">
+                                                    <div className="space-y-1">
+                                                        <p className="text-[10px] text-gray-500 font-bold uppercase tracking-wider">Stock Disponible</p>
+                                                        <p className={`text-xl font-black ${art.cantidad_disponible > 0 ? 'text-teal-400' : 'text-red-400'}`}>
+                                                            {art.cantidad_disponible}
+                                                            <span className="text-[10px] ml-1 text-gray-400 uppercase tracking-tighter">{art.unidad}</span>
+                                                        </p>
                                                     </div>
-                                                </td>
-                                                <td className="py-3">
-                                                    <div className="font-medium text-white">{item.nombre_articulo}</div>
-                                                    <div className="text-xs text-gray-500">{item.codigo_articulo}</div>
-                                                </td>
-                                                <td className="py-3 text-sm text-gray-400">{item.marca || 'Sin marca'}</td>
-                                                <td className="py-3 text-sm text-gray-300 font-mono">{item.cantidad_disponible} {item.unidad}</td>
-                                                <td className="py-3 text-center">
-                                                    <button
-                                                        onClick={() => seleccionarArticulo(item)}
-                                                        className="px-3 py-1.5 rounded-lg bg-[#00d4ff]/10 text-[#00d4ff] border border-[#00d4ff]/20 hover:bg-[#00d4ff]/20 transition-colors text-sm font-medium"
-                                                    >
-                                                        Seleccionar
-                                                    </button>
-                                                </td>
-                                            </tr>
-                                        ))}
-                                    </tbody>
-                                </table>
-                            )}
+                                                    <div className="w-10 h-10 rounded-full bg-teal-500/10 flex items-center justify-center text-teal-400 group-hover:bg-teal-500 group-hover:text-black transition-all">
+                                                        <PlusCircle size={20} />
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    ))
+                                )}
+                            </div>
+                        </div>
 
-                            {filteredInventario.length > 100 && (
-                                <div className="text-center py-4 text-gray-500 text-sm">
-                                    Mostrando primeros 100 resultados de {filteredInventario.length}...
-                                </div>
-                            )}
-
-                            <div className="p-4 text-center border-t border-white/10">
+                        {/* Footer Info */}
+                        <div className="px-8 py-4 bg-black/40 border-t border-white/5 flex flex-col md:flex-row justify-between items-center text-xs text-gray-500 gap-4">
+                            <div className="flex items-center gap-4">
+                                <span className="flex items-center gap-1"><div className="w-2 h-2 rounded-full bg-teal-500" /> {inventario.length} Artículos Cargados</span>
+                                <span className="flex items-center gap-1"><div className="w-2 h-2 rounded-full bg-cyan-500" /> Página {inventoryPage} de {Math.ceil(totalInventory / ITEMS_PER_PAGE)}</span>
+                            </div>
+                            <div className="flex gap-2">
                                 <button
-                                    type="button"
                                     onClick={() => {
                                         const nextPage = inventoryPage + 1;
                                         setInventoryPage(nextPage);
                                         cargarInventario(nextPage, true);
                                     }}
-                                    disabled={loadingInventario || inventario.length >= totalInventory}
-                                    className="px-4 py-2 bg-white/5 hover:bg-white/10 text-[#00d4ff] rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed text-sm font-medium"
+                                    disabled={inventoryLoading || inventario.length >= totalInventory}
+                                    className="px-6 py-2 bg-white/5 hover:bg-teal-500/20 hover:text-teal-400 rounded-xl transition-all disabled:opacity-30 border border-white/10"
                                 >
-                                    {loadingInventario ? (
-                                        <span className="flex items-center gap-2">
-                                            <Loader2 className="w-4 h-4 animate-spin" /> Cargando...
-                                        </span>
-                                    ) : (
-                                        inventario.length >= totalInventory ? 'Todos los artículos cargados' : 'Cargar más artículos'
-                                    )}
+                                    {inventoryLoading ? 'CARGANDO...' : 'CARGAR MÁS ARTÍCULOS'}
                                 </button>
-                                <div className="text-xs text-gray-500 mt-2">
-                                    {inventario.length} de {totalInventory} artículos cargados
-                                </div>
                             </div>
                         </div>
                     </div>
                 </div>
             )}
 
-            {/* Comments Modal */}
-            {showComentariosModal && (
-                <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-in fade-in">
-                    <div className="w-full max-w-2xl bg-[#1a1d29] border border-white/10 rounded-2xl shadow-2xl overflow-hidden">
-                        <div className="p-6 border-b border-white/10 flex justify-between items-center">
-                            <h3 className="text-xl font-bold text-white flex items-center gap-2">
-                                <MessageSquare className="w-5 h-5 text-[#00d4ff]" />
-                                Comentarios Adicionales
-                            </h3>
-                            <button onClick={() => setShowComentariosModal(false)} className="text-gray-400 hover:text-white">
-                                <X className="w-5 h-5" />
-                            </button>
-                        </div>
-                        <div className="p-6">
-                            <textarea
-                                className="w-full h-40 bg-white/5 border border-white/10 rounded-xl p-4 text-white focus:border-[#00d4ff] focus:outline-none resize-none"
-                                placeholder="Detalles adicionales sobre esta salida..."
-                                value={tempComentarios}
-                                onChange={e => setTempComentarios(e.target.value)}
-                            />
-                        </div>
-                        <div className="p-6 border-t border-white/10 flex justify-end gap-3">
-                            <button
-                                onClick={() => setShowComentariosModal(false)}
-                                className="px-4 py-2 text-gray-400 hover:text-white"
-                            >
-                                Cancelar
-                            </button>
-                            <button
-                                onClick={() => {
-                                    setComentarios(tempComentarios);
-                                    setShowComentariosModal(false);
-                                }}
-                                className="px-6 py-2 bg-[#00d4ff] text-black font-bold rounded-lg hover:bg-[#00fff0] transition-colors"
-                            >
-                                Guardar Comentarios
-                            </button>
-                        </div>
-                    </div>
-                </div>
-            )}
-
-            {/* Image Modal */}
+            {/* Lightbox / Image Preview */}
             {showImageModal && selectedImage && (
-                <div className="fixed inset-0 z-[70] flex items-center justify-center bg-black/90 backdrop-blur-md p-4" onClick={() => setShowImageModal(false)}>
-                    <div className="relative max-w-4xl max-h-[90vh]" onClick={e => e.stopPropagation()}>
-                        <button onClick={() => setShowImageModal(false)} className="absolute -top-4 -right-4 w-8 h-8 bg-[#00d4ff] text-black rounded-full flex items-center justify-center font-bold hover:scale-110 transition-transform shadow-lg">
-                            <X size={16} />
+                <div className="fixed inset-0 z-[120] flex items-center justify-center bg-black/95 backdrop-blur-xl p-4 animate-in fade-in duration-300" onClick={() => setShowImageModal(false)}>
+                    <div className="relative max-w-4xl max-h-[90vh] group" onClick={e => e.stopPropagation()}>
+                        <div className="absolute -inset-1 bg-gradient-to-r from-teal-500 to-cyan-500 rounded-2xl blur opacity-20 group-hover:opacity-40 transition duration-1000"></div>
+                        <img
+                            src={selectedImage.src}
+                            alt={selectedImage.alt}
+                            className="relative max-w-full max-h-[85vh] rounded-2xl border border-white/10 shadow-[0_0_50px_rgba(0,0,0,0.5)]"
+                        />
+                        <button
+                            onClick={() => setShowImageModal(false)}
+                            className="absolute -top-4 -right-4 w-12 h-12 bg-white text-black rounded-2xl flex items-center justify-center font-black hover:scale-110 active:scale-95 transition-all shadow-2xl z-10"
+                        >
+                            <X size={24} />
                         </button>
-                        <img src={selectedImage.src} alt={selectedImage.alt} className="max-w-full max-h-[85vh] rounded-lg border border-white/20 shadow-2xl" />
-                        <div className="absolute bottom-4 left-1/2 -translate-x-1/2 bg-black/60 px-4 py-2 rounded-full text-white text-sm backdrop-blur-sm border border-white/10">
+                        <div className="absolute bottom-6 left-1/2 -translate-x-1/2 px-6 py-3 bg-black/60 backdrop-blur-md rounded-2xl text-white font-bold border border-white/10 shadow-2xl whitespace-nowrap">
                             {selectedImage.alt}
                         </div>
                     </div>

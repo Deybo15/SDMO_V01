@@ -17,8 +17,14 @@ import {
     Camera,
     Upload,
     Trash2,
-    Image as ImageIcon
+    Image as ImageIcon,
+    MapPin,
+    Home,
+    Shield,
+    Users,
+    Calendar
 } from 'lucide-react';
+import { PageHeader } from '../components/ui/PageHeader';
 
 // Interfaces
 interface CatalogItem {
@@ -339,56 +345,60 @@ export default function IngresarSolicitud() {
                 </div>
             )}
 
-            {/* Sticky Header */}
-            <div className="sticky top-0 z-40 flex flex-col md:flex-row md:items-center justify-between gap-4 py-6 mb-8 bg-[#1a1d29]/90 backdrop-blur-xl px-4 md:px-8 border-b border-white/5 shadow-lg shadow-black/20 transition-all">
-                <div className="flex items-center gap-4">
-                    <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-[#8e44ad]/20 to-[#9b59b6]/20 border border-white/20 flex items-center justify-center">
-                        <FileText className="w-6 h-6 text-[#8e44ad]" />
-                    </div>
-                    <div>
-                        <h1 className="text-2xl font-bold text-white">
-                            Registro de Solicitudes
-                        </h1>
-                    </div>
+            {/* Background Halos */}
+            <div className="fixed inset-0 z-0 pointer-events-none">
+                <div className="absolute top-[85%] left-[20%] w-[80rem] h-[80rem] bg-purple-500/10 rounded-full blur-[100px] -translate-x-1/2 -translate-y-1/2 animate-pulse"></div>
+                <div className="absolute top-[15%] right-[20%] w-[80rem] h-[80rem] bg-violet-600/5 rounded-full blur-[100px] translate-x-1/2 -translate-y-1/2"></div>
+            </div>
+
+            {/* Header Content */}
+            <div className="max-w-7xl mx-auto px-6 pt-6 flex flex-col gap-6 relative z-10">
+                <PageHeader
+                    title="REGISTRO DE SOLICITUDES"
+                    icon={FileText}
+                    themeColor="purple"
+                    backRoute="/cliente-interno"
+                />
+
+                {/* Date Display */}
+                <div className="flex items-center gap-2 text-purple-400 font-bold text-xs uppercase tracking-widest bg-purple-500/10 w-fit px-4 py-2 rounded-full border border-purple-500/20 shadow-[0_0_15px_rgba(168,85,247,0.15)]">
+                    <Calendar className="w-3.5 h-3.5" />
+                    {new Date().toLocaleDateString('es-ES', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })}
                 </div>
-                <button
-                    onClick={() => navigate(-1)}
-                    className="flex items-center gap-2 px-4 py-2 bg-white/5 hover:bg-white/10 border border-white/10 text-white/80 hover:text-white rounded-xl transition-all shadow-sm backdrop-blur-md"
-                >
-                    <ArrowLeft className="w-4 h-4" />
-                    Regresar
-                </button>
             </div>
 
             <div className="max-w-6xl mx-auto relative z-10 px-6 pb-8">
                 {/* Content Card */}
-                <div className="bg-[#1e2230]/80 backdrop-blur-xl border border-white/10 rounded-[20px] shadow-2xl overflow-hidden">
+                <div className="bg-[#1E293B]/40 backdrop-blur-3xl border border-white/10 rounded-[2.5rem] overflow-hidden shadow-2xl transition-all duration-500 hover:border-purple-500/20">
 
-                    <div className="p-8 md:p-12">
+                    <div className="p-8 md:p-12 relative">
                         {/* Section Title */}
-                        <div className="relative flex items-center gap-3 mb-8 pb-3">
-                            <Edit className="w-5 h-5 text-[#8e44ad]" />
-                            <h3 className="text-xl font-semibold text-[#8e44ad]">Información de la Solicitud</h3>
-                            <div className="absolute bottom-0 left-0 w-[60px] h-[3px] bg-gradient-to-r from-[#8e44ad] to-[#9b59b6] rounded-full" />
+                        <div className="relative flex items-center gap-3 mb-12">
+                            <div className="w-10 h-10 rounded-xl bg-purple-500/10 border border-purple-500/20 flex items-center justify-center text-purple-400 group-hover:scale-110 transition-transform">
+                                <Edit className="w-5 h-5" />
+                            </div>
+                            <div>
+                                <h3 className="text-xl font-black text-white uppercase tracking-tight">Información de la Solicitud</h3>
+                                <p className="text-[10px] font-black text-purple-400/60 uppercase tracking-widest mt-0.5">Complete todos los campos requeridos</p>
+                            </div>
                         </div>
 
                         {/* Form */}
                         <div className="space-y-8">
                             {/* Description */}
-                            <div className="space-y-2">
-                                <label className="block text-sm font-medium text-[#e4e6ea] after:content-['_*'] after:text-red-500 after:font-bold">
+                            <div className="space-y-3">
+                                <label className="block text-[11px] font-black uppercase tracking-wider text-purple-400 opacity-80 after:content-['_*'] after:text-rose-500 after:font-bold">
                                     Descripción de la solicitud
                                 </label>
                                 <textarea
                                     value={formData.descripcion}
                                     onChange={(e) => setFormData(prev => ({ ...prev, descripcion: e.target.value }))}
-                                    placeholder="Describa detalladamente la solicitud..."
-                                    className="w-full min-h-[120px] bg-[#2d3241]/60 backdrop-blur-sm border border-white/10 rounded-xl px-4 py-3.5 text-[#e4e6ea] placeholder-[#9ca3af]/70 focus:outline-none focus:border-[#8e44ad]/50 focus:ring-1 focus:ring-[#8e44ad]/50 transition-all resize-y"
+                                    placeholder="Describa detalladamente el requerimiento o incidencia técnica..."
+                                    className="w-full min-h-[140px] bg-[#1E293B]/40 backdrop-blur-xl border border-white/10 rounded-2xl px-5 py-4 text-white placeholder-slate-500 focus:outline-none focus:border-purple-500/50 focus:ring-1 focus:ring-purple-500/50 transition-all resize-y text-sm font-medium leading-relaxed"
                                 />
                             </div>
 
-                            {/* Row 1 */}
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mt-4">
                                 <FormSelect
                                     label="Área de Mantenimiento"
                                     value={formData.area}
@@ -397,6 +407,7 @@ export default function IngresarSolicitud() {
                                     onClear={() => handleClearField('area')}
                                     loading={loading}
                                     required
+                                    icon={Home}
                                 />
 
                                 <FormSelect
@@ -407,11 +418,11 @@ export default function IngresarSolicitud() {
                                     onClear={() => handleClearField('instalacion')}
                                     loading={loading}
                                     required
+                                    icon={MapPin}
                                 />
                             </div>
 
-                            {/* Row 2 */}
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                                 <FormSelect
                                     label="Supervisor Asignado"
                                     value={formData.supervisor}
@@ -420,6 +431,7 @@ export default function IngresarSolicitud() {
                                     onClear={() => handleClearField('supervisor')}
                                     loading={loading}
                                     required
+                                    icon={Shield}
                                 />
 
                                 <FormSelect
@@ -430,11 +442,11 @@ export default function IngresarSolicitud() {
                                     onClear={() => handleClearField('profesional')}
                                     loading={loading}
                                     required
+                                    icon={Users}
                                 />
                             </div>
 
-                            {/* Row 3 */}
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                                 <FormSelect
                                     label="Cliente Interno"
                                     value={formData.cliente}
@@ -443,19 +455,22 @@ export default function IngresarSolicitud() {
                                     onClear={() => handleClearField('cliente')}
                                     loading={loading}
                                     required
+                                    icon={Users}
                                 />
                             </div>
                         </div>
 
                         {/* Image Upload Section */}
-                        <div className="mt-8 pt-8 border-t border-white/10">
-                            <h4 className="text-lg font-medium text-[#e4e6ea] mb-4 flex items-center gap-2">
-                                <ImageIcon className="w-5 h-5 text-[#8e44ad]" />
-                                Evidencia Fotográfica
-                            </h4>
+                        <div className="mt-12 pt-10 border-t border-white/5">
+                            <div className="flex items-center gap-3 mb-8">
+                                <div className="w-8 h-8 rounded-lg bg-purple-500/10 border border-purple-500/20 flex items-center justify-center text-purple-400">
+                                    <ImageIcon className="w-4 h-4" />
+                                </div>
+                                <h4 className="text-sm font-black text-white uppercase tracking-wider">Evidencia Fotográfica</h4>
+                            </div>
 
-                            <div className="flex flex-col md:flex-row gap-6 items-start">
-                                <div className="flex flex-col gap-3 w-full md:w-auto">
+                            <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 items-start">
+                                <div className="grid grid-cols-2 gap-4">
                                     <input
                                         type="file"
                                         accept="image/*"
@@ -465,40 +480,52 @@ export default function IngresarSolicitud() {
                                     />
                                     <label
                                         htmlFor="image-upload"
-                                        className="px-4 py-2.5 rounded-xl bg-[#2d3241]/50 border border-white/10 hover:bg-[#2d3241] text-slate-300 hover:text-white transition-all cursor-pointer flex items-center justify-center gap-2"
+                                        className="group/btn h-32 rounded-[2rem] bg-white/5 border border-white/10 hover:border-purple-500/40 hover:bg-white/[0.08] transition-all cursor-pointer flex flex-col items-center justify-center gap-2 relative overflow-hidden"
                                     >
-                                        <Upload className="w-4 h-4" />
-                                        Subir Imagen
+                                        <div className="absolute inset-0 bg-gradient-to-br from-purple-500/10 to-transparent opacity-0 group-hover/btn:opacity-100 transition-opacity"></div>
+                                        <div className="w-10 h-10 rounded-full bg-white/5 flex items-center justify-center text-purple-400 group-hover/btn:scale-110 transition-transform relative z-10">
+                                            <Upload className="w-5 h-5" />
+                                        </div>
+                                        <span className="text-[10px] font-black uppercase tracking-widest text-slate-400 group-hover/btn:text-white relative z-10">Subir Imagen</span>
                                     </label>
+
                                     <button
                                         onClick={startCamera}
-                                        className="px-4 py-2.5 rounded-xl bg-[#2d3241]/50 border border-white/10 hover:bg-[#2d3241] text-slate-300 hover:text-white transition-all flex items-center justify-center gap-2"
+                                        className="group/btn h-32 rounded-[2rem] bg-white/5 border border-white/10 hover:border-purple-500/40 hover:bg-white/[0.08] transition-all flex flex-col items-center justify-center gap-2 relative overflow-hidden"
                                     >
-                                        <Camera className="w-4 h-4" />
-                                        Tomar Foto
+                                        <div className="absolute inset-0 bg-gradient-to-br from-violet-500/10 to-transparent opacity-0 group-hover/btn:opacity-100 transition-opacity"></div>
+                                        <div className="w-10 h-10 rounded-full bg-white/5 flex items-center justify-center text-violet-400 group-hover/btn:scale-110 transition-transform relative z-10">
+                                            <Camera className="w-5 h-5" />
+                                        </div>
+                                        <span className="text-[10px] font-black uppercase tracking-widest text-slate-400 group-hover/btn:text-white relative z-10">Tomar Foto</span>
                                     </button>
                                 </div>
 
                                 {/* Preview Area */}
-                                <div className="flex-1 w-full">
+                                <div className="relative group/preview">
                                     {imagePreview ? (
-                                        <div className="relative w-full max-w-md aspect-video bg-black/20 rounded-xl overflow-hidden border border-white/10 group">
+                                        <div className="relative aspect-video bg-black/40 rounded-[2.5rem] overflow-hidden border border-white/10 shadow-2xl group-hover/preview:border-purple-500/30 transition-all">
                                             <img
                                                 src={imagePreview}
                                                 alt="Preview"
                                                 className="w-full h-full object-contain"
                                             />
-                                            <button
-                                                onClick={handleRemoveImage}
-                                                className="absolute top-2 right-2 p-2 bg-red-500/80 hover:bg-red-600 text-white rounded-lg opacity-0 group-hover:opacity-100 transition-opacity"
-                                            >
-                                                <Trash2 className="w-4 h-4" />
-                                            </button>
+                                            <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent opacity-0 group-hover/preview:opacity-100 transition-opacity flex items-end justify-center pb-6">
+                                                <button
+                                                    onClick={handleRemoveImage}
+                                                    className="flex items-center gap-2 px-6 py-2 bg-rose-500/20 border border-rose-500/40 text-rose-400 rounded-full hover:bg-rose-500 hover:text-white transition-all duration-300 backdrop-blur-md"
+                                                >
+                                                    <Trash2 className="w-4 h-4" />
+                                                    <span className="text-[10px] font-black uppercase tracking-widest">Eliminar Imagen</span>
+                                                </button>
+                                            </div>
                                         </div>
                                     ) : (
-                                        <div className="w-full max-w-md aspect-video bg-[#2d3241]/30 rounded-xl border border-white/5 flex flex-col items-center justify-center text-slate-500 gap-2">
-                                            <ImageIcon className="w-8 h-8 opacity-50" />
-                                            <span className="text-sm">Sin imagen seleccionada</span>
+                                        <div className="aspect-video bg-white/2 rounded-[2.5rem] border-2 border-dashed border-white/5 flex flex-col items-center justify-center text-slate-600 gap-3 group-hover/preview:border-purple-500/20 transition-all">
+                                            <div className="w-12 h-12 rounded-full bg-white/[0.02] flex items-center justify-center">
+                                                <ImageIcon className="w-6 h-6 opacity-20" />
+                                            </div>
+                                            <span className="text-[10px] font-black uppercase tracking-widest opacity-40">Sin evidencia seleccionada</span>
                                         </div>
                                     )}
                                 </div>
@@ -549,19 +576,19 @@ export default function IngresarSolicitud() {
                     </div>
 
                     {/* Footer Buttons */}
-                    <div className="p-8 border-t border-white/10 bg-[#1a1d29]/30 flex flex-col md:flex-row justify-between items-center gap-4">
+                    <div className="p-8 border-t border-white/5 bg-white/[0.02] flex flex-col md:flex-row justify-between items-center gap-6">
                         <button
                             onClick={() => navigate(-1)}
-                            className="w-full md:w-auto px-6 py-3.5 rounded-xl bg-gradient-to-br from-slate-600/30 to-slate-700/30 border border-slate-600/40 text-[#e4e6ea] font-medium hover:from-slate-600/40 hover:to-slate-700/40 hover:shadow-lg hover:shadow-slate-600/20 hover:-translate-y-0.5 transition-all flex items-center justify-center gap-2"
+                            className="w-full md:w-auto px-8 py-4 rounded-2xl bg-white/5 border border-white/10 text-slate-400 font-black uppercase tracking-widest text-[10px] hover:bg-white/10 hover:text-white transition-all flex items-center justify-center gap-2 group/back"
                         >
-                            <ArrowLeft className="w-4 h-4" />
+                            <ArrowLeft className="w-4 h-4 transition-transform group-hover/back:-translate-x-1" />
                             Regresar
                         </button>
 
                         <div className="flex flex-col md:flex-row gap-4 w-full md:w-auto">
                             <button
                                 onClick={() => navigate('/cliente-interno/realizar-salidas')}
-                                className="px-6 py-3.5 rounded-xl bg-[#2d3241]/30 border border-[#8e44ad]/40 text-[#8e44ad] font-medium hover:bg-[#8e44ad]/20 hover:border-[#8e44ad]/60 hover:text-[#9b59b6] transition-all flex items-center justify-center gap-2"
+                                className="px-8 py-4 rounded-2xl bg-purple-500/10 border border-purple-500/20 text-purple-400 font-black uppercase tracking-widest text-[10px] hover:bg-purple-500/20 hover:border-purple-500/40 transition-all flex items-center justify-center gap-2"
                             >
                                 <Table className="w-4 h-4" />
                                 Ver Solicitudes
@@ -569,10 +596,13 @@ export default function IngresarSolicitud() {
                             <button
                                 onClick={handleSave}
                                 disabled={saving}
-                                className="px-6 py-3.5 rounded-xl bg-gradient-to-br from-[#8e44ad]/30 to-[#9b59b6]/30 border border-[#8e44ad]/40 text-[#e4e6ea] font-medium hover:from-[#8e44ad]/40 hover:to-[#9b59b6]/40 hover:shadow-lg hover:shadow-[#8e44ad]/20 hover:-translate-y-0.5 transition-all flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+                                className="relative group/save overflow-hidden px-10 py-4 rounded-2xl bg-purple-500 text-white font-black uppercase tracking-widest text-[10px] hover:bg-purple-600 transition-all shadow-[0_10px_30px_rgba(168,85,247,0.3)] disabled:opacity-50 disabled:cursor-not-allowed hover:-translate-y-0.5"
                             >
-                                {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
-                                Guardar Solicitud
+                                <div className="relative z-10 flex items-center justify-center gap-2">
+                                    {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4 transition-transform group-hover/save:scale-110" />}
+                                    {saving ? 'Guardando...' : 'Guardar Solicitud'}
+                                </div>
+                                <div className="absolute inset-0 bg-gradient-to-r from-purple-600 to-violet-600 opacity-0 group-hover/save:opacity-100 transition-opacity"></div>
                             </button>
                         </div>
                     </div>
