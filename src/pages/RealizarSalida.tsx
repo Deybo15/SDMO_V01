@@ -609,7 +609,7 @@ export default function RealizarSalida() {
 
                                             {/* Article Info */}
                                             <div className="flex-1">
-                                                <h4 className="font-bold text-white group-hover:text-teal-400 transition-colors line-clamp-2 mb-1 leading-tight h-10">
+                                                <h4 className="font-bold text-white group-hover:text-teal-400 transition-colors mb-2 leading-tight">
                                                     {art.nombre_articulo}
                                                 </h4>
                                                 <div className="flex items-center gap-2 mb-3">

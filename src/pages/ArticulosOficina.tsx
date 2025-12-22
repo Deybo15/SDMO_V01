@@ -2,7 +2,6 @@ import { useState, useEffect } from 'react';
 import {
     Paperclip,
     Save,
-    MessageSquare,
     User,
     Loader2,
     Image as ImageIcon,
@@ -14,7 +13,7 @@ import {
 import { useTransactionManager } from '../hooks/useTransactionManager';
 import { PageHeader } from '../components/ui/PageHeader';
 import { TransactionTable } from '../components/ui/TransactionTable';
-import { Colaborador, Articulo } from '../types/inventory';
+import { Articulo } from '../types/inventory';
 import ColaboradorSearchModal from '../components/ColaboradorSearchModal';
 import { supabase } from '../lib/supabase';
 
@@ -306,7 +305,7 @@ export default function ArticulosOficina() {
                                         <div className="flex-1 min-w-0">
                                             <div className="flex items-start justify-between gap-4">
                                                 <div>
-                                                    <h3 className="text-white font-medium line-clamp-2 group-hover:text-pink-400 transition-colors text-lg">
+                                                    <h3 className="text-white font-medium group-hover:text-pink-400 transition-colors text-lg text-pretty">
                                                         {article.nombre_articulo}
                                                     </h3>
                                                     <p className="text-sm text-gray-400 font-mono mt-1">

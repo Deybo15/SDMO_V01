@@ -615,7 +615,7 @@ export default function RegistroSalidaExterno() {
                                             </div>
 
                                             <div className="flex-1 flex flex-col">
-                                                <h4 className="text-white font-bold leading-tight group-hover:text-teal-300 transition-colors mb-2">
+                                                <h4 className="text-white font-bold leading-tight group-hover:text-teal-300 transition-colors mb-2 text-pretty">
                                                     {art.nombre_articulo}
                                                 </h4>
                                                 <div className="mt-auto pt-4 flex items-center justify-between border-t border-white/5">

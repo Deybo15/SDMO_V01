@@ -740,7 +740,7 @@ export default function IngresarArticulo() {
                                                         </div>
                                                     </td>
                                                     <td className="p-3">
-                                                        <span className="text-white font-medium block line-clamp-2">{art.nombre_articulo}</span>
+                                                        <span className="text-white font-medium block text-pretty">{art.nombre_articulo}</span>
                                                     </td>
                                                     <td className="p-3">
                                                         <span className="text-slate-400 text-sm">{art.marca}</span>

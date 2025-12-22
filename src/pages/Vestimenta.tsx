@@ -2,9 +2,9 @@ import { useState, useEffect } from 'react';
 import {
     Shirt,
     Save,
-    MessageSquare,
     User,
     Loader2,
+    Search,
     Image as ImageIcon
 } from 'lucide-react';
 
@@ -12,7 +12,7 @@ import {
 import { useTransactionManager } from '../hooks/useTransactionManager';
 import { PageHeader } from '../components/ui/PageHeader';
 import { TransactionTable } from '../components/ui/TransactionTable';
-import { Colaborador, Articulo } from '../types/inventory';
+import { Articulo } from '../types/inventory';
 import ColaboradorSearchModal from '../components/ColaboradorSearchModal';
 import { supabase } from '../lib/supabase';
 
@@ -53,12 +53,12 @@ export default function Vestimenta() {
 
     // Theme
     const colorTheme = 'indigo';
-    const fechaActual = new Date().toLocaleDateString('es-CR', {
+    /* const fechaActual = new Date().toLocaleDateString('es-CR', {
         weekday: 'long',
         year: 'numeric',
         month: 'long',
         day: 'numeric'
-    });
+    }); */
 
     // Handlers
     const handleOpenSearch = (index: number) => {
@@ -85,7 +85,7 @@ export default function Vestimenta() {
                     // Start building the query
                     let query = supabase
                         .from('inventario_actual')
-                        .select('codigo_articulo, nombre_articulo, cantidad_disponible, unidad, imagen_url')
+                        .select('codigo_articulo, nombre_articulo, cantidad_disponible, unidad, imagen_url, precio_unitario')
                         .gt('cantidad_disponible', 0)
                         .limit(50);
 
@@ -294,7 +294,7 @@ export default function Vestimenta() {
                                             <div className="flex-1 min-w-0">
                                                 <div className="flex items-start justify-between gap-4">
                                                     <div>
-                                                        <h3 className="text-white font-medium truncate group-hover:text-indigo-400 transition-colors text-lg">
+                                                        <h3 className="text-white font-medium group-hover:text-indigo-400 transition-colors text-lg text-pretty">
                                                             {article.nombre_articulo}
                                                         </h3>
                                                         <p className="text-sm text-gray-400 font-mono mt-1">
