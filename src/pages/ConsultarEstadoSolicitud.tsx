@@ -13,7 +13,6 @@ import {
     ArrowUp,
     ArrowDown,
     Search,
-    ChevronDown,
     X
 } from 'lucide-react';
 
@@ -368,8 +367,7 @@ export default function ConsultarEstadoSolicitud() {
         fetchNextPage,
         hasNextPage,
         isFetchingNextPage,
-        isLoading,
-        isError
+        isLoading
     } = useInfiniteQuery({
         queryKey: ['solicitudes', debouncedFilters, sortConfig],
         queryFn: fetchSolicitudes,
@@ -399,7 +397,11 @@ export default function ConsultarEstadoSolicitud() {
 
             if (data) {
                 const getUnique = (key: keyof SolicitudSTI) =>
-                    [...new Set(data.map(item => item[key]).filter(Boolean))].sort() as string[];
+                    [...new Set((data as any[]).map(item => item[key]).filter(Boolean))].sort() as string[];
+
+                const estadosFromDb = getUnique('estado_actual');
+                const estadosEsenciales = ['ACTIVA', 'CANCELADA', 'EJECUTADA'];
+                const estadosFinales = [...new Set([...estadosEsenciales, ...estadosFromDb])].sort();
 
                 setFilterOptions({
                     nombre_cliente: getUnique('nombre_cliente'),
@@ -408,7 +410,7 @@ export default function ConsultarEstadoSolicitud() {
                     supervisor_asignado: getUnique('supervisor_asignado'),
                     instalacion_municipal: getUnique('instalacion_municipal'),
                     descripcion_area: getUnique('descripcion_area'),
-                    estado_actual: getUnique('estado_actual')
+                    estado_actual: estadosFinales
                 });
             }
         } catch (error) {
@@ -434,28 +436,54 @@ export default function ConsultarEstadoSolicitud() {
     const exportarExcel = async () => {
         if (confirm(`¿Desea exportar los ${totalRecords} registros que coinciden con los filtros?`)) {
             try {
-                let query = supabase.from('vw_solicitudes_sti_estado').select('*');
-                const f = filters;
-                if (f.nombre_cliente) query = query.ilike('nombre_cliente', `%${f.nombre_cliente}%`);
-                if (f.dependencia_cliente) query = query.ilike('dependencia_cliente', `%${f.dependencia_cliente}%`);
-                if (f.profesional_responsable) query = query.ilike('profesional_responsable', `%${f.profesional_responsable}%`);
-                if (f.supervisor_asignado) query = query.ilike('supervisor_asignado', `%${f.supervisor_asignado}%`);
-                if (f.instalacion_municipal) query = query.ilike('instalacion_municipal', `%${f.instalacion_municipal}%`);
-                if (f.descripcion_area) query = query.ilike('descripcion_area', `%${f.descripcion_area}%`);
-                if (f.estado_actual) query = query.ilike('estado_actual', `%${f.estado_actual}%`);
-                if (f.fecha_inicio) query = query.gte('fecha_solicitud', f.fecha_inicio);
-                if (f.fecha_fin) query = query.lte('fecha_solicitud', f.fecha_fin);
+                // Set a small toast or internal loading state if available, 
+                // but since we don't have a specific global toast, we'll use console and alert for errors.
+                let allData: any[] = [];
+                const BATCH_SIZE = 1000;
+                const totalPages = Math.ceil(totalRecords / BATCH_SIZE);
 
-                const { data, error } = await query.order(sortConfig.field, { ascending: sortConfig.direction === 'asc' }).limit(5000);
-                if (error) throw error;
-                if (!data) return;
+                console.log(`Iniciando exportación de ${totalRecords} registros en ${totalPages} lotes...`);
 
-                const ws = XLSX.utils.json_to_sheet(data);
+                for (let i = 0; i < totalPages; i++) {
+                    const from = i * BATCH_SIZE;
+                    const to = from + BATCH_SIZE - 1;
+
+                    let query = supabase.from('vw_solicitudes_sti_estado').select('*');
+                    const f = filters;
+
+                    if (f.nombre_cliente) query = query.ilike('nombre_cliente', `%${f.nombre_cliente}%`);
+                    if (f.dependencia_cliente) query = query.ilike('dependencia_cliente', `%${f.dependencia_cliente}%`);
+                    if (f.profesional_responsable) query = query.ilike('profesional_responsable', `%${f.profesional_responsable}%`);
+                    if (f.supervisor_asignado) query = query.ilike('supervisor_asignado', `%${f.supervisor_asignado}%`);
+                    if (f.instalacion_municipal) query = query.ilike('instalacion_municipal', `%${f.instalacion_municipal}%`);
+                    if (f.descripcion_area) query = query.ilike('descripcion_area', `%${f.descripcion_area}%`);
+                    if (f.estado_actual) query = query.ilike('estado_actual', `%${f.estado_actual}%`);
+                    if (f.fecha_inicio) query = query.gte('fecha_solicitud', f.fecha_inicio);
+                    if (f.fecha_fin) query = query.lte('fecha_solicitud', f.fecha_fin);
+
+                    const { data, error } = await query
+                        .order(sortConfig.field, { ascending: sortConfig.direction === 'asc' })
+                        .range(from, to);
+
+                    if (error) throw error;
+                    if (data) allData = [...allData, ...data];
+
+                    console.log(`Lote ${i + 1}/${totalPages} completado...`);
+                }
+
+                if (allData.length === 0) {
+                    alert('No hay datos para exportar con los filtros actuales.');
+                    return;
+                }
+
+                const ws = XLSX.utils.json_to_sheet(allData);
                 const wb = XLSX.utils.book_new();
                 XLSX.utils.book_append_sheet(wb, ws, 'STI Estado');
                 XLSX.writeFile(wb, `reporte_sti_estado_${new Date().toISOString().split('T')[0]}.xlsx`);
+
             } catch (e: any) {
                 alert('Error exportando: ' + e.message);
+                console.error('Error in exportarExcel:', e);
             }
         }
     };
@@ -623,7 +651,22 @@ export default function ConsultarEstadoSolicitud() {
                             onChange={(val) => handleFilterChange('estado_actual', val)}
                             placeholder="Estado..."
                         />
-                        <input type="date" className="filter-input" value={filters.fecha_inicio} onChange={(e) => handleFilterChange('fecha_inicio', e.target.value)} />
+                        <div className="flex flex-col gap-1">
+                            <input
+                                type="date"
+                                className="filter-input !py-0.5 h-7"
+                                value={filters.fecha_inicio}
+                                onChange={(e) => handleFilterChange('fecha_inicio', e.target.value)}
+                                title="Fecha Inicio"
+                            />
+                            <input
+                                type="date"
+                                className="filter-input !py-0.5 h-7"
+                                value={filters.fecha_fin}
+                                onChange={(e) => handleFilterChange('fecha_fin', e.target.value)}
+                                title="Fecha Fin"
+                            />
+                        </div>
                     </div>
                 </div>
 
