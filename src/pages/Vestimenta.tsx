@@ -27,6 +27,7 @@ export default function Vestimenta() {
         updateRow,
         updateRowWithArticle,
         removeRow,
+        autorizaId,
         processTransaction,
         showAlert
     } = useTransactionManager({
@@ -42,10 +43,15 @@ export default function Vestimenta() {
     const [articles, setArticles] = useState<Articulo[]>([]);
     const [loadingArticles, setLoadingArticles] = useState(false);
 
-    // Form State
     const [autoriza, setAutoriza] = useState('');
     const [retira, setRetira] = useState('');
     const [comentarios, setComentarios] = useState('');
+
+    useEffect(() => {
+        if (autorizaId) {
+            setAutoriza(autorizaId);
+        }
+    }, [autorizaId]);
 
     // Modals
     const [showColaboradorModal, setShowColaboradorModal] = useState(false);
@@ -61,6 +67,10 @@ export default function Vestimenta() {
     }); */
 
     // Handlers
+    const handleSelectArticle = (index: number, article: Articulo) => {
+        updateRowWithArticle(index, article);
+    };
+
     const handleOpenSearch = (index: number) => {
         setCurrentRowIndex(index);
         setShowSearch(true);
@@ -137,23 +147,16 @@ export default function Vestimenta() {
                         {/* Headers Section */}
                         <div className="bg-white/5 border border-white/10 rounded-xl p-6 mb-8">
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
-                                <div>
-                                    <label className="block text-sm font-medium text-gray-300 mb-2">
-                                        Responsable que autoriza <span className="text-red-400">*</span>
-                                    </label>
-                                    <div className="relative">
-                                        <div
-                                            onClick={() => {
-                                                setColaboradorField('autoriza');
-                                                setShowColaboradorModal(true);
-                                            }}
-                                            className="w-full bg-white/5 border border-white/10 rounded-lg py-3 pl-4 pr-12 text-white cursor-pointer hover:bg-white/10 transition-colors flex items-center justify-between"
-                                        >
-                                            <span className={autoriza ? 'text-white' : 'text-gray-500'}>
-                                                {autoriza ? colaboradores.autorizados.find(c => c.identificacion === autoriza)?.alias || colaboradores.autorizados.find(c => c.identificacion === autoriza)?.colaborador : '-- Seleccione --'}
-                                            </span>
-                                            <User className={`w-4 h-4 text-${colorTheme}-400 ml-2`} />
-                                        </div>
+                                <div className="relative group">
+                                    <label className="block text-sm font-medium text-gray-300 mb-2">Profesional Responsable <span className="text-red-400">*</span></label>
+                                    <div
+                                        className="w-full bg-black/20 border border-white/10 rounded-lg py-3 pl-4 pr-12 text-white cursor-not-allowed flex items-center justify-between opacity-75 shadow-inner"
+                                        title="El responsable se asigna automáticamente según su usuario"
+                                    >
+                                        <span className={autoriza ? 'text-indigo-400 font-bold' : 'text-gray-500 italic'}>
+                                            {autoriza ? colaboradores.todos.find((c: any) => c.identificacion === autoriza)?.alias || colaboradores.todos.find((c: any) => c.identificacion === autoriza)?.colaborador : 'Usuario no identificado'}
+                                        </span>
+                                        <User className={`w-4 h-4 text-indigo-400/50 ml-2`} />
                                     </div>
                                 </div>
 
@@ -161,18 +164,18 @@ export default function Vestimenta() {
                                     <label className="block text-sm font-medium text-gray-300 mb-2">
                                         Persona que retira <span className="text-red-400">*</span>
                                     </label>
-                                    <div className="relative">
+                                    <div className="relative group">
                                         <div
                                             onClick={() => {
                                                 setColaboradorField('retira');
                                                 setShowColaboradorModal(true);
                                             }}
-                                            className="w-full bg-white/5 border border-white/10 rounded-lg py-3 pl-4 pr-12 text-white cursor-pointer hover:bg-white/10 transition-colors flex items-center justify-between"
+                                            className="w-full bg-white/5 border border-white/10 rounded-lg py-3 pl-4 pr-12 text-white cursor-pointer hover:bg-white/10 transition-colors flex items-center justify-between shadow-inner"
                                         >
-                                            <span className={retira ? 'text-white' : 'text-gray-500'}>
-                                                {retira ? colaboradores.retirantes.find(c => c.identificacion === retira)?.alias || colaboradores.retirantes.find(c => c.identificacion === retira)?.colaborador : '-- Seleccione --'}
+                                            <span className={retira ? 'text-white' : 'text-gray-500 italic'}>
+                                                {retira ? colaboradores.todos.find((c: any) => c.identificacion === retira)?.alias || colaboradores.todos.find((c: any) => c.identificacion === retira)?.colaborador : '-- Seleccione --'}
                                             </span>
-                                            <User className={`w-4 h-4 text-${colorTheme}-400 ml-2`} />
+                                            <User className={`w-4 h-4 text-indigo-400 ml-2`} />
                                         </div>
                                     </div>
                                 </div>
@@ -222,11 +225,17 @@ export default function Vestimenta() {
                 isOpen={showColaboradorModal}
                 onClose={() => setShowColaboradorModal(false)}
                 onSelect={(c) => {
-                    if (colaboradorField === 'autoriza') setAutoriza(c.identificacion);
-                    else setRetira(c.identificacion);
+                    if (colaboradorField === 'autoriza') {
+                        setAutoriza(c.identificacion);
+                    } else if (colaboradorField === 'retira') {
+                        setRetira(c.identificacion);
+                    }
                     setShowColaboradorModal(false);
                 }}
-                colaboradores={colaboradorField === 'autoriza' ? colaboradores.autorizados : colaboradores.retirantes}
+                colaboradores={colaboradorField === 'autoriza'
+                    ? colaboradores.todos
+                    : colaboradores.todos.filter((c: any) => c.identificacion !== autoriza)
+                }
             />
 
             {/* Article Search Modal */}
@@ -275,8 +284,9 @@ export default function Vestimenta() {
                                         <button
                                             key={article.codigo_articulo}
                                             onClick={() => {
-                                                updateRowWithArticle(currentRowIndex, article);
+                                                handleSelectArticle(currentRowIndex, article);
                                                 setShowSearch(false);
+                                                setSearchTerm('');
                                             }}
                                             className="flex items-center gap-4 p-4 bg-white/5 hover:bg-white/10 border border-white/5 hover:border-indigo-500/50 rounded-xl transition-all group text-left"
                                         >

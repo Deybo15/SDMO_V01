@@ -28,6 +28,7 @@ export default function TallerEbanisteria() {
         updateRow,
         updateRowWithArticle,
         removeRow,
+        autorizaId,
         processTransaction,
         showAlert
     } = useTransactionManager({
@@ -43,10 +44,15 @@ export default function TallerEbanisteria() {
     const [articles, setArticles] = useState<Articulo[]>([]);
     const [loadingArticles, setLoadingArticles] = useState(false);
 
-    // Form State
     const [autoriza, setAutoriza] = useState('');
     const [retira, setRetira] = useState('');
     const [comentarios, setComentarios] = useState('');
+
+    useEffect(() => {
+        if (autorizaId) {
+            setAutoriza(autorizaId);
+        }
+    }, [autorizaId]);
 
     // Modals
     const [showColaboradorModal, setShowColaboradorModal] = useState(false);
@@ -56,6 +62,10 @@ export default function TallerEbanisteria() {
     const colorTheme = 'amber';
 
     // Handlers
+    const handleSelectArticle = (index: number, article: Articulo) => {
+        updateRowWithArticle(index, article);
+    };
+
     const handleOpenSearch = (index: number) => {
         setCurrentRowIndex(index);
         setShowSearch(true);
@@ -153,18 +163,15 @@ export default function TallerEbanisteria() {
                                     <label className="block text-sm font-medium text-gray-300 mb-2">
                                         Responsable que autoriza <span className="text-red-400">*</span>
                                     </label>
-                                    <div className="relative">
+                                    <div className="relative group">
                                         <div
-                                            onClick={() => {
-                                                setColaboradorField('autoriza');
-                                                setShowColaboradorModal(true);
-                                            }}
-                                            className="w-full bg-white/5 border border-white/10 rounded-lg py-3 pl-4 pr-12 text-white cursor-pointer hover:bg-white/10 transition-colors flex items-center justify-between"
+                                            className="w-full bg-black/20 border border-white/10 rounded-lg py-3 pl-4 pr-12 text-white cursor-not-allowed flex items-center justify-between opacity-75 shadow-inner"
+                                            title="El responsable se asigna automáticamente según su usuario"
                                         >
-                                            <span className={autoriza ? 'text-white' : 'text-gray-500'}>
-                                                {autoriza ? colaboradores.autorizados.find(c => c.identificacion === autoriza)?.alias || colaboradores.autorizados.find(c => c.identificacion === autoriza)?.colaborador : '-- Seleccione --'}
+                                            <span className={autoriza ? 'text-amber-400 font-bold' : 'text-gray-500 italic'}>
+                                                {autoriza ? colaboradores.todos.find((c: any) => c.identificacion === autoriza)?.alias || colaboradores.todos.find((c: any) => c.identificacion === autoriza)?.colaborador : 'Usuario no identificado'}
                                             </span>
-                                            <User className={`w-4 h-4 text-${colorTheme}-400 ml-2`} />
+                                            <User className={`w-4 h-4 text-amber-400/50 ml-2`} />
                                         </div>
                                     </div>
                                 </div>
@@ -173,18 +180,18 @@ export default function TallerEbanisteria() {
                                     <label className="block text-sm font-medium text-gray-300 mb-2">
                                         Persona que retira <span className="text-red-400">*</span>
                                     </label>
-                                    <div className="relative">
+                                    <div className="relative group">
                                         <div
                                             onClick={() => {
                                                 setColaboradorField('retira');
                                                 setShowColaboradorModal(true);
                                             }}
-                                            className="w-full bg-white/5 border border-white/10 rounded-lg py-3 pl-4 pr-12 text-white cursor-pointer hover:bg-white/10 transition-colors flex items-center justify-between"
+                                            className="w-full bg-white/5 border border-white/10 rounded-lg py-3 pl-4 pr-12 text-white cursor-pointer hover:bg-white/10 transition-colors flex items-center justify-between shadow-inner"
                                         >
-                                            <span className={retira ? 'text-white' : 'text-gray-500'}>
-                                                {retira ? colaboradores.retirantes.find(c => c.identificacion === retira)?.alias || colaboradores.retirantes.find(c => c.identificacion === retira)?.colaborador : '-- Seleccione --'}
+                                            <span className={retira ? 'text-white' : 'text-gray-500 italic'}>
+                                                {retira ? colaboradores.todos.find((c: any) => c.identificacion === retira)?.alias || colaboradores.todos.find((c: any) => c.identificacion === retira)?.colaborador : '-- Seleccione --'}
                                             </span>
-                                            <User className={`w-4 h-4 text-${colorTheme}-400 ml-2`} />
+                                            <User className={`w-4 h-4 text-amber-400 ml-2`} />
                                         </div>
                                     </div>
                                 </div>
@@ -234,11 +241,15 @@ export default function TallerEbanisteria() {
                 isOpen={showColaboradorModal}
                 onClose={() => setShowColaboradorModal(false)}
                 onSelect={(c) => {
-                    if (colaboradorField === 'autoriza') setAutoriza(c.identificacion);
-                    else setRetira(c.identificacion);
+                    if (colaboradorField === 'retira') {
+                        setRetira(c.identificacion);
+                    }
                     setShowColaboradorModal(false);
                 }}
-                colaboradores={colaboradorField === 'autoriza' ? colaboradores.autorizados : colaboradores.retirantes}
+                colaboradores={colaboradorField === 'autoriza'
+                    ? colaboradores.autorizados
+                    : colaboradores.todos.filter((c: any) => c.identificacion !== autoriza)
+                }
             />
 
             {/* Article Search Modal */}
@@ -289,7 +300,7 @@ export default function TallerEbanisteria() {
                                     <div
                                         key={article.codigo_articulo}
                                         onClick={() => {
-                                            updateRowWithArticle(currentRowIndex, article);
+                                            handleSelectArticle(currentRowIndex, article);
                                             setShowSearch(false);
                                             setSearchTerm('');
                                         }}

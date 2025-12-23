@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect } from 'react';
 import { supabase } from '../lib/supabase';
 import { useNavigate } from 'react-router-dom';
 import { Articulo, Colaborador, DetalleSalida, TransactionHeader } from '../types/inventory';
@@ -22,33 +22,54 @@ export const useTransactionManager = ({
     const [items, setItems] = useState<DetalleSalida[]>([]);
 
     // Data State
-    const [colaboradores, setColaboradores] = useState<{ autorizados: Colaborador[], retirantes: Colaborador[] }>({
+    const [colaboradores, setColaboradores] = useState<{ autorizados: Colaborador[], todos: Colaborador[] }>({
         autorizados: [],
-        retirantes: []
+        todos: []
     });
 
-    // Load Colaboradores
-    useEffect(() => {
-        const fetchColaboradores = async () => {
-            const { data } = await supabase
-                .from('colaboradores_06')
-                .select('identificacion, alias, colaborador, autorizado, condicion_laboral')
-                .or('autorizado.eq.true,condicion_laboral.eq.false');
+    const [autorizaId, setAutorizaId] = useState('');
 
-            if (data) {
-                setColaboradores({
-                    autorizados: data.filter((c: any) => c.autorizado).map((c: any) => ({
-                        ...c,
-                        colaborador: c.colaborador || c.alias // Ensure name
-                    })),
-                    retirantes: data.filter((c: any) => !c.autorizado).map((c: any) => ({
+    // Load Colaboradores & Auto-select Responsable
+    useEffect(() => {
+        const initialize = async () => {
+            try {
+                // 1. Get current user
+                const { data: { user } } = await supabase.auth.getUser();
+                const userEmail = user?.email;
+
+                // 2. Fetch collaborators
+                const { data } = await supabase
+                    .from('colaboradores_06')
+                    .select('identificacion, alias, colaborador, autorizado, condicion_laboral, correo_colaborador')
+                    .or('autorizado.eq.true,condicion_laboral.eq.false');
+
+                if (data) {
+                    const mappedData = data.map((c: any) => ({
                         ...c,
                         colaborador: c.colaborador || c.alias
-                    }))
-                });
+                    }));
+
+                    setColaboradores({
+                        autorizados: mappedData.filter((c: any) => c.autorizado),
+                        todos: mappedData
+                    });
+
+                    // 3. Auto-populate based on email
+                    if (userEmail) {
+                        const matched = mappedData.find(c =>
+                            c.correo_colaborador?.toLowerCase() === userEmail.toLowerCase()
+                        );
+                        if (matched) {
+                            setAutorizaId(matched.identificacion);
+                            setRetiraId(matched.identificacion); // Auto-populate retiraId as well
+                        }
+                    }
+                }
+            } catch (err) {
+                console.error('Error initializing transaction manager:', err);
             }
         };
-        fetchColaboradores();
+        initialize();
     }, []);
 
     // Feedback Helper
@@ -243,6 +264,8 @@ export const useTransactionManager = ({
         feedback,
         items,
         colaboradores,
+        autorizaId,
+        setAutorizaId,
         addEmptyRow,
         updateRow,
         updateRowWithArticle,

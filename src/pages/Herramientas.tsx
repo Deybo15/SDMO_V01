@@ -18,7 +18,6 @@ import ColaboradorSearchModal from '../components/ColaboradorSearchModal';
 import { supabase } from '../lib/supabase';
 
 export default function Herramientas() {
-    // 1. Hook Integration
     const {
         loading,
         feedback,
@@ -28,6 +27,7 @@ export default function Herramientas() {
         updateRow,
         updateRowWithArticle,
         removeRow,
+        autorizaId,
         processTransaction,
         showAlert
     } = useTransactionManager({
@@ -40,6 +40,12 @@ export default function Herramientas() {
     const [autoriza, setAutoriza] = useState('');
     const [retira, setRetira] = useState('');
     const [comentarios, setComentarios] = useState('');
+
+    useEffect(() => {
+        if (autorizaId) {
+            setAutoriza(autorizaId);
+        }
+    }, [autorizaId]);
 
     // Modals
     const [showBusquedaModal, setShowBusquedaModal] = useState(false);
@@ -147,29 +153,33 @@ export default function Herramientas() {
                             </h3>
 
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
-                                <div>
+                                <div className="relative group">
                                     <label className="block text-sm font-medium text-gray-300 mb-2">Profesional Responsable <span className="text-red-400">*</span></label>
                                     <div
-                                        onClick={() => handleOpenBusqueda('autoriza')}
-                                        className="w-full bg-white/5 border border-white/10 rounded-lg py-3 pl-4 pr-12 text-white cursor-pointer hover:bg-white/10 transition-colors flex items-center justify-between"
+                                        className="w-full bg-black/20 border border-white/10 rounded-lg py-3 pl-4 pr-12 text-white cursor-not-allowed flex items-center justify-between opacity-75 shadow-inner"
+                                        title="El responsable se asigna automáticamente según su usuario"
                                     >
-                                        <span className={autoriza ? 'text-white' : 'text-gray-500'}>
-                                            {autoriza ? colaboradores.autorizados.find(c => c.identificacion === autoriza)?.alias || colaboradores.autorizados.find(c => c.identificacion === autoriza)?.colaborador : '-- Seleccione --'}
+                                        <span className={autoriza ? 'text-orange-400 font-bold' : 'text-gray-500 italic'}>
+                                            {autoriza ? colaboradores.todos.find((c: any) => c.identificacion === autoriza)?.alias || colaboradores.todos.find((c: any) => c.identificacion === autoriza)?.colaborador : 'Usuario no identificado'}
                                         </span>
-                                        <User className="w-4 h-4 text-orange-400 ml-2" />
+                                        <User className={`w-4 h-4 text-orange-400/50 ml-2`} />
                                     </div>
                                 </div>
 
                                 <div>
-                                    <label className="block text-sm font-medium text-gray-300 mb-2">Entregado a (Quien retira) <span className="text-red-400">*</span></label>
-                                    <div
-                                        onClick={() => handleOpenBusqueda('retira')}
-                                        className="w-full bg-white/5 border border-white/10 rounded-lg py-3 pl-4 pr-12 text-white cursor-pointer hover:bg-white/10 transition-colors flex items-center justify-between"
-                                    >
-                                        <span className={retira ? 'text-white' : 'text-gray-500'}>
-                                            {retira ? colaboradores.retirantes.find(c => c.identificacion === retira)?.alias || colaboradores.retirantes.find(c => c.identificacion === retira)?.colaborador : '-- Seleccione --'}
-                                        </span>
-                                        <User className="w-4 h-4 text-orange-400 ml-2" />
+                                    <label className="block text-sm font-medium text-gray-300 mb-2">
+                                        Persona que retira <span className="text-red-400">*</span>
+                                    </label>
+                                    <div className="relative group">
+                                        <div
+                                            onClick={() => handleOpenBusqueda('retira')}
+                                            className="w-full bg-white/5 border border-white/10 rounded-lg py-3 pl-4 pr-12 text-white cursor-pointer hover:bg-white/10 transition-colors flex items-center justify-between shadow-inner"
+                                        >
+                                            <span className={retira ? 'text-white' : 'text-gray-500 italic'}>
+                                                {retira ? colaboradores.todos.find((c: any) => c.identificacion === retira)?.alias || colaboradores.todos.find((c: any) => c.identificacion === retira)?.colaborador : '-- Seleccione --'}
+                                            </span>
+                                            <User className={`w-4 h-4 text-orange-400 ml-2`} />
+                                        </div>
                                     </div>
                                 </div>
                             </div>
@@ -225,11 +235,17 @@ export default function Herramientas() {
                 isOpen={showBusquedaModal}
                 onClose={() => setShowBusquedaModal(false)}
                 onSelect={(c) => {
-                    if (busquedaTipo === 'autoriza') setAutoriza(c.identificacion);
-                    else setRetira(c.identificacion);
+                    // The 'autoriza' field is now automatically set by the hook based on the logged-in user.
+                    // So, we only need to handle 'retira' selection here.
+                    if (busquedaTipo === 'retira') {
+                        setRetira(c.identificacion);
+                    }
                     setShowBusquedaModal(false);
                 }}
-                colaboradores={busquedaTipo === 'autoriza' ? colaboradores.autorizados : colaboradores.retirantes}
+                colaboradores={busquedaTipo === 'autoriza'
+                    ? colaboradores.autorizados
+                    : colaboradores.todos.filter((c: any) => c.identificacion !== autoriza)
+                }
             />
 
             {/* Premium Article Search Modal */}

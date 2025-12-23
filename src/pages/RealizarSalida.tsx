@@ -47,9 +47,9 @@ export default function RealizarSalida() {
     const [ultimoIdSalida, setUltimoIdSalida] = useState<number | null>(null);
 
     // 3. Data State
-    const [colaboradores, setColaboradores] = useState<{ autorizados: Colaborador[], retirantes: Colaborador[] }>({
+    const [colaboradores, setColaboradores] = useState<{ autorizados: Colaborador[], todos: Colaborador[] }>({
         autorizados: [],
-        retirantes: []
+        todos: []
     });
     const [inventario, setInventario] = useState<Articulo[]>([]);
     const [fechaActual, setFechaActual] = useState('');
@@ -88,22 +88,36 @@ export default function RealizarSalida() {
     // Load Data
     const fetchColaboradores = async () => {
         try {
+            // 1. Get current user session
+            const { data: { user } } = await supabase.auth.getUser();
+            const userEmail = user?.email;
+
+            // 2. Fetch all relevant collaborators
             const { data } = await supabase
                 .from('colaboradores_06')
-                .select('identificacion, alias, colaborador, autorizado, condicion_laboral')
+                .select('identificacion, alias, colaborador, autorizado, condicion_laboral, correo_colaborador')
                 .or('autorizado.eq.true,condicion_laboral.eq.false');
 
             if (data) {
+                const mappedData = data.map((c: any) => ({
+                    ...c,
+                    colaborador: c.colaborador || c.alias
+                }));
+
                 setColaboradores({
-                    autorizados: data.filter((c: any) => c.autorizado).map((c: any) => ({
-                        ...c,
-                        colaborador: c.colaborador || c.alias
-                    })),
-                    retirantes: data.filter((c: any) => !c.autorizado).map((c: any) => ({
-                        ...c,
-                        colaborador: c.colaborador || c.alias
-                    }))
+                    autorizados: mappedData.filter((c: any) => c.autorizado),
+                    todos: mappedData
                 });
+
+                // 3. Auto-populate Profesional Responsable based on email
+                if (userEmail) {
+                    const matchedUser = mappedData.find(c =>
+                        c.correo_colaborador?.toLowerCase() === userEmail.toLowerCase()
+                    );
+                    if (matchedUser) {
+                        setAutoriza(matchedUser.identificacion);
+                    }
+                }
             }
         } catch (error) {
             console.error('Error loading collaborators:', error);
@@ -412,32 +426,32 @@ export default function RealizarSalida() {
                             <div className="w-10 h-10 rounded-xl bg-teal-500/20 flex items-center justify-center">
                                 <User className="w-6 h-6 text-teal-400" />
                             </div>
-                            <h3 className="text-xl font-bold">Información de la Salida</h3>
+                            <h3 className="text-xl font-bold text-teal-400">Información de Responsables</h3>
                         </div>
 
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mb-8">
                             {/* Responsable Autoriza */}
                             <div>
                                 <label className="block text-sm font-medium text-gray-400 mb-2 ml-1">
-                                    Responsable que autoriza <span className="text-red-400">*</span>
+                                    Profesional Responsable <span className="text-red-400">*</span>
                                 </label>
                                 <div
-                                    onClick={() => handleOpenBusqueda('autoriza')}
-                                    className="w-full bg-white/5 border border-white/10 rounded-xl py-4 px-5 text-white cursor-pointer hover:bg-white/10 hover:border-teal-500/50 transition-all flex items-center justify-between group shadow-inner"
+                                    className="w-full bg-black/20 border border-white/10 rounded-xl py-4 px-5 text-white cursor-not-allowed flex items-center justify-between group shadow-inner opacity-75"
+                                    title="El responsable se asigna automáticamente según su usuario"
                                 >
-                                    <span className={autoriza ? 'text-white font-medium' : 'text-gray-500 italic'}>
+                                    <span className={autoriza ? 'text-teal-400 font-bold' : 'text-gray-500 italic'}>
                                         {autoriza
-                                            ? colaboradores.autorizados.find(c => c.identificacion === autoriza)?.colaborador
-                                            : '-- Seleccione un responsable --'}
+                                            ? colaboradores.todos.find(c => c.identificacion === autoriza)?.alias || colaboradores.todos.find(c => c.identificacion === autoriza)?.colaborador
+                                            : 'Usuario no identificado'}
                                     </span>
-                                    <Search className="w-5 h-5 text-gray-500 group-hover:text-teal-400 transition-colors" />
+                                    <User className="w-5 h-5 text-teal-400/50" />
                                 </div>
                             </div>
 
                             {/* Persona que Retira */}
                             <div>
                                 <label className="block text-sm font-medium text-gray-400 mb-2 ml-1">
-                                    Persona que retira <span className="text-red-400">*</span>
+                                    Entregado a (Quien retira) <span className="text-red-400">*</span>
                                 </label>
                                 <div
                                     onClick={() => handleOpenBusqueda('retira')}
@@ -445,10 +459,10 @@ export default function RealizarSalida() {
                                 >
                                     <span className={retira ? 'text-white font-medium' : 'text-gray-500 italic'}>
                                         {retira
-                                            ? colaboradores.retirantes.find(c => c.identificacion === retira)?.colaborador
+                                            ? colaboradores.todos.find((c: any) => c.identificacion === retira)?.colaborador
                                             : '-- Seleccione quien retira --'}
                                     </span>
-                                    <Search className="w-5 h-5 text-gray-500 group-hover:text-teal-400 transition-colors" />
+                                    <User className="w-5 h-5 text-gray-500 group-hover:text-teal-400 transition-colors" />
                                 </div>
                             </div>
 
@@ -486,6 +500,13 @@ export default function RealizarSalida() {
 
                     {/* Section 2: Articles Table */}
                     <div className="bg-white/5 border border-white/10 rounded-2xl p-6 md:p-8 backdrop-blur-xl shadow-2xl">
+                        <div className="flex items-center gap-3 mb-8 border-b border-white/10 pb-4">
+                            <div className="w-10 h-10 rounded-xl bg-teal-500/20 flex items-center justify-center">
+                                <Box className="w-6 h-6 text-teal-400" />
+                            </div>
+                            <h3 className="text-xl font-bold text-teal-400">Artículos a Retirar</h3>
+                        </div>
+
                         <TransactionTable
                             items={items}
                             onUpdateRow={updateDetalle}
@@ -504,7 +525,7 @@ export default function RealizarSalida() {
                             <button
                                 type="submit"
                                 disabled={loading}
-                                className="px-8 py-3 bg-gradient-to-r from-[#00d4ff] to-[#00fff0] text-black font-bold rounded-xl hover:shadow-[0_0_25px_rgba(0,212,255,0.4)] transition-all flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+                                className="px-8 py-3 bg-gradient-to-r from-teal-600 to-cyan-600 text-white font-bold rounded-xl hover:shadow-[0_0_25px_rgba(20,184,166,0.4)] hover:brightness-110 transition-all flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed shadow-lg shadow-teal-500/20"
                             >
                                 {loading ? <Loader2 className="w-5 h-5 animate-spin" /> : <Save className="w-5 h-5" />}
                                 Guardar Salida
@@ -530,7 +551,10 @@ export default function RealizarSalida() {
                     isOpen={showBusquedaModal}
                     onClose={() => setShowBusquedaModal(false)}
                     onSelect={handleSelectColaborador}
-                    colaboradores={busquedaTipo === 'autoriza' ? colaboradores.autorizados : colaboradores.retirantes}
+                    colaboradores={busquedaTipo === 'autoriza'
+                        ? colaboradores.autorizados
+                        : colaboradores.todos.filter(c => c.identificacion !== autoriza)
+                    }
                     title={busquedaTipo === 'autoriza' ? 'Seleccionar Responsable' : 'Seleccionar Quien Retira'}
                 />
             )}
@@ -546,9 +570,9 @@ export default function RealizarSalida() {
                             <div>
                                 <h3 className="text-2xl font-bold text-white flex items-center gap-3">
                                     <Search className="w-6 h-6 text-teal-400" />
-                                    Búsqueda de Artículos
+                                    Buscar Artículo
                                 </h3>
-                                <p className="text-sm text-gray-400 mt-1">Seleccione los artículos para el registro de salida</p>
+                                <p className="text-sm text-gray-400 mt-1">Seleccione un artículo para agregar a la lista</p>
                             </div>
                             <button
                                 onClick={() => setShowArticulosModal(false)}

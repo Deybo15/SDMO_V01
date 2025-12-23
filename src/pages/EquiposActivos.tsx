@@ -32,6 +32,7 @@ export default function EquiposActivos() {
         updateRow,
         updateRowWithArticle,
         removeRow,
+        autorizaId,
         processTransaction,
         showAlert
     } = useTransactionManager({
@@ -57,6 +58,12 @@ export default function EquiposActivos() {
     const [equipos, setEquipos] = useState<Equipo[]>([]);
     const [selectedEquipoValue, setSelectedEquipoValue] = useState('');
     const [isEquipoModalOpen, setIsEquipoModalOpen] = useState(false);
+
+    useEffect(() => {
+        if (autorizaId) {
+            setautoriza(autorizaId);
+        }
+    }, [autorizaId]);
 
     useEffect(() => {
         const fetchEquipos = async () => {
@@ -212,18 +219,15 @@ export default function EquiposActivos() {
                                     <label className="block text-sm font-medium text-gray-300 mb-2">
                                         Responsable que autoriza <span className="text-red-400">*</span>
                                     </label>
-                                    <div className="relative">
+                                    <div className="relative group">
                                         <div
-                                            onClick={() => {
-                                                setColaboradorField('autoriza');
-                                                setShowColaboradorModal(true);
-                                            }}
-                                            className="w-full bg-white/5 border border-white/10 rounded-lg py-3 pl-4 pr-12 text-white cursor-pointer hover:bg-white/10 transition-colors flex items-center justify-between"
+                                            className="w-full bg-black/20 border border-white/10 rounded-lg py-3 pl-4 pr-12 text-white cursor-not-allowed flex items-center justify-between opacity-75 shadow-inner"
+                                            title="El responsable se asigna automáticamente según su usuario"
                                         >
-                                            <span className={autoriza ? 'text-white' : 'text-gray-500'}>
-                                                {autoriza ? colaboradores.autorizados.find(c => c.identificacion === autoriza)?.alias || colaboradores.autorizados.find(c => c.identificacion === autoriza)?.colaborador : '-- Seleccione --'}
+                                            <span className={autoriza ? 'text-blue-400 font-bold' : 'text-gray-500 italic'}>
+                                                {autoriza ? colaboradores.todos.find(c => c.identificacion === autoriza)?.alias || colaboradores.todos.find(c => c.identificacion === autoriza)?.colaborador : 'Usuario no identificado'}
                                             </span>
-                                            <User className={`w-4 h-4 text-${colorTheme}-400 ml-2`} />
+                                            <User className={`w-4 h-4 text-blue-400/50 ml-2`} />
                                         </div>
                                     </div>
                                 </div>
@@ -232,18 +236,18 @@ export default function EquiposActivos() {
                                     <label className="block text-sm font-medium text-gray-300 mb-2">
                                         Persona que retira <span className="text-red-400">*</span>
                                     </label>
-                                    <div className="relative">
+                                    <div className="relative group">
                                         <div
                                             onClick={() => {
                                                 setColaboradorField('retira');
                                                 setShowColaboradorModal(true);
                                             }}
-                                            className="w-full bg-white/5 border border-white/10 rounded-lg py-3 pl-4 pr-12 text-white cursor-pointer hover:bg-white/10 transition-colors flex items-center justify-between"
+                                            className="w-full bg-white/5 border border-white/10 rounded-lg py-3 pl-4 pr-12 text-white cursor-pointer hover:bg-white/10 transition-colors flex items-center justify-between shadow-inner"
                                         >
-                                            <span className={retira ? 'text-white' : 'text-gray-500'}>
-                                                {retira ? colaboradores.retirantes.find(c => c.identificacion === retira)?.alias || colaboradores.retirantes.find(c => c.identificacion === retira)?.colaborador : '-- Seleccione --'}
+                                            <span className={retira ? 'text-white' : 'text-gray-500 italic'}>
+                                                {retira ? colaboradores.todos.find((c: any) => c.identificacion === retira)?.alias || colaboradores.todos.find((c: any) => c.identificacion === retira)?.colaborador : '-- Seleccione --'}
                                             </span>
-                                            <User className={`w-4 h-4 text-${colorTheme}-400 ml-2`} />
+                                            <User className={`w-4 h-4 text-blue-400 ml-2`} />
                                         </div>
                                     </div>
                                 </div>
@@ -293,11 +297,14 @@ export default function EquiposActivos() {
                 isOpen={showColaboradorModal}
                 onClose={() => setShowColaboradorModal(false)}
                 onSelect={(c) => {
-                    if (colaboradorField === 'autoriza') setautoriza(c.identificacion);
-                    else setretira(c.identificacion);
+                    if (colaboradorField === 'autoriza') {
+                        // Autoriza is locked, but we keep the handler for completeness if needed
+                    } else {
+                        setretira(c.identificacion);
+                    }
                     setShowColaboradorModal(false);
                 }}
-                colaboradores={colaboradorField === 'autoriza' ? colaboradores.autorizados : colaboradores.retirantes}
+                colaboradores={colaboradorField === 'autoriza' ? colaboradores.autorizados : colaboradores.todos.filter((c: any) => c.identificacion !== autoriza)}
             />
 
             {/* Equipo Search Modal */}

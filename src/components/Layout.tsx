@@ -61,20 +61,22 @@ export default function Layout() {
 
             {/* Sidebar (Desktop & Mobile Drawer) */}
             <aside className={cn(
-                "fixed inset-y-0 left-0 z-[70] w-72 bg-slate-950 border-r border-slate-800/50 shadow-2xl transition-transform duration-300 ease-in-out md:translate-x-0 md:static md:flex md:flex-col",
-                mobileMenuOpen ? "translate-x-0" : "-translate-x-full"
+                "fixed inset-y-0 left-0 z-[70] bg-slate-950 border-r border-slate-800/50 shadow-2xl transition-all duration-300 ease-in-out md:translate-x-0 md:static md:flex md:flex-col group/sidebar",
+                mobileMenuOpen ? "translate-x-0 w-72" : "-translate-x-full w-72 md:w-20 md:hover:w-72"
             )}>
-                {/* Header / Logo (Hidden on Mobile as we have the top bar, but visible on Desktop) */}
-                <div className="p-8 pb-6 hidden md:block">
-                    <div className="flex items-center gap-3 mb-1">
-                        <div className="w-8 h-8 rounded-lg bg-blue-600 flex items-center justify-center shadow-lg shadow-blue-500/20">
-                            <span className="text-white font-bold text-lg">S</span>
+                {/* Header / Logo */}
+                <div className="p-6 md:p-4 md:group-hover/sidebar:p-8 transition-all duration-300 hidden md:block overflow-hidden">
+                    <div className="flex items-center gap-3">
+                        <div className="w-10 h-10 rounded-xl bg-blue-600 flex items-center justify-center shadow-lg shadow-blue-500/20 shrink-0">
+                            <span className="text-white font-bold text-xl">S</span>
                         </div>
-                        <h1 className="text-2xl font-bold text-white tracking-tight">
-                            SDMO
-                        </h1>
+                        <div className="flex flex-col opacity-0 group-hover/sidebar:opacity-100 transition-all duration-300 whitespace-nowrap overflow-hidden">
+                            <h1 className="text-2xl font-bold text-white tracking-tight leading-none mb-1">
+                                SDMO
+                            </h1>
+                            <p className="text-[10px] text-slate-500 font-medium tracking-wider uppercase">Municipalidad de San José</p>
+                        </div>
                     </div>
-                    <p className="text-xs text-slate-500 font-medium tracking-wider pl-11 uppercase">Municipalidad de San José</p>
                 </div>
 
                 {/* Mobile Drawer Header */}
@@ -86,9 +88,8 @@ export default function Layout() {
                 </div>
 
                 {/* Navigation */}
-                <nav className="flex-1 px-4 py-4 space-y-1.5 overflow-y-auto scrollbar-thin scrollbar-thumb-slate-800 scrollbar-track-transparent">
+                <nav className="flex-1 px-3 py-4 space-y-1.5 overflow-y-auto overflow-x-hidden scrollbar-thin scrollbar-thumb-slate-800 scrollbar-track-transparent">
                     {navItems.map((item) => {
-                        // Find the best matching item based on the longest path that matches the current location
                         const matchingItems = navItems.filter(navItem =>
                             navItem.path === '/'
                                 ? location.pathname === '/'
@@ -103,7 +104,7 @@ export default function Layout() {
                                 key={item.path}
                                 to={item.path}
                                 className={cn(
-                                    "group flex items-center gap-3 px-4 py-3 text-sm font-medium rounded-xl transition-all duration-200",
+                                    "group/item flex items-center gap-4 px-3 py-3 text-sm font-medium rounded-xl transition-all duration-200 relative",
                                     isActive
                                         ? "bg-blue-600 text-white shadow-md shadow-blue-900/20"
                                         : "text-slate-400 hover:text-slate-100 hover:bg-slate-900"
@@ -111,37 +112,49 @@ export default function Layout() {
                             >
                                 <item.icon
                                     className={cn(
-                                        "w-5 h-5 transition-transform duration-200",
-                                        isActive ? "text-white" : "text-slate-500 group-hover:text-slate-300"
+                                        "w-6 h-6 shrink-0 transition-transform duration-200",
+                                        isActive ? "text-white" : "text-slate-500 group-hover/item:text-slate-300"
                                     )}
                                 />
-                                <span className={isActive ? "font-semibold" : ""}>
+                                <span className={cn(
+                                    "transition-all duration-300 whitespace-nowrap overflow-hidden",
+                                    "opacity-0 group-hover/sidebar:opacity-100",
+                                    isActive ? "font-semibold" : ""
+                                )}>
                                     {item.label}
                                 </span>
+
+                                {/* Tooltip for collapsed state */}
+                                <div className="absolute left-full ml-6 px-2 py-1 bg-slate-800 text-white text-xs rounded opacity-0 pointer-events-none group-hover/item:opacity-100 group-hover/sidebar:hidden transition-opacity whitespace-nowrap z-[100] border border-slate-700 shadow-xl">
+                                    {item.label}
+                                </div>
                             </Link>
                         );
                     })}
                 </nav>
 
                 {/* User Profile & Logout */}
-                <div className="p-4 border-t border-slate-800/50 bg-slate-950">
-                    <div className="bg-slate-900/50 rounded-2xl p-4 border border-slate-800/50 hover:border-slate-700 transition-colors group">
-                        <div className="flex items-center gap-3 mb-3">
-                            <div className="w-10 h-10 rounded-full bg-slate-800 flex items-center justify-center border border-slate-700">
-                                <UserCircle2 className="w-6 h-6 text-slate-400" />
+                <div className="p-3 border-t border-slate-800/50 bg-slate-950 overflow-hidden">
+                    <div className="bg-slate-900/50 rounded-2xl p-2.5 md:group-hover/sidebar:p-4 border border-slate-800/50 hover:border-slate-700 transition-all duration-300">
+                        <div className="flex items-center gap-3 mb-0 md:group-hover/sidebar:mb-3">
+                            <div className="w-9 h-9 md:w-10 md:h-10 rounded-full bg-slate-800 flex items-center justify-center border border-slate-700 shrink-0">
+                                <UserCircle2 className="w-5 h-5 md:w-6 md:h-6 text-slate-400" />
                             </div>
-                            <div className="flex-1 min-w-0">
+                            <div className="flex flex-col opacity-0 group-hover/sidebar:opacity-100 transition-all duration-300 whitespace-nowrap overflow-hidden">
                                 <p className="text-sm font-semibold text-white truncate">Usuario</p>
-                                <p className="text-xs text-slate-500 truncate">dgamboa@msj.go.cr</p>
+                                <p className="text-[10px] text-slate-500 truncate">dgamboa@msj.go.cr</p>
                             </div>
                         </div>
 
                         <button
                             onClick={handleLogout}
-                            className="flex items-center justify-center gap-2 w-full px-3 py-2 text-xs font-medium text-slate-400 hover:text-red-400 hover:bg-red-500/10 rounded-lg transition-all duration-200"
+                            className={cn(
+                                "flex items-center justify-center gap-2 w-full mt-2 md:mt-0 px-3 py-2 text-xs font-medium text-slate-400 hover:text-red-400 hover:bg-red-500/10 rounded-lg transition-all duration-200 overflow-hidden",
+                                "md:h-0 md:opacity-0 md:group-hover/sidebar:h-8 md:group-hover/sidebar:opacity-100 md:group-hover/sidebar:mt-1"
+                            )}
                         >
-                            <LogOut className="w-3.5 h-3.5" />
-                            <span>Cerrar Sesión</span>
+                            <LogOut className="w-3.5 h-3.5 shrink-0" />
+                            <span className="whitespace-nowrap overflow-hidden">Cerrar Sesión</span>
                         </button>
                     </div>
                 </div>

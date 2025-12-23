@@ -35,6 +35,7 @@ export default function Prestamo() {
         updateRow,
         updateRowWithArticle,
         removeRow,
+        autorizaId,
         processTransaction,
         showAlert
     } = useTransactionManager({
@@ -44,9 +45,15 @@ export default function Prestamo() {
     });
 
     // 2. Local State
-    const [autoriza, setAutoriza] = useState('');
-    const [retira, setRetira] = useState('');
-    const [comentarios, setComentarios] = useState('');
+    const [autoriza, setautoriza] = useState('');
+    const [retira, setretira] = useState('');
+    const [comentarios, setcomentarios] = useState('');
+
+    useEffect(() => {
+        if (autorizaId) {
+            setautoriza(autorizaId);
+        }
+    }, [autorizaId]);
     const [dependencia, setDependencia] = useState('');
 
     // Dependencias Logic
@@ -69,15 +76,15 @@ export default function Prestamo() {
     );
 
     // Modals state
-    const [showBusquedaModal, setShowBusquedaModal] = useState(false);
-    const [busquedaTipo, setBusquedaTipo] = useState<'autoriza' | 'retira'>('autoriza');
+    const [showColaboradorModal, setShowColaboradorModal] = useState(false); // Renamed from showBusquedaModal
+    const [colaboradorField, setColaboradorField] = useState<'autoriza' | 'retira'>('autoriza'); // Renamed from busquedaTipo
     const [showArticulosModal, setShowArticulosModal] = useState(false);
     const [currentRowIndex, setCurrentRowIndex] = useState<number>(0);
 
     // Handlers
     const handleOpenBusqueda = (tipo: 'autoriza' | 'retira') => {
-        setBusquedaTipo(tipo);
-        setShowBusquedaModal(true);
+        setColaboradorField(tipo); // Use new state variable
+        setShowColaboradorModal(true); // Use new state variable
     };
 
     const handleOpenSearch = (index: number) => {
@@ -97,8 +104,8 @@ export default function Prestamo() {
         processTransaction({
             autoriza,
             retira,
-            comentarios,
-            destino: dependencia // Map dependency to destino
+            comentarios: comentarios,
+            destino: dependencia
         });
     };
 
@@ -150,6 +157,11 @@ export default function Prestamo() {
         }
     }, [showArticulosModal, searchTerm]);
 
+    // Function to update a row with selected article data
+    const handleSelectArticle = (index: number, article: Articulo) => {
+        updateRowWithArticle(index, article);
+    };
+
     return (
         <div className="min-h-screen bg-[#0f111a] font-['Inter']">
             <PageHeader
@@ -197,27 +209,31 @@ export default function Prestamo() {
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
                                 <div>
                                     <label className="block text-sm font-medium text-gray-300 mb-2">Profesional Responsable <span className="text-red-400">*</span></label>
-                                    <div
-                                        onClick={() => handleOpenBusqueda('autoriza')}
-                                        className="w-full bg-white/5 border border-white/10 rounded-lg py-3 pl-4 pr-12 text-white cursor-pointer hover:bg-white/10 transition-colors flex items-center justify-between"
-                                    >
-                                        <span className={autoriza ? 'text-white' : 'text-gray-500'}>
-                                            {autoriza ? colaboradores.autorizados.find(c => c.identificacion === autoriza)?.alias || colaboradores.autorizados.find(c => c.identificacion === autoriza)?.colaborador : '-- Seleccione --'}
-                                        </span>
-                                        <User className="w-4 h-4 text-purple-400 ml-2" />
+                                    <div className="relative group">
+                                        <div
+                                            className="w-full bg-black/20 border border-white/10 rounded-lg py-3 pl-4 pr-12 text-white cursor-not-allowed flex items-center justify-between opacity-75 shadow-inner"
+                                            title="El responsable se asigna automáticamente según su usuario"
+                                        >
+                                            <span className={autoriza ? 'text-teal-400 font-bold' : 'text-gray-500 italic'}>
+                                                {autoriza ? colaboradores.todos.find((c: any) => c.identificacion === autoriza)?.alias || colaboradores.todos.find((c: any) => c.identificacion === autoriza)?.colaborador : 'Usuario no identificado'}
+                                            </span>
+                                            <User className={`w-4 h-4 text-teal-400/50 ml-2`} />
+                                        </div>
                                     </div>
                                 </div>
 
                                 <div>
                                     <label className="block text-sm font-medium text-gray-300 mb-2">Entregado a (Quien retira) <span className="text-red-400">*</span></label>
-                                    <div
-                                        onClick={() => handleOpenBusqueda('retira')}
-                                        className="w-full bg-white/5 border border-white/10 rounded-lg py-3 pl-4 pr-12 text-white cursor-pointer hover:bg-white/10 transition-colors flex items-center justify-between"
-                                    >
-                                        <span className={retira ? 'text-white' : 'text-gray-500'}>
-                                            {retira ? colaboradores.retirantes.find(c => c.identificacion === retira)?.alias || colaboradores.retirantes.find(c => c.identificacion === retira)?.colaborador : '-- Seleccione --'}
-                                        </span>
-                                        <User className="w-4 h-4 text-purple-400 ml-2" />
+                                    <div className="relative group">
+                                        <div
+                                            onClick={() => handleOpenBusqueda('retira')}
+                                            className="w-full bg-white/5 border border-white/10 rounded-lg py-3 pl-4 pr-12 text-white cursor-pointer hover:bg-white/10 transition-colors flex items-center justify-between shadow-inner"
+                                        >
+                                            <span className={retira ? 'text-white' : 'text-gray-500 italic'}>
+                                                {retira ? colaboradores.todos.find((c: any) => c.identificacion === retira)?.alias || colaboradores.todos.find((c: any) => c.identificacion === retira)?.colaborador : '-- Seleccione --'}
+                                            </span>
+                                            <User className={`w-4 h-4 text-teal-400 ml-2`} />
+                                        </div>
                                     </div>
                                 </div>
                             </div>
@@ -226,9 +242,9 @@ export default function Prestamo() {
                                 <label className="block text-sm font-medium text-gray-300 mb-2">Comentarios</label>
                                 <textarea
                                     value={comentarios}
-                                    onChange={(e) => setComentarios(e.target.value)}
-                                    className="w-full bg-white/5 border border-white/10 rounded-lg p-3 text-white focus:border-purple-500 outline-none min-h-[100px] transition-all focus:ring-1 focus:ring-purple-500/50"
-                                    placeholder="Detalles adicionales sobre este préstamo..."
+                                    onChange={(e) => setcomentarios(e.target.value)}
+                                    className="w-full bg-white/5 border border-white/10 rounded-lg p-4 text-white focus:border-purple-500 outline-none min-h-[120px] transition-all focus:ring-1 focus:ring-purple-500/50 shadow-inner"
+                                    placeholder="Notas adicionales sobre este préstamo..."
                                 />
                             </div>
                         </div>
@@ -270,14 +286,20 @@ export default function Prestamo() {
 
             {/* Colaborador Modal */}
             <ColaboradorSearchModal
-                isOpen={showBusquedaModal}
-                onClose={() => setShowBusquedaModal(false)}
-                onSelect={(c) => {
-                    if (busquedaTipo === 'autoriza') setAutoriza(c.identificacion);
-                    else setRetira(c.identificacion);
-                    setShowBusquedaModal(false);
+                isOpen={showColaboradorModal}
+                onClose={() => setShowColaboradorModal(false)}
+                onSelect={(c: any) => {
+                    if (colaboradorField === 'autoriza') {
+                        // Locked
+                    } else {
+                        setretira(c.identificacion);
+                    }
+                    setShowColaboradorModal(false);
                 }}
-                colaboradores={busquedaTipo === 'autoriza' ? colaboradores.autorizados : colaboradores.retirantes}
+                colaboradores={colaboradorField === 'autoriza'
+                    ? colaboradores.autorizados
+                    : colaboradores.todos.filter((c: any) => c.identificacion !== autoriza)
+                }
             />
 
             {/* Dependencia Modal */}
@@ -382,7 +404,7 @@ export default function Prestamo() {
                                     <div
                                         key={article.codigo_articulo}
                                         onClick={() => {
-                                            updateRowWithArticle(currentRowIndex, article);
+                                            handleSelectArticle(currentRowIndex, article);
                                             setShowArticulosModal(false);
                                             setSearchTerm('');
                                         }}
