@@ -32,6 +32,9 @@ interface Solicitud {
     numero_solicitud: number;
     fecha_solicitud: string;
     descripcion_solicitud: string;
+    direccion_exacta?: string;
+    barrio?: string;
+    distrito?: string;
     tipo_solicitud: string;
     estado_actual?: string;
 }
@@ -59,7 +62,7 @@ export default function SeguimientoSolicitudExterno() {
     // Data State
     const [solicitudes, setSolicitudes] = useState<Solicitud[]>([]);
     const [stats, setStats] = useState({ total: 0, activas: 0, ejecutadas: 0, canceladas: 0 });
-    const [totalRecords, setTotalRecords] = useState(0);
+    // const [totalRecords, setTotalRecords] = useState(0);
 
     // Filter State
     const [searchTerm, setSearchTerm] = useState('');
@@ -131,8 +134,16 @@ export default function SeguimientoSolicitudExterno() {
     const cargarSolicitudes = async () => {
         setLoading(true);
         try {
-            // 1. Fetch ALL STE Requests
-            const solicitudesData = await fetchAll('solicitud_17', 'numero_solicitud, fecha_solicitud, descripcion_solicitud, tipo_solicitud', 'tipo_solicitud', 'STE');
+            // 1. Fetch ALL STE Requests with Location Data
+            const selectFields = `
+                numero_solicitud, 
+                fecha_solicitud, 
+                descripcion_solicitud, 
+                direccion_exacta,
+                tipo_solicitud,
+                barrios_distritos(barrio, distrito)
+            `;
+            const solicitudesData = await fetchAll('solicitud_17', selectFields, 'tipo_solicitud', 'STE');
 
             if (!solicitudesData || solicitudesData.length === 0) {
                 setSolicitudes([]);
@@ -149,9 +160,11 @@ export default function SeguimientoSolicitudExterno() {
                 estadoMap.set(s.numero_solicitud, s.estado_actual);
             });
 
-            // 3. Merge Data
+            // 3. Merge Data and Extract Nested Location
             const mapped: Solicitud[] = solicitudesData.map((s: any) => ({
                 ...s,
+                barrio: s.barrios_distritos?.barrio || 'No especificado',
+                distrito: s.barrios_distritos?.distrito || 'No especificado',
                 estado_actual: estadoMap.get(s.numero_solicitud) || 'ACTIVA'
             }));
 
@@ -166,7 +179,7 @@ export default function SeguimientoSolicitudExterno() {
 
             setSolicitudes(mapped);
             setStats(conteos);
-            setTotalRecords(mapped.length);
+            // setTotalRecords(mapped.length);
 
         } catch (error: any) {
             console.error('Error:', error);
@@ -201,10 +214,13 @@ export default function SeguimientoSolicitudExterno() {
         if (!sortConfig) return 0;
         const { key, direction } = sortConfig;
 
-        if (a[key] < b[key]) {
+        const aVal = a[key] ?? '';
+        const bVal = b[key] ?? '';
+
+        if (aVal < bVal) {
             return direction === 'asc' ? -1 : 1;
         }
-        if (a[key] > b[key]) {
+        if (aVal > bVal) {
             return direction === 'asc' ? 1 : -1;
         }
         return 0;
@@ -427,19 +443,42 @@ export default function SeguimientoSolicitudExterno() {
         try {
             const dataToExport = filteredSolicitudes.map(s => ({
                 'N° Solicitud': s.numero_solicitud,
-                'Fecha': new Date(s.fecha_solicitud).toLocaleDateString(),
-                'Descripción': s.descripcion_solicitud,
-                'Tipo': s.tipo_solicitud,
-                'Estado': s.estado_actual
+                'Fecha': s.fecha_solicitud ? new Date(s.fecha_solicitud).toLocaleDateString('es-CR') : 'N/A',
+                'Descripción': s.descripcion_solicitud || 'Sin descripción',
+                'Dirección Exacta': s.direccion_exacta || 'N/A',
+                'Barrio': s.barrio || 'N/A',
+                'Distrito': s.distrito || 'N/A',
+                'Tipo': s.tipo_solicitud || 'N/A',
+                'Estado': s.estado_actual || 'ACTIVA'
             }));
 
             const ws = XLSX.utils.json_to_sheet(dataToExport);
             const wb = XLSX.utils.book_new();
             XLSX.utils.book_append_sheet(wb, ws, "Solicitudes STE");
-            XLSX.writeFile(wb, `Seguimiento_Solicitudes_Externas_${new Date().toISOString().split('T')[0]}.xlsx`);
+
+            // Generar buffer XLSX y forzar descarga manual para asegurar nombre de archivo
+            const wbout = XLSX.write(wb, { bookType: 'xlsx', type: 'array' });
+            const blob = new Blob([wbout], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
+
+            const dateStr = new Date().toISOString().split('T')[0];
+            const fileName = `Seguimiento_Solicitudes_Externas_${dateStr}.xlsx`;
+
+            const url = window.URL.createObjectURL(blob);
+            const link = document.createElement('a');
+            link.href = url;
+            link.download = fileName;
+            document.body.appendChild(link);
+            link.click();
+
+            // Limpieza diferida
+            setTimeout(() => {
+                document.body.removeChild(link);
+                window.URL.revokeObjectURL(url);
+            }, 100);
 
             showNotification('Exportación completada', 'success');
         } catch (error: any) {
+            console.error('Error al exportar:', error);
             showNotification('Error al exportar: ' + error.message, 'error');
         }
     };

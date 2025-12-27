@@ -34,7 +34,7 @@ export default function SinAsignacion() {
     } = useTransactionManager({
         tipoSalidaId: 'sin_asignacion',
         defaultDescription: 'Solicitud Sin Asignación Específica',
-        onSuccessRoute: '/activos/sin-asignacion'
+        onSuccessRoute: '/otras-solicitudes/sin-asignacion'
     });
 
     // 2. Local State

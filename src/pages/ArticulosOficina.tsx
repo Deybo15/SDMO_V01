@@ -34,7 +34,7 @@ export default function ArticulosOficina() {
     } = useTransactionManager({
         tipoSalidaId: 'articulos_oficina',
         defaultDescription: 'Solicitud de Artículos de Oficina',
-        onSuccessRoute: '/activos/articulos-oficina'
+        onSuccessRoute: '/otras-solicitudes/articulos-oficina'
     });
 
     // 2. Local State

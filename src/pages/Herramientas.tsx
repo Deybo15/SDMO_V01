@@ -33,7 +33,7 @@ export default function Herramientas() {
     } = useTransactionManager({
         tipoSalidaId: 'herramientas',
         defaultDescription: 'Solicitud de Herramientas',
-        onSuccessRoute: '/activos/herramientas'
+        onSuccessRoute: '/otras-solicitudes/herramientas'
     });
 
     // 2. Local State

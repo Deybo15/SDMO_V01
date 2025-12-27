@@ -33,7 +33,7 @@ export default function LimpiezaAseo() {
     } = useTransactionManager({
         tipoSalidaId: 'limpieza_aseo',
         defaultDescription: 'Solicitud de Limpieza y Aseo',
-        onSuccessRoute: '/activos/limpieza-aseo'
+        onSuccessRoute: '/otras-solicitudes/limpieza-aseo'
     });
 
     useEffect(() => {

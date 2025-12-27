@@ -38,7 +38,7 @@ export default function EquiposActivos() {
     } = useTransactionManager({
         tipoSalidaId: 'equipos',
         defaultDescription: 'Solicitud Equipos Tecnológicos',
-        onSuccessRoute: '/activos/equipos'
+        onSuccessRoute: '/otras-solicitudes/equipos-activos'
     });
 
     // 2. Local State
@@ -104,11 +104,11 @@ export default function EquiposActivos() {
                 comentarios,
                 numero_solicitud: numeroSolicitud
             },
-            async (_idSalida, numSolicitud) => {
+            async (_idSalida, _validItems, numSolicitud) => {
                 // Update Solicitud with Equipo
-                if (selectedEquipoValue) {
+                if (selectedEquipoValue && numSolicitud) {
                     await supabase.from('solicitud_17')
-                        .update({ equipo_automotor: parseInt(selectedEquipoValue) })
+                        .update({ equipo_automotor: selectedEquipoValue })
                         .eq('numero_solicitud', numSolicitud);
                 }
             }

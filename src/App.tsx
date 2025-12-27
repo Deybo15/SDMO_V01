@@ -40,6 +40,7 @@ import InventarioActivos from './pages/Activos/InventarioActivos';
 import IngresoActivos from './pages/Activos/IngresoActivos';
 import AsignacionActivos from './pages/Activos/AsignacionActivos';
 import AccesoriosActivos from './pages/Activos/AccesoriosActivos';
+import AuditHistory from './pages/AuditHistory';
 import { ThemeProvider } from './context/ThemeContext';
 import { ProtectedRoute } from './components/ProtectedRoute';
 import { AuthorizedRoute } from './components/AuthorizedRoute';
@@ -94,6 +95,7 @@ function App() {
                             <Route path="/activos/ingreso" element={<IngresoActivos />} />
                             <Route path="/activos/asignacion" element={<AsignacionActivos />} />
                             <Route path="/activos/accesorios" element={<AccesoriosActivos />} />
+                            <Route path="/gestion-interna/auditoria" element={<AuditHistory />} />
                         </Route>
 
                         {/* Navigation / Container Pages */}

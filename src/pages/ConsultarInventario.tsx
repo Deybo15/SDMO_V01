@@ -1,10 +1,13 @@
 import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '../lib/supabase';
-import { Search, Download, FileText, ChevronLeft, ChevronRight, X, Loader2, ClipboardList } from 'lucide-react';
+import { Search, Download, FileText, ChevronLeft, ChevronRight, X, Loader2, AlertCircle } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
+import SmartImage from '../components/SmartImage';
+import VirtualizedTable from '../components/VirtualizedTable';
 import * as XLSX from 'xlsx';
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
+import { cn } from '../lib/utils';
 
 // Define types for our data
 interface InventoryItem {
@@ -32,7 +35,7 @@ export default function ConsultarInventario() {
     const [totalItems, setTotalItems] = useState(0);
     const [selectedImage, setSelectedImage] = useState<{ src: string, alt: string } | null>(null);
 
-    const itemsPerPage = 15;
+    const itemsPerPage = 50;
     const VIEW = 'inventario_con_datos';
 
     const fetchData = useCallback(async () => {
@@ -99,63 +102,27 @@ export default function ConsultarInventario() {
             let allData: InventoryItem[] = [];
             let from = 0;
             const step = 1000;
-            let more = true;
+            let keepFetching = true;
 
-            while (more) {
-                const { data: batch, error } = await supabase
+            while (keepFetching) {
+                const { data: chunk, error } = await supabase
                     .from(VIEW)
-                    .select('codigo_articulo, nombre_articulo, unidad, codigo_gasto, precio_unitario, cantidad_disponible')
-                    .order('nombre_articulo')
+                    .select('*')
                     .range(from, from + step - 1);
 
-                if (error) throw error;
-
-                if (batch && batch.length > 0) {
-                    const batchWithImages = batch.map((item: any) => ({
-                        ...item,
-                        imagen_url: null
-                    }));
-                    allData = [...allData, ...batchWithImages];
-                    from += step;
-                    more = batch.length === step;
+                if (error || !chunk || chunk.length === 0) {
+                    keepFetching = false;
                 } else {
-                    more = false;
+                    allData = [...allData, ...chunk];
+                    from += step;
+                    if (chunk.length < step) keepFetching = false;
                 }
             }
 
-            const cods = allData.map(r => r.codigo_articulo).filter(Boolean);
-            let marcasMap: Record<string, string> = {};
-            const batchSize = 500;
-
-            for (let i = 0; i < cods.length; i += batchSize) {
-                const { data: marcas } = await supabase
-                    .from('articulo_01')
-                    .select('codigo_articulo, marca')
-                    .in('codigo_articulo', cods.slice(i, i + batchSize));
-
-                marcas?.forEach((m: MarcaItem) => {
-                    marcasMap[m.codigo_articulo] = m.marca;
-                });
-            }
-
-            const excelData = allData.map(r => ({
-                'Código': r.codigo_articulo,
-                'Artículo': r.nombre_articulo,
-                'Marca': marcasMap[r.codigo_articulo] || 'Sin marca',
-                'Unidad': r.unidad,
-                'GASTO': r.codigo_gasto || '',
-                'PRECIO': r.precio_unitario,
-                'Cantidad': r.cantidad_disponible
-            }));
-
+            const ws = XLSX.utils.json_to_sheet(allData);
             const wb = XLSX.utils.book_new();
-            const ws = XLSX.utils.json_to_sheet(excelData);
-            ws['!cols'] = [
-                { wch: 15 }, { wch: 44 }, { wch: 22 }, { wch: 10 }, { wch: 14 }, { wch: 14 }, { wch: 14 }
-            ];
-            XLSX.utils.book_append_sheet(wb, ws, 'Inventario');
-            XLSX.writeFile(wb, `Inventario_Completo_SDMO_${new Date().toISOString().split('T')[0]}.xlsx`);
-
+            XLSX.utils.book_append_sheet(wb, ws, "Inventario");
+            XLSX.writeFile(wb, "Inventario_Completo_SDMO.xlsx");
         } catch (error) {
             console.error('Error exporting Excel:', error);
         } finally {
@@ -169,83 +136,44 @@ export default function ConsultarInventario() {
             let allData: InventoryItem[] = [];
             let from = 0;
             const step = 1000;
-            let more = true;
+            let keepFetching = true;
 
-            while (more) {
-                const { data: batch, error } = await supabase
+            while (keepFetching) {
+                const { data: chunk, error } = await supabase
                     .from(VIEW)
-                    .select('codigo_articulo, nombre_articulo, unidad, codigo_gasto, precio_unitario, cantidad_disponible')
-                    .order('nombre_articulo')
+                    .select('*')
                     .range(from, from + step - 1);
 
-                if (error) throw error;
-
-                if (batch && batch.length > 0) {
-                    const batchWithImages = batch.map((item: any) => ({
-                        ...item,
-                        imagen_url: null
-                    }));
-                    allData = [...allData, ...batchWithImages];
-                    from += step;
-                    more = batch.length === step;
+                if (error || !chunk || chunk.length === 0) {
+                    keepFetching = false;
                 } else {
-                    more = false;
+                    allData = [...allData, ...chunk];
+                    from += step;
+                    if (chunk.length < step) keepFetching = false;
                 }
             }
 
-            const cods = allData.map(r => r.codigo_articulo).filter(Boolean);
-            let marcasMap: Record<string, string> = {};
-            const batchSize = 500;
-            for (let i = 0; i < cods.length; i += batchSize) {
-                const { data: marcas } = await supabase
-                    .from('articulo_01')
-                    .select('codigo_articulo, marca')
-                    .in('codigo_articulo', cods.slice(i, i + batchSize));
-                marcas?.forEach((m: MarcaItem) => {
-                    marcasMap[m.codigo_articulo] = m.marca;
-                });
-            }
-
-            const doc = new jsPDF('l', 'mm', 'a4');
-
-            doc.setFontSize(18);
-            doc.text('Inventario Actual - SDMO', 14, 18);
-            doc.setFontSize(11);
-            doc.text(`Generado el: ${new Date().toLocaleDateString('es-CR')}`, 14, 26);
-            doc.text(`Total de artículos: ${allData.length}`, 14, 32);
-
-            const body = allData.map(r => [
-                r.codigo_articulo || 'N/D',
-                r.nombre_articulo || 'N/D',
-                marcasMap[r.codigo_articulo] || 'Sin marca',
-                r.unidad || 'N/D',
-                r.codigo_gasto || '',
-                'CRC ' + Number(r.precio_unitario).toLocaleString('es-CR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }),
-                Number(r.cantidad_disponible).toLocaleString('es-CR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
-            ]);
+            const doc = new jsPDF();
+            doc.text("Inventario Completo SDMO", 14, 15);
+            doc.setFontSize(10);
+            doc.text(`Generado el: ${new Date().toLocaleString()}`, 14, 22);
+            doc.text(`Total de artículos: ${allData.length}`, 14, 29);
 
             autoTable(doc, {
-                head: [['Código', 'Artículo', 'Marca', 'Unidad', 'GASTO', 'PRECIO', 'Cantidad']],
-                body,
+                startY: 35,
+                head: [['Código', 'Artículo', 'Unidad', 'Stock', 'Precio']],
+                body: allData.map(item => [
+                    item.codigo_articulo,
+                    item.nombre_articulo,
+                    item.unidad,
+                    item.cantidad_disponible,
+                    new Intl.NumberFormat('es-CR', { style: 'currency', currency: 'CRC' }).format(item.precio_unitario)
+                ]),
                 theme: 'striped',
-                headStyles: { fillColor: [249, 115, 22] },
-                styles: { fontSize: 8 },
-                startY: 38,
-                margin: { top: 38, bottom: 18 },
-                columnStyles: {
-                    0: { cellWidth: 25, halign: 'center' },
-                    1: { cellWidth: 'auto' },
-                    2: { cellWidth: 25, halign: 'center' },
-                    3: { cellWidth: 15, halign: 'center' },
-                    4: { cellWidth: 20, halign: 'center' },
-                    5: { cellWidth: 35, halign: 'center' },
-                    6: { cellWidth: 25, halign: 'center' }
-                },
-                showHead: 'everyPage'
+                headStyles: { fillColor: [59, 130, 246] }
             });
 
-            doc.save(`Inventario_Completo_SDMO_${new Date().toISOString().split('T')[0]}.pdf`);
-
+            doc.save("Inventario_Completo_SDMO.pdf");
         } catch (error) {
             console.error('Error exporting PDF:', error);
         } finally {
@@ -256,18 +184,16 @@ export default function ConsultarInventario() {
     const totalPages = Math.ceil(totalItems / itemsPerPage);
 
     return (
-        <div className="p-6 space-y-6">
+        <div className="p-6 space-y-6 flex flex-col h-full bg-slate-50 dark:bg-[#070b14]">
             {/* Header */}
-            {/* Header */}
-            <div className="sticky top-0 z-50 flex flex-col md:flex-row md:items-center justify-between gap-4 py-6 mb-8 bg-slate-50/90 dark:bg-[#0f1419]/90 backdrop-blur-xl -mx-6 px-6 border-b border-slate-200/50 dark:border-white/5 shadow-lg shadow-black/5 dark:shadow-black/20 transition-all">
+            <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 py-4 mb-4">
                 <div className="flex items-center gap-4">
-                    <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-purple-500 to-purple-700 flex items-center justify-center shadow-lg shadow-purple-500/30">
-                        <ClipboardList className="w-6 h-6 text-white" />
+                    <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-indigo-500 to-blue-600 flex items-center justify-center shadow-lg shadow-indigo-500/20">
+                        <FileText className="w-6 h-6 text-white" />
                     </div>
                     <div>
-                        <h1 className="text-2xl font-bold bg-clip-text text-transparent bg-gradient-to-br from-slate-800 to-slate-500 dark:from-white dark:to-slate-400">
-                            Inventario Actual
-                        </h1>
+                        <h1 className="text-2xl font-bold text-slate-900 dark:text-white">Inventario Actual</h1>
+                        <p className="text-sm text-slate-500 dark:text-slate-400">Consulta y gestión de artículos en tiempo real</p>
                     </div>
                 </div>
                 <div className="flex gap-2">
@@ -282,7 +208,7 @@ export default function ConsultarInventario() {
             </div>
 
             {/* Filters & Actions */}
-            <div className="bg-white dark:bg-slate-800 p-4 rounded-xl shadow-sm border border-slate-100 dark:border-slate-700 flex flex-col md:flex-row gap-4 justify-between items-center">
+            <div className="bg-white dark:bg-slate-800/50 backdrop-blur-sm p-4 rounded-2xl shadow-sm border border-slate-200/50 dark:border-white/5 flex flex-col md:flex-row gap-4 justify-between items-center">
                 <div className="relative w-full md:w-96">
                     <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400" />
                     <input
@@ -293,160 +219,173 @@ export default function ConsultarInventario() {
                             setSearch(e.target.value);
                             setPage(1);
                         }}
-                        className="w-full pl-10 pr-4 py-2 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-brand-500 text-slate-900 dark:text-white placeholder-slate-400"
+                        className="w-full pl-10 pr-4 py-2 bg-slate-100 dark:bg-slate-900/50 border border-transparent focus:border-blue-500 dark:focus:border-blue-500 rounded-xl focus:outline-none focus:ring-4 focus:ring-blue-500/10 text-slate-900 dark:text-white placeholder-slate-400 transition-all"
                     />
                 </div>
                 <div className="flex gap-2 w-full md:w-auto">
                     <button
                         onClick={handleExportExcel}
                         disabled={loading}
-                        className="flex-1 md:flex-none flex items-center justify-center gap-2 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors disabled:opacity-50"
+                        className="flex-1 md:flex-none flex items-center justify-center gap-2 px-5 py-2.5 bg-emerald-600/10 text-emerald-600 dark:text-emerald-400 border border-emerald-600/20 rounded-xl hover:bg-emerald-600 hover:text-white transition-all disabled:opacity-50 font-semibold"
                     >
-                        <FileText className="w-4 h-4" />
+                        <Download className="w-4 h-4" />
                         Excel
                     </button>
                     <button
                         onClick={handleExportPDF}
                         disabled={loading}
-                        className="flex-1 md:flex-none flex items-center justify-center gap-2 px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors disabled:opacity-50"
+                        className="flex-1 md:flex-none flex items-center justify-center gap-2 px-5 py-2.5 bg-red-600/10 text-red-600 dark:text-red-400 border border-red-600/20 rounded-xl hover:bg-red-600 hover:text-white transition-all disabled:opacity-50 font-semibold"
                     >
-                        <Download className="w-4 h-4" />
+                        <FileText className="w-4 h-4" />
                         PDF
                     </button>
                 </div>
             </div>
 
-            {/* Table */}
-            <div className="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-slate-100 dark:border-slate-700 overflow-hidden">
-                <div className="overflow-x-auto">
-                    <table className="w-full text-sm text-left">
-                        <thead className="text-xs text-slate-700 dark:text-slate-200 uppercase bg-slate-50 dark:bg-slate-700/50">
-                            <tr>
-                                <th className="px-6 py-4 font-bold">Imagen</th>
-                                <th className="px-6 py-4 font-bold">Código</th>
-                                <th className="px-6 py-4 font-bold">Artículo</th>
-                                <th className="px-6 py-4 font-bold">Marca</th>
-                                <th className="px-6 py-4 font-bold">Unidad</th>
-                                <th className="px-6 py-4 font-bold">Gasto</th>
-                                <th className="px-6 py-4 font-bold text-right">Precio</th>
-                                <th className="px-6 py-4 font-bold text-right">Cantidad</th>
-                            </tr>
-                        </thead>
-                        <tbody className="divide-y divide-slate-100 dark:divide-slate-700">
-                            {loading ? (
-                                <tr>
-                                    <td colSpan={8} className="px-6 py-12 text-center text-slate-500 dark:text-slate-400">
-                                        <div className="flex flex-col items-center gap-2">
-                                            <Loader2 className="w-8 h-8 animate-spin text-brand-500" />
-                                            <p>Cargando datos...</p>
+            {/* Table Container with Virtualization */}
+            <div className="flex-1 min-h-0 bg-white dark:bg-slate-800/20 rounded-2xl shadow-xl border border-slate-200/50 dark:border-white/5 overflow-hidden flex flex-col">
+                {loading && data.length === 0 ? (
+                    <div className="flex-1 flex flex-col items-center justify-center gap-4 text-slate-500">
+                        <div className="relative">
+                            <Loader2 className="w-12 h-12 animate-spin text-blue-500" />
+                            <div className="absolute inset-0 blur-xl bg-blue-500/20 animate-pulse"></div>
+                        </div>
+                        <p className="font-semibold text-lg animate-pulse">Optimizando datos...</p>
+                    </div>
+                ) : data.length === 0 ? (
+                    <div className="flex-1 flex flex-col items-center justify-center gap-3 text-slate-500 grayscale opacity-50">
+                        <AlertCircle className="w-16 h-16" />
+                        <p className="font-bold text-xl">Sin resultados</p>
+                    </div>
+                ) : (
+                    <VirtualizedTable
+                        data={data}
+                        rowHeight={110}
+                        columns={[
+                            { header: 'Imagen', width: '120px' },
+                            { header: 'Código', width: '150px', className: 'font-mono text-[10px] tracking-tight' },
+                            { header: 'Artículo', width: '450px', className: 'text-sm' },
+                            { header: 'Marca', width: '180px' },
+                            { header: 'Unidad', width: '120px' },
+                            { header: 'Gasto', width: '120px' },
+                            { header: 'Precio', width: '180px', className: 'text-right font-mono' },
+                            { header: 'Cantidad', width: '140px', className: 'text-right' },
+                        ]}
+                        renderCell={(item, colIdx) => {
+                            switch (colIdx) {
+                                case 0:
+                                    return (
+                                        <div
+                                            className="w-16 h-16 rounded-xl overflow-hidden border border-slate-200 dark:border-white/10 bg-white dark:bg-slate-900 group/img cursor-pointer transition-all duration-300 hover:scale-110 active:scale-95 shadow-lg shadow-black/5"
+                                            onDoubleClick={() => setSelectedImage({
+                                                src: item.imagen_url || '',
+                                                alt: item.nombre_articulo
+                                            })}
+                                        >
+                                            <SmartImage
+                                                src={item.imagen_url}
+                                                alt={item.nombre_articulo}
+                                                className="w-full h-full"
+                                            />
                                         </div>
-                                    </td>
-                                </tr>
-                            ) : data.length === 0 ? (
-                                <tr>
-                                    <td colSpan={8} className="px-6 py-12 text-center text-slate-500 dark:text-slate-400">
-                                        No se encontraron resultados
-                                    </td>
-                                </tr>
-                            ) : (
-                                data.map((item) => (
-                                    <tr key={item.codigo_articulo} className="hover:bg-slate-50 dark:hover:bg-slate-700/50 transition-colors">
-                                        <td className="px-6 py-4">
-                                            <div className="w-16 h-16 rounded-lg overflow-hidden border border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-900 flex items-center justify-center cursor-pointer hover:scale-105 transition-transform shadow-sm"
-                                                onDoubleClick={() => setSelectedImage({
-                                                    src: item.imagen_url || 'https://via.placeholder.com/150?text=Sin+Imagen',
-                                                    alt: item.nombre_articulo
-                                                })}
-                                            >
-                                                <img
-                                                    src={item.imagen_url || 'https://via.placeholder.com/150?text=Sin+Imagen'}
-                                                    alt={item.nombre_articulo}
-                                                    className="w-full h-full object-cover"
-                                                    onError={(e) => {
-                                                        (e.target as HTMLImageElement).src = 'https://via.placeholder.com/150?text=Sin+Imagen';
-                                                    }}
-                                                />
-                                            </div>
-                                        </td>
-                                        <td className="px-6 py-4 font-medium text-slate-900 dark:text-white whitespace-nowrap">
-                                            {item.codigo_articulo}
-                                        </td>
-                                        <td className="px-6 py-4 text-slate-600 dark:text-slate-300 min-w-[300px]">
-                                            {item.nombre_articulo}
-                                        </td>
-                                        <td className="px-6 py-4">
-                                            <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-orange-100 text-orange-800 dark:bg-orange-900/30 dark:text-orange-300 border border-orange-200 dark:border-orange-800">
-                                                {item.marca || 'Sin marca'}
-                                            </span>
-                                        </td>
-                                        <td className="px-6 py-4 text-slate-600 dark:text-slate-300">
-                                            {item.unidad}
-                                        </td>
-                                        <td className="px-6 py-4 text-slate-600 dark:text-slate-300 whitespace-nowrap">
-                                            {item.codigo_gasto || 'N/D'}
-                                        </td>
-                                        <td className="px-6 py-4 text-slate-600 dark:text-slate-300 text-right font-mono">
+                                    );
+                                case 1:
+                                    return <span className="text-slate-400 font-bold uppercase">{item.codigo_articulo}</span>;
+                                case 2:
+                                    return <span className="text-slate-900 dark:text-white font-semibold leading-snug">{item.nombre_articulo}</span>;
+                                case 3:
+                                    return (
+                                        <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-black bg-blue-500/10 text-blue-500 border border-blue-500/20 uppercase tracking-wider">
+                                            {item.marca || 'Sin marca'}
+                                        </span>
+                                    );
+                                case 4:
+                                    return <span className="text-slate-500 dark:text-slate-400 font-medium">{item.unidad}</span>;
+                                case 5:
+                                    return <span className="text-slate-500 dark:text-slate-400 font-medium">{item.codigo_gasto || 'N/D'}</span>;
+                                case 6:
+                                    return (
+                                        <span className="text-slate-900 dark:text-white font-black">
                                             {Number(item.precio_unitario).toLocaleString('es-CR', { style: 'currency', currency: 'CRC' })}
-                                        </td>
-                                        <td className={`px-6 py-4 font-bold text-right ${item.cantidad_disponible === 0 ? 'text-red-500 dark:text-red-400' : 'text-slate-900 dark:text-white'}`}>
-                                            {Number(item.cantidad_disponible).toLocaleString('es-CR')}
-                                        </td>
-                                    </tr>
-                                ))
-                            )}
-                        </tbody>
-                    </table>
-                </div>
+                                        </span>
+                                    );
+                                case 7:
+                                    return (
+                                        <div className="flex flex-col items-end">
+                                            <span className={cn(
+                                                "text-lg font-black tracking-tighter",
+                                                item.cantidad_disponible === 0 ? 'text-red-500' : 'text-slate-900 dark:text-emerald-400'
+                                            )}>
+                                                {Number(item.cantidad_disponible).toLocaleString('es-CR')}
+                                            </span>
+                                            <span className="text-[10px] uppercase font-bold text-slate-400">En stock</span>
+                                        </div>
+                                    );
+                                default:
+                                    return null;
+                            }
+                        }}
+                    />
+                )}
+            </div>
 
-                {/* Pagination */}
-                <div className="px-6 py-4 border-t border-slate-100 dark:border-slate-700 flex items-center justify-between">
-                    <button
-                        onClick={() => setPage(p => Math.max(1, p - 1))}
-                        disabled={page === 1 || loading}
-                        className="flex items-center gap-1 px-3 py-1 text-sm font-medium text-slate-600 dark:text-slate-300 hover:text-brand-600 dark:hover:text-brand-400 disabled:opacity-50 disabled:cursor-not-allowed"
-                    >
-                        <ChevronLeft className="w-4 h-4" />
-                        Anterior
-                    </button>
-                    <span className="text-sm text-slate-600 dark:text-slate-400">
-                        Página <span className="font-medium text-slate-900 dark:text-white">{page}</span> de <span className="font-medium text-slate-900 dark:text-white">{totalPages || 1}</span>
+            {/* Pagination Controls */}
+            <div className="flex items-center justify-between bg-white dark:bg-slate-800/30 p-4 rounded-2xl border border-slate-200/50 dark:border-white/5 mt-2">
+                <button
+                    onClick={() => setPage(p => Math.max(1, p - 1))}
+                    disabled={page === 1 || loading}
+                    className="flex items-center gap-2 px-4 py-2 text-sm font-bold text-slate-600 dark:text-slate-300 bg-slate-100 dark:bg-slate-700/50 rounded-xl hover:bg-slate-200 dark:hover:bg-slate-700 transition-all disabled:opacity-20 disabled:cursor-not-allowed uppercase tracking-widest"
+                >
+                    <ChevronLeft className="w-5 h-5" />
+                    Anterior
+                </button>
+                <div className="flex items-center gap-6">
+                    <span className="text-sm font-bold text-slate-500 uppercase tracking-widest">
+                        Página <span className="text-blue-500 font-black">{page}</span> de <span className="text-blue-500 font-black">{totalPages || 1}</span>
                     </span>
-                    <button
-                        onClick={() => setPage(p => Math.min(totalPages, p + 1))}
-                        disabled={page === totalPages || loading}
-                        className="flex items-center gap-1 px-3 py-1 text-sm font-medium text-slate-600 dark:text-slate-300 hover:text-brand-600 dark:hover:text-brand-400 disabled:opacity-50 disabled:cursor-not-allowed"
-                    >
-                        Siguiente
-                        <ChevronRight className="w-4 h-4" />
-                    </button>
+                    <div className="h-4 w-[1px] bg-slate-300 dark:bg-slate-700"></div>
+                    <span className="text-xs font-bold text-slate-400 uppercase tracking-tighter">
+                        Total Items: {totalItems}
+                    </span>
                 </div>
+                <button
+                    onClick={() => setPage(p => Math.min(totalPages, p + 1))}
+                    disabled={page === totalPages || loading}
+                    className="flex items-center gap-2 px-4 py-2 text-sm font-bold text-slate-600 dark:text-slate-300 bg-slate-100 dark:bg-slate-700/50 rounded-xl hover:bg-slate-200 dark:hover:bg-slate-700 transition-all disabled:opacity-20 disabled:cursor-not-allowed uppercase tracking-widest"
+                >
+                    Siguiente
+                    <ChevronRight className="w-5 h-5" />
+                </button>
             </div>
 
             {/* Image Modal */}
             {selectedImage && (
                 <div
-                    className="fixed inset-0 z-50 flex items-center justify-center bg-black/90 backdrop-blur-sm p-4"
+                    className="fixed inset-0 z-[100] flex items-center justify-center bg-[#070b14]/95 backdrop-blur-xl p-4 animate-in fade-in duration-300"
                     onClick={() => setSelectedImage(null)}
                 >
                     <div
-                        className="relative max-w-4xl w-full max-h-[90vh] bg-slate-900 rounded-2xl overflow-hidden border border-slate-700 shadow-2xl"
+                        className="relative max-w-5xl w-full max-h-[90vh] bg-slate-900/50 rounded-[2.5rem] overflow-hidden border border-white/10 shadow-3xl animate-in zoom-in-95 duration-300"
                         onClick={e => e.stopPropagation()}
                     >
-                        <div className="flex items-center justify-between p-4 border-b border-slate-700 bg-slate-800/50">
-                            <h3 className="text-lg font-bold text-white">Vista Detallada</h3>
+                        <div className="absolute top-6 right-6 z-10">
                             <button
                                 onClick={() => setSelectedImage(null)}
-                                className="p-1 rounded-full hover:bg-slate-700 text-slate-400 hover:text-white transition-colors"
+                                className="w-12 h-12 flex items-center justify-center rounded-2xl bg-white/10 hover:bg-white/20 text-white backdrop-blur-md transition-all border border-white/20"
                             >
                                 <X className="w-6 h-6" />
                             </button>
                         </div>
-                        <div className="p-4 flex items-center justify-center bg-black/50 h-[calc(90vh-80px)]">
+                        <div className="p-12 flex items-center justify-center min-h-[500px]">
                             <img
                                 src={selectedImage.src}
                                 alt={selectedImage.alt}
-                                className="max-w-full max-h-full object-contain rounded-lg shadow-lg"
+                                className="max-w-full max-h-[70vh] object-contain rounded-3xl shadow-2xl shadow-black/50"
                             />
+                        </div>
+                        <div className="bg-gradient-to-t from-black/80 to-transparent p-12 pt-24 absolute bottom-0 left-0 right-0">
+                            <h3 className="text-2xl font-black text-white tracking-tight">{selectedImage.alt}</h3>
+                            <p className="text-slate-400 font-medium">Visualización de alta resolución</p>
                         </div>
                     </div>
                 </div>

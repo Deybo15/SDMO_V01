@@ -1,8 +1,9 @@
 import React from 'react';
 import { Link, useLocation, useNavigate, Outlet } from 'react-router-dom';
-import { LayoutDashboard, Package, Users, Building2, ClipboardList, Settings2, Wrench, LogOut, UserCircle2, Menu, X, Calculator } from 'lucide-react';
+import { LayoutDashboard, Package, Users, Building2, ClipboardList, Settings2, Wrench, LogOut, UserCircle2, Menu, X, Calculator, History } from 'lucide-react';
 import { cn } from '../lib/utils';
 import { supabase } from '../lib/supabase';
+import CommandPalette from './CommandPalette';
 
 export default function Layout() {
     const location = useLocation();
@@ -22,6 +23,7 @@ export default function Layout() {
         { icon: Settings2, label: 'Gestión Interna', path: '/gestion-interna' },
         { icon: Calculator, label: 'Proyección Compras', path: '/gestion-interna/proyeccion-compras' },
         { icon: Wrench, label: 'Gestión de Activos', path: '/activos' },
+        { icon: History, label: 'Historial Auditoría', path: '/gestion-interna/auditoria' },
 
     ];
 
@@ -61,20 +63,20 @@ export default function Layout() {
 
             {/* Sidebar (Desktop & Mobile Drawer) */}
             <aside className={cn(
-                "fixed inset-y-0 left-0 z-[70] bg-slate-950 border-r border-slate-800/50 shadow-2xl transition-all duration-300 ease-in-out md:translate-x-0 md:static md:flex md:flex-col group/sidebar",
-                mobileMenuOpen ? "translate-x-0 w-72" : "-translate-x-full w-72 md:w-20 md:hover:w-72"
+                "fixed inset-y-0 left-0 z-[70] glass-dark border-r border-white/5 shadow-2xl transition-[width,transform] duration-300 cubic-bezier(0.4, 0, 0.2, 1) md:translate-x-0 md:static md:flex md:flex-col group/sidebar",
+                mobileMenuOpen ? "translate-x-0 w-72" : "-translate-x-full w-72 md:w-24 md:hover:w-72"
             )}>
                 {/* Header / Logo */}
-                <div className="p-6 md:p-4 md:group-hover/sidebar:p-8 transition-all duration-300 hidden md:block overflow-hidden">
-                    <div className="flex items-center gap-3">
-                        <div className="w-10 h-10 rounded-xl bg-blue-600 flex items-center justify-center shadow-lg shadow-blue-500/20 shrink-0">
-                            <span className="text-white font-bold text-xl">S</span>
+                <div className="p-6 md:p-6 md:group-hover/sidebar:p-8 transition-all duration-300 hidden md:block overflow-hidden relative">
+                    <div className="flex items-center gap-4">
+                        <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-blue-500 to-blue-700 flex items-center justify-center shadow-xl shadow-blue-500/20 shrink-0 animate-float">
+                            <span className="text-white font-black text-2xl tracking-tighter">S</span>
                         </div>
-                        <div className="flex flex-col opacity-0 group-hover/sidebar:opacity-100 transition-all duration-300 whitespace-nowrap overflow-hidden">
-                            <h1 className="text-2xl font-bold text-white tracking-tight leading-none mb-1">
+                        <div className="flex flex-col opacity-0 scale-95 group-hover/sidebar:opacity-100 group-hover/sidebar:scale-100 transition-[opacity,transform] duration-300 whitespace-nowrap overflow-hidden">
+                            <h1 className="text-2xl font-black text-white tracking-tighter leading-none mb-1">
                                 SDMO
                             </h1>
-                            <p className="text-[10px] text-slate-500 font-medium tracking-wider uppercase">Municipalidad de San José</p>
+                            <p className="text-[10px] text-blue-400 font-bold tracking-widest uppercase">Municipalidad</p>
                         </div>
                     </div>
                 </div>
@@ -90,12 +92,12 @@ export default function Layout() {
                 {/* Navigation */}
                 <nav className="flex-1 px-3 py-4 space-y-1.5 overflow-y-auto overflow-x-hidden scrollbar-thin scrollbar-thumb-slate-800 scrollbar-track-transparent">
                     {navItems.map((item) => {
+                        // Improved active logic: find matching items and pick the most specific one
                         const matchingItems = navItems.filter(navItem =>
                             navItem.path === '/'
                                 ? location.pathname === '/'
                                 : location.pathname.startsWith(navItem.path)
                         );
-
                         const bestMatch = matchingItems.sort((a, b) => b.path.length - a.path.length)[0];
                         const isActive = bestMatch?.path === item.path;
 
@@ -104,56 +106,54 @@ export default function Layout() {
                                 key={item.path}
                                 to={item.path}
                                 className={cn(
-                                    "group/item flex items-center gap-4 px-3 py-3 text-sm font-medium rounded-xl transition-all duration-200 relative",
+                                    "group/item flex items-center gap-4 px-4 py-3.5 text-sm font-bold rounded-2xl transition-[background-color,color,border-color,transform,opacity] duration-200 relative overflow-hidden outline-none border",
                                     isActive
-                                        ? "bg-blue-600 text-white shadow-md shadow-blue-900/20"
-                                        : "text-slate-400 hover:text-slate-100 hover:bg-slate-900"
+                                        ? "bg-blue-600/10 text-blue-400 inner-glow border-blue-500/20"
+                                        : "text-slate-500 hover:text-white hover:bg-white/5 border-transparent"
                                 )}
                             >
+                                {isActive && (
+                                    <div className="absolute left-0 top-1/2 -translate-y-1/2 w-1.5 h-8 bg-blue-500 rounded-r-full shadow-[4px_0_15px_rgba(59,130,246,0.5)] pointer-events-none" />
+                                )}
                                 <item.icon
                                     className={cn(
-                                        "w-6 h-6 shrink-0 transition-transform duration-200",
-                                        isActive ? "text-white" : "text-slate-500 group-hover/item:text-slate-300"
+                                        "w-6 h-6 shrink-0 transition-all duration-200",
+                                        isActive ? "text-blue-400 scale-110" : "text-slate-600 group-hover/item:text-slate-300"
                                     )}
                                 />
                                 <span className={cn(
-                                    "transition-all duration-300 whitespace-nowrap overflow-hidden",
-                                    "opacity-0 group-hover/sidebar:opacity-100",
-                                    isActive ? "font-semibold" : ""
+                                    "transition-[opacity,transform] duration-300 whitespace-nowrap overflow-hidden transform",
+                                    "opacity-0 scale-95 group-hover/sidebar:opacity-100 group-hover/sidebar:scale-100",
+                                    isActive ? "text-blue-400" : ""
                                 )}>
                                     {item.label}
                                 </span>
-
-                                {/* Tooltip for collapsed state */}
-                                <div className="absolute left-full ml-6 px-2 py-1 bg-slate-800 text-white text-xs rounded opacity-0 pointer-events-none group-hover/item:opacity-100 group-hover/sidebar:hidden transition-opacity whitespace-nowrap z-[100] border border-slate-700 shadow-xl">
-                                    {item.label}
-                                </div>
                             </Link>
                         );
                     })}
                 </nav>
 
                 {/* User Profile & Logout */}
-                <div className="p-3 border-t border-slate-800/50 bg-slate-950 overflow-hidden">
-                    <div className="bg-slate-900/50 rounded-2xl p-2.5 md:group-hover/sidebar:p-4 border border-slate-800/50 hover:border-slate-700 transition-all duration-300">
-                        <div className="flex items-center gap-3 mb-0 md:group-hover/sidebar:mb-3">
-                            <div className="w-9 h-9 md:w-10 md:h-10 rounded-full bg-slate-800 flex items-center justify-center border border-slate-700 shrink-0">
-                                <UserCircle2 className="w-5 h-5 md:w-6 md:h-6 text-slate-400" />
+                <div className="p-4 border-t border-white/5 bg-black/20 overflow-hidden">
+                    <div className="glass px-3 py-3 md:group-hover/sidebar:px-4 md:group-hover/sidebar:py-5 rounded-3xl border border-white/5 transition-all duration-300">
+                        <div className="flex items-center gap-3 mb-0 md:group-hover/sidebar:mb-5">
+                            <div className="w-10 h-10 rounded-2xl bg-gradient-to-br from-slate-700 to-slate-900 flex items-center justify-center border border-white/10 shrink-0 shadow-lg">
+                                <UserCircle2 className="w-6 h-6 text-slate-400" />
                             </div>
-                            <div className="flex flex-col opacity-0 group-hover/sidebar:opacity-100 transition-all duration-300 whitespace-nowrap overflow-hidden">
-                                <p className="text-sm font-semibold text-white truncate">Usuario</p>
-                                <p className="text-[10px] text-slate-500 truncate">dgamboa@msj.go.cr</p>
+                            <div className="flex flex-col opacity-0 scale-95 group-hover/sidebar:opacity-100 group-hover/sidebar:scale-100 transition-[opacity,transform] duration-300 whitespace-nowrap overflow-hidden">
+                                <p className="text-sm font-black text-white truncate tracking-tight">Usuario</p>
+                                <p className="text-[10px] text-slate-500 truncate font-bold">dgamboa@msj.go.cr</p>
                             </div>
                         </div>
 
                         <button
                             onClick={handleLogout}
                             className={cn(
-                                "flex items-center justify-center gap-2 w-full mt-2 md:mt-0 px-3 py-2 text-xs font-medium text-slate-400 hover:text-red-400 hover:bg-red-500/10 rounded-lg transition-all duration-200 overflow-hidden",
-                                "md:h-0 md:opacity-0 md:group-hover/sidebar:h-8 md:group-hover/sidebar:opacity-100 md:group-hover/sidebar:mt-1"
+                                "flex items-center justify-center gap-3 w-full mt-2 md:mt-0 px-4 py-2.5 text-[10px] font-black uppercase tracking-widest text-slate-400 hover:text-red-400 hover:bg-red-500/10 rounded-2xl border border-transparent hover:border-red-500/20 transition-all duration-200 overflow-hidden",
+                                "md:h-0 md:opacity-0 md:group-hover/sidebar:h-10 md:group-hover/sidebar:opacity-100 md:group-hover/sidebar:mt-1"
                             )}
                         >
-                            <LogOut className="w-3.5 h-3.5 shrink-0" />
+                            <LogOut className="w-4 h-4 shrink-0" />
                             <span className="whitespace-nowrap overflow-hidden">Cerrar Sesión</span>
                         </button>
                     </div>
@@ -166,6 +166,9 @@ export default function Layout() {
                     <Outlet />
                 </div>
             </main>
+
+            {/* Global Features */}
+            <CommandPalette />
         </div>
     );
 }

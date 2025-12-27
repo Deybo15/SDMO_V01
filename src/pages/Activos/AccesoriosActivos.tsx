@@ -1,3 +1,4 @@
+// AccesoriosActivos.tsx - v2.2 robust camera fix
 import { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '../../lib/supabase';
@@ -39,7 +40,7 @@ export default function AccesoriosActivos() {
     const [showCamera, setShowCamera] = useState(false);
     const [stream, setStream] = useState<MediaStream | null>(null);
     const [facingMode, setFacingMode] = useState<'user' | 'environment'>('environment');
-    const videoRef = useRef<HTMLVideoElement>(null);
+    const videoElementRef = useRef<HTMLVideoElement | null>(null);
     const canvasRef = useRef<HTMLCanvasElement>(null);
     const [selectedFile, setSelectedFile] = useState<File | null>(null);
     const [previewUrl, setPreviewUrl] = useState<string | null>(null);
@@ -71,6 +72,15 @@ export default function AccesoriosActivos() {
             }
         };
     }, []);
+
+    // Callback ref to attach stream to video element as soon as it mounts
+    const setVideoRef = (el: HTMLVideoElement | null) => {
+        videoElementRef.current = el;
+        if (el && stream) {
+            console.log("Attaching stream to video element:", stream.id);
+            el.srcObject = stream;
+        }
+    };
 
     useEffect(() => {
         loadAccesorios();
@@ -104,18 +114,16 @@ export default function AccesoriosActivos() {
     };
 
     // Camera Logic
-    const startCamera = async () => {
+    const startCamera = async (mode?: 'user' | 'environment') => {
+        const currentMode = mode || facingMode;
         try {
             if (stream) {
                 stream.getTracks().forEach(track => track.stop());
             }
             const newStream = await navigator.mediaDevices.getUserMedia({
-                video: { facingMode: facingMode, width: { ideal: 1280 }, height: { ideal: 720 } }
+                video: { facingMode: currentMode, width: { ideal: 1280 }, height: { ideal: 720 } }
             });
             setStream(newStream);
-            if (videoRef.current) {
-                videoRef.current.srcObject = newStream;
-            }
             setShowCamera(true);
         } catch (err: any) {
             console.error("Error accessing camera:", err);
@@ -141,8 +149,8 @@ export default function AccesoriosActivos() {
     };
 
     const capturePhoto = () => {
-        if (videoRef.current && canvasRef.current) {
-            const video = videoRef.current;
+        if (videoElementRef.current && canvasRef.current) {
+            const video = videoElementRef.current;
             const canvas = canvasRef.current;
             canvas.width = video.videoWidth;
             canvas.height = video.videoHeight;
@@ -162,13 +170,9 @@ export default function AccesoriosActivos() {
     };
 
     const switchCamera = () => {
-        setFacingMode(prev => prev === 'user' ? 'environment' : 'user');
-        // Effect will trigger re-start if camera is open? No, need to call startCamera again.
-        // But since startCamera is async and uses state, better to just toggle state and let a useEffect handle it or call startCamera directly.
-        // For simplicity, let's just call startCamera in the next render or immediately.
-        // Actually, facingMode state change won't auto-trigger startCamera unless we add it to dependency, but that might cause loops.
-        // Let's just restart manually.
-        setTimeout(() => startCamera(), 100);
+        const newMode = facingMode === 'user' ? 'environment' : 'user';
+        setFacingMode(newMode);
+        startCamera(newMode);
     };
 
     const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -364,7 +368,7 @@ export default function AccesoriosActivos() {
                                 <div className="flex gap-2">
                                     <button
                                         type="button"
-                                        onClick={startCamera}
+                                        onClick={() => startCamera()}
                                         className="flex-1 py-2 bg-slate-700 hover:bg-slate-600 text-slate-200 rounded-xl transition-colors flex items-center justify-center gap-2"
                                     >
                                         <Camera className="w-4 h-4" />
@@ -404,7 +408,13 @@ export default function AccesoriosActivos() {
                                         </button>
                                     </div>
                                     <div className="flex-1 relative bg-black flex items-center justify-center">
-                                        <video ref={videoRef} autoPlay playsInline className="w-full h-full object-contain" />
+                                        <video
+                                            ref={setVideoRef}
+                                            autoPlay
+                                            playsInline
+                                            muted
+                                            className="w-full h-full object-contain"
+                                        />
                                         <canvas ref={canvasRef} className="hidden" />
                                     </div>
                                     <div className="p-6 bg-slate-900 flex justify-center">

@@ -1,3 +1,4 @@
+// useTransactionManager.ts - v2.1 (Fixing ReferenceError)
 import { useState, useEffect } from 'react';
 import { supabase } from '../lib/supabase';
 import { useNavigate } from 'react-router-dom';
@@ -61,7 +62,6 @@ export const useTransactionManager = ({
                         );
                         if (matched) {
                             setAutorizaId(matched.identificacion);
-                            setRetiraId(matched.identificacion); // Auto-populate retiraId as well
                         }
                     }
                 }
@@ -77,9 +77,6 @@ export const useTransactionManager = ({
         setFeedback({ message, type });
         setTimeout(() => setFeedback(null), 3000);
     };
-
-    // Item Management is now handled by Row Actions
-
 
     // Actions
     const addEmptyRow = () => {
@@ -134,7 +131,7 @@ export const useTransactionManager = ({
     };
 
 
-    const processTransaction = async (header: TransactionHeader, extraLogic?: (idSalida: number, validItems: DetalleSalida[]) => Promise<void>) => {
+    const processTransaction = async (header: TransactionHeader, extraLogic?: (idSalida: number, validItems: DetalleSalida[], solicitudId?: string | number) => Promise<void>) => {
         // Validate Header (basic)
         if (!header.autoriza || !header.retira) {
             setFeedback({ message: 'Debe seleccionar responsables', type: 'error' });
@@ -143,7 +140,6 @@ export const useTransactionManager = ({
         }
 
         // Validate Items
-        // Filter valid items (must have code and quantity > 0)
         const validItems = items.filter(i => i.codigo_articulo && Number(i.cantidad) > 0);
 
         if (validItems.length === 0) {
@@ -163,8 +159,8 @@ export const useTransactionManager = ({
 
         setLoading(true);
         try {
-            // 1. Create Request (Solicitud) - if tipoSalidaId is provided
-            let solicitudId: number | string = header.numero_solicitud || 'S/N'; // Default to S/N if not provided
+            // STEP 1: Create Request (Solicitud) - if tipoSalidaId is provided
+            let solicitudId: number | string = header.numero_solicitud || 'S/N';
 
             if (tipoSalidaId) {
                 const { data: tipoData } = await supabase
@@ -174,7 +170,7 @@ export const useTransactionManager = ({
                     .limit(1)
                     .single();
 
-                const finalTipoId = tipoData?.tipo_solicitud || 1; // Fallback
+                const finalTipoId = tipoData?.tipo_solicitud || 1;
 
                 const { data: solData, error: solError } = await supabase
                     .from('solicitud_17')
@@ -182,40 +178,49 @@ export const useTransactionManager = ({
                         tipo_solicitud: finalTipoId,
                         descripcion_solicitud: defaultDescription || 'Solicitud Generada',
                         fecha_solicitud: header.fecha_solicitud || new Date().toISOString(),
-                        profesional_responsable: header.autoriza,
-                        dependencia_solicitante: header.destino
+                        profesional_responsable: header.autoriza
                     }])
                     .select('numero_solicitud')
                     .single();
 
-                if (solError) throw solError;
+                if (solError) {
+                    console.error("Step 1 Error (solicitud_17):", solError);
+                    throw new Error(`Error al crear solicitud: ${solError.message}`);
+                }
                 solicitudId = solData.numero_solicitud;
             }
 
-            // 2. Create Output Header (Salida)
+            // STEP 2: Create Output Header (Salida) - marked as finalizada: FALSE
             const { data: headerData, error: headerError } = await supabase
                 .from('salida_articulo_08')
                 .insert({
                     fecha_salida: new Date().toISOString(),
                     autoriza: header.autoriza,
                     retira: header.retira,
-                    numero_solicitud: solicitudId, // Use created ID or passed one
+                    numero_solicitud: solicitudId,
                     comentarios: header.comentarios,
-                    finalizada: true // Assuming it's finalized upon creation
+                    finalizada: false // REQUIRED: Initially FALSE for Make automation
                 })
                 .select('id_salida')
                 .single();
 
-            if (headerError) throw headerError;
+            if (headerError) {
+                console.error("Step 2 Error (salida_articulo_08):", headerError);
+                throw new Error(`Error al crear encabezado de salida: ${headerError.message}`);
+            }
             const newId = headerData.id_salida;
 
-            // Extra Logic (e.g., specific table updates)
+            // Extra Logic (e.g. equipment updates)
             if (extraLogic) {
-                await extraLogic(newId, validItems);
+                try {
+                    await extraLogic(newId, validItems, solicitudId);
+                } catch (extraErr: any) {
+                    console.error("Extra Logic Error:", extraErr);
+                    // We might decide whether to throw or just log depending on criticality
+                }
             }
 
-            // Insert Details (Standard)
-            // Construct details for `dato_salida_13`
+            // STEP 3: Insert Details (dato_salida_13)
             const detallesToInsert = validItems.map(d => ({
                 id_salida: newId,
                 articulo: d.codigo_articulo,
@@ -227,9 +232,23 @@ export const useTransactionManager = ({
                 .from('dato_salida_13')
                 .insert(detallesToInsert);
 
-            if (detailsError) throw detailsError;
+            if (detailsError) {
+                console.error("Step 3 Error (dato_salida_13):", detailsError);
+                throw new Error(`Error al insertar detalles: ${detailsError.message}`);
+            }
 
-            setFeedback({ message: 'Solicitud procesada correctamente', type: 'success' });
+            // STEP 4: Update Header - set finalizada: TRUE - THIS TRIGGERS MAKE
+            const { error: finalError } = await supabase
+                .from('salida_articulo_08')
+                .update({ finalizada: true })
+                .eq('id_salida', newId);
+
+            if (finalError) {
+                console.error("Step 4 Error (final update):", finalError);
+                throw new Error(`Error al finalizar la salida: ${finalError.message}`);
+            }
+
+            setFeedback({ message: 'Solicitud procesada y finalizada correctamente', type: 'success' });
 
             // Redirect
             if (onSuccessRoute) {
@@ -237,7 +256,7 @@ export const useTransactionManager = ({
                     navigate(onSuccessRoute);
                 }, 1500);
             } else {
-                // Reset
+                // Reset items
                 setItems([{
                     codigo_articulo: '',
                     articulo: '',
@@ -251,9 +270,10 @@ export const useTransactionManager = ({
             }
 
         } catch (error: any) {
-            console.error(error);
+            console.error("Transaction failed:", error);
             setFeedback({ message: error.message || 'Error al procesar solicitud', type: 'error' });
-            setTimeout(() => setFeedback(null), 5000);
+            // Don't auto-clear the error as quickly so user can read it if needed
+            setTimeout(() => setFeedback(null), 8000);
         } finally {
             setLoading(false);
         }

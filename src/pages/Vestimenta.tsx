@@ -33,7 +33,7 @@ export default function Vestimenta() {
     } = useTransactionManager({
         tipoSalidaId: 'vestimenta',
         defaultDescription: 'Solicitud de Vestimenta',
-        onSuccessRoute: '/activos/vestimenta'
+        onSuccessRoute: '/otras-solicitudes/vestimenta'
     });
 
     // 2. Local State
