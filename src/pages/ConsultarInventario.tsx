@@ -262,14 +262,14 @@ export default function ConsultarInventario() {
                         data={data}
                         rowHeight={110}
                         columns={[
-                            { header: 'Imagen', width: '120px' },
-                            { header: 'Código', width: '150px', className: 'font-mono text-[10px] tracking-tight' },
-                            { header: 'Artículo', width: '450px', className: 'text-sm' },
-                            { header: 'Marca', width: '180px' },
-                            { header: 'Unidad', width: '120px' },
-                            { header: 'Gasto', width: '120px' },
-                            { header: 'Precio', width: '180px', className: 'text-right font-mono' },
-                            { header: 'Cantidad', width: '140px', className: 'text-right' },
+                            { header: 'Imagen', width: '70px' },
+                            { header: 'Código', width: '100px', className: 'font-mono text-[10px] tracking-tight' },
+                            { header: 'Artículo', width: '300px', className: 'text-sm' },
+                            { header: 'Marca', width: '100px' },
+                            { header: 'Unidad', width: '80px' },
+                            { header: 'Gasto', width: '80px' },
+                            { header: 'Precio', width: '130px', className: 'text-right font-mono' },
+                            { header: 'Cantidad', width: '110px', className: 'text-right' },
                         ]}
                         renderCell={(item, colIdx) => {
                             switch (colIdx) {

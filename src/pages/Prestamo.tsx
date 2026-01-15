@@ -39,7 +39,7 @@ export default function Prestamo() {
         processTransaction,
         showAlert
     } = useTransactionManager({
-        tipoSalidaId: 'prestamo',
+        tipoSalidaId: 'P',
         defaultDescription: 'Solicitud de Préstamo',
         onSuccessRoute: '/otras-solicitudes/prestamo'
     });

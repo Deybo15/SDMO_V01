@@ -31,7 +31,7 @@ export default function LimpiezaAseo() {
         processTransaction,
         showAlert
     } = useTransactionManager({
-        tipoSalidaId: 'limpieza_aseo',
+        tipoSalidaId: 'LIM',
         defaultDescription: 'Solicitud de Limpieza y Aseo',
         onSuccessRoute: '/otras-solicitudes/limpieza-aseo'
     });

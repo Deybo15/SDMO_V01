@@ -112,7 +112,7 @@ export default function VirtualizedTable<T>({
                         key={idx}
                         style={{ width: col.width }}
                         className={cn(
-                            "px-6 py-4 text-[10px] font-black text-slate-500 dark:text-slate-400 uppercase tracking-[0.2em] shrink-0",
+                            "px-3 py-4 text-[10px] font-black text-slate-500 dark:text-slate-400 uppercase tracking-[0.2em] shrink-0",
                             col.className
                         )}
                     >
@@ -146,7 +146,7 @@ export default function VirtualizedTable<T>({
                                             <div
                                                 key={colIdx}
                                                 style={{ width: col.width }}
-                                                className={cn("px-6 py-4 shrink-0", col.className)}
+                                                className={cn("px-3 py-4 shrink-0", col.className)}
                                             >
                                                 {renderCell(item, colIdx, index)}
                                             </div>

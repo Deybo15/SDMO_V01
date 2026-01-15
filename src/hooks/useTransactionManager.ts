@@ -163,14 +163,29 @@ export const useTransactionManager = ({
             let solicitudId: number | string = header.numero_solicitud || 'S/N';
 
             if (tipoSalidaId) {
-                const { data: tipoData } = await supabase
+                // Try direct code match first
+                let { data: tipoData } = await supabase
                     .from('tipo_solicitud_75')
                     .select('tipo_solicitud')
-                    .ilike('descripcion_tipo_salida', `%${tipoSalidaId}%`)
-                    .limit(1)
-                    .single();
+                    .eq('tipo_solicitud', tipoSalidaId.toUpperCase())
+                    .maybeSingle();
 
-                const finalTipoId = tipoData?.tipo_solicitud || 1;
+                // If not found, try description match
+                if (!tipoData) {
+                    const { data: descMatch } = await supabase
+                        .from('tipo_solicitud_75')
+                        .select('tipo_solicitud')
+                        .ilike('descripcion_tipo_salida', `%${tipoSalidaId}%`)
+                        .limit(1)
+                        .maybeSingle();
+                    tipoData = descMatch;
+                }
+
+                if (!tipoData) {
+                    throw new Error(`Tipo de solicitud no válido: "${tipoSalidaId}"`);
+                }
+
+                const finalTipoId = tipoData.tipo_solicitud;
 
                 const { data: solData, error: solError } = await supabase
                     .from('solicitud_17')

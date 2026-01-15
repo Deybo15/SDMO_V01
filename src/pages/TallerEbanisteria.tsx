@@ -32,7 +32,7 @@ export default function TallerEbanisteria() {
         processTransaction,
         showAlert
     } = useTransactionManager({
-        tipoSalidaId: 'taller_ebanisteria',
+        tipoSalidaId: 'TE',
         defaultDescription: 'Solicitud Taller Ebanistería',
         onSuccessRoute: '/otras-solicitudes/taller-ebanisteria'
     });

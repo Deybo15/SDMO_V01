@@ -31,7 +31,7 @@ export default function Vestimenta() {
         processTransaction,
         showAlert
     } = useTransactionManager({
-        tipoSalidaId: 'vestimenta',
+        tipoSalidaId: 'V',
         defaultDescription: 'Solicitud de Vestimenta',
         onSuccessRoute: '/otras-solicitudes/vestimenta'
     });

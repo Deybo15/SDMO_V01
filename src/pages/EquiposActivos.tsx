@@ -36,7 +36,7 @@ export default function EquiposActivos() {
         processTransaction,
         showAlert
     } = useTransactionManager({
-        tipoSalidaId: 'equipos',
+        tipoSalidaId: 'EQ',
         defaultDescription: 'Solicitud Equipos Tecnológicos',
         onSuccessRoute: '/otras-solicitudes/equipos-activos'
     });

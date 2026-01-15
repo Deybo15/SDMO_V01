@@ -31,7 +31,7 @@ export default function Herramientas() {
         processTransaction,
         showAlert
     } = useTransactionManager({
-        tipoSalidaId: 'herramientas',
+        tipoSalidaId: 'H',
         defaultDescription: 'Solicitud de Herramientas',
         onSuccessRoute: '/otras-solicitudes/herramientas'
     });

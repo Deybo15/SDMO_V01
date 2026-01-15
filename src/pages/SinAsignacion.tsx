@@ -32,7 +32,7 @@ export default function SinAsignacion() {
         processTransaction,
         showAlert
     } = useTransactionManager({
-        tipoSalidaId: 'sin_asignacion',
+        tipoSalidaId: 'SAE',
         defaultDescription: 'Solicitud Sin Asignación Específica',
         onSuccessRoute: '/otras-solicitudes/sin-asignacion'
     });

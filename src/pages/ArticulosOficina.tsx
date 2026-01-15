@@ -32,7 +32,7 @@ export default function ArticulosOficina() {
         processTransaction,
         showAlert
     } = useTransactionManager({
-        tipoSalidaId: 'articulos_oficina',
+        tipoSalidaId: 'OFI',
         defaultDescription: 'Solicitud de Artículos de Oficina',
         onSuccessRoute: '/otras-solicitudes/articulos-oficina'
     });
