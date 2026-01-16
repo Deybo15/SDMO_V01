@@ -193,9 +193,11 @@ export const useTransactionManager = ({
                     .from('solicitud_17')
                     .insert([{
                         tipo_solicitud: finalTipoId,
-                        descripcion_solicitud: defaultDescription || 'Solicitud Generada',
+                        descripcion_solicitud: header.comentarios || defaultDescription || 'Solicitud Generada',
                         fecha_solicitud: header.fecha_solicitud || new Date().toISOString(),
-                        profesional_responsable: header.autoriza
+                        profesional_responsable: header.autoriza,
+                        equipo_automotor: header.equipo_automotor,
+                        dependencia_municipal: header.destino
                     }])
                     .select('numero_solicitud')
                     .single();

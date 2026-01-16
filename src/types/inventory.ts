@@ -40,4 +40,5 @@ export interface TransactionHeader {
     comentarios?: string;
     fecha_solicitud?: string;
     destino?: string;
+    equipo_automotor?: string;
 }

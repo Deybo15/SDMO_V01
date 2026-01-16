@@ -107,15 +107,8 @@ export default function EquiposActivos() {
                 autoriza,
                 retira,
                 comentarios,
-                numero_solicitud: numeroSolicitud
-            },
-            async (_idSalida, _validItems, numSolicitud) => {
-                // Update Solicitud with Equipo
-                if (selectedEquipoValue && numSolicitud) {
-                    await supabase.from('solicitud_17')
-                        .update({ equipo_automotor: selectedEquipoValue })
-                        .eq('numero_solicitud', numSolicitud);
-                }
+                numero_solicitud: numeroSolicitud,
+                equipo_automotor: selectedEquipoValue
             }
         );
     };
