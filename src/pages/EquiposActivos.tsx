@@ -38,7 +38,12 @@ export default function EquiposActivos() {
     } = useTransactionManager({
         tipoSalidaId: 'EQ',
         defaultDescription: 'Solicitud Equipos Tecnológicos',
-        onSuccessRoute: '/otras-solicitudes/equipos-activos'
+        onSuccessRoute: '/otras-solicitudes/equipos-activos',
+        onSuccess: () => {
+            setretira('');
+            setcomentarios('');
+            setSelectedEquipoValue('');
+        }
     });
 
     // 2. Local State

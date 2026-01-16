@@ -104,15 +104,15 @@ export default function VirtualizedTable<T>({
     }
 
     return (
-        <div className={cn("w-full h-full flex flex-col", className)}>
+        <div className={cn("w-full h-full flex flex-col overflow-hidden", className)}>
             {/* Header */}
-            <div className="flex bg-slate-50 dark:bg-slate-700/50 border-b border-slate-200 dark:border-slate-700 overflow-x-auto hide-scrollbar z-10 shadow-sm">
+            <div className="flex bg-slate-50 dark:bg-slate-700/50 border-b border-slate-200 dark:border-slate-700 z-10 shadow-sm">
                 {columns.map((col, idx) => (
                     <div
                         key={idx}
-                        style={{ width: col.width }}
+                        style={{ width: col.width, minWidth: 0 }}
                         className={cn(
-                            "px-3 py-4 text-[10px] font-black text-slate-500 dark:text-slate-400 uppercase tracking-[0.2em] shrink-0",
+                            "px-3 py-4 text-[10px] font-black text-slate-500 dark:text-slate-400 uppercase tracking-[0.2em]",
                             col.className
                         )}
                     >
@@ -145,8 +145,8 @@ export default function VirtualizedTable<T>({
                                         {columns.map((col, colIdx) => (
                                             <div
                                                 key={colIdx}
-                                                style={{ width: col.width }}
-                                                className={cn("px-3 py-4 shrink-0", col.className)}
+                                                style={{ width: col.width, minWidth: 0 }}
+                                                className={cn("px-3 py-4", col.className)}
                                             >
                                                 {renderCell(item, colIdx, index)}
                                             </div>

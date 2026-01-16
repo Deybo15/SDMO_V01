@@ -205,13 +205,13 @@ export default function AccesoriosActivos() {
                 const filePath = `accesorios/${fileName}`;
 
                 const { error: uploadError } = await supabase.storage
-                    .from('imagenes-sti')
+                    .from('Img-activos')
                     .upload(filePath, selectedFile, { upsert: true });
 
                 if (uploadError) throw uploadError;
 
                 const { data: { publicUrl } } = supabase.storage
-                    .from('imagenes-sti')
+                    .from('Img-activos')
                     .getPublicUrl(filePath);
 
                 imageUrl = publicUrl;

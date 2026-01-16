@@ -33,7 +33,10 @@ export default function LimpiezaAseo() {
     } = useTransactionManager({
         tipoSalidaId: 'LIM',
         defaultDescription: 'Solicitud de Limpieza y Aseo',
-        onSuccessRoute: '/otras-solicitudes/limpieza-aseo'
+        onSuccess: () => {
+            setRetira('');
+            setComentarios('');
+        }
     });
 
     useEffect(() => {

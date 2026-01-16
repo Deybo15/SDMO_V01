@@ -34,7 +34,10 @@ export default function ArticulosOficina() {
     } = useTransactionManager({
         tipoSalidaId: 'OFI',
         defaultDescription: 'Solicitud de Artículos de Oficina',
-        onSuccessRoute: '/otras-solicitudes/articulos-oficina'
+        onSuccess: () => {
+            setRetira('');
+            setComentarios('');
+        }
     });
 
     // 2. Local State

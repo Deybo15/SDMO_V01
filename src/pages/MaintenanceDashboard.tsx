@@ -617,7 +617,7 @@ export default function MaintenanceDashboard() {
                     </h3>
                 </div>
                 {/* Active Requests Table with Virtualization */}
-                <div className="bg-white/5 border border-white/5 rounded-[2.5rem] p-8 backdrop-blur-3xl shadow-2xl h-[500px] flex flex-col">
+                <div className="bg-white/5 border border-white/5 rounded-[2.5rem] px-4 py-8 backdrop-blur-3xl shadow-2xl h-[500px] flex flex-col">
                     {currentTableItems.length === 0 ? (
                         <div className="flex-1 flex flex-col items-center justify-center gap-4 text-slate-500">
                             <div className="w-20 h-20 rounded-full bg-slate-900 border border-white/5 flex items-center justify-center shadow-inner">
@@ -630,11 +630,11 @@ export default function MaintenanceDashboard() {
                             data={currentTableItems}
                             rowHeight={70}
                             columns={[
-                                { header: 'ID', width: '100px', className: 'font-black text-blue-400' },
-                                { header: 'Fecha', width: '150px', className: 'font-mono text-slate-400' },
-                                { header: 'Ubicación', width: '300px' },
-                                { header: 'Área', width: '200px' },
-                                { header: 'Responsable', width: '250px' },
+                                { header: 'ID', width: '6%', className: 'font-black text-blue-400' },
+                                { header: 'Fecha', width: '10%', className: 'font-mono text-slate-400' },
+                                { header: 'Ubicación', width: '40%' },
+                                { header: 'Área', width: '16%' },
+                                { header: 'Responsable', width: '28%' },
                             ]}
                             renderCell={(item, colIdx) => {
                                 switch (colIdx) {
@@ -643,7 +643,7 @@ export default function MaintenanceDashboard() {
                                     case 1:
                                         return <span>{item.fecha_solicitud}</span>;
                                     case 2:
-                                        return <span className="font-semibold truncate block" title={item.base_location}>{item.base_location}</span>;
+                                        return <span className="font-semibold text-[11px] whitespace-normal line-clamp-2 block leading-tight" title={item.base_location}>{item.base_location}</span>;
                                     case 3:
                                         return (
                                             <span className="bg-white/5 px-2 py-1 rounded-lg text-[10px] font-bold text-slate-400 border border-white/5 uppercase tracking-widest">
@@ -652,11 +652,11 @@ export default function MaintenanceDashboard() {
                                         );
                                     case 4:
                                         return (
-                                            <div className="flex items-center gap-2">
-                                                <div className="w-8 h-8 rounded-full bg-gradient-to-br from-slate-700 to-slate-900 flex items-center justify-center text-[10px] font-black text-slate-200 border border-white/10 shadow-lg">
+                                            <div className="flex items-center gap-1">
+                                                <div className="w-7 h-7 rounded-full bg-gradient-to-br from-slate-700 to-slate-900 flex items-center justify-center text-[10px] font-black text-slate-200 border border-white/10 shadow-lg shrink-0">
                                                     {(item.supervisor_asignado_alias || '?')[0]}
                                                 </div>
-                                                <span className="font-medium text-slate-300 truncate">{item.supervisor_asignado_alias || 'PENDIENTE'}</span>
+                                                <span className="font-medium text-slate-300 whitespace-normal line-clamp-2 text-[11px] leading-tight">{item.supervisor_asignado_alias || 'PENDIENTE'}</span>
                                             </div>
                                         );
                                     default:

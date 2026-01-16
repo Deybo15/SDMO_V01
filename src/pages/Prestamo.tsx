@@ -41,7 +41,12 @@ export default function Prestamo() {
     } = useTransactionManager({
         tipoSalidaId: 'P',
         defaultDescription: 'Solicitud de Préstamo',
-        onSuccessRoute: '/otras-solicitudes/prestamo'
+        onSuccessRoute: '/otras-solicitudes/prestamo',
+        onSuccess: () => {
+            setretira('');
+            setcomentarios('');
+            setDependencia('');
+        }
     });
 
     // 2. Local State

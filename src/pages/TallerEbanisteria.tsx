@@ -34,7 +34,11 @@ export default function TallerEbanisteria() {
     } = useTransactionManager({
         tipoSalidaId: 'TE',
         defaultDescription: 'Solicitud Taller Ebanistería',
-        onSuccessRoute: '/otras-solicitudes/taller-ebanisteria'
+        onSuccessRoute: '/otras-solicitudes/taller-ebanisteria',
+        onSuccess: () => {
+            setRetira('');
+            setComentarios('');
+        }
     });
 
     // 2. Local State

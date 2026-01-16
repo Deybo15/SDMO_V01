@@ -8,12 +8,14 @@ interface UseTransactionManagerProps {
     tipoSalidaId?: string; // e.g. 'equipos', 'herramientas' for fetching type ID
     defaultDescription?: string;
     onSuccessRoute?: string;
+    onSuccess?: () => void;
 }
 
 export const useTransactionManager = ({
     tipoSalidaId,
     defaultDescription,
-    onSuccessRoute
+    onSuccessRoute,
+    onSuccess
 }: UseTransactionManagerProps = {}) => {
     const navigate = useNavigate();
 
@@ -265,23 +267,26 @@ export const useTransactionManager = ({
 
             setFeedback({ message: 'Solicitud procesada y finalizada correctamente', type: 'success' });
 
+            // Reset items locally in all cases
+            setItems([{
+                codigo_articulo: '',
+                articulo: '',
+                cantidad: 0,
+                unidad: '',
+                precio_unitario: 0,
+                marca: '',
+                cantidad_disponible: 0,
+                imagen_url: null
+            }]);
+
+            // Call external success callback
+            if (onSuccess) onSuccess();
+
             // Redirect
             if (onSuccessRoute) {
                 setTimeout(() => {
                     navigate(onSuccessRoute);
                 }, 1500);
-            } else {
-                // Reset items
-                setItems([{
-                    codigo_articulo: '',
-                    articulo: '',
-                    cantidad: 0,
-                    unidad: '',
-                    precio_unitario: 0,
-                    marca: '',
-                    cantidad_disponible: 0,
-                    imagen_url: null
-                }]);
             }
 
         } catch (error: any) {
