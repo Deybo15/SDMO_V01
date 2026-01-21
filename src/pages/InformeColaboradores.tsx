@@ -220,7 +220,7 @@ export default function InformeColaboradores() {
                 }).join(','))
             ].join('\n');
 
-            const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+            const blob = new Blob(['\uFEFF', csvContent], { type: 'text/csv;charset=utf-8;' });
             const url = URL.createObjectURL(blob);
             const link = document.createElement('a');
             link.href = url;
@@ -246,69 +246,130 @@ export default function InformeColaboradores() {
         setModalFilterTipo('');
 
         try {
+            // -- PART 1: Standard Article Requests (Consumables) --
             const { data: salidas } = await supabase
                 .from('salida_articulo_08')
                 .select('id_salida, fecha_salida, numero_solicitud, retira')
                 .eq('retira', colab.identificacion)
                 .order('fecha_salida', { ascending: false });
 
-            if (!salidas || salidas.length === 0) {
-                setModalLoading(false);
-                return;
+            let mergedArticulos: ArticuloSalida[] = [];
+
+            if (salidas && salidas.length > 0) {
+                const numerosSolicitud = [...new Set(salidas.map(s => s.numero_solicitud).filter(Boolean))];
+                let tiposMap = new Map();
+                if (numerosSolicitud.length > 0) {
+                    const { data: solicitudes } = await supabase
+                        .from('solicitud_17')
+                        .select('numero_solicitud, tipo_solicitud')
+                        .in('numero_solicitud', numerosSolicitud);
+                    solicitudes?.forEach(s => tiposMap.set(s.numero_solicitud, s.tipo_solicitud));
+                }
+
+                const idsSalida = salidas.map(s => s.id_salida);
+                const { data: detalles } = await supabase
+                    .from('dato_salida_13')
+                    .select('id_salida, articulo, cantidad, precio_unitario, subtotal')
+                    .in('id_salida', idsSalida);
+
+                if (detalles && detalles.length > 0) {
+                    const codigosArticulo = [...new Set(detalles.map(d => d.articulo))];
+                    let articulosMap = new Map();
+                    if (codigosArticulo.length > 0) {
+                        const { data: arts } = await supabase
+                            .from('articulo_01')
+                            .select('codigo_articulo, nombre_articulo')
+                            .in('codigo_articulo', codigosArticulo);
+                        arts?.forEach(a => articulosMap.set(a.codigo_articulo, a.nombre_articulo));
+                    }
+
+                    const merged = detalles.map(d => {
+                        const salida = salidas.find(s => s.id_salida === d.id_salida);
+                        const tipo = tiposMap.get(salida?.numero_solicitud) || 'Sin tipo';
+                        const nombreArt = articulosMap.get(d.articulo) || 'Artículo no encontrado';
+
+                        return {
+                            id_salida: d.id_salida,
+                            fecha_salida: salida?.fecha_salida || '',
+                            tipo_solicitud: tipo,
+                            articulo: d.articulo.toString(),
+                            nombre_articulo: nombreArt,
+                            cantidad: d.cantidad,
+                            precio_unitario: d.precio_unitario,
+                            subtotal: d.subtotal
+                        };
+                    });
+                    mergedArticulos = [...mergedArticulos, ...merged];
+                }
             }
 
-            const numerosSolicitud = [...new Set(salidas.map(s => s.numero_solicitud).filter(Boolean))];
-            let tiposMap = new Map();
-            if (numerosSolicitud.length > 0) {
-                const { data: solicitudes } = await supabase
-                    .from('solicitud_17')
-                    .select('numero_solicitud, tipo_solicitud')
-                    .in('numero_solicitud', numerosSolicitud);
-                solicitudes?.forEach(s => tiposMap.set(s.numero_solicitud, s.tipo_solicitud));
+            // -- PART 2: Asset Assignments (activos_50) --
+            const { data: boletasActivo } = await supabase
+                .from('salida_activo_55')
+                .select('boleta_salida_activo, fecha_salida_activo, usuario_de_activo')
+                .eq('usuario_de_activo', colab.identificacion)
+                .order('fecha_salida_activo', { ascending: false });
+
+            if (boletasActivo && boletasActivo.length > 0) {
+                const idsBoleta = boletasActivo.map(b => b.boleta_salida_activo);
+                const { data: detallesActivo } = await supabase
+                    .from('dato_salida_activo_56')
+                    .select('boleta_salida_activo, numero_activo, cantidad')
+                    .in('boleta_salida_activo', idsBoleta);
+
+                if (detallesActivo && detallesActivo.length > 0) {
+                    const numsActivo = [...new Set(detallesActivo.map(d => d.numero_activo))];
+                    let activosMap = new Map();
+                    if (numsActivo.length > 0) {
+                        const { data: infoActivos } = await supabase
+                            .from('activos_50')
+                            .select('numero_activo, nombre_corto_activo, valor_activo')
+                            .in('numero_activo', numsActivo);
+                        infoActivos?.forEach(a => activosMap.set(a.numero_activo, a));
+                    }
+
+                    const mergedActivos = detallesActivo.map(d => {
+                        const boleta = boletasActivo.find(b => b.boleta_salida_activo === d.boleta_salida_activo);
+                        const info = activosMap.get(d.numero_activo);
+
+                        // Robust parsing for valor_activo (handles both '.' and ',' as decimals)
+                        const rawValor = info?.valor_activo?.toString().trim() || '0';
+                        const lastComma = rawValor.lastIndexOf(',');
+                        const lastDot = rawValor.lastIndexOf('.');
+                        let parsedValor = 0;
+
+                        if (lastComma > lastDot) {
+                            // Comma is likely the decimal separator
+                            parsedValor = parseFloat(rawValor.replace(/\./g, '').replace(',', '.')) || 0;
+                        } else {
+                            // Dot (or nothing) is the decimal separator
+                            parsedValor = parseFloat(rawValor.replace(/,/g, '')) || 0;
+                        }
+
+                        return {
+                            id_salida: d.boleta_salida_activo,
+                            fecha_salida: boleta?.fecha_salida_activo || '',
+                            tipo_solicitud: 'ACTIVO',
+                            articulo: d.numero_activo.toString(),
+                            nombre_articulo: info?.nombre_corto_activo || 'Activo no encontrado',
+                            cantidad: d.cantidad,
+                            precio_unitario: parsedValor,
+                            subtotal: parsedValor * d.cantidad
+                        };
+                    });
+                    mergedArticulos = [...mergedArticulos, ...mergedActivos];
+                }
             }
 
-            const idsSalida = salidas.map(s => s.id_salida);
-            const { data: detalles } = await supabase
-                .from('dato_salida_13')
-                .select('id_salida, articulo, cantidad, precio_unitario, subtotal')
-                .in('id_salida', idsSalida);
+            // -- PART 3: Final Merge and Sorting --
+            const finalMerged = mergedArticulos.sort((a, b) =>
+                new Date(b.fecha_salida).getTime() - new Date(a.fecha_salida).getTime()
+            );
 
-            if (!detalles || detalles.length === 0) {
-                setModalLoading(false);
-                return;
-            }
+            setArticulos(finalMerged);
+            setArticulosOriginal(finalMerged);
 
-            const codigosArticulo = [...new Set(detalles.map(d => d.articulo))];
-            let articulosMap = new Map();
-            if (codigosArticulo.length > 0) {
-                const { data: arts } = await supabase
-                    .from('articulo_01')
-                    .select('codigo_articulo, nombre_articulo')
-                    .in('codigo_articulo', codigosArticulo);
-                arts?.forEach(a => articulosMap.set(a.codigo_articulo, a.nombre_articulo));
-            }
-
-            const merged: ArticuloSalida[] = detalles.map(d => {
-                const salida = salidas.find(s => s.id_salida === d.id_salida);
-                const tipo = tiposMap.get(salida?.numero_solicitud) || 'Sin tipo';
-                const nombreArt = articulosMap.get(d.articulo) || 'Artículo no encontrado';
-
-                return {
-                    id_salida: d.id_salida,
-                    fecha_salida: salida?.fecha_salida,
-                    tipo_solicitud: tipo,
-                    articulo: d.articulo,
-                    nombre_articulo: nombreArt,
-                    cantidad: d.cantidad,
-                    precio_unitario: d.precio_unitario,
-                    subtotal: d.subtotal
-                };
-            }).sort((a, b) => new Date(b.fecha_salida).getTime() - new Date(a.fecha_salida).getTime());
-
-            setArticulos(merged);
-            setArticulosOriginal(merged);
-
-            const types = [...new Set(merged.map(m => m.tipo_solicitud))].sort();
+            const types = [...new Set(finalMerged.map(m => m.tipo_solicitud))].sort();
             setTiposSolicitudDisponibles(types);
 
         } catch (error) {
@@ -334,6 +395,7 @@ export default function InformeColaboradores() {
         const fecha = new Date().toISOString().split('T')[0];
 
         let html = `
+        <meta charset="utf-8">
         <table border="1">
             <tr><td colspan="8" style="font-weight:bold;font-size:16px;">Colaborador: ${selectedColaborador?.nombre} (${selectedColaborador?.id})</td></tr>
             <tr></tr>
@@ -356,7 +418,7 @@ export default function InformeColaboradores() {
         });
         html += '</table>';
 
-        const blob = new Blob([html], { type: 'application/vnd.ms-excel' });
+        const blob = new Blob(['\uFEFF', html], { type: 'application/vnd.ms-excel;charset=utf-8' });
         const url = URL.createObjectURL(blob);
         const a = document.createElement('a');
         a.href = url;
