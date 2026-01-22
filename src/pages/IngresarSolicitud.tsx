@@ -2,7 +2,6 @@ import { useState, useEffect } from 'react';
 import { supabase } from '../lib/supabase';
 import { useNavigate } from 'react-router-dom';
 import SearchModal from '../components/SearchModal';
-import FormSelect from '../components/FormSelect';
 import {
     Save,
     ArrowLeft,
@@ -22,9 +21,13 @@ import {
     Home,
     Shield,
     Users,
-    Calendar
+    Calendar,
+    ChevronRight,
+    MessageSquare,
+    Zap
 } from 'lucide-react';
 import { PageHeader } from '../components/ui/PageHeader';
+import { cn } from '../lib/utils';
 
 // Interfaces
 interface CatalogItem {
@@ -86,6 +89,8 @@ export default function IngresarSolicitud() {
     const [isCameraOpen, setIsCameraOpen] = useState(false);
     const [cameraStream, setCameraStream] = useState<MediaStream | null>(null);
 
+    const themeColor = 'purple';
+
     // Load Data
     useEffect(() => {
         const loadCatalogs = async () => {
@@ -133,7 +138,6 @@ export default function IngresarSolicitud() {
 
     const handleSelectOption = (item: CatalogItem) => {
         if (searchModal.type) {
-            // Map the catalog type to the form field name
             const fieldMap: Record<keyof Catalogs, string> = {
                 areas: 'area',
                 instalaciones: 'instalacion',
@@ -162,21 +166,17 @@ export default function IngresarSolicitud() {
 
     const startCamera = async () => {
         try {
-            // Try to get the rear camera (environment)
             const stream = await navigator.mediaDevices.getUserMedia({
                 video: { facingMode: 'environment' }
             });
             setCameraStream(stream);
             setIsCameraOpen(true);
         } catch (err) {
-            console.error("Error accessing rear camera, trying default:", err);
             try {
-                // Fallback to any available camera (e.g. for desktops or if rear unavailable)
                 const stream = await navigator.mediaDevices.getUserMedia({ video: true });
                 setCameraStream(stream);
                 setIsCameraOpen(true);
             } catch (err2) {
-                console.error("Error accessing camera:", err2);
                 showNotification("No se pudo acceder a la cámara", "error");
             }
         }
@@ -223,17 +223,15 @@ export default function IngresarSolicitud() {
         try {
             const fileExt = file.name.split('.').pop();
             const fileName = `${Math.random().toString(36).substring(2, 15)}_${Date.now()}.${fileExt}`;
-            const filePath = `${fileName}`;
-
             const { error: uploadError } = await supabase.storage
                 .from('imagenes-sti')
-                .upload(filePath, file);
+                .upload(fileName, file);
 
             if (uploadError) throw uploadError;
 
             const { data } = supabase.storage
                 .from('imagenes-sti')
-                .getPublicUrl(filePath);
+                .getPublicUrl(fileName);
 
             return data.publicUrl;
         } catch (error) {
@@ -243,13 +241,12 @@ export default function IngresarSolicitud() {
     };
 
     const handleSave = async () => {
-        // Validation
         if (!formData.descripcion.trim()) {
             showNotification("La descripción es requerida", "error");
             return;
         }
         if (!formData.area || !formData.instalacion || !formData.supervisor || !formData.profesional || !formData.cliente) {
-            showNotification("Todos los campos son obligatorios", "error");
+            showNotification("Todos los campos con (*) son obligatorios", "error");
             return;
         }
 
@@ -276,17 +273,6 @@ export default function IngresarSolicitud() {
                     supervisor_asignado: formData.supervisor,
                     profesional_responsable: formData.profesional,
                     cliente_interno: formData.cliente,
-                    // Default nulls as per requirement
-                    id_solicitud_sa: null,
-                    tipologia_trabajo: null,
-                    barrio_solicitud: null,
-                    direccion_exacta: null,
-                    latitud: null,
-                    longitud: null,
-                    link_ubicacion: null,
-                    cliente_externo: null,
-                    numero_activo: null,
-                    dependencia_municipal: null,
                     imagen_sti: imageUrl
                 }])
                 .select('numero_solicitud')
@@ -296,7 +282,6 @@ export default function IngresarSolicitud() {
 
             showNotification(`Solicitud #${data.numero_solicitud} guardada exitosamente`, 'success');
 
-            // Reset form
             setFormData({
                 descripcion: '',
                 area: '',
@@ -307,331 +292,291 @@ export default function IngresarSolicitud() {
             });
             handleRemoveImage();
         } catch (error: any) {
-            console.error("Error saving request:", error);
-            showNotification("Error al guardar la solicitud: " + error.message, "error");
+            showNotification("Error al guardar la solicitud", "error");
         } finally {
             setSaving(false);
         }
     };
 
-    // Get label for selected value
     const getSelectedLabel = (catalogKey: keyof Catalogs, value: string | number) => {
         const item = catalogs[catalogKey].find(i => i.id == value);
         return item ? item.label : '';
     };
 
+    // Component for Interactive Selector Cards
+    const SelectorCard = ({
+        label,
+        value,
+        displayValue,
+        onOpen,
+        icon: Icon,
+        required = false
+    }: any) => (
+        <div className="space-y-3">
+            <label className={cn(
+                "text-[10px] font-black uppercase tracking-widest ml-1 block opacity-60",
+                required && "after:content-['*'] after:text-rose-500 after:ml-1"
+            )}>
+                {label}
+            </label>
+            <div
+                onClick={onOpen}
+                className="group relative bg-[#1e2235]/40 border border-white/10 rounded-2xl p-4 cursor-pointer hover:bg-white/5 hover:border-purple-500/30 transition-all flex items-center justify-between shadow-inner"
+            >
+                <div className="flex items-center gap-4 min-w-0">
+                    <div className="w-10 h-10 rounded-xl bg-purple-500/10 flex items-center justify-center shrink-0 border border-purple-500/10">
+                        <Icon className="w-5 h-5 text-purple-400 group-hover:scale-110 transition-transform" />
+                    </div>
+                    <div className="min-w-0">
+                        <span className={cn(
+                            "block truncate font-bold tracking-tight",
+                            value ? 'text-white' : 'text-gray-600 italic text-sm'
+                        )}>
+                            {displayValue || 'Seleccionar...'}
+                        </span>
+                        {value && <span className="text-[9px] text-purple-500/50 font-black uppercase tracking-tighter">Sincronizado</span>}
+                    </div>
+                </div>
+                <ChevronRight className="w-5 h-5 text-gray-700 group-hover:translate-x-1 transition-transform shrink-0" />
+            </div>
+        </div>
+    );
+
     return (
-        <div className="min-h-[calc(100vh-4rem)] bg-[#1a1d29] text-[#e4e6ea] font-sans relative">
-            {/* Background Gradients */}
+        <div className="min-h-screen bg-[#0f111a] p-4 md:p-8 relative">
+            {/* Ambient Background Elements */}
             <div className="fixed inset-0 pointer-events-none overflow-hidden">
-                <div className="absolute top-[20%] left-[20%] w-96 h-96 bg-[#7877c6]/30 rounded-full blur-3xl mix-blend-screen" />
-                <div className="absolute top-[80%] right-[20%] w-96 h-96 bg-[#ff77c6]/15 rounded-full blur-3xl mix-blend-screen" />
-                <div className="absolute top-[40%] left-[40%] w-96 h-96 bg-[#78dbe2]/10 rounded-full blur-3xl mix-blend-screen" />
+                <div className="absolute top-[10%] left-[10%] w-[500px] h-[500px] bg-purple-500/10 rounded-full blur-[120px] animate-pulse" />
+                <div className="absolute bottom-[10%] right-[10%] w-[400px] h-[400px] bg-violet-600/5 rounded-full blur-[100px]" />
             </div>
 
-            {/* Notification Toast */}
-            {notification && (
-                <div className={`fixed top-24 right-6 z-50 flex items-center gap-3 px-6 py-4 rounded-xl shadow-2xl border backdrop-blur-xl animate-in slide-in-from-right duration-300 ${notification.type === 'success' ? 'bg-green-500/20 border-green-500/30 text-green-400' :
-                    notification.type === 'error' ? 'bg-red-500/20 border-red-500/30 text-red-400' :
-                        'bg-purple-500/20 border-purple-500/30 text-purple-400'
-                    }`}>
-                    {notification.type === 'success' && <CheckCircle className="w-5 h-5" />}
-                    {notification.type === 'error' && <AlertTriangle className="w-5 h-5" />}
-                    {notification.type === 'info' && <Info className="w-5 h-5" />}
-                    <span className="font-medium">{notification.message}</span>
-                    <button onClick={() => setNotification(null)} className="ml-2 opacity-70 hover:opacity-100">
-                        <X className="w-4 h-4" />
-                    </button>
-                </div>
-            )}
+            <PageHeader
+                title="Nueva Solicitud"
+                icon={FileText}
+                themeColor={themeColor}
+            />
 
-            {/* Background Halos */}
-            <div className="fixed inset-0 z-0 pointer-events-none">
-                <div className="absolute top-[85%] left-[20%] w-[80rem] h-[80rem] bg-purple-500/10 rounded-full blur-[100px] -translate-x-1/2 -translate-y-1/2 animate-pulse"></div>
-                <div className="absolute top-[15%] right-[20%] w-[80rem] h-[80rem] bg-violet-600/5 rounded-full blur-[100px] translate-x-1/2 -translate-y-1/2"></div>
-            </div>
+            <div className="max-w-6xl mx-auto space-y-6 relative z-10">
+                {/* Notification */}
+                {notification && (
+                    <div className={cn(
+                        "fixed top-8 right-8 z-[100] px-6 py-4 rounded-2xl shadow-2xl backdrop-blur-xl border flex items-center gap-3 animate-in slide-in-from-top-4 duration-300",
+                        notification.type === 'success' ? 'bg-emerald-500/20 border-emerald-500/50 text-emerald-400' :
+                            notification.type === 'error' ? 'bg-rose-500/20 border-rose-500/50 text-rose-400' :
+                                'bg-blue-500/20 border-blue-500/50 text-blue-400'
+                    )}>
+                        {notification.type === 'success' ? <CheckCircle className="w-5 h-5" /> : <AlertTriangle className="w-5 h-5" />}
+                        <span className="font-bold">{notification.message}</span>
+                    </div>
+                )}
 
-            {/* Header Content */}
-            <div className="max-w-7xl mx-auto px-6 pt-6 flex flex-col gap-6 relative z-10">
-                <PageHeader
-                    title="REGISTRO DE SOLICITUDES"
-                    icon={FileText}
-                    themeColor="purple"
-                    backRoute="/cliente-interno"
-                />
-
-                {/* Date Display */}
-                <div className="flex items-center gap-2 text-purple-400 font-bold text-xs uppercase tracking-widest bg-purple-500/10 w-fit px-4 py-2 rounded-full border border-purple-500/20 shadow-[0_0_15px_rgba(168,85,247,0.15)]">
-                    <Calendar className="w-3.5 h-3.5" />
-                    {new Date().toLocaleDateString('es-ES', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })}
-                </div>
-            </div>
-
-            <div className="max-w-6xl mx-auto relative z-10 px-6 pb-8">
-                {/* Content Card */}
-                <div className="bg-[#1E293B]/40 backdrop-blur-3xl border border-white/10 rounded-[2.5rem] overflow-hidden shadow-2xl transition-all duration-500 hover:border-purple-500/20">
-
-                    <div className="p-8 md:p-12 relative">
-                        {/* Section Title */}
-                        <div className="relative flex items-center gap-3 mb-12">
-                            <div className="w-10 h-10 rounded-xl bg-purple-500/10 border border-purple-500/20 flex items-center justify-center text-purple-400 group-hover:scale-110 transition-transform">
-                                <Edit className="w-5 h-5" />
+                <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+                    {/* Main Form Section */}
+                    <div className="lg:col-span-2 space-y-6">
+                        <div className="bg-[#1e2235] border border-white/10 rounded-[2.5rem] shadow-2xl p-6 md:p-8 space-y-8">
+                            <div className="flex items-center gap-3 mb-2">
+                                <Edit className="w-5 h-5 text-purple-400" />
+                                <h3 className="text-xl font-black text-white uppercase tracking-tight italic">Detalles del Requerimiento</h3>
                             </div>
-                            <div>
-                                <h3 className="text-xl font-black text-white uppercase tracking-tight">Información de la Solicitud</h3>
-                                <p className="text-[10px] font-black text-purple-400/60 uppercase tracking-widest mt-0.5">Complete todos los campos requeridos</p>
-                            </div>
-                        </div>
 
-                        {/* Form */}
-                        <div className="space-y-8">
-                            {/* Description */}
+                            {/* Descriptions */}
                             <div className="space-y-3">
-                                <label className="block text-[11px] font-black uppercase tracking-wider text-purple-400 opacity-80 after:content-['_*'] after:text-rose-500 after:font-bold">
-                                    Descripción de la solicitud
+                                <label className="text-[10px] font-black uppercase tracking-widest ml-1 block opacity-60 after:content-['*'] after:text-rose-500 after:ml-1">
+                                    Descripción Técnica
                                 </label>
-                                <textarea
-                                    value={formData.descripcion}
-                                    onChange={(e) => setFormData(prev => ({ ...prev, descripcion: e.target.value }))}
-                                    placeholder="Describa detalladamente el requerimiento o incidencia técnica..."
-                                    className="w-full min-h-[140px] bg-[#1E293B]/40 backdrop-blur-xl border border-white/10 rounded-2xl px-5 py-4 text-white placeholder-slate-500 focus:outline-none focus:border-purple-500/50 focus:ring-1 focus:ring-purple-500/50 transition-all resize-y text-sm font-medium leading-relaxed"
-                                />
+                                <div className="relative group/text">
+                                    <MessageSquare className="absolute left-5 top-5 w-5 h-5 text-gray-700 group-focus-within/text:text-purple-400 transition-colors" />
+                                    <textarea
+                                        value={formData.descripcion}
+                                        onChange={(e) => setFormData(prev => ({ ...prev, descripcion: e.target.value }))}
+                                        className="w-full min-h-[160px] bg-black/30 border border-white/10 rounded-3xl py-5 pl-14 pr-6 text-white font-medium placeholder-gray-700 focus:outline-none focus:border-purple-500/50 transition-all shadow-inner resize-none leading-relaxed"
+                                        placeholder="Describa detalladamente el requerimiento o falla técnica..."
+                                    />
+                                </div>
                             </div>
 
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mt-4">
-                                <FormSelect
+                            {/* Selectors Grid */}
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                <SelectorCard
                                     label="Área de Mantenimiento"
                                     value={formData.area}
                                     displayValue={getSelectedLabel('areas', formData.area)}
-                                    onOpenSearch={() => handleOpenSearch('areas', 'Buscar Área de Mantenimiento')}
-                                    onClear={() => handleClearField('area')}
-                                    loading={loading}
-                                    required
+                                    onOpen={() => handleOpenSearch('areas', 'Seleccionar Área')}
                                     icon={Home}
+                                    required
                                 />
-
-                                <FormSelect
+                                <SelectorCard
                                     label="Instalación Municipal"
                                     value={formData.instalacion}
                                     displayValue={getSelectedLabel('instalaciones', formData.instalacion)}
-                                    onOpenSearch={() => handleOpenSearch('instalaciones', 'Buscar Instalación Municipal')}
-                                    onClear={() => handleClearField('instalacion')}
-                                    loading={loading}
-                                    required
+                                    onOpen={() => handleOpenSearch('instalaciones', 'Seleccionar Instalación')}
                                     icon={MapPin}
+                                    required
                                 />
-                            </div>
-
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                                <FormSelect
+                                <SelectorCard
                                     label="Supervisor Asignado"
                                     value={formData.supervisor}
                                     displayValue={getSelectedLabel('supervisores', formData.supervisor)}
-                                    onOpenSearch={() => handleOpenSearch('supervisores', 'Buscar Supervisor')}
-                                    onClear={() => handleClearField('supervisor')}
-                                    loading={loading}
-                                    required
+                                    onOpen={() => handleOpenSearch('supervisores', 'Seleccionar Supervisor')}
                                     icon={Shield}
+                                    required
                                 />
-
-                                <FormSelect
+                                <SelectorCard
                                     label="Profesional Responsable"
                                     value={formData.profesional}
                                     displayValue={getSelectedLabel('profesionales', formData.profesional)}
-                                    onOpenSearch={() => handleOpenSearch('profesionales', 'Buscar Profesional')}
-                                    onClear={() => handleClearField('profesional')}
-                                    loading={loading}
-                                    required
+                                    onOpen={() => handleOpenSearch('profesionales', 'Seleccionar Responsable')}
                                     icon={Users}
-                                />
-                            </div>
-
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                                <FormSelect
-                                    label="Cliente Interno"
-                                    value={formData.cliente}
-                                    displayValue={getSelectedLabel('clientes', formData.cliente)}
-                                    onOpenSearch={() => handleOpenSearch('clientes', 'Buscar Cliente Interno')}
-                                    onClear={() => handleClearField('cliente')}
-                                    loading={loading}
                                     required
-                                    icon={Users}
                                 />
-                            </div>
-                        </div>
-
-                        {/* Image Upload Section */}
-                        <div className="mt-12 pt-10 border-t border-white/5">
-                            <div className="flex items-center gap-3 mb-8">
-                                <div className="w-8 h-8 rounded-lg bg-purple-500/10 border border-purple-500/20 flex items-center justify-center text-purple-400">
-                                    <ImageIcon className="w-4 h-4" />
-                                </div>
-                                <h4 className="text-sm font-black text-white uppercase tracking-wider">Evidencia Fotográfica</h4>
-                            </div>
-
-                            <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 items-start">
-                                <div className="grid grid-cols-2 gap-4">
-                                    <input
-                                        type="file"
-                                        accept="image/*"
-                                        onChange={handleImageSelect}
-                                        className="hidden"
-                                        id="image-upload"
+                                <div className="md:col-span-2">
+                                    <SelectorCard
+                                        label="Cliente Interno / Solicitante"
+                                        value={formData.cliente}
+                                        displayValue={getSelectedLabel('clientes', formData.cliente)}
+                                        onOpen={() => handleOpenSearch('clientes', 'Seleccionar Cliente')}
+                                        icon={Users}
+                                        required
                                     />
-                                    <label
-                                        htmlFor="image-upload"
-                                        className="group/btn h-32 rounded-[2rem] bg-white/5 border border-white/10 hover:border-purple-500/40 hover:bg-white/[0.08] transition-all cursor-pointer flex flex-col items-center justify-center gap-2 relative overflow-hidden"
-                                    >
-                                        <div className="absolute inset-0 bg-gradient-to-br from-purple-500/10 to-transparent opacity-0 group-hover/btn:opacity-100 transition-opacity"></div>
-                                        <div className="w-10 h-10 rounded-full bg-white/5 flex items-center justify-center text-purple-400 group-hover/btn:scale-110 transition-transform relative z-10">
-                                            <Upload className="w-5 h-5" />
-                                        </div>
-                                        <span className="text-[10px] font-black uppercase tracking-widest text-slate-400 group-hover/btn:text-white relative z-10">Subir Imagen</span>
-                                    </label>
-
-                                    <button
-                                        onClick={startCamera}
-                                        className="group/btn h-32 rounded-[2rem] bg-white/5 border border-white/10 hover:border-purple-500/40 hover:bg-white/[0.08] transition-all flex flex-col items-center justify-center gap-2 relative overflow-hidden"
-                                    >
-                                        <div className="absolute inset-0 bg-gradient-to-br from-violet-500/10 to-transparent opacity-0 group-hover/btn:opacity-100 transition-opacity"></div>
-                                        <div className="w-10 h-10 rounded-full bg-white/5 flex items-center justify-center text-violet-400 group-hover/btn:scale-110 transition-transform relative z-10">
-                                            <Camera className="w-5 h-5" />
-                                        </div>
-                                        <span className="text-[10px] font-black uppercase tracking-widest text-slate-400 group-hover/btn:text-white relative z-10">Tomar Foto</span>
-                                    </button>
-                                </div>
-
-                                {/* Preview Area */}
-                                <div className="relative group/preview">
-                                    {imagePreview ? (
-                                        <div className="relative aspect-video bg-black/40 rounded-[2.5rem] overflow-hidden border border-white/10 shadow-2xl group-hover/preview:border-purple-500/30 transition-all">
-                                            <img
-                                                src={imagePreview}
-                                                alt="Preview"
-                                                className="w-full h-full object-contain"
-                                            />
-                                            <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent opacity-0 group-hover/preview:opacity-100 transition-opacity flex items-end justify-center pb-6">
-                                                <button
-                                                    onClick={handleRemoveImage}
-                                                    className="flex items-center gap-2 px-6 py-2 bg-rose-500/20 border border-rose-500/40 text-rose-400 rounded-full hover:bg-rose-500 hover:text-white transition-all duration-300 backdrop-blur-md"
-                                                >
-                                                    <Trash2 className="w-4 h-4" />
-                                                    <span className="text-[10px] font-black uppercase tracking-widest">Eliminar Imagen</span>
-                                                </button>
-                                            </div>
-                                        </div>
-                                    ) : (
-                                        <div className="aspect-video bg-white/2 rounded-[2.5rem] border-2 border-dashed border-white/5 flex flex-col items-center justify-center text-slate-600 gap-3 group-hover/preview:border-purple-500/20 transition-all">
-                                            <div className="w-12 h-12 rounded-full bg-white/[0.02] flex items-center justify-center">
-                                                <ImageIcon className="w-6 h-6 opacity-20" />
-                                            </div>
-                                            <span className="text-[10px] font-black uppercase tracking-widest opacity-40">Sin evidencia seleccionada</span>
-                                        </div>
-                                    )}
                                 </div>
                             </div>
                         </div>
-
-                        {/* Camera Modal */}
-                        {isCameraOpen && (
-                            <div className="fixed inset-0 z-[60] bg-black/80 backdrop-blur-sm flex items-center justify-center p-4">
-                                <div className="bg-[#1e2230] border border-white/10 rounded-2xl p-4 max-w-2xl w-full">
-                                    <div className="flex justify-between items-center mb-4">
-                                        <h3 className="text-lg font-medium text-white">Tomar Fotografía</h3>
-                                        <button onClick={stopCamera} className="text-slate-400 hover:text-white">
-                                            <X className="w-6 h-6" />
-                                        </button>
-                                    </div>
-                                    <div className="relative aspect-video bg-black rounded-xl overflow-hidden mb-4">
-                                        <video
-                                            id="camera-video"
-                                            autoPlay
-                                            playsInline
-                                            ref={(video) => {
-                                                if (video && cameraStream) {
-                                                    video.srcObject = cameraStream;
-                                                }
-                                            }}
-                                            className="w-full h-full object-cover"
-                                        />
-                                    </div>
-                                    <div className="flex justify-center gap-4">
-                                        <button
-                                            onClick={stopCamera}
-                                            className="px-6 py-2 rounded-xl border border-white/10 text-slate-300 hover:bg-white/5"
-                                        >
-                                            Cancelar
-                                        </button>
-                                        <button
-                                            onClick={capturePhoto}
-                                            className="px-6 py-2 rounded-xl bg-[#8e44ad] text-white hover:bg-[#9b59b6] flex items-center gap-2"
-                                        >
-                                            <Camera className="w-4 h-4" />
-                                            Capturar
-                                        </button>
-                                    </div>
-                                </div>
-                            </div>
-                        )}
                     </div>
 
-                    {/* Footer Buttons */}
-                    <div className="p-8 border-t border-white/5 bg-white/[0.02] flex flex-col md:flex-row justify-between items-center gap-6">
-                        <button
-                            onClick={() => navigate(-1)}
-                            className="w-full md:w-auto px-8 py-4 rounded-2xl bg-white/5 border border-white/10 text-slate-400 font-black uppercase tracking-widest text-[10px] hover:bg-white/10 hover:text-white transition-all flex items-center justify-center gap-2 group/back"
-                        >
-                            <ArrowLeft className="w-4 h-4 transition-transform group-hover/back:-translate-x-1" />
-                            Regresar
-                        </button>
+                    {/* Side Actions Section */}
+                    <div className="space-y-6">
+                        {/* Evidence Upload Box */}
+                        <div className="bg-[#1e2235] border border-white/10 rounded-[2.5rem] shadow-2xl p-6 md:p-8 space-y-6">
+                            <div className="flex items-center gap-3">
+                                <Camera className="w-5 h-5 text-purple-400" />
+                                <h3 className="text-xl font-black text-white uppercase tracking-tight italic">Evidencia</h3>
+                            </div>
 
-                        <div className="flex flex-col md:flex-row gap-4 w-full md:w-auto">
-                            <button
-                                onClick={() => navigate('/cliente-interno/realizar-salidas')}
-                                className="px-8 py-4 rounded-2xl bg-purple-500/10 border border-purple-500/20 text-purple-400 font-black uppercase tracking-widest text-[10px] hover:bg-purple-500/20 hover:border-purple-500/40 transition-all flex items-center justify-center gap-2"
-                            >
-                                <Table className="w-4 h-4" />
-                                Ver Solicitudes
-                            </button>
-                            <button
-                                onClick={handleSave}
-                                disabled={saving}
-                                className="relative group/save overflow-hidden px-10 py-4 rounded-2xl bg-purple-500 text-white font-black uppercase tracking-widest text-[10px] hover:bg-purple-600 transition-all shadow-[0_10px_30px_rgba(168,85,247,0.3)] disabled:opacity-50 disabled:cursor-not-allowed hover:-translate-y-0.5"
-                            >
-                                <div className="relative z-10 flex items-center justify-center gap-2">
-                                    {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4 transition-transform group-hover/save:scale-110" />}
-                                    {saving ? 'Guardando...' : 'Guardar Solicitud'}
+                            {imagePreview ? (
+                                <div className="relative group/preview aspect-square bg-black/40 rounded-3xl overflow-hidden border border-white/10 shadow-inner">
+                                    <img src={imagePreview} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700" alt="Evidencia" />
+                                    <div className="absolute inset-0 bg-black/60 opacity-0 group-hover/preview:opacity-100 transition-opacity flex flex-col items-center justify-center p-6 text-center">
+                                        <button
+                                            onClick={handleRemoveImage}
+                                            className="w-14 h-14 rounded-full bg-rose-500 text-white flex items-center justify-center shadow-2xl hover:scale-110 active:scale-95 transition-all mb-4"
+                                        >
+                                            <Trash2 className="w-6 h-6" />
+                                        </button>
+                                        <p className="text-white text-xs font-black uppercase tracking-widest">Eliminar Fotografía</p>
+                                    </div>
                                 </div>
-                                <div className="absolute inset-0 bg-gradient-to-r from-purple-600 to-violet-600 opacity-0 group-hover/save:opacity-100 transition-opacity"></div>
-                            </button>
+                            ) : (
+                                <div className="grid grid-cols-1 gap-4">
+                                    <button
+                                        onClick={startCamera}
+                                        className="h-32 rounded-3xl bg-black/30 border border-white/5 border-dashed hover:border-purple-500/40 hover:bg-purple-500/5 transition-all flex flex-col items-center justify-center gap-3 group/opt"
+                                    >
+                                        <div className="w-10 h-10 rounded-xl bg-purple-500/10 flex items-center justify-center text-purple-400 group-hover/opt:scale-110 transition-transform">
+                                            <Camera className="w-6 h-6" />
+                                        </div>
+                                        <span className="text-[10px] font-black uppercase tracking-[0.2em] text-gray-600 group-hover/opt:text-purple-400">Tomar Foto</span>
+                                    </button>
+                                    <label
+                                        htmlFor="file-upload"
+                                        className="h-32 rounded-3xl bg-black/30 border border-white/5 border-dashed hover:border-blue-500/40 hover:bg-blue-500/5 transition-all flex flex-col items-center justify-center gap-3 group/opt cursor-pointer"
+                                    >
+                                        <input id="file-upload" type="file" className="hidden" onChange={handleImageSelect} accept="image/*" />
+                                        <div className="w-10 h-10 rounded-xl bg-blue-500/10 flex items-center justify-center text-blue-400 group-hover/opt:scale-110 transition-transform">
+                                            <Upload className="w-6 h-6" />
+                                        </div>
+                                        <span className="text-[10px] font-black uppercase tracking-[0.2em] text-gray-600 group-hover/opt:text-blue-400">Subir Archivo</span>
+                                    </label>
+                                </div>
+                            )}
+                        </div>
+
+                        {/* Save Button Container */}
+                        <div className="bg-gradient-to-br from-purple-600 to-violet-700 rounded-[2.5rem] p-8 shadow-2xl shadow-purple-900/40 relative overflow-hidden group">
+                            <Zap className="absolute -right-4 -top-4 w-32 h-32 text-white/5 -rotate-12 group-hover:scale-110 transition-transform duration-700" />
+
+                            <div className="relative z-10 space-y-6">
+                                <div className="space-y-1">
+                                    <h4 className="text-white font-black text-2xl uppercase tracking-tighter italic">Finalizar</h4>
+                                    <p className="text-purple-200 text-[10px] font-bold uppercase tracking-widest opacity-80">Asegúrese que los datos son correctos</p>
+                                </div>
+
+                                <button
+                                    onClick={handleSave}
+                                    disabled={saving || loading}
+                                    className="w-full py-5 bg-white text-purple-700 font-black text-xl rounded-2xl shadow-2xl hover:scale-[1.02] active:scale-95 transition-all flex items-center justify-center gap-3 disabled:opacity-50 uppercase tracking-tight"
+                                >
+                                    {saving ? <Loader2 className="w-7 h-7 animate-spin" /> : <Save className="w-7 h-7" />}
+                                    Guardar STI
+                                </button>
+                            </div>
                         </div>
                     </div>
                 </div>
             </div>
 
-            {/* Search Modal Component */}
+            {/* Premium Camera Modal */}
+            {isCameraOpen && (
+                <div className="fixed inset-0 z-[200] bg-black/95 backdrop-blur-xl flex items-center justify-center p-4 animate-in fade-in duration-300">
+                    <div className="bg-[#1e2235] border border-white/10 rounded-[3rem] p-4 max-w-3xl w-full relative overflow-hidden shadow-[0_0_100px_rgba(168,85,247,0.2)]">
+                        <div className="absolute top-8 left-8 z-10">
+                            <div className="px-4 py-2 bg-purple-500 text-white rounded-full flex items-center gap-3 shadow-2xl">
+                                <span className="w-2 h-2 rounded-full bg-white animate-pulse" />
+                                <span className="text-[10px] font-black uppercase tracking-widest">Cámara Activa</span>
+                            </div>
+                        </div>
+
+                        <button onClick={stopCamera} className="absolute top-8 right-8 z-10 w-12 h-12 rounded-2xl bg-white/5 border border-white/10 flex items-center justify-center text-gray-400 hover:text-white transition-all backdrop-blur-md">
+                            <X className="w-6 h-6" />
+                        </button>
+
+                        <div className="relative aspect-video bg-black rounded-[2rem] overflow-hidden mb-6 group">
+                            <video
+                                id="camera-video"
+                                autoPlay
+                                playsInline
+                                ref={(video) => video && cameraStream && (video.srcObject = cameraStream)}
+                                className="w-full h-full object-cover"
+                            />
+                            {/* Sci-Fi Overlay Markers */}
+                            <div className="absolute inset-0 pointer-events-none border-[30px] border-black/20">
+                                <div className="absolute top-10 left-10 w-12 h-12 border-t-4 border-l-4 border-purple-500/50 rounded-tl-2xl" />
+                                <div className="absolute top-10 right-10 w-12 h-12 border-t-4 border-r-4 border-purple-500/50 rounded-tr-2xl" />
+                                <div className="absolute bottom-10 left-10 w-12 h-12 border-b-4 border-l-4 border-purple-500/50 rounded-bl-2xl" />
+                                <div className="absolute bottom-10 right-10 w-12 h-12 border-b-4 border-r-4 border-purple-500/50 rounded-br-2xl" />
+                                <div className="absolute top-0 left-0 w-full h-0.5 bg-purple-500/20 shadow-[0_0_15px_rgba(168,85,247,0.5)] animate-scan-line-slow" />
+                            </div>
+                        </div>
+
+                        <div className="flex justify-center pb-4">
+                            <button
+                                onClick={capturePhoto}
+                                className="w-24 h-24 rounded-full bg-white border-[8px] border-purple-500/20 flex items-center justify-center shadow-2xl hover:scale-110 active:scale-95 transition-all group/shot"
+                            >
+                                <div className="w-14 h-14 rounded-full bg-purple-600 flex items-center justify-center text-white group-hover/shot:scale-90 transition-transform">
+                                    <Camera className="w-8 h-8" />
+                                </div>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
+
             <SearchModal
                 isOpen={searchModal.isOpen}
                 onClose={() => setSearchModal({ isOpen: false, type: null, title: '' })}
                 title={searchModal.title}
                 options={searchModal.type ? catalogs[searchModal.type] : []}
                 onSelect={handleSelectOption}
+                themeColor={themeColor}
             />
 
             <style>{`
-                .custom-scrollbar::-webkit-scrollbar {
-                    width: 6px;
+                @keyframes scan-line-slow {
+                    0% { top: 10%; }
+                    100% { top: 90%; }
                 }
-                .custom-scrollbar::-webkit-scrollbar-track {
-                    background: rgba(45, 50, 65, 0.3);
-                    border-radius: 3px;
-                }
-                .custom-scrollbar::-webkit-scrollbar-thumb {
-                    background: rgba(142, 68, 173, 0.4);
-                    border-radius: 3px;
-                }
-                .custom-scrollbar::-webkit-scrollbar-thumb:hover {
-                    background: rgba(142, 68, 173, 0.6);
+                .animate-scan-line-slow {
+                    animation: scan-line-slow 4s ease-in-out infinite alternate;
                 }
             `}</style>
         </div>

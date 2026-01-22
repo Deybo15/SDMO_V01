@@ -4,20 +4,26 @@ import { useNavigate, useSearchParams } from 'react-router-dom';
 import {
     Box,
     Calendar,
-    User,
+    UserCircle,
     Search,
     PlusCircle,
     Save,
     Printer,
-    X,
     CheckCircle,
     AlertTriangle,
     Info,
-    Loader2
+    Loader2,
+    Ticket,
+    MessageSquare,
+    ChevronRight
 } from 'lucide-react';
+import jsPDF from 'jspdf';
+import autoTable from 'jspdf-autotable';
 
+// Shared Components
 import { PageHeader } from '../components/ui/PageHeader';
 import { TransactionTable } from '../components/ui/TransactionTable';
+import ArticuloSearchModal from '../components/ArticleSearchModal';
 import ColaboradorSearchModal from '../components/ColaboradorSearchModal';
 import { Articulo, DetalleSalida, Colaborador } from '../types/inventory';
 
@@ -39,8 +45,10 @@ export default function RealizarSalida() {
     }]);
 
     // 2. Header State
-    const [autoriza, setAutoriza] = useState('');
-    const [retira, setRetira] = useState('');
+    const [autorizaId, setAutorizaId] = useState('');
+    const [autorizaAlias, setAutorizaAlias] = useState('');
+    const [retiraId, setRetiraId] = useState('');
+    const [retiraName, setRetiraName] = useState('');
     const [numeroSolicitud, setNumeroSolicitud] = useState('');
     const [comentarios, setComentarios] = useState('');
     const [finalizado, setFinalizado] = useState(false);
@@ -51,7 +59,6 @@ export default function RealizarSalida() {
         autorizados: [],
         todos: []
     });
-    const [inventario, setInventario] = useState<Articulo[]>([]);
     const [fechaActual, setFechaActual] = useState('');
 
     // 4. Modals State
@@ -59,15 +66,8 @@ export default function RealizarSalida() {
     const [busquedaTipo, setBusquedaTipo] = useState<'autoriza' | 'retira'>('autoriza');
     const [showArticulosModal, setShowArticulosModal] = useState(false);
     const [currentRowIndex, setCurrentRowIndex] = useState<number>(0);
-    const [showImageModal, setShowImageModal] = useState(false);
-    const [selectedImage, setSelectedImage] = useState<{ src: string, alt: string } | null>(null);
-    const [articuloTermino, setArticuloTermino] = useState('');
 
-    // Inventory Controls
-    const [inventoryPage, setInventoryPage] = useState(1);
-    const [inventoryLoading, setInventoryLoading] = useState(false);
-    const [totalInventory, setTotalInventory] = useState(0);
-    const ITEMS_PER_PAGE = 1000;
+    const themeColor = 'teal';
 
     // Initialize
     useEffect(() => {
@@ -83,150 +83,30 @@ export default function RealizarSalida() {
         if (numSol) setNumeroSolicitud(numSol);
 
         fetchColaboradores();
-    }, []);
+    }, [searchParams]);
 
     // Load Data
     const fetchColaboradores = async () => {
         try {
-            // 1. Get current user session
-            const { data: { user } } = await supabase.auth.getUser();
-            const userEmail = user?.email;
-
-            // 2. Fetch all relevant collaborators
             const { data } = await supabase
                 .from('colaboradores_06')
                 .select('identificacion, alias, colaborador, autorizado, condicion_laboral, correo_colaborador')
                 .or('autorizado.eq.true,condicion_laboral.eq.false');
 
             if (data) {
-                const mappedData = data.map((c: any) => ({
-                    ...c,
-                    colaborador: c.colaborador || c.alias
-                }));
-
                 setColaboradores({
-                    autorizados: mappedData.filter((c: any) => c.autorizado),
-                    todos: mappedData
+                    autorizados: data.filter(c => c.autorizado),
+                    todos: data
                 });
-
-                // 3. Auto-populate Profesional Responsable based on email
-                if (userEmail) {
-                    const matchedUser = mappedData.find(c =>
-                        c.correo_colaborador?.toLowerCase() === userEmail.toLowerCase()
-                    );
-                    if (matchedUser) {
-                        setAutoriza(matchedUser.identificacion);
-                    }
-                }
             }
-        } catch (error) {
-            console.error('Error loading collaborators:', error);
-            showAlert('Error al cargar colaboradores', 'error');
+        } catch (err) {
+            console.error('Error fetching colaboradores:', err);
         }
     };
 
-    const fetchInventario = async (page = 1, append = false) => {
-        setInventoryLoading(true);
-        try {
-            const from = (page - 1) * ITEMS_PER_PAGE;
-            const to = page * ITEMS_PER_PAGE - 1;
-
-            const { data, error, count } = await supabase
-                .from('inventario_actual')
-                .select('codigo_articulo, nombre_articulo, cantidad_disponible, unidad, imagen_url, precio_unitario', { count: 'exact' })
-                .order('nombre_articulo', { ascending: true })
-                .range(from, to);
-
-            if (error) throw error;
-
-            let fetchedItems = data || [];
-
-            // Fetch brands
-            if (fetchedItems.length > 0) {
-                const codigos = fetchedItems.map(i => i.codigo_articulo).filter(Boolean);
-                if (codigos.length > 0) {
-                    const { data: marcas } = await supabase
-                        .from('articulo_01')
-                        .select('codigo_articulo, marca')
-                        .in('codigo_articulo', codigos);
-
-                    const marcasMap = (marcas || []).reduce((acc: any, curr) => {
-                        acc[curr.codigo_articulo] = curr.marca;
-                        return acc;
-                    }, {});
-
-                    fetchedItems = fetchedItems.map(item => ({
-                        ...item,
-                        marca: marcasMap[item.codigo_articulo] || 'Sin marca'
-                    }));
-                }
-            }
-
-            setTotalInventory(count || 0);
-            setInventario(prev => append ? [...prev, ...fetchedItems] : fetchedItems);
-
-        } catch (error) {
-            console.error('Error loading inventory:', error);
-            showAlert('Error al cargar inventario', 'error');
-        } finally {
-            setInventoryLoading(false);
-        }
-    };
-
-    // Feedback Helper
-    const showAlert = (message: string, type: 'success' | 'error' | 'warning' | 'info') => {
-        setFeedback({ message, type });
-        setTimeout(() => setFeedback(null), 5000);
-    };
-
-    // Handlers
-    const handleOpenBusqueda = (tipo: 'autoriza' | 'retira') => {
-        setBusquedaTipo(tipo);
-        setShowBusquedaModal(true);
-    };
-
-    const handleSelectColaborador = (colaborador: Colaborador) => {
-        if (busquedaTipo === 'autoriza') setAutoriza(colaborador.identificacion);
-        else setRetira(colaborador.identificacion);
-        setShowBusquedaModal(false);
-    };
-
-    const handleOpenArticulos = async (index: number) => {
-        setCurrentRowIndex(index);
-        setShowArticulosModal(true);
-        if (inventario.length === 0) {
-            await fetchInventario(1);
-        }
-    };
-
-    const handleSelectArticulo = (article: Articulo) => {
-        if (currentRowIndex === null) return;
-
-        // Duplicate Detection
-        const exists = items.some((item, i) => i !== currentRowIndex && item.codigo_articulo === article.codigo_articulo);
-        if (exists) {
-            showAlert('Este artículo ya ha sido agregado a la lista.', 'warning');
-            return;
-        }
-
-        setItems(prev => {
-            const newItems = [...prev];
-            newItems[currentRowIndex] = {
-                codigo_articulo: article.codigo_articulo,
-                articulo: article.nombre_articulo,
-                cantidad: 0,
-                unidad: article.unidad || 'Unidad',
-                precio_unitario: article.precio_unitario,
-                marca: article.marca || 'Sin marca',
-                cantidad_disponible: article.cantidad_disponible
-            };
-            return newItems;
-        });
-        setShowArticulosModal(false);
-    };
-
+    // Table Actions
     const agregarFila = () => {
-        setItems(prev => [...prev, {
+        setItems([...items, {
             codigo_articulo: '',
             articulo: '',
             cantidad: 0,
@@ -239,7 +119,6 @@ export default function RealizarSalida() {
 
     const eliminarFila = (index: number) => {
         if (items.length === 1) {
-            // Reset the only row instead of deleting if it's the last one
             setItems([{
                 codigo_articulo: '',
                 articulo: '',
@@ -251,262 +130,310 @@ export default function RealizarSalida() {
             }]);
             return;
         }
-        setItems(prev => prev.filter((_, i) => i !== index));
+        const newItems = [...items];
+        newItems.splice(index, 1);
+        setItems(newItems);
     };
 
     const updateDetalle = (index: number, field: keyof DetalleSalida, value: any) => {
-        setItems(prev => {
-            const newItems = [...prev];
-            newItems[index] = { ...newItems[index], [field]: value };
-            return newItems;
-        });
+        const newItems = [...items];
+        newItems[index] = { ...newItems[index], [field]: value };
+        setItems(newItems);
     };
 
+    // Modals Handlers
+    const handleOpenArticulos = (index: number) => {
+        setCurrentRowIndex(index);
+        setShowArticulosModal(true);
+    };
+
+    const handleSelectArticulo = (articulo: any) => {
+        const itemExistente = items.some((it, i) => it.codigo_articulo === articulo.codigo_articulo && i !== currentRowIndex);
+
+        if (itemExistente) {
+            showAlert('Este artículo ya está en la lista', 'warning');
+            return;
+        }
+
+        const newItems = [...items];
+        newItems[currentRowIndex] = {
+            codigo_articulo: articulo.codigo_articulo,
+            articulo: articulo.nombre_articulo,
+            cantidad: 1,
+            unidad: articulo.unidad || 'UND',
+            precio_unitario: articulo.precio_unitario || 0,
+            marca: articulo.marca || 'S/M',
+            cantidad_disponible: articulo.cantidad_disponible || 0
+        };
+        setItems(newItems);
+        setShowArticulosModal(false);
+    };
+
+    const handleOpenBusqueda = (tipo: 'autoriza' | 'retira') => {
+        setBusquedaTipo(tipo);
+        setShowBusquedaModal(true);
+    };
+
+    const handleSelectColaborador = (colab: any) => {
+        if (busquedaTipo === 'autoriza') {
+            setAutorizaId(colab.identificacion);
+            setAutorizaAlias(colab.alias || colab.colaborador);
+        } else {
+            setRetiraId(colab.identificacion);
+            setRetiraName(colab.colaborador);
+        }
+    };
+
+    const showAlert = (message: string, type: 'success' | 'error' | 'warning' | 'info') => {
+        setFeedback({ message, type });
+        setTimeout(() => setFeedback(null), 4000);
+    };
+
+    // Save Logic
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
 
-        if (!autoriza || !retira) {
-            showAlert('Debe seleccionar responsable y quien retira', 'warning');
+        // Validations
+        if (!autorizaId || !retiraId) {
+            showAlert('Debe seleccionar quien autoriza y quien retira', 'error');
             return;
         }
 
-        if (!numeroSolicitud) {
-            showAlert('Número de solicitud requerido', 'warning');
+        const itemsValidos = items.filter(i => i.codigo_articulo !== '' && i.cantidad > 0);
+        if (itemsValidos.length === 0) {
+            showAlert('Debe agregar al menos un artículo con cantidad válida', 'error');
             return;
         }
 
-        const validItems = items.filter(d => d.codigo_articulo && Number(d.cantidad) > 0);
-        if (validItems.length === 0) {
-            showAlert('Debe agregar al menos un artículo válido con cantidad mayor a 0', 'warning');
-            return;
-        }
-
-        // Validate limits
-        const exceedsLimit = validItems.some(d => d.cantidad_disponible !== undefined && Number(d.cantidad) > d.cantidad_disponible);
-        if (exceedsLimit) {
-            showAlert('La cantidad de uno o más artículos supera el disponible.', 'warning');
-            return;
+        for (const item of itemsValidos) {
+            if (item.cantidad > item.cantidad_disponible!) {
+                showAlert(`Stock insuficiente para ${item.articulo}`, 'error');
+                return;
+            }
         }
 
         setLoading(true);
         try {
-            // Real-time Stock Validation
-            const { data: currentStock, error: stockError } = await supabase
-                .from('inventario_actual')
-                .select('codigo_articulo, cantidad_disponible')
-                .in('codigo_articulo', validItems.map(d => d.codigo_articulo));
+            // 1. Get current user session
+            const { data: { user } } = await supabase.auth.getUser();
 
-            if (stockError) throw stockError;
-
-            const stockMap = (currentStock || []).reduce((acc: any, curr) => {
-                acc[curr.codigo_articulo] = curr.cantidad_disponible;
-                return acc;
-            }, {});
-
-            for (const d of validItems) {
-                const available = stockMap[d.codigo_articulo];
-                if (available === undefined || Number(d.cantidad) > available) {
-                    throw new Error(`El artículo ${d.articulo} solo tiene ${available ?? 0} disponible(s).`);
-                }
-            }
-
-            // 1. Insert Header
-            const { data: headerData, error: headerError } = await supabase
+            // 2. Insert Header (salida_articulo_08)
+            const { data: salida, error: errorSalida } = await supabase
                 .from('salida_articulo_08')
                 .insert({
                     fecha_salida: new Date().toISOString(),
-                    autoriza,
-                    retira,
-                    numero_solicitud: numeroSolicitud,
-                    comentarios
+                    solicitud_articulo: numeroSolicitud || null,
+                    autoriza_salida: autorizaId,
+                    retira_salida: retiraId,
+                    personal_entrega: user?.email || 'sistema',
+                    observaciones: comentarios || null
                 })
                 .select('id_salida')
                 .single();
 
-            if (headerError) throw headerError;
+            if (errorSalida) throw errorSalida;
 
-            const newId = headerData.id_salida;
-            setUltimoIdSalida(newId);
+            // 3. Insert Details (dato_salida_13)
+            const detalles = itemsValidos.map(item => ({
+                id_salida: salida.id_salida,
+                articulo: item.codigo_articulo,
+                cantidad: item.cantidad,
+                precio_unitario: item.precio_unitario,
+                subtotal: item.cantidad * item.precio_unitario,
+                registro_salida: salida.id_salida
+            }));
 
-            // 2. Insert Details
-            const { error: detailsError } = await supabase
+            const { error: errorDetalles } = await supabase
                 .from('dato_salida_13')
-                .insert(validItems.map(d => ({
-                    id_salida: newId,
-                    articulo: d.codigo_articulo,
-                    cantidad: Number(d.cantidad),
-                    precio_unitario: d.precio_unitario
-                })));
+                .insert(detalles);
 
-            if (detailsError) throw detailsError;
+            if (errorDetalles) throw errorDetalles;
 
-            showAlert(`Salida registrada (SA-${newId.toString().padStart(4, '0')})`, 'success');
+            // 4. Success Actions
+            setUltimoIdSalida(salida.id_salida);
             setFinalizado(true);
+            showAlert('¡Salida registrada exitosamente!', 'success');
 
-        } catch (error: any) {
-            console.error('Error submitting:', error);
-            showAlert('Error al guardar: ' + error.message, 'error');
+        } catch (err: any) {
+            console.error('Error guardando salida:', err);
+            showAlert(err.message || 'Error al guardar la salida', 'error');
         } finally {
             setLoading(false);
         }
     };
 
-    const handleFinalizar = async () => {
+    const handleFinalizar = () => {
+        generarPDF();
+        navigate(-1);
+    };
+
+    const generarPDF = () => {
         if (!ultimoIdSalida) return;
 
-        setLoading(true);
-        try {
-            const { error } = await supabase
-                .from('salida_articulo_08')
-                .update({ finalizada: true })
-                .eq('id_salida', ultimoIdSalida);
+        const doc = new jsPDF();
+        const pageWidth = doc.internal.pageSize.getWidth();
 
-            if (error) throw error;
+        // Header
+        doc.setFillColor(0, 128, 128);
+        doc.rect(0, 0, pageWidth, 40, 'F');
+        doc.setTextColor(255, 255, 255);
+        doc.setFontSize(22);
+        doc.setFont('helvetica', 'bold');
+        doc.text('COMPROBANTE DE SALIDA', pageWidth / 2, 25, { align: 'center' });
 
-            showAlert('Registro finalizado correctamente', 'success');
-            setTimeout(() => navigate('/cliente-interno/realizar-salidas'), 1500);
+        // Info Box
+        doc.setTextColor(60, 60, 60);
+        doc.setFontSize(10);
+        doc.setFont('helvetica', 'normal');
+        let y = 55;
+        doc.text(`ID Transacción: #${ultimoIdSalida}`, 15, y);
+        doc.text(`Fecha: ${new Date().toLocaleString()}`, 15, y + 6);
+        doc.text(`Solicitud: ${numeroSolicitud || 'N/A'}`, 15, y + 12);
 
-        } catch (error: any) {
-            showAlert('Error al finalizar: ' + error.message, 'error');
-        } finally {
-            setLoading(false);
-        }
+        doc.text(`Autoriza: ${autorizaAlias}`, 110, y);
+        doc.text(`Retira: ${retiraName}`, 110, y + 6);
+
+        // Table
+        const tableData = items.filter(i => i.codigo_articulo !== '').map(item => [
+            item.codigo_articulo,
+            item.articulo,
+            item.marca || 'N/A',
+            item.cantidad,
+            item.unidad,
+            new Intl.NumberFormat('es-CR', { style: 'currency', currency: 'CRC' }).format(item.precio_unitario),
+            new Intl.NumberFormat('es-CR', { style: 'currency', currency: 'CRC' }).format(item.cantidad * item.precio_unitario)
+        ]);
+
+        autoTable(doc, {
+            startY: 85,
+            head: [['COD', 'ARTÍCULO', 'MARCA', 'CANT', 'UNID', 'PRECIO', 'TOTAL']],
+            body: tableData,
+            theme: 'grid',
+            headStyles: { fillColor: [0, 128, 128], textColor: 255, fontStyle: 'bold' },
+            alternateRowStyles: { fillColor: [245, 245, 245] },
+            styles: { fontSize: 8, cellPadding: 3 }
+        });
+
+        // Signatures
+        const finalY = (doc as any).lastAutoTable.finalY + 30;
+        doc.line(15, finalY, 80, finalY);
+        doc.text('Firma Autoriza', 47.5, finalY + 5, { align: 'center' });
+
+        doc.line(130, finalY, 195, finalY);
+        doc.text('Firma Recibe', 162.5, finalY + 5, { align: 'center' });
+
+        doc.save(`Salida_${ultimoIdSalida}.pdf`);
     };
 
-    // Filtered lists
-    const filteredArticulos = inventario.filter(i =>
-        i.nombre_articulo.toLowerCase().includes(articuloTermino.toLowerCase()) ||
-        i.codigo_articulo.toLowerCase().includes(articuloTermino.toLowerCase())
-    );
-
     return (
-        <div className="min-h-screen bg-[#0a0a0a] text-white font-sans p-4 md:p-8 relative overflow-hidden">
-            {/* Background Effects */}
-            <div className="fixed inset-0 pointer-events-none">
-                <div className="absolute top-[20%] left-[20%] w-96 h-96 bg-teal-500/10 rounded-full blur-[100px]" />
-                <div className="absolute bottom-[20%] right-[20%] w-96 h-96 bg-cyan-500/10 rounded-full blur-[100px]" />
-            </div>
+        <div className="min-h-screen bg-[#0f111a] p-4 md:p-8">
+            <PageHeader
+                title="Realizar Salida"
+                icon={Box}
+                themeColor={themeColor}
+            />
 
-            {/* Feedback Alert */}
-            {feedback && (
-                <div className="fixed top-6 left-1/2 transform -translate-x-1/2 z-[100] animate-in slide-in-from-top-4">
-                    <div className={`px-6 py-4 rounded-xl shadow-2xl border backdrop-blur-xl flex items-center gap-3 ${feedback.type === 'success' ? 'bg-green-500/10 border-green-500/30 text-green-400' :
-                        feedback.type === 'error' ? 'bg-red-500/10 border-red-500/30 text-red-400' :
-                            feedback.type === 'warning' ? 'bg-amber-500/10 border-amber-500/30 text-amber-400' :
-                                'bg-blue-500/10 border-blue-500/30 text-blue-400'
+            <div className="max-w-6xl mx-auto">
+                {/* Feedback Toast */}
+                {feedback && (
+                    <div className={`fixed top-8 right-8 z-[100] px-6 py-4 rounded-2xl shadow-2xl backdrop-blur-xl border flex items-center gap-3 animate-in slide-in-from-top-4 duration-300 ${feedback.type === 'success' ? 'bg-emerald-500/20 border-emerald-500/50 text-emerald-400' :
+                            feedback.type === 'error' ? 'bg-rose-500/20 border-rose-500/50 text-rose-400' :
+                                feedback.type === 'warning' ? 'bg-amber-500/20 border-amber-500/50 text-amber-400' :
+                                    'bg-blue-500/20 border-blue-500/50 text-blue-400'
                         }`}>
                         {feedback.type === 'success' && <CheckCircle className="w-5 h-5" />}
                         {feedback.type === 'error' && <AlertTriangle className="w-5 h-5" />}
                         {feedback.type === 'warning' && <AlertTriangle className="w-5 h-5" />}
                         {feedback.type === 'info' && <Info className="w-5 h-5" />}
-                        <span className="font-medium">{feedback.message}</span>
-                        <button onClick={() => setFeedback(null)} className="ml-2 hover:text-white">
-                            <X className="w-4 h-4" />
-                        </button>
+                        <span className="font-bold">{feedback.message}</span>
                     </div>
-                </div>
-            )}
-
-            <div className="max-w-6xl mx-auto relative z-10">
-                <PageHeader
-                    title="REGISTRO DE SALIDA DE ARTÍCULOS"
-                    icon={Box}
-                    themeColor="teal"
-                />
-
-                <div className="flex items-center gap-2 text-gray-400 font-medium mt-2 mb-6 px-1">
-                    <Calendar className="w-4 h-4 text-teal-400" />
-                    {fechaActual}
-                </div>
+                )}
 
                 <form onSubmit={handleSubmit} className="space-y-6">
-                    {/* Section 1: Info (Premium Selectors) */}
-                    <div className="bg-white/5 border border-white/10 rounded-2xl p-6 md:p-8 backdrop-blur-xl shadow-2xl">
+                    {/* Section 1: Header Information */}
+                    <div className="bg-[#1e2235] border border-white/10 rounded-3xl shadow-2xl overflow-hidden p-6 md:p-8">
                         <div className="flex items-center gap-3 mb-8 border-b border-white/10 pb-4">
-                            <div className="w-10 h-10 rounded-xl bg-teal-500/20 flex items-center justify-center">
-                                <User className="w-6 h-6 text-teal-400" />
-                            </div>
-                            <h3 className="text-xl font-bold text-teal-400">Información de Responsables</h3>
+                            <Info className={`w-5 h-5 text-${themeColor}-400`} />
+                            <h3 className="text-xl font-black text-white uppercase tracking-tight">Información de la Salida</h3>
                         </div>
 
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mb-8">
-                            {/* Responsable Autoriza */}
-                            <div>
-                                <label className="block text-sm font-medium text-gray-400 mb-2 ml-1">
-                                    Profesional Responsable <span className="text-red-400">*</span>
-                                </label>
+                        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+                            {/* Autoriza Selector */}
+                            <div className="space-y-3">
+                                <label className="text-[10px] font-black text-gray-500 uppercase tracking-widest ml-1 block">Responsable (Autoriza)</label>
                                 <div
-                                    className="w-full bg-black/20 border border-white/10 rounded-xl py-4 px-5 text-white cursor-not-allowed flex items-center justify-between group shadow-inner opacity-75"
-                                    title="El responsable se asigna automáticamente según su usuario"
+                                    onClick={() => handleOpenBusqueda('autoriza')}
+                                    className="group relative bg-black/30 border border-white/10 rounded-2xl p-4 cursor-pointer hover:bg-white/5 hover:border-teal-500/30 transition-all flex items-center justify-between shadow-inner"
                                 >
-                                    <span className={autoriza ? 'text-teal-400 font-bold' : 'text-gray-500 italic'}>
-                                        {autoriza
-                                            ? colaboradores.todos.find(c => c.identificacion === autoriza)?.alias || colaboradores.todos.find(c => c.identificacion === autoriza)?.colaborador
-                                            : 'Usuario no identificado'}
-                                    </span>
-                                    <User className="w-5 h-5 text-teal-400/50" />
+                                    <div className="flex items-center gap-4 min-w-0">
+                                        <div className={`w-10 h-10 rounded-xl bg-${themeColor}-500/10 flex items-center justify-center shrink-0`}>
+                                            <UserCircle className={`w-5 h-5 text-${themeColor}-400 group-hover:scale-110 transition-transform`} />
+                                        </div>
+                                        <div className="min-w-0">
+                                            <span className={`block truncate font-bold ${autorizaId ? 'text-white' : 'text-gray-600 italic'}`}>
+                                                {autorizaAlias || 'Seleccionar...'}
+                                            </span>
+                                            {autorizaId && <span className="text-[9px] text-gray-500 font-mono tracking-tighter uppercase">{autorizaId}</span>}
+                                        </div>
+                                    </div>
+                                    <ChevronRight className="w-5 h-5 text-gray-700 group-hover:translate-x-1 transition-transform shrink-0" />
                                 </div>
                             </div>
 
-                            {/* Persona que Retira */}
-                            <div>
-                                <label className="block text-sm font-medium text-gray-400 mb-2 ml-1">
-                                    Entregado a (Quien retira) <span className="text-red-400">*</span>
-                                </label>
+                            {/* Retira Selector */}
+                            <div className="space-y-3">
+                                <label className="text-[10px] font-black text-gray-500 uppercase tracking-widest ml-1 block">Persona que Retira</label>
                                 <div
                                     onClick={() => handleOpenBusqueda('retira')}
-                                    className="w-full bg-white/5 border border-white/10 rounded-xl py-4 px-5 text-white cursor-pointer hover:bg-white/10 hover:border-teal-500/50 transition-all flex items-center justify-between group shadow-inner"
+                                    className="group relative bg-black/30 border border-white/10 rounded-2xl p-4 cursor-pointer hover:bg-white/5 hover:border-teal-500/30 transition-all flex items-center justify-between shadow-inner"
                                 >
-                                    <span className={retira ? 'text-white font-medium' : 'text-gray-500 italic'}>
-                                        {retira
-                                            ? colaboradores.todos.find((c: any) => c.identificacion === retira)?.colaborador
-                                            : '-- Seleccione quien retira --'}
-                                    </span>
-                                    <User className="w-5 h-5 text-gray-500 group-hover:text-teal-400 transition-colors" />
+                                    <div className="flex items-center gap-4 min-w-0">
+                                        <div className={`w-10 h-10 rounded-xl bg-${themeColor}-500/10 flex items-center justify-center shrink-0`}>
+                                            <UserCircle className={`w-5 h-5 text-${themeColor}-400 group-hover:scale-110 transition-transform`} />
+                                        </div>
+                                        <div className="min-w-0">
+                                            <span className={`block truncate font-bold ${retiraId ? 'text-white' : 'text-gray-600 italic'}`}>
+                                                {retiraName || 'Seleccionar...'}
+                                            </span>
+                                            {retiraId && <span className="text-[9px] text-gray-500 font-mono tracking-tighter uppercase">{retiraId}</span>}
+                                        </div>
+                                    </div>
+                                    <ChevronRight className="w-5 h-5 text-gray-700 group-hover:translate-x-1 transition-transform shrink-0" />
                                 </div>
                             </div>
 
-                            {/* Número de Solicitud */}
-                            <div className="md:col-span-2">
-                                <label className="block text-sm font-medium text-gray-400 mb-2 ml-1">
-                                    Número de solicitud <span className="text-red-400">*</span>
-                                </label>
+                            {/* Solicitud Input */}
+                            <div className="space-y-3">
+                                <label className="text-[10px] font-black text-gray-500 uppercase tracking-widest ml-1 block">Número de Solicitud</label>
                                 <div className="relative group">
-                                    <div className="absolute left-5 top-1/2 -translate-y-1/2 text-teal-400 font-bold group-focus-within:scale-110 transition-transform">#</div>
+                                    <Ticket className="absolute left-5 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-600 group-focus-within:text-teal-400 transition-colors" />
                                     <input
                                         type="text"
                                         value={numeroSolicitud}
                                         onChange={(e) => setNumeroSolicitud(e.target.value)}
-                                        className="w-full bg-white/5 border border-white/10 rounded-xl py-4 pl-12 pr-5 text-white focus:border-teal-500 focus:ring-4 focus:ring-teal-500/10 outline-none transition-all placeholder-gray-600 font-mono shadow-inner"
-                                        placeholder="Ingrese número de solicitud"
-                                        required
-                                        readOnly={!!searchParams.get('numero')}
+                                        className="w-full bg-black/30 border border-white/10 rounded-2xl py-4 pl-14 pr-4 text-white font-bold placeholder-gray-700 focus:outline-none focus:border-teal-500/50 transition-all shadow-inner"
+                                        placeholder="Ejem: 8639..."
                                     />
                                 </div>
                             </div>
                         </div>
 
-                        {/* Inline Comments */}
-                        <div className="space-y-2">
-                            <label className="block text-sm font-medium text-gray-400 ml-1">Comentarios</label>
-                            <textarea
-                                value={comentarios}
-                                onChange={(e) => setComentarios(e.target.value)}
-                                className="w-full bg-white/5 border border-white/10 rounded-xl p-4 text-white focus:border-teal-500 focus:ring-4 focus:ring-teal-500/10 outline-none min-h-[120px] transition-all placeholder-gray-600 resize-none shadow-inner"
-                                placeholder="Detalles adicionales sobre esta salida..."
-                            />
+                        <div className="space-y-3">
+                            <label className="text-[10px] font-black text-gray-500 uppercase tracking-widest ml-1 block">Observaciones adicionales</label>
+                            <div className="relative group">
+                                <MessageSquare className="absolute left-5 top-5 w-5 h-5 text-gray-600 group-focus-within:text-teal-400 transition-colors" />
+                                <textarea
+                                    value={comentarios}
+                                    onChange={(e) => setComentarios(e.target.value)}
+                                    className="w-full bg-black/30 border border-white/10 rounded-2xl py-5 pl-14 pr-6 text-white font-medium placeholder-gray-700 focus:outline-none focus:border-teal-500/50 transition-all shadow-inner min-h-[120px] resize-none"
+                                    placeholder="Detalles sobre la entrega, destino o requerimientos especiales..."
+                                />
+                            </div>
                         </div>
                     </div>
 
-                    {/* Section 2: Articles Table */}
-                    <div className="bg-white/5 border border-white/10 rounded-2xl p-6 md:p-8 backdrop-blur-xl shadow-2xl">
-                        <div className="flex items-center gap-3 mb-8 border-b border-white/10 pb-4">
-                            <div className="w-10 h-10 rounded-xl bg-teal-500/20 flex items-center justify-center">
-                                <Box className="w-6 h-6 text-teal-400" />
-                            </div>
-                            <h3 className="text-xl font-bold text-teal-400">Artículos a Retirar</h3>
-                        </div>
-
+                    {/* Section 2: Items Table */}
+                    <div className="bg-[#1e2235] border border-white/10 rounded-3xl shadow-2xl overflow-hidden p-6 md:p-8">
                         <TransactionTable
                             items={items}
                             onUpdateRow={updateDetalle}
@@ -514,212 +441,53 @@ export default function RealizarSalida() {
                             onOpenSearch={handleOpenArticulos}
                             onAddRow={agregarFila}
                             onWarning={(msg) => showAlert(msg, 'warning')}
-                            themeColor="teal"
+                            themeColor={themeColor}
                         />
                     </div>
 
-                    {/* Actions */}
-                    <div className="flex justify-end items-center pt-4">
-
+                    {/* Form Controls */}
+                    <div className="flex justify-end pt-4">
                         {!finalizado ? (
                             <button
                                 type="submit"
                                 disabled={loading}
-                                className="px-8 py-3 bg-gradient-to-r from-teal-600 to-cyan-600 text-white font-bold rounded-xl hover:shadow-[0_0_25px_rgba(20,184,166,0.4)] hover:brightness-110 transition-all flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed shadow-lg shadow-teal-500/20"
+                                className="w-full md:w-auto px-12 py-5 bg-gradient-to-r from-teal-600 to-teal-400 text-white font-black text-xl rounded-2xl hover:brightness-110 active:scale-95 transition-all flex items-center justify-center gap-3 disabled:opacity-50 shadow-xl shadow-teal-500/20 uppercase tracking-tight"
                             >
-                                {loading ? <Loader2 className="w-5 h-5 animate-spin" /> : <Save className="w-5 h-5" />}
-                                Guardar Salida
+                                {loading ? <Loader2 className="w-7 h-7 animate-spin" /> : <Save className="w-7 h-7" />}
+                                Procesar Salida
                             </button>
                         ) : (
                             <button
                                 type="button"
                                 onClick={handleFinalizar}
-                                disabled={loading}
-                                className="px-8 py-3 bg-gradient-to-r from-green-500 to-emerald-400 text-white font-bold rounded-xl hover:shadow-[0_0_25px_rgba(34,197,94,0.4)] transition-all flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed animate-in zoom-in"
+                                className="w-full md:w-auto px-12 py-5 bg-gradient-to-r from-emerald-600 to-emerald-400 text-white font-black text-xl rounded-2xl hover:brightness-110 active:scale-95 transition-all flex items-center justify-center gap-3 shadow-xl shadow-emerald-500/20 uppercase tracking-tight animate-in zoom-in duration-300"
                             >
-                                {loading ? <Loader2 className="w-5 h-5 animate-spin" /> : <Printer className="w-5 h-5" />}
-                                Imprimir y Finalizar
+                                <Printer className="w-7 h-7" />
+                                Finalizar e Imprimir
                             </button>
                         )}
                     </div>
                 </form>
             </div>
 
-            {/* Modal: Colaborador Search */}
-            {showBusquedaModal && (
-                <ColaboradorSearchModal
-                    isOpen={showBusquedaModal}
-                    onClose={() => setShowBusquedaModal(false)}
-                    onSelect={handleSelectColaborador}
-                    colaboradores={busquedaTipo === 'autoriza'
-                        ? colaboradores.autorizados
-                        : colaboradores.todos.filter(c => c.identificacion !== autoriza)
-                    }
-                    title={busquedaTipo === 'autoriza' ? 'Seleccionar Responsable' : 'Seleccionar Quien Retira'}
-                />
-            )}
+            {/* Modals */}
+            <ColaboradorSearchModal
+                isOpen={showBusquedaModal}
+                onClose={() => setShowBusquedaModal(false)}
+                onSelect={handleSelectColaborador}
+                colaboradores={busquedaTipo === 'autoriza'
+                    ? colaboradores.autorizados
+                    : colaboradores.todos
+                }
+                title={busquedaTipo === 'autoriza' ? 'Autorizado Por...' : 'Recibido Por...'}
+            />
 
-            {/* Modal: Article Search (Galaxy Version) */}
-            {showArticulosModal && (
-                <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 md:p-6 animate-in fade-in duration-300">
-                    <div className="absolute inset-0 bg-black/40 backdrop-blur-md" onClick={() => setShowArticulosModal(false)} />
-
-                    <div className="relative w-full max-w-5xl bg-[#0f111a]/90 border border-white/10 rounded-3xl shadow-[0_0_50px_rgba(0,0,0,0.5)] overflow-hidden flex flex-col h-[85vh] animate-in zoom-in-95 duration-300">
-                        {/* Modal Header */}
-                        <div className="p-6 border-b border-white/10 flex justify-between items-center bg-gradient-to-r from-teal-500/10 to-cyan-500/10 shrink-0">
-                            <div>
-                                <h3 className="text-2xl font-bold text-white flex items-center gap-3">
-                                    <Search className="w-6 h-6 text-teal-400" />
-                                    Buscar Artículo
-                                </h3>
-                                <p className="text-sm text-gray-400 mt-1">Seleccione un artículo para agregar a la lista</p>
-                            </div>
-                            <button
-                                onClick={() => setShowArticulosModal(false)}
-                                className="p-2 hover:bg-white/10 rounded-full transition-colors text-gray-400 hover:text-white"
-                            >
-                                <X className="w-6 h-6" />
-                            </button>
-                        </div>
-
-                        {/* Article List Search */}
-                        <div className="px-8 py-4 bg-black/20 border-b border-white/5">
-                            <div className="relative group">
-                                <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-500 group-focus-within:text-teal-400 transition-colors" />
-                                <input
-                                    type="text"
-                                    placeholder="Buscar por código o nombre del artículo..."
-                                    value={articuloTermino}
-                                    onChange={(e) => setArticuloTermino(e.target.value)}
-                                    className="w-full bg-white/5 border border-white/10 rounded-2xl py-4 pl-12 pr-6 text-white outline-none focus:border-teal-500/50 focus:ring-4 focus:ring-teal-500/5 transition-all"
-                                />
-                            </div>
-                        </div>
-
-                        {/* Article List */}
-                        <div className="flex-1 overflow-y-auto p-6 md:p-8 custom-scrollbar">
-                            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-                                {inventoryLoading && inventario.length === 0 ? (
-                                    <div className="col-span-full flex flex-col items-center justify-center py-20 gap-4">
-                                        <Loader2 className="w-12 h-12 text-teal-500 animate-spin" />
-                                        <p className="text-gray-400 animate-pulse text-lg">Cargando inventario galáctico...</p>
-                                    </div>
-                                ) : (
-                                    filteredArticulos.map((art) => (
-                                        <div
-                                            key={art.codigo_articulo}
-                                            onClick={() => handleSelectArticulo(art)}
-                                            className="group relative bg-white/5 border border-white/10 rounded-2xl p-4 hover:bg-white/10 hover:border-teal-500/50 transition-all cursor-pointer flex flex-col h-full shadow-lg hover:shadow-teal-500/10"
-                                        >
-                                            {/* Article Image */}
-                                            <div className="relative aspect-square rounded-xl overflow-hidden mb-4 bg-black/40 border border-white/5">
-                                                <img
-                                                    src={art.imagen_url || 'https://via.placeholder.com/300?text=Sin+Imagen'}
-                                                    alt={art.nombre_articulo}
-                                                    onClick={(e) => {
-                                                        if (art.imagen_url) {
-                                                            e.stopPropagation();
-                                                            setSelectedImage({ src: art.imagen_url, alt: art.nombre_articulo });
-                                                            setShowImageModal(true);
-                                                        }
-                                                    }}
-                                                    className={`w-full h-full object-cover group-hover:scale-110 transition-transform duration-500 ${art.imagen_url ? 'cursor-zoom-in' : ''}`}
-                                                />
-                                                <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none" />
-                                                <div className="absolute top-2 right-2 px-2 py-1 bg-black/60 backdrop-blur-md rounded-lg text-[10px] font-bold text-teal-400 border border-teal-500/30 uppercase tracking-widest pointer-events-none">
-                                                    {art.unidad}
-                                                </div>
-                                            </div>
-
-                                            {/* Article Info */}
-                                            <div className="flex-1">
-                                                <h4 className="font-bold text-white group-hover:text-teal-400 transition-colors mb-2 leading-tight">
-                                                    {art.nombre_articulo}
-                                                </h4>
-                                                <div className="flex items-center gap-2 mb-3">
-                                                    <span className="text-[10px] font-mono text-gray-500 bg-white/5 px-2 py-0.5 rounded border border-white/5 tracking-tighter">
-                                                        {art.codigo_articulo}
-                                                    </span>
-                                                    {art.marca && (
-                                                        <span className="text-[10px] uppercase font-bold text-gray-400">
-                                                            • {art.marca}
-                                                        </span>
-                                                    )}
-                                                </div>
-                                            </div>
-
-                                            {/* Stock & Action */}
-                                            <div className="pt-3 border-t border-white/5 flex items-center justify-between">
-                                                <div className="flex flex-col">
-                                                    <span className="text-xs text-gray-500 uppercase font-medium">Disponible</span>
-                                                    <span className={`text-lg font-black ${art.cantidad_disponible > 0 ? 'text-teal-400' : 'text-red-400'}`}>
-                                                        {art.cantidad_disponible}
-                                                    </span>
-                                                </div>
-                                                <div className="w-10 h-10 rounded-full bg-teal-500/20 flex items-center justify-center group-hover:bg-teal-500 group-hover:text-black transition-all shadow-inner">
-                                                    <PlusCircle className="w-5 h-5" />
-                                                </div>
-                                            </div>
-                                        </div>
-                                    ))
-                                )}
-                            </div>
-
-                            {/* Pagination Button */}
-                            {inventario.length < totalInventory && (
-                                <div className="mt-12 text-center pb-8 border-t border-white/10 pt-8">
-                                    <button
-                                        onClick={() => {
-                                            const nextPage = inventoryPage + 1;
-                                            setInventoryPage(nextPage);
-                                            fetchInventario(nextPage, true);
-                                        }}
-                                        disabled={inventoryLoading}
-                                        className="inline-flex items-center gap-2 px-8 py-3 bg-white/5 hover:bg-white/10 text-teal-400 rounded-xl transition-all border border-white/10 hover:border-teal-500/30 disabled:opacity-50 font-bold"
-                                    >
-                                        {inventoryLoading ? (
-                                            <>
-                                                <Loader2 className="w-5 h-5 animate-spin" />
-                                                Cargando más galaxias...
-                                            </>
-                                        ) : (
-                                            'Explorar más artículos'
-                                        )}
-                                    </button>
-                                    <p className="text-xs text-gray-500 mt-3 font-mono">
-                                        Viendo {inventario.length} de {totalInventory} artículos espaciales
-                                    </p>
-                                </div>
-                            )}
-                        </div>
-                    </div>
-                </div>
-            )}
-
-            {/* Image Modal (Standard) */}
-            {showImageModal && selectedImage && (
-                <div
-                    className="fixed inset-0 z-[200] flex items-center justify-center p-4 bg-black/95 backdrop-blur-xl animate-in fade-in"
-                    onClick={() => setShowImageModal(false)}
-                >
-                    <div className="relative max-w-5xl w-full max-h-[90vh] flex flex-col items-center" onClick={e => e.stopPropagation()}>
-                        <button
-                            onClick={() => setShowImageModal(false)}
-                            className="absolute -top-12 right-0 p-2 text-white/50 hover:text-white transition-colors"
-                        >
-                            <X className="w-8 h-8" />
-                        </button>
-                        <img
-                            src={selectedImage.src}
-                            alt={selectedImage.alt}
-                            className="max-w-full max-h-[80vh] object-contain rounded-2xl shadow-2xl border border-white/10"
-                        />
-                        <p className="mt-4 text-white font-bold text-center text-lg">{selectedImage.alt}</p>
-                    </div>
-                </div>
-            )}
+            <ArticuloSearchModal
+                isOpen={showArticulosModal}
+                onClose={() => setShowArticulosModal(false)}
+                onSelect={handleSelectArticulo}
+                themeColor={themeColor}
+            />
         </div>
     );
 }
-
-// Support Icons (Empty as we use lucide-react)

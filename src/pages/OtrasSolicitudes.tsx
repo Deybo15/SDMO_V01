@@ -7,8 +7,11 @@ import {
     HelpCircle,
     Hammer,
     Shirt,
-    Sparkles
+    Sparkles,
+    ChevronRight,
+    LayoutGrid
 } from 'lucide-react';
+import { PageHeader } from '../components/ui/PageHeader';
 
 export default function OtrasSolicitudes() {
     const navigate = useNavigate();
@@ -16,81 +19,101 @@ export default function OtrasSolicitudes() {
     const modules = [
         {
             title: 'Equipos y activos',
-            icon: <Monitor className="w-8 h-8 text-blue-500" />,
+            icon: <Monitor className="w-8 h-8" />,
             path: '/otras-solicitudes/equipos-activos',
-            color: 'bg-blue-50 dark:bg-blue-900/20',
-            borderColor: 'border-blue-200 dark:border-blue-800'
+            color: 'blue',
+            description: 'Computadoras, monitores y periféricos'
         },
         {
             title: 'Herramientas',
-            icon: <Wrench className="w-8 h-8 text-orange-500" />,
+            icon: <Wrench className="w-8 h-8" />,
             path: '/otras-solicitudes/herramientas',
-            color: 'bg-orange-50 dark:bg-orange-900/20',
-            borderColor: 'border-orange-200 dark:border-orange-800'
+            color: 'orange',
+            description: 'Taladros, sierras y equipo manual'
         },
         {
             title: 'Préstamo',
-            icon: <Clock className="w-8 h-8 text-purple-500" />,
+            icon: <Clock className="w-8 h-8" />,
             path: '/otras-solicitudes/prestamo',
-            color: 'bg-purple-50 dark:bg-purple-900/20',
-            borderColor: 'border-purple-200 dark:border-purple-800'
+            color: 'purple',
+            description: 'Equipo para uso temporal'
         },
         {
             title: 'Artículos de oficina',
-            icon: <Paperclip className="w-8 h-8 text-pink-500" />,
+            icon: <Paperclip className="w-8 h-8" />,
             path: '/otras-solicitudes/articulos-oficina',
-            color: 'bg-pink-50 dark:bg-pink-900/20',
-            borderColor: 'border-pink-200 dark:border-pink-800'
+            color: 'pink',
+            description: 'Papelería, tintas y accesorios'
         },
         {
             title: 'Sin asignación especifica',
-            icon: <HelpCircle className="w-8 h-8 text-gray-500" />,
+            icon: <HelpCircle className="w-8 h-8" />,
             path: '/otras-solicitudes/sin-asignacion',
-            color: 'bg-gray-50 dark:bg-gray-800',
-            borderColor: 'border-gray-200 dark:border-gray-700'
+            color: 'slate',
+            description: 'Otros artículos no categorizados'
         },
         {
-            title: 'Para trabajos en el taller de ebanistería',
-            icon: <Hammer className="w-8 h-8 text-amber-600" />,
+            title: 'Taller de ebanistería',
+            icon: <Hammer className="w-8 h-8" />,
             path: '/otras-solicitudes/taller-ebanisteria',
-            color: 'bg-amber-50 dark:bg-amber-900/20',
-            borderColor: 'border-amber-200 dark:border-amber-800'
+            color: 'amber',
+            description: 'Materiales para madera y carpintería'
         },
         {
             title: 'Vestimenta e indumentaría',
-            icon: <Shirt className="w-8 h-8 text-indigo-500" />,
+            icon: <Shirt className="w-8 h-8" />,
             path: '/otras-solicitudes/vestimenta',
-            color: 'bg-indigo-50 dark:bg-indigo-900/20',
-            borderColor: 'border-indigo-200 dark:border-indigo-800'
+            color: 'indigo',
+            description: 'Uniformes y equipo de protección'
         },
         {
-            title: 'Artículos de limpieza y aseo',
-            icon: <Sparkles className="w-8 h-8 text-teal-500" />,
+            title: 'Limpieza y aseo',
+            icon: <Sparkles className="w-8 h-8" />,
             path: '/otras-solicitudes/limpieza-aseo',
-            color: 'bg-teal-50 dark:bg-teal-900/20',
-            borderColor: 'border-teal-200 dark:border-teal-800'
+            color: 'teal',
+            description: 'Insumos de limpieza y desinfección'
         }
     ];
 
     return (
-        <div className="p-6">
-            <h1 className="text-2xl font-bold text-slate-800 dark:text-white mb-6">Otras Solicitudes</h1>
+        <div className="min-h-screen bg-[#0f111a] p-4 md:p-8">
+            <PageHeader
+                title="Otras Solicitudes"
+                icon={LayoutGrid}
+                themeColor="blue"
+            />
 
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-                {modules.map((module, index) => (
-                    <button
-                        key={index}
-                        onClick={() => navigate(module.path)}
-                        className={`flex flex-col items-center justify-center p-6 rounded-xl border transition-all hover:scale-105 hover:shadow-lg ${module.color} ${module.borderColor}`}
-                    >
-                        <div className="mb-4 p-3 bg-white dark:bg-slate-800 rounded-full shadow-sm">
-                            {module.icon}
-                        </div>
-                        <h3 className="text-lg font-semibold text-slate-800 dark:text-white text-center">
-                            {module.title}
-                        </h3>
-                    </button>
-                ))}
+            <div className="max-w-7xl mx-auto">
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+                    {modules.map((module, index) => (
+                        <button
+                            key={index}
+                            onClick={() => navigate(module.path)}
+                            className="group relative bg-[#1e2235] border border-white/10 p-6 rounded-2xl transition-all duration-300 hover:border-white/20 hover:bg-[#252a41] hover:shadow-2xl hover:shadow-black/50 text-left overflow-hidden flex flex-col h-full active:scale-95 shadow-lg"
+                        >
+                            {/* Decorative background gradient */}
+                            <div className={`absolute -right-8 -top-8 w-32 h-32 bg-${module.color}-500/10 rounded-full blur-3xl group-hover:bg-${module.color}-500/20 transition-all duration-500`} />
+
+                            <div className={`mb-6 p-4 bg-${module.color}-500/10 rounded-2xl w-fit group-hover:scale-110 transition-transform duration-300 text-${module.color}-400`}>
+                                {module.icon}
+                            </div>
+
+                            <div className="flex-1">
+                                <h3 className="text-xl font-bold text-white mb-2 leading-tight">
+                                    {module.title}
+                                </h3>
+                                <p className="text-gray-400 text-sm leading-relaxed">
+                                    {module.description}
+                                </p>
+                            </div>
+
+                            <div className="mt-8 flex items-center gap-2 text-sm font-bold text-white/40 group-hover:text-white transition-colors">
+                                Explorar categoría
+                                <ChevronRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
+                            </div>
+                        </button>
+                    ))}
+                </div>
             </div>
         </div>
     );

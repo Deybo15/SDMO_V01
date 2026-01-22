@@ -175,21 +175,21 @@ export default function IngresoActivos() {
     };
 
     return (
-        <div className="max-w-6xl mx-auto p-4 md:p-8 animate-in fade-in slide-in-from-bottom-4 duration-700">
+        <div className="max-w-6xl mx-auto p-3 md:p-8 animate-in fade-in slide-in-from-bottom-4 duration-700">
             {/* Header */}
-            <div className="flex flex-col md:flex-row items-center justify-between gap-4 mb-8">
-                <div className="flex items-center gap-4">
-                    <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-blue-600 to-indigo-600 flex items-center justify-center shadow-lg shadow-blue-500/30 ring-1 ring-white/20">
-                        <Package className="w-7 h-7 text-white" />
+            <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4 mb-6 md:mb-8">
+                <div className="flex items-center gap-3 md:gap-4">
+                    <div className="w-12 h-12 md:w-14 md:h-14 rounded-2xl bg-gradient-to-br from-blue-600 to-indigo-600 flex items-center justify-center shadow-lg shadow-blue-500/30 ring-1 ring-white/20 shrink-0">
+                        <Package className="w-6 h-6 md:w-7 md:h-7 text-white" />
                     </div>
                     <div>
-                        <h1 className="text-3xl font-bold text-white tracking-tight">Ingreso de Activos</h1>
-                        <p className="text-slate-400 font-medium">Registrar nuevo activo en el sistema</p>
+                        <h1 className="text-xl md:text-3xl font-bold text-white tracking-tight">Ingreso de Activos</h1>
+                        <p className="text-slate-400 text-sm md:text-base font-medium">Registrar nuevo activo</p>
                     </div>
                 </div>
                 <button
                     onClick={() => navigate('/activos')}
-                    className="group flex items-center gap-2 px-5 py-2.5 bg-slate-900/50 hover:bg-slate-800 text-slate-300 hover:text-white border border-white/10 rounded-xl transition-all duration-300 backdrop-blur-md"
+                    className="group flex items-center gap-2 px-4 py-2 md:px-5 md:py-2.5 bg-slate-900/50 hover:bg-slate-800 text-slate-300 hover:text-white border border-white/10 rounded-xl transition-all duration-300 backdrop-blur-md text-sm"
                 >
                     <ChevronLeft className="w-4 h-4 group-hover:-translate-x-1 transition-transform" />
                     Regresar
@@ -197,12 +197,12 @@ export default function IngresoActivos() {
             </div>
 
             {/* Main Content */}
-            <div className="relative backdrop-blur-xl bg-slate-900/60 border border-white/10 rounded-[2rem] shadow-2xl overflow-hidden">
+            <div className="relative backdrop-blur-xl bg-slate-900/60 border border-white/10 rounded-2xl md:rounded-[2rem] shadow-2xl overflow-hidden text-sm md:text-base">
                 {/* Decorative gradients */}
                 <div className="absolute top-0 right-0 w-[500px] h-[500px] bg-blue-500/10 rounded-full blur-[100px] -translate-y-1/2 translate-x-1/2 pointer-events-none" />
                 <div className="absolute bottom-0 left-0 w-[500px] h-[500px] bg-indigo-500/10 rounded-full blur-[100px] translate-y-1/2 -translate-x-1/2 pointer-events-none" />
 
-                <form onSubmit={handleSubmit} className="relative p-8 md:p-10 space-y-10">
+                <form onSubmit={handleSubmit} className="relative p-5 md:p-10 space-y-8 md:y-10">
                     <div className="grid grid-cols-1 lg:grid-cols-2 gap-x-16 gap-y-10">
                         {/* Column 1: Información Básica */}
                         <div className="space-y-6">
@@ -416,7 +416,7 @@ export default function IngresoActivos() {
                         </div>
                     </div>
 
-                    <div className="pt-8 mt-8 border-t border-white/10 flex justify-end gap-4">
+                    <div className="pt-6 mt-6 md:pt-8 md:mt-8 border-t border-white/10 flex flex-col sm:flex-row justify-end gap-3 md:gap-4">
                         <button
                             type="button"
                             onClick={() => setFormData({
@@ -430,7 +430,7 @@ export default function IngresoActivos() {
                                 nota_activo: '',
                                 imagen_activo: ''
                             })}
-                            className="px-6 py-3.5 text-slate-300 font-medium hover:bg-white/5 rounded-xl transition-all flex items-center gap-2 border border-transparent hover:border-white/10"
+                            className="w-full sm:w-auto px-6 py-3.5 text-slate-300 font-medium hover:bg-white/5 rounded-xl transition-all flex items-center justify-center gap-2 border border-transparent hover:border-white/10 order-2 sm:order-1"
                         >
                             <X className="w-4 h-4" />
                             Limpiar
@@ -438,7 +438,7 @@ export default function IngresoActivos() {
                         <button
                             type="submit"
                             disabled={loading}
-                            className="px-8 py-3.5 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white font-bold rounded-xl shadow-lg shadow-blue-500/25 ring-1 ring-white/20 transition-all flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed transform hover:-translate-y-0.5 active:translate-y-0"
+                            className="w-full sm:w-auto px-8 py-3.5 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white font-bold rounded-xl shadow-lg shadow-blue-500/25 ring-1 ring-white/20 transition-all flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed transform hover:-translate-y-0.5 active:translate-y-0 order-1 sm:order-2"
                         >
                             {loading ? (
                                 <Loader2 className="w-5 h-5 animate-spin" />

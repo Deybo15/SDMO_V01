@@ -7,7 +7,6 @@ import {
     List,
     Eraser,
     Loader2,
-    ChevronLeft,
     AlertTriangle,
     CheckCircle2,
     Info,
@@ -16,8 +15,14 @@ import {
     X,
     PackageOpen,
     ArrowRight,
-    AlertCircle
+    AlertCircle,
+    Hash,
+    ChevronRight,
+    MessageSquare
 } from 'lucide-react';
+
+// Shared Components
+import { PageHeader } from '../components/ui/PageHeader';
 
 interface Articulo {
     codigo_articulo: string;
@@ -41,9 +46,10 @@ interface SalidaItem {
 export default function Devoluciones() {
     const navigate = useNavigate();
     const [loading, setLoading] = useState(false);
+    const [searching, setSearching] = useState(false);
     const [searchTerm, setSearchTerm] = useState('');
     const [resultados, setResultados] = useState<SalidaItem[]>([]);
-    const [statusMessage, setStatusMessage] = useState<{ type: 'success' | 'error' | 'warning' | 'info', message: string } | null>(null);
+    const [feedback, setFeedback] = useState<{ type: 'success' | 'error' | 'warning' | 'info', message: string } | null>(null);
 
     // Modal/Form State
     const [selectedItem, setSelectedItem] = useState<SalidaItem | null>(null);
@@ -54,27 +60,29 @@ export default function Devoluciones() {
     // Confirmation Modal State
     const [showConfirmModal, setShowConfirmModal] = useState(false);
 
-    // Clear status message after 5 seconds
+    // Theme Color
+    const themeColor = 'rose';
+
+    // Clear feedback after 5 seconds
     useEffect(() => {
-        if (statusMessage) {
-            const timer = setTimeout(() => setStatusMessage(null), 5000);
+        if (feedback) {
+            const timer = setTimeout(() => setFeedback(null), 5000);
             return () => clearTimeout(timer);
         }
-    }, [statusMessage]);
+    }, [feedback]);
 
     const buscarSalida = async () => {
         if (!searchTerm.trim()) {
-            setStatusMessage({ type: 'warning', message: 'Por favor, ingrese un número de salida para buscar' });
+            setFeedback({ type: 'warning', message: 'Por favor, ingrese un número de salida' });
             return;
         }
 
-        setLoading(true);
-        setStatusMessage(null);
+        setSearching(true);
+        setFeedback(null);
         setResultados([]);
         setSelectedItem(null);
 
         try {
-            // 1. Search in dato_salida_13
             const { data: salidaData, error: salidaError } = await supabase
                 .from('dato_salida_13')
                 .select('id_salida, cantidad, articulo, precio_unitario, subtotal, fecha_registro, registro_salida')
@@ -84,11 +92,10 @@ export default function Devoluciones() {
             if (salidaError) throw salidaError;
 
             if (!salidaData || salidaData.length === 0) {
-                setStatusMessage({ type: 'warning', message: `No se encontraron salidas con ID "${searchTerm}"` });
+                setFeedback({ type: 'warning', message: `No se encontraron salidas con ID #${searchTerm}` });
                 return;
             }
 
-            // 2. Fetch Article Details
             const codigosArticulos = [...new Set(salidaData.map(item => item.articulo))];
             const { data: articulosData, error: articulosError } = await supabase
                 .from('articulo_01')
@@ -97,7 +104,6 @@ export default function Devoluciones() {
 
             if (articulosError) throw articulosError;
 
-            // 3. Combine Data
             const resultadosCombinados = salidaData.map(salida => {
                 const articulo = articulosData?.find(art => art.codigo_articulo === salida.articulo) || {
                     codigo_articulo: salida.articulo,
@@ -114,14 +120,12 @@ export default function Devoluciones() {
             });
 
             setResultados(resultadosCombinados);
-            // Don't show success message for search, results are self-explanatory
-            // setStatusMessage({ type: 'success', message: `¡Éxito! Se encontraron ${resultadosCombinados.length} líneas de la salida ${searchTerm}` });
 
         } catch (error: any) {
             console.error('Error:', error);
-            setStatusMessage({ type: 'error', message: 'Error: ' + error.message });
+            setFeedback({ type: 'error', message: 'Error: ' + error.message });
         } finally {
-            setLoading(false);
+            setSearching(false);
         }
     };
 
@@ -140,17 +144,17 @@ export default function Devoluciones() {
         const motivoFinal = motivoDev === 'Otros' ? otroMotivo : motivoDev;
 
         if (!cantidad || cantidad <= 0) {
-            setStatusMessage({ type: 'warning', message: 'Ingrese una cantidad válida mayor a 0' });
+            setFeedback({ type: 'warning', message: 'Ingrese una cantidad válida mayor a 0' });
             return;
         }
 
         if (cantidad > selectedItem.cantidad) {
-            setStatusMessage({ type: 'warning', message: `La cantidad no puede ser mayor a ${selectedItem.cantidad}` });
+            setFeedback({ type: 'warning', message: `La cantidad no puede ser mayor a ${selectedItem.cantidad}` });
             return;
         }
 
         if (!motivoFinal.trim()) {
-            setStatusMessage({ type: 'warning', message: 'Seleccione o especifique un motivo' });
+            setFeedback({ type: 'warning', message: 'Seleccione o especifique un motivo' });
             return;
         }
 
@@ -164,10 +168,10 @@ export default function Devoluciones() {
         const motivoFinal = motivoDev === 'Otros' ? otroMotivo : motivoDev;
 
         setLoading(true);
-        setShowConfirmModal(false); // Close modal
+        setShowConfirmModal(false);
 
         try {
-            // 1. Verify current quantity (concurrency check)
+            // 1. Verify current quantity
             const { data: salidaActual, error: errorConsulta } = await supabase
                 .from('dato_salida_13')
                 .select('cantidad, precio_unitario')
@@ -177,11 +181,11 @@ export default function Devoluciones() {
 
             if (errorConsulta) throw new Error('Error al consultar salida: ' + errorConsulta.message);
 
-            if (cantidad > salidaActual.cantidad) {
-                throw new Error(`La cantidad a devolver (${cantidad}) es mayor que la cantidad disponible (${salidaActual.cantidad})`);
+            if (cantidad > (salidaActual?.cantidad || 0)) {
+                throw new Error(`La cantidad a devolver (${cantidad}) es mayor que la cantidad disponible (${salidaActual?.cantidad || 0})`);
             }
 
-            // 2. Insert Master Record (devolucion_articulo_09)
+            // 2. Insert Master Record
             const { data: dataMaestro, error: errorMaestro } = await supabase
                 .from('devolucion_articulo_09')
                 .insert({
@@ -194,7 +198,7 @@ export default function Devoluciones() {
 
             if (errorMaestro) throw new Error('Error en tabla maestro: ' + errorMaestro.message);
 
-            // 3. Insert Detail Record (dato_devolucion_14)
+            // 3. Insert Detail Record
             const { error: errorDetalle } = await supabase
                 .from('dato_devolucion_14')
                 .insert({
@@ -204,7 +208,6 @@ export default function Devoluciones() {
                 });
 
             if (errorDetalle) {
-                // Rollback master if detail fails
                 await supabase.from('devolucion_articulo_09').delete().eq('id_devolucion', dataMaestro.id_devolucion);
                 throw new Error('Error en tabla detalle: ' + errorDetalle.message);
             }
@@ -224,13 +227,13 @@ export default function Devoluciones() {
 
             if (errorUpdate) throw new Error('Error al actualizar inventario: ' + errorUpdate.message);
 
-            setStatusMessage({ type: 'success', message: '¡Éxito! Devolución registrada correctamente' });
+            setFeedback({ type: 'success', message: '¡Éxito! Devolución registrada correctamente' });
             setSelectedItem(null);
             buscarSalida(); // Refresh list
 
         } catch (error: any) {
             console.error('Error:', error);
-            setStatusMessage({ type: 'error', message: 'Error al procesar: ' + error.message });
+            setFeedback({ type: 'error', message: 'Error al procesar: ' + error.message });
         } finally {
             setLoading(false);
         }
@@ -241,293 +244,259 @@ export default function Devoluciones() {
     };
 
     return (
-        <div className="min-h-screen bg-[#0f1419] text-slate-200 font-sans relative p-4 md:p-8">
-            {/* Background Effects */}
-            <div className="fixed inset-0 z-0 pointer-events-none">
-                <div className="absolute top-[20%] left-[80%] w-[40rem] h-[40rem] bg-red-900/10 rounded-full blur-3xl" />
-                <div className="absolute bottom-[20%] right-[80%] w-[40rem] h-[40rem] bg-blue-900/10 rounded-full blur-3xl" />
-            </div>
+        <div className="min-h-screen bg-[#0f111a] p-4 md:p-8">
+            <PageHeader
+                title="Devolución de Material"
+                icon={RotateCcw}
+                themeColor={themeColor}
+            />
 
+            <div className="max-w-6xl mx-auto space-y-6">
 
-
-            <div className="relative z-10 max-w-6xl mx-auto space-y-8">
-                {/* Header */}
-                <div className="sticky top-0 z-50 flex flex-col md:flex-row md:items-center justify-between gap-4 py-6 mb-8 bg-[#0f1419]/90 backdrop-blur-xl -mx-4 px-4 md:-mx-8 md:px-8 border-b border-white/5 shadow-lg shadow-black/20 transition-all">
-                    <div className="flex items-center gap-4">
-                        <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-red-500 to-red-700 flex items-center justify-center shadow-lg shadow-red-500/30">
-                            <RotateCcw className="w-6 h-6 text-white" />
-                        </div>
-                        <div>
-                            <h1 className="text-2xl font-bold bg-clip-text text-transparent bg-gradient-to-br from-white to-slate-400">
-                                Devolución de Material
-                            </h1>
-                        </div>
+                {/* Status Messages */}
+                {feedback && (
+                    <div className={`fixed top-4 right-4 z-[100] px-6 py-4 rounded-xl shadow-2xl backdrop-blur-md border animate-in slide-in-from-top-4 flex items-center gap-3 ${feedback.type === 'success' ? 'bg-emerald-500/20 border-emerald-500/50 text-emerald-400' :
+                            feedback.type === 'error' ? 'bg-rose-500/20 border-rose-500/50 text-rose-400' :
+                                feedback.type === 'warning' ? 'bg-amber-500/20 border-amber-500/50 text-amber-400' :
+                                    'bg-blue-500/20 border-blue-500/50 text-blue-400'
+                        }`}>
+                        {feedback.type === 'error' ? <AlertCircle className="w-5 h-5" /> :
+                            feedback.type === 'success' ? <CheckCircle2 className="w-5 h-5" /> :
+                                <Info className="w-5 h-5" />}
+                        <span className="font-bold">{feedback.message}</span>
                     </div>
-                    <div className="flex gap-2">
+                )}
+
+                {/* Search Bar Section */}
+                <div className="bg-[#1e2235] border border-white/10 rounded-2xl shadow-xl overflow-hidden p-4 md:p-8">
+                    <h2 className="text-lg font-black text-gray-500 uppercase tracking-widest mb-6 flex items-center gap-2">
+                        <Search className={`w-5 h-5 text-${themeColor}-500`} />
+                        Buscar Salida Registrada
+                    </h2>
+
+                    <div className="flex flex-col sm:flex-row gap-4">
+                        <div className="flex-1 relative group">
+                            <div className="absolute inset-y-0 left-0 pl-5 flex items-center pointer-events-none">
+                                <Hash className="w-5 h-5 text-gray-600 group-focus-within:text-rose-500 transition-colors" />
+                            </div>
+                            <input
+                                type="number"
+                                value={searchTerm}
+                                onChange={(e) => setSearchTerm(e.target.value)}
+                                onKeyDown={(e) => e.key === 'Enter' && buscarSalida()}
+                                placeholder="Ingrese el número de salida (ej: 8639)"
+                                className="w-full bg-black/40 border border-white/10 rounded-xl pl-14 pr-4 py-4 text-white text-lg font-bold placeholder-gray-600 focus:outline-none focus:border-rose-500/50 transition-all shadow-inner"
+                            />
+                        </div>
                         <button
-                            onClick={() => navigate('/articulos')}
-                            className="flex items-center gap-2 px-4 py-2 bg-slate-800/50 text-slate-200 border border-white/10 rounded-xl hover:bg-slate-700/50 transition-all shadow-sm backdrop-blur-sm group"
+                            onClick={buscarSalida}
+                            disabled={searching}
+                            className={`px-8 py-4 bg-gradient-to-r from-rose-600 to-rose-400 text-white font-black rounded-xl shadow-xl shadow-rose-500/20 transition-all flex items-center justify-center gap-3 disabled:opacity-50 active:scale-95`}
                         >
-                            <ChevronLeft className="w-4 h-4 group-hover:-translate-x-1 transition-transform" />
-                            Regresar
+                            {searching ? <Loader2 className="w-6 h-6 animate-spin" /> : <Search className="w-6 h-6" />}
+                            <span className="text-lg">Buscar</span>
                         </button>
-                    </div>
-                </div>
-
-                {/* Search Section */}
-                <div className="bg-slate-800/40 backdrop-blur-xl border border-white/10 rounded-2xl p-1 shadow-2xl">
-                    <div className="bg-slate-900/50 rounded-xl p-6 md:p-8">
-                        <h2 className="text-xl font-bold text-white mb-6 flex items-center gap-2">
-                            <Search className="w-5 h-5 text-red-500" />
-                            Seleccionar Salida
-                        </h2>
-
-                        <div className="flex flex-col md:flex-row gap-4">
-                            <div className="flex-1 relative group">
-                                <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
-                                    <span className="text-slate-500 font-mono">#</span>
-                                </div>
-                                <input
-                                    type="number"
-                                    value={searchTerm}
-                                    onChange={(e) => setSearchTerm(e.target.value)}
-                                    onKeyDown={(e) => e.key === 'Enter' && buscarSalida()}
-                                    placeholder="Ingrese el número de salida (ej: 8639)"
-                                    className="w-full bg-slate-950/50 border border-white/10 rounded-xl pl-8 pr-4 py-4 text-white placeholder-slate-600 focus:outline-none focus:ring-2 focus:ring-red-500/50 focus:border-red-500/50 transition-all shadow-inner"
-                                />
-                            </div>
+                        {resultados.length > 0 && (
                             <button
-                                onClick={buscarSalida}
-                                disabled={loading}
-                                className="px-8 py-4 bg-gradient-to-r from-red-600 to-red-700 hover:from-red-500 hover:to-red-600 text-white font-bold rounded-xl shadow-lg shadow-red-900/20 transition-all flex items-center justify-center gap-2 disabled:opacity-50 hover:scale-[1.02] active:scale-[0.98]"
+                                onClick={() => { setSearchTerm(''); setResultados([]); setFeedback(null); setSelectedItem(null); }}
+                                className="px-6 py-4 bg-white/5 hover:bg-white/10 text-gray-400 font-bold rounded-xl border border-white/10 transition-all active:scale-95"
                             >
-                                {loading ? <Loader2 className="w-5 h-5 animate-spin" /> : <Search className="w-5 h-5" />}
-                                Buscar Salida
+                                <Eraser className="w-6 h-6" />
                             </button>
-                            {resultados.length > 0 && (
-                                <button
-                                    onClick={() => { setSearchTerm(''); setResultados([]); setStatusMessage(null); setSelectedItem(null); }}
-                                    className="px-6 py-4 bg-slate-800 hover:bg-slate-700 text-slate-300 font-bold rounded-xl border border-white/10 transition-all flex items-center justify-center gap-2 hover:text-white"
-                                >
-                                    <Eraser className="w-5 h-5" />
-                                </button>
-                            )}
-                        </div>
+                        )}
                     </div>
                 </div>
 
-                {/* Status Message Banner */}
-                {statusMessage && (
-                    <div className={`fixed bottom-8 right-8 z-50 max-w-md w-full animate-in slide-in-from-bottom-5 fade-in duration-300`}>
-                        <div className={`p-4 rounded-xl flex items-start gap-4 shadow-2xl backdrop-blur-xl border ${statusMessage.type === 'error' ? 'bg-red-500/20 border-red-500/30 text-red-100' :
-                            statusMessage.type === 'success' ? 'bg-emerald-500/20 border-emerald-500/30 text-emerald-100' :
-                                statusMessage.type === 'warning' ? 'bg-amber-500/20 border-amber-500/30 text-amber-100' :
-                                    'bg-blue-500/20 border-blue-500/30 text-blue-100'
-                            }`}>
-                            <div className={`p-2 rounded-full shrink-0 ${statusMessage.type === 'error' ? 'bg-red-500/20' :
-                                statusMessage.type === 'success' ? 'bg-emerald-500/20' :
-                                    statusMessage.type === 'warning' ? 'bg-amber-500/20' :
-                                        'bg-blue-500/20'
-                                }`}>
-                                {statusMessage.type === 'error' && <AlertCircle className="w-5 h-5" />}
-                                {statusMessage.type === 'success' && <CheckCircle2 className="w-5 h-5" />}
-                                {statusMessage.type === 'warning' && <AlertTriangle className="w-5 h-5" />}
-                                {statusMessage.type === 'info' && <Info className="w-5 h-5" />}
+                {/* Content Area */}
+                <div className="space-y-4">
+                    {searching ? (
+                        <div className="py-20 flex flex-col items-center justify-center space-y-4 text-gray-500">
+                            <Loader2 className="w-12 h-12 animate-spin text-rose-500" />
+                            <p className="font-bold uppercase tracking-widest text-sm">Consultando registros...</p>
+                        </div>
+                    ) : resultados.length > 0 ? (
+                        <>
+                            <div className="flex items-center justify-between px-2">
+                                <h3 className="text-white font-bold flex items-center gap-3 text-xl">
+                                    <List className="w-6 h-6 text-rose-500" />
+                                    Artículos encontrados ({resultados.length})
+                                </h3>
+                                <span className="bg-rose-500/10 text-rose-400 text-[10px] font-black px-3 py-1 rounded-full border border-rose-500/20 uppercase tracking-widest">
+                                    Salida #{searchTerm}
+                                </span>
                             </div>
-                            <div className="flex-1 pt-1">
-                                <h4 className="font-bold text-sm uppercase tracking-wider mb-1 opacity-80">{statusMessage.type}</h4>
-                                <p className="text-sm font-medium leading-relaxed">{statusMessage.message}</p>
-                            </div>
-                            <button onClick={() => setStatusMessage(null)} className="p-1 hover:bg-white/10 rounded-lg transition-colors">
-                                <X className="w-4 h-4" />
-                            </button>
-                        </div>
-                    </div>
-                )}
 
-                {/* Empty State */}
-                {resultados.length === 0 && !loading && (
-                    <div className="flex flex-col items-center justify-center py-20 opacity-50">
-                        <div className="w-24 h-24 bg-slate-800/50 rounded-full flex items-center justify-center mb-6 border border-white/5">
-                            <PackageOpen className="w-10 h-10 text-slate-500" />
-                        </div>
-                        <h3 className="text-xl font-bold text-slate-400">Esperando búsqueda</h3>
-                        <p className="text-slate-500 mt-2">Ingrese un ID de salida para ver los artículos disponibles</p>
-                    </div>
-                )}
+                            <div className="grid grid-cols-1 gap-4">
+                                {resultados.map((item, index) => (
+                                    <div
+                                        key={item.articulo}
+                                        className="bg-[#1e2235] border border-white/10 rounded-2xl p-5 relative overflow-hidden group animate-in slide-in-from-right-4 duration-300"
+                                        style={{ animationDelay: `${index * 50}ms` }}
+                                    >
+                                        <div className="absolute top-0 left-0 w-1.5 h-full bg-rose-500/50" />
 
-                {/* Results List */}
-                {resultados.length > 0 && (
-                    <div className="space-y-4">
-                        <div className="flex items-center justify-between px-2">
-                            <h3 className="text-white font-bold flex items-center gap-2 text-lg">
-                                <List className="w-5 h-5 text-red-500" />
-                                Artículos en Salida #{searchTerm}
-                            </h3>
-                            <span className="text-xs font-mono text-slate-400 bg-slate-800/80 px-3 py-1 rounded-full border border-white/10">
-                                {resultados.length} ITEMS
-                            </span>
-                        </div>
+                                        <div className="flex flex-col md:flex-row gap-6 items-center">
+                                            {/* Article Image */}
+                                            <div className="w-24 h-24 bg-black/40 rounded-2xl border border-white/10 overflow-hidden shrink-0 shadow-lg group-hover:scale-105 transition-transform">
+                                                <img
+                                                    src={item.articulo_01.imagen_url || 'https://via.placeholder.com/100?text=No+Img'}
+                                                    alt={item.articulo_01.nombre_articulo}
+                                                    className="w-full h-full object-cover"
+                                                />
+                                            </div>
 
-                        <div className="grid grid-cols-1 gap-4">
-                            {resultados.map((item) => (
-                                <div
-                                    key={item.articulo}
-                                    className="bg-slate-800/40 backdrop-blur-md border border-white/5 rounded-2xl p-1 hover:bg-slate-800/60 transition-all group hover:border-red-500/30 hover:shadow-lg hover:shadow-red-900/10"
-                                >
-                                    <div className="bg-slate-900/40 rounded-xl p-5 flex flex-col md:flex-row gap-6 items-center">
-                                        {/* Image */}
-                                        <div className="w-20 h-20 md:w-24 md:h-24 bg-slate-800 rounded-xl overflow-hidden border border-white/10 shrink-0 shadow-lg group-hover:scale-105 transition-transform duration-500">
-                                            <img
-                                                src={item.articulo_01.imagen_url || 'https://via.placeholder.com/100?text=No+Img'}
-                                                alt={item.articulo_01.nombre_articulo}
-                                                className="w-full h-full object-cover"
-                                                onError={(e) => e.currentTarget.style.display = 'none'}
-                                            />
-                                        </div>
-
-                                        {/* Info */}
-                                        <div className="flex-1 w-full text-center md:text-left">
-                                            <div className="flex flex-col md:flex-row md:items-start justify-between gap-2 mb-3">
+                                            {/* Info */}
+                                            <div className="flex-1 w-full space-y-4">
                                                 <div>
-                                                    <span className="text-red-400 font-mono text-xs font-bold uppercase tracking-wider mb-1 block">
+                                                    <span className="text-rose-400 font-black text-[10px] uppercase tracking-widest block mb-1">
                                                         {item.articulo_01.codigo_articulo}
                                                     </span>
-                                                    <h4 className="text-white font-bold text-lg leading-tight group-hover:text-red-400 transition-colors">
+                                                    <h4 className="text-white font-bold text-lg leading-tight group-hover:text-rose-400 transition-colors">
                                                         {item.articulo_01.nombre_articulo}
                                                     </h4>
-                                                    <span className="text-slate-500 text-sm">{item.articulo_01.marca}</span>
+                                                    <div className="flex items-center gap-2 mt-1">
+                                                        <span className="text-gray-500 font-bold text-xs uppercase">{item.articulo_01.marca || 'S/M'}</span>
+                                                        <span className="w-1 h-1 rounded-full bg-gray-700" />
+                                                        <span className="text-gray-500 font-bold text-xs uppercase">{item.articulo_01.unidad}</span>
+                                                    </div>
+                                                </div>
+
+                                                <div className="grid grid-cols-2 sm:grid-cols-3 gap-4 border-t border-white/5 pt-4">
+                                                    <div>
+                                                        <span className="text-gray-600 text-[9px] font-black uppercase tracking-tighter block mb-1">Entregado</span>
+                                                        <span className="text-white font-black text-base">{item.cantidad}</span>
+                                                    </div>
+                                                    <div>
+                                                        <span className="text-gray-600 text-[9px] font-black uppercase tracking-tighter block mb-1">Precio Unit.</span>
+                                                        <span className="text-gray-400 font-bold text-sm">{formatCurrency(item.precio_unitario)}</span>
+                                                    </div>
+                                                    <div className="col-span-2 sm:col-span-1 border-t sm:border-t-0 border-white/5 pt-4 sm:pt-0">
+                                                        <span className="text-gray-600 text-[9px] font-black uppercase tracking-tighter block mb-1">Subtotal</span>
+                                                        <span className="text-emerald-400 font-black text-base">{formatCurrency(item.subtotal)}</span>
+                                                    </div>
                                                 </div>
                                             </div>
 
-                                            <div className="grid grid-cols-3 gap-4 border-t border-white/5 pt-3">
-                                                <div className="text-center md:text-left">
-                                                    <span className="text-slate-500 text-[10px] uppercase tracking-wider block">Cant.</span>
-                                                    <span className="text-emerald-400 font-bold font-mono">
-                                                        {item.cantidad} <span className="text-xs text-slate-500">{item.articulo_01.unidad}</span>
-                                                    </span>
-                                                </div>
-                                                <div className="text-center md:text-left">
-                                                    <span className="text-slate-500 text-[10px] uppercase tracking-wider block">Precio</span>
-                                                    <span className="text-slate-300 font-mono text-sm">
-                                                        {formatCurrency(item.precio_unitario)}
-                                                    </span>
-                                                </div>
-                                                <div className="text-center md:text-left">
-                                                    <span className="text-slate-500 text-[10px] uppercase tracking-wider block">Total</span>
-                                                    <span className="text-slate-300 font-mono text-sm">
-                                                        {formatCurrency(item.subtotal)}
-                                                    </span>
-                                                </div>
-                                            </div>
-                                        </div>
-
-                                        {/* Action */}
-                                        <div className="w-full md:w-auto">
+                                            {/* Action Button */}
                                             <button
                                                 onClick={() => handleSelect(item)}
-                                                className="w-full md:w-auto px-6 py-3 bg-slate-800 hover:bg-red-600/20 text-slate-300 hover:text-red-400 border border-white/10 hover:border-red-500/50 rounded-xl font-bold transition-all flex items-center justify-center gap-2 group/btn"
+                                                className="w-full md:w-auto px-8 py-4 bg-white/5 hover:bg-rose-500/10 text-gray-300 hover:text-rose-400 border border-white/10 hover:border-rose-500/30 rounded-xl font-black transition-all flex items-center justify-center gap-3 active:scale-95"
                                             >
                                                 <span>Devolver</span>
-                                                <ArrowRight className="w-4 h-4 group-hover/btn:translate-x-1 transition-transform" />
+                                                <RotateCcw className="w-5 h-5" />
                                             </button>
                                         </div>
                                     </div>
-                                </div>
-                            ))}
+                                ))}
+                            </div>
+                        </>
+                    ) : (
+                        <div className="py-20 flex flex-col items-center justify-center text-center opacity-40">
+                            <div className="w-24 h-24 bg-white/5 rounded-full flex items-center justify-center mb-8 border border-white/5">
+                                <PackageOpen className="w-12 h-12 text-gray-600" />
+                            </div>
+                            <h3 className="text-xl font-bold text-gray-500 uppercase tracking-widest">Esperando Búsqueda</h3>
+                            <p className="text-gray-600 mt-2 max-w-xs mx-auto">
+                                Ingrese el ID de una salida registrada para ver los materiales disponibles para devolución.
+                            </p>
                         </div>
-                    </div>
-                )}
+                    )}
+                </div>
             </div>
 
-            {/* RETURN MODAL */}
+            {/* PROCESS MODAL */}
             {selectedItem && (
-                <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-in fade-in duration-200">
-                    <div className="bg-[#0f1419] border border-white/10 rounded-2xl shadow-2xl w-full max-w-lg overflow-hidden animate-in zoom-in-95 duration-200">
+                <div className="fixed inset-0 z-[110] flex items-center justify-center p-0 md:p-4 bg-black/90 backdrop-blur-md animate-in fade-in duration-200">
+                    <div className="bg-[#1e2235] w-full h-full md:h-auto md:max-w-lg md:rounded-3xl border-0 md:border md:border-white/10 shadow-2xl overflow-y-auto flex flex-col animate-in zoom-in-95 duration-200">
                         {/* Modal Header */}
-                        <div className="bg-gradient-to-r from-slate-900 to-slate-800 p-6 border-b border-white/5 flex justify-between items-start">
+                        <div className="bg-white/5 p-8 border-b border-white/10 flex justify-between items-start shrink-0">
                             <div>
-                                <h3 className="text-xl font-bold text-white flex items-center gap-2">
-                                    <Undo2 className="w-5 h-5 text-red-500" />
-                                    Procesar Devolución
+                                <h3 className="text-2xl font-black text-white flex items-center gap-3">
+                                    <RotateCcw className="w-6 h-6 text-rose-500" />
+                                    Devolución
                                 </h3>
-                                <p className="text-slate-400 text-sm mt-1">Salida #{selectedItem.id_salida}</p>
+                                <p className="text-gray-500 font-bold text-xs uppercase tracking-widest mt-2">Item perteneciente a Salida #{selectedItem.id_salida}</p>
                             </div>
-                            <button onClick={() => setSelectedItem(null)} className="text-slate-400 hover:text-white transition-colors">
-                                <X className="w-6 h-6" />
+                            <button
+                                onClick={() => setSelectedItem(null)}
+                                className="p-2 hover:bg-white/10 rounded-xl text-gray-500 hover:text-white transition-colors"
+                            >
+                                <X className="w-7 h-7" />
                             </button>
                         </div>
 
                         {/* Modal Body */}
-                        <div className="p-6 space-y-6">
-                            {/* Item Summary */}
-                            <div className="bg-slate-800/50 rounded-xl p-4 flex gap-4 items-center border border-white/5">
-                                <div className="w-16 h-16 bg-slate-700 rounded-lg overflow-hidden shrink-0">
+                        <div className="p-8 space-y-8 flex-1">
+                            {/* Selected Item Summary */}
+                            <div className="bg-black/20 rounded-2xl p-5 flex gap-5 items-center border border-white/5 shadow-inner">
+                                <div className="w-20 h-20 bg-[#1e2235] rounded-xl overflow-hidden shrink-0 border border-white/10">
                                     <img
                                         src={selectedItem.articulo_01.imagen_url || ''}
                                         className="w-full h-full object-cover"
-                                        onError={(e) => e.currentTarget.style.display = 'none'}
                                     />
                                 </div>
-                                <div>
-                                    <h4 className="font-bold text-white text-sm">{selectedItem.articulo_01.nombre_articulo}</h4>
-                                    <p className="text-xs text-slate-400 font-mono mt-1">{selectedItem.articulo}</p>
-                                    <div className="flex items-center gap-2 mt-2">
-                                        <span className="text-[10px] uppercase text-slate-500 font-bold">Disponible:</span>
-                                        <span className="text-xs font-bold text-emerald-400 bg-emerald-500/10 px-2 py-0.5 rounded">
+                                <div className="min-w-0">
+                                    <h4 className="font-black text-white text-lg leading-tight truncate">{selectedItem.articulo_01.nombre_articulo}</h4>
+                                    <p className="text-xs text-rose-400 font-black font-mono mt-1 opacity-80">{selectedItem.articulo}</p>
+                                    <div className="inline-flex items-center gap-2 mt-3 bg-emerald-500/10 px-3 py-1 rounded-lg border border-emerald-500/20">
+                                        <span className="text-[10px] uppercase text-emerald-500/80 font-black">Stock de Salida</span>
+                                        <span className="text-sm font-black text-emerald-400">
                                             {selectedItem.cantidad} {selectedItem.articulo_01.unidad}
                                         </span>
                                     </div>
                                 </div>
                             </div>
 
-                            {/* Form */}
-                            <div className="space-y-4">
-                                <div className="space-y-2">
-                                    <label className="text-sm font-bold text-slate-300">Cantidad a devolver</label>
+                            {/* Inputs */}
+                            <div className="space-y-6">
+                                <div className="space-y-3">
+                                    <label className="text-xs font-black text-gray-500 uppercase tracking-widest block px-1">Cantidad a devolver</label>
                                     <div className="relative">
                                         <input
                                             type="number"
                                             value={cantidadDev}
                                             onChange={(e) => setCantidadDev(e.target.value)}
                                             placeholder="0.00"
-                                            max={selectedItem.cantidad}
-                                            min="0.1"
-                                            step="0.1"
-                                            className="w-full bg-slate-900 border border-white/10 rounded-xl px-4 py-3 text-white placeholder-slate-600 focus:outline-none focus:ring-2 focus:ring-red-500/50 text-lg font-mono"
+                                            className="w-full bg-black/40 border border-white/10 rounded-2xl p-5 text-white text-2xl font-black placeholder-gray-700 focus:outline-none focus:border-rose-500/50 shadow-inner"
                                             autoFocus
                                         />
-                                        <span className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-500 font-medium text-sm">
+                                        <span className="absolute right-5 top-1/2 -translate-y-1/2 text-gray-600 font-black text-sm uppercase">
                                             {selectedItem.articulo_01.unidad}
                                         </span>
                                     </div>
                                 </div>
 
-                                <div className="space-y-2">
-                                    <label className="text-sm font-bold text-slate-300">Motivo</label>
-                                    <select
-                                        value={motivoDev}
-                                        onChange={(e) => setMotivoDev(e.target.value)}
-                                        className="w-full bg-slate-900 border border-white/10 rounded-xl px-4 py-3 text-white focus:outline-none focus:ring-2 focus:ring-red-500/50 appearance-none cursor-pointer"
-                                    >
-                                        <option value="">-- Seleccione un motivo --</option>
-                                        <option value="Material en exceso">Material en exceso</option>
-                                        <option value="Material defectuoso">Material defectuoso</option>
-                                        <option value="Cambio en proyecto">Cambio en proyecto</option>
-                                        <option value="Material no utilizado">Material no utilizado</option>
-                                        <option value="Error en salida">Error en salida</option>
-                                        <option value="Otros">Otros</option>
-                                    </select>
+                                <div className="space-y-3">
+                                    <label className="text-xs font-black text-gray-500 uppercase tracking-widest block px-1">Motivo de la devolución</label>
+                                    <div className="relative">
+                                        <select
+                                            value={motivoDev}
+                                            onChange={(e) => setMotivoDev(e.target.value)}
+                                            className="w-full bg-black/40 border border-white/10 rounded-2xl p-5 text-white font-bold outline-none cursor-pointer appearance-none focus:border-rose-500/50 shadow-inner pr-12"
+                                        >
+                                            <option value="" disabled className="bg-[#1e2235]">-- Seleccione un motivo --</option>
+                                            <option value="Material en exceso" className="bg-[#1e2235]">Material en exceso</option>
+                                            <option value="Material defectuoso" className="bg-[#1e2235]">Material defectuoso</option>
+                                            <option value="Cambio en proyecto" className="bg-[#1e2235]">Cambio en proyecto</option>
+                                            <option value="Material no utilizado" className="bg-[#1e2235]">Material no utilizado</option>
+                                            <option value="Error en salida" className="bg-[#1e2235]">Error en salida</option>
+                                            <option value="Otros" className="bg-[#1e2235]">Otros (Especificar)</option>
+                                        </select>
+                                        <ChevronRight className="absolute right-5 top-1/2 -translate-y-1/2 w-6 h-6 text-gray-600 pointer-events-none rotate-90" />
+                                    </div>
                                 </div>
 
                                 {motivoDev === 'Otros' && (
-                                    <div className="space-y-2 animate-in fade-in slide-in-from-top-2 duration-200">
-                                        <label className="text-sm font-bold text-slate-300">Especifique</label>
+                                    <div className="space-y-3 animate-in fade-in slide-in-from-top-2">
+                                        <label className="text-xs font-black text-gray-500 uppercase tracking-widest block px-1 flex items-center gap-2">
+                                            <MessageSquare className="w-4 h-4" />
+                                            Especificaciones adicionales
+                                        </label>
                                         <textarea
                                             value={otroMotivo}
                                             onChange={(e) => setOtroMotivo(e.target.value)}
-                                            placeholder="Describa el motivo de la devolución..."
-                                            className="w-full bg-slate-900 border border-white/10 rounded-xl px-4 py-3 text-white placeholder-slate-600 focus:outline-none focus:ring-2 focus:ring-red-500/50 min-h-[80px] resize-none"
+                                            placeholder="Describa el motivo detalladamente..."
+                                            className="w-full bg-black/40 border border-white/10 rounded-2xl p-5 text-white font-medium placeholder-gray-700 outline-none focus:border-rose-500/50 min-h-[120px] shadow-inner"
                                         />
                                     </div>
                                 )}
@@ -535,53 +504,58 @@ export default function Devoluciones() {
                         </div>
 
                         {/* Modal Footer */}
-                        <div className="p-6 pt-2 flex gap-3">
+                        <div className="p-8 bg-white/5 border-t border-white/10 flex flex-col sm:flex-row gap-4 shrink-0">
                             <button
                                 onClick={() => setSelectedItem(null)}
-                                className="flex-1 py-3 bg-slate-800 hover:bg-slate-700 text-slate-300 font-bold rounded-xl border border-white/10 transition-all"
+                                className="flex-1 py-4 bg-transparent hover:bg-white/5 text-gray-400 font-black rounded-2xl border border-white/10 transition-all uppercase tracking-widest shadow-lg"
                             >
                                 Cancelar
                             </button>
                             <button
                                 onClick={validateAndConfirm}
-                                className="flex-1 py-3 bg-gradient-to-r from-red-600 to-red-700 hover:from-red-500 hover:to-red-600 text-white font-bold rounded-xl shadow-lg shadow-red-900/20 transition-all flex items-center justify-center gap-2"
+                                className="flex-1 py-4 bg-gradient-to-r from-rose-600 to-rose-400 text-white font-black rounded-2xl shadow-xl shadow-rose-900/20 transition-all flex items-center justify-center gap-3 active:scale-95"
                             >
-                                Continuar
-                                <ArrowRight className="w-4 h-4" />
+                                <span>Verificar</span>
+                                <ArrowRight className="w-6 h-6" />
                             </button>
                         </div>
                     </div>
                 </div>
             )}
 
-            {/* CONFIRMATION MODAL (Nested) */}
+            {/* CONFIRMATION SUB-MODAL */}
             {showConfirmModal && selectedItem && (
-                <div className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-black/80 backdrop-blur-md animate-in fade-in duration-200">
-                    <div className="bg-[#0f1419] border border-red-500/30 rounded-2xl shadow-2xl w-full max-w-sm overflow-hidden animate-in zoom-in-95 duration-200 ring-1 ring-red-500/20">
-                        <div className="p-6 text-center">
-                            <div className="w-16 h-16 bg-red-500/10 rounded-full flex items-center justify-center mx-auto mb-4">
-                                <AlertTriangle className="w-8 h-8 text-red-500" />
+                <div className="fixed inset-0 z-[120] flex items-center justify-center p-4 bg-black/80 backdrop-blur-xl animate-in fade-in duration-200">
+                    <div className="bg-[#1e2235] border border-rose-500/30 rounded-3xl shadow-2xl w-full max-w-sm overflow-hidden animate-in zoom-in-95 duration-200 ring-4 ring-rose-500/5">
+                        <div className="p-8 text-center">
+                            <div className="w-20 h-20 bg-rose-500/10 rounded-full flex items-center justify-center mx-auto mb-6 shadow-inner">
+                                <AlertTriangle className="w-10 h-10 text-rose-500" />
                             </div>
-                            <h3 className="text-xl font-bold text-white mb-2">¿Confirmar Devolución?</h3>
-                            <p className="text-slate-400 text-sm mb-6">
-                                Se devolverán <strong className="text-white">{cantidadDev} {selectedItem.articulo_01.unidad}</strong> de <strong className="text-white">{selectedItem.articulo_01.nombre_articulo}</strong> al inventario.
-                            </p>
+                            <h3 className="text-2xl font-black text-white mb-3">¿Confirmar Acción?</h3>
+                            <div className="space-y-4 mb-8">
+                                <p className="text-gray-400 font-medium leading-relaxed">
+                                    Se devolverán <span className="text-white font-black">{cantidadDev} {selectedItem.articulo_01.unidad}</span> de <span className="text-white font-bold">{selectedItem.articulo_01.nombre_articulo}</span> al inventario general.
+                                </p>
+                                <div className="bg-rose-500/5 border border-rose-500/10 p-3 rounded-xl">
+                                    <p className="text-[10px] text-rose-400 font-black uppercase tracking-tighter">Esta acción no se puede deshacer de forma automática</p>
+                                </div>
+                            </div>
 
-                            <div className="flex flex-col gap-3">
+                            <div className="flex flex-col gap-4">
                                 <button
                                     onClick={procesarDevolucion}
                                     disabled={loading}
-                                    className="w-full py-3 bg-red-600 hover:bg-red-500 text-white font-bold rounded-xl shadow-lg shadow-red-900/20 transition-all flex items-center justify-center gap-2"
+                                    className="w-full py-4 bg-rose-600 hover:bg-rose-500 text-white font-black rounded-2xl shadow-xl shadow-rose-900/40 transition-all flex items-center justify-center gap-3 active:scale-95"
                                 >
-                                    {loading ? <Loader2 className="w-5 h-5 animate-spin" /> : <Check className="w-5 h-5" />}
-                                    Sí, Confirmar
+                                    {loading ? <Loader2 className="w-6 h-6 animate-spin" /> : <Check className="w-6 h-6" />}
+                                    Sí, Procesar
                                 </button>
                                 <button
                                     onClick={() => setShowConfirmModal(false)}
                                     disabled={loading}
-                                    className="w-full py-3 bg-transparent hover:bg-white/5 text-slate-400 font-bold rounded-xl transition-all"
+                                    className="w-full py-4 bg-transparent hover:bg-white/5 text-gray-500 font-black rounded-2xl transition-all uppercase tracking-widest text-xs"
                                 >
-                                    Cancelar
+                                    Girar atrás
                                 </button>
                             </div>
                         </div>
