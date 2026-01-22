@@ -33,16 +33,18 @@ export default function ArticleSearchModal({
                 try {
                     let query = supabase
                         .from('inventario_actual')
-                        .select('codigo_articulo, nombre_articulo, cantidad_disponible, unidad, imagen_url, precio_unitario')
-                        .limit(50);
+                        .select('codigo_articulo, nombre_articulo, cantidad_disponible, unidad, imagen_url, precio_unitario');
 
                     if (showOnlyAvailable) {
                         query = query.gt('cantidad_disponible', 0);
                     }
 
-                    if (searchTerm) {
-                        query = query.or(`nombre_articulo.ilike.%${searchTerm}%,codigo_articulo.ilike.%${searchTerm}%`);
+                    const term = searchTerm.trim();
+                    if (term) {
+                        query = query.or(`nombre_articulo.ilike.%${term}%,codigo_articulo.ilike.%${term}%`);
                     }
+
+                    query = query.limit(50);
 
                     const { data, error } = await query;
                     if (error) throw error;
@@ -70,7 +72,7 @@ export default function ArticleSearchModal({
             const timer = setTimeout(fetchArticles, 300);
             return () => clearTimeout(timer);
         }
-    }, [isOpen, searchTerm]);
+    }, [isOpen, searchTerm, showOnlyAvailable]);
 
     if (!isOpen) return null;
 

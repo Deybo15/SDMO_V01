@@ -33,7 +33,7 @@ interface Origen {
 interface Colaborador {
     identificacion: string;
     alias?: string;
-    colaborador?: string;
+    colaborador: string;
 }
 
 interface Articulo {
