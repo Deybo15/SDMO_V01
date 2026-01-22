@@ -10,6 +10,7 @@ interface ArticleSearchModalProps {
     themeColor?: string;
     title?: string;
     placeholder?: string;
+    showOnlyAvailable?: boolean;
 }
 
 export default function ArticleSearchModal({
@@ -18,7 +19,8 @@ export default function ArticleSearchModal({
     onSelect,
     themeColor = 'blue',
     title = 'Buscar Artículo',
-    placeholder = 'Buscar por código, nombre...'
+    placeholder = 'Buscar por código, nombre...',
+    showOnlyAvailable = true
 }: ArticleSearchModalProps) {
     const [searchTerm, setSearchTerm] = useState('');
     const [articles, setArticles] = useState<Articulo[]>([]);
@@ -32,8 +34,11 @@ export default function ArticleSearchModal({
                     let query = supabase
                         .from('inventario_actual')
                         .select('codigo_articulo, nombre_articulo, cantidad_disponible, unidad, imagen_url, precio_unitario')
-                        .gt('cantidad_disponible', 0)
                         .limit(50);
+
+                    if (showOnlyAvailable) {
+                        query = query.gt('cantidad_disponible', 0);
+                    }
 
                     if (searchTerm) {
                         query = query.or(`nombre_articulo.ilike.%${searchTerm}%,codigo_articulo.ilike.%${searchTerm}%`);

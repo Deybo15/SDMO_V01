@@ -312,8 +312,8 @@ export default function IngresarArticulo() {
                         <button
                             onClick={() => setShowHistory(!showHistory)}
                             className={`flex items-center gap-2 px-5 py-2.5 rounded-xl font-bold transition-all shadow-lg ${showHistory
-                                    ? 'bg-emerald-500 text-white shadow-emerald-500/20'
-                                    : 'bg-[#1e2235] text-gray-400 border border-white/10 hover:bg-[#252a41]'
+                                ? 'bg-emerald-500 text-white shadow-emerald-500/20'
+                                : 'bg-[#1e2235] text-gray-400 border border-white/10 hover:bg-[#252a41]'
                                 }`}
                         >
                             <History className="w-5 h-5" />
@@ -594,6 +594,7 @@ export default function IngresarArticulo() {
                 }}
                 onSelect={handleSelectArticle}
                 themeColor="emerald"
+                showOnlyAvailable={false}
             />
 
             {/* Origen Search Modal */}
