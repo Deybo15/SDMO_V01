@@ -1,10 +1,13 @@
+import { useNavigate } from 'react-router-dom';
 import {
     Users,
     LineChart,
     Search,
-    Truck
+    Truck,
+    ChevronRight,
+    UserCircle
 } from 'lucide-react';
-import { useNavigate } from 'react-router-dom';
+import { PageHeader } from '../components/ui/PageHeader';
 
 export default function ClienteInterno() {
     const navigate = useNavigate();
@@ -12,58 +15,73 @@ export default function ClienteInterno() {
     const modules = [
         {
             title: 'Ingresar Solicitud',
-            icon: <Users className="w-8 h-8 text-purple-600" />,
+            icon: <Users className="w-8 h-8" />,
             path: '/cliente-interno/ingresar',
-            color: 'bg-purple-50 dark:bg-purple-900/20',
-            borderColor: 'border-purple-200 dark:border-purple-800'
+            color: 'purple',
+            description: 'Crear una nueva solicitud de mantenimiento o materiales'
         },
         {
             title: 'Seguimiento de Solicitud',
-            icon: <LineChart className="w-8 h-8 text-indigo-600" />,
+            icon: <LineChart className="w-8 h-8" />,
             path: '/cliente-interno/seguimiento',
-            color: 'bg-indigo-50 dark:bg-indigo-900/20',
-            borderColor: 'border-indigo-200 dark:border-indigo-800'
+            color: 'indigo',
+            description: 'Ver el estado y bitácora de sus solicitudes activas'
         },
         {
             title: 'Consultar Estado de Solicitud',
-            icon: <Search className="w-8 h-8 text-cyan-600" />,
+            icon: <Search className="w-8 h-8" />,
             path: '/cliente-interno/consultar-estado',
-            color: 'bg-cyan-50 dark:bg-cyan-900/20',
-            borderColor: 'border-cyan-200 dark:border-cyan-800'
+            color: 'cyan',
+            description: 'Búsqueda rápida de solicitudes por número'
         },
         {
             title: 'Realizar Salidas',
-            icon: <Truck className="w-8 h-8 text-orange-600" />,
+            icon: <Truck className="w-8 h-8" />,
             path: '/cliente-interno/realizar-salidas',
-            color: 'bg-orange-50 dark:bg-orange-900/20',
-            borderColor: 'border-orange-200 dark:border-orange-800'
+            color: 'orange',
+            description: 'Procesar la entrega física de materiales'
         }
     ];
 
     return (
-        <div className="p-6">
-            <div className="sticky top-0 z-30 flex items-center gap-4 py-4 -mx-6 px-6 bg-slate-900/90 backdrop-blur-md border-b border-slate-800 mb-6">
-                <h1 className="text-2xl font-bold text-white">Cliente Interno</h1>
-            </div>
+        <div className="min-h-screen bg-[#0f111a] p-4 md:p-8">
+            <PageHeader
+                title="Cliente Interno"
+                icon={UserCircle}
+                themeColor="blue"
+            />
 
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-                {modules.map((module, index) => (
-                    <button
-                        key={index}
-                        onClick={() => navigate(module.path)}
-                        className="group relative flex flex-col items-center justify-center p-8 rounded-2xl bg-slate-800/50 border border-slate-700 hover:bg-slate-800 transition-all duration-300 hover:scale-[1.02] hover:shadow-xl hover:shadow-black/20 overflow-hidden"
-                    >
-                        {/* Hover Gradient Effect */}
-                        <div className={`absolute inset-0 opacity-0 group-hover:opacity-10 transition-opacity duration-500 bg-gradient-to-br ${module.color.replace('bg-', 'from-').replace('50', '500').split(' ')[0]} to-transparent`} />
+            <div className="max-w-7xl mx-auto">
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+                    {modules.map((module, index) => (
+                        <button
+                            key={index}
+                            onClick={() => navigate(module.path)}
+                            className="group relative bg-[#1e2235] border border-white/10 p-6 rounded-2xl transition-all duration-300 hover:border-white/20 hover:bg-[#252a41] hover:shadow-2xl hover:shadow-black/50 text-left overflow-hidden flex flex-col h-full active:scale-95 shadow-lg"
+                        >
+                            {/* Decorative background gradient */}
+                            <div className={`absolute -right-8 -top-8 w-32 h-32 bg-${module.color}-500/10 rounded-full blur-3xl group-hover:bg-${module.color}-500/20 transition-all duration-500`} />
 
-                        <div className={`mb-5 p-4 rounded-2xl bg-slate-900/80 border border-slate-700 shadow-lg group-hover:scale-110 transition-transform duration-300 ${module.borderColor}`}>
-                            {module.icon}
-                        </div>
-                        <h3 className="text-lg font-bold text-slate-200 group-hover:text-white text-center z-10">
-                            {module.title}
-                        </h3>
-                    </button>
-                ))}
+                            <div className={`mb-6 p-4 bg-${module.color}-500/10 rounded-2xl w-fit group-hover:scale-110 transition-transform duration-300 text-${module.color}-400`}>
+                                {module.icon}
+                            </div>
+
+                            <div className="flex-1">
+                                <h3 className="text-xl font-bold text-white mb-2 leading-tight">
+                                    {module.title}
+                                </h3>
+                                <p className="text-gray-400 text-sm leading-relaxed">
+                                    {module.description}
+                                </p>
+                            </div>
+
+                            <div className="mt-8 flex items-center gap-2 text-sm font-bold text-white/40 group-hover:text-white transition-colors">
+                                Explorar categoría
+                                <ChevronRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
+                            </div>
+                        </button>
+                    ))}
+                </div>
             </div>
         </div>
     );

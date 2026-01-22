@@ -1,10 +1,13 @@
+import { useNavigate } from 'react-router-dom';
 import {
     LayoutList,
     PlusCircle,
     UserPlus,
-    Wrench
+    Wrench,
+    ChevronRight,
+    Briefcase
 } from 'lucide-react';
-import { useNavigate } from 'react-router-dom';
+import { PageHeader } from '../components/ui/PageHeader';
 
 export default function Activos() {
     const navigate = useNavigate();
@@ -12,59 +15,73 @@ export default function Activos() {
     const modules = [
         {
             title: 'Inventario General',
-            icon: <LayoutList className="w-8 h-8 text-blue-600" />,
+            icon: <LayoutList className="w-8 h-8" />,
             path: '/activos/inventario',
-            color: 'bg-blue-50 dark:bg-blue-900/20',
-            borderColor: 'border-blue-200 dark:border-blue-800'
+            color: 'blue',
+            description: 'Consulta detallada del catálogo completo de activos institucionales'
         },
         {
             title: 'Registrar Nuevo',
-            icon: <PlusCircle className="w-8 h-8 text-emerald-600" />,
+            icon: <PlusCircle className="w-8 h-8" />,
             path: '/activos/ingreso',
-            color: 'bg-emerald-50 dark:bg-emerald-900/20',
-            borderColor: 'border-emerald-200 dark:border-emerald-800'
+            color: 'emerald',
+            description: 'Alta y registro de nuevos activos en el sistema central'
         },
         {
             title: 'Asignar a Colaborador',
-            icon: <UserPlus className="w-8 h-8 text-purple-600" />,
+            icon: <UserPlus className="w-8 h-8" />,
             path: '/activos/asignacion',
-            color: 'bg-purple-50 dark:bg-purple-900/20',
-            borderColor: 'border-purple-200 dark:border-purple-800'
+            color: 'purple',
+            description: 'Gestión de asignaciones y responsabilidades de activos por personal'
         },
         {
             title: 'Registrar Accesorios',
-            icon: <Wrench className="w-8 h-8 text-orange-600" />,
+            icon: <Wrench className="w-8 h-8" />,
             path: '/activos/accesorios',
-            color: 'bg-orange-50 dark:bg-orange-900/20',
-            borderColor: 'border-orange-200 dark:border-orange-800'
+            color: 'orange',
+            description: 'Control, registro y vinculación de complementos para activos específicos'
         }
     ];
 
     return (
-        <div className="p-6">
-            <div className="sticky top-0 z-30 flex items-center justify-between py-6 mb-8 bg-slate-900/90 backdrop-blur-md border-b border-slate-800 -mx-6 px-6">
-                <h1 className="text-2xl font-bold text-white">Gestión de Activos</h1>
+        <div className="min-h-screen bg-[#0f111a] p-4 md:p-8">
+            <PageHeader
+                title="Gestión de Activos"
+                icon={Briefcase}
+                themeColor="blue"
+            />
 
-            </div>
+            <div className="max-w-7xl mx-auto">
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+                    {modules.map((module, index) => (
+                        <button
+                            key={index}
+                            onClick={() => navigate(module.path)}
+                            className="group relative bg-[#1e2235] border border-white/10 p-6 rounded-2xl transition-all duration-300 hover:border-white/20 hover:bg-[#252a41] hover:shadow-2xl hover:shadow-black/50 text-left overflow-hidden flex flex-col h-full active:scale-95 shadow-lg"
+                        >
+                            {/* Decorative background gradient */}
+                            <div className={`absolute -right-8 -top-8 w-32 h-32 bg-${module.color}-500/10 rounded-full blur-3xl group-hover:bg-${module.color}-500/20 transition-all duration-500`} />
 
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                {modules.map((module, index) => (
-                    <button
-                        key={index}
-                        onClick={() => navigate(module.path)}
-                        className="group relative flex flex-col items-center justify-center p-8 rounded-2xl bg-slate-800/50 border border-slate-700 hover:bg-slate-800 transition-all duration-300 hover:scale-[1.02] hover:shadow-xl hover:shadow-black/20 overflow-hidden"
-                    >
-                        {/* Hover Gradient Effect */}
-                        <div className={`absolute inset-0 opacity-0 group-hover:opacity-10 transition-opacity duration-500 bg-gradient-to-br ${module.color.replace('bg-', 'from-').replace('50', '500').split(' ')[0]} to-transparent`} />
+                            <div className={`mb-6 p-4 bg-${module.color}-500/10 rounded-2xl w-fit group-hover:scale-110 transition-transform duration-300 text-${module.color}-400`}>
+                                {module.icon}
+                            </div>
 
-                        <div className={`mb-5 p-4 rounded-2xl bg-slate-900/80 border border-slate-700 shadow-lg group-hover:scale-110 transition-transform duration-300 ${module.borderColor}`}>
-                            {module.icon}
-                        </div>
-                        <h3 className="text-lg font-bold text-slate-200 group-hover:text-white text-center z-10">
-                            {module.title}
-                        </h3>
-                    </button>
-                ))}
+                            <div className="flex-1">
+                                <h3 className="text-xl font-bold text-white mb-2 leading-tight">
+                                    {module.title}
+                                </h3>
+                                <p className="text-gray-400 text-sm leading-relaxed">
+                                    {module.description}
+                                </p>
+                            </div>
+
+                            <div className="mt-8 flex items-center gap-2 text-sm font-bold text-white/40 group-hover:text-white transition-colors">
+                                Explorar categoría
+                                <ChevronRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
+                            </div>
+                        </button>
+                    ))}
+                </div>
             </div>
         </div>
     );
