@@ -172,14 +172,18 @@ export default function ConsultarSalidas() {
         if (!sortConfig) return resumen;
 
         return [...resumen].sort((a, b) => {
-            if (a[sortConfig.key] < b[sortConfig.key]) {
+            const key = sortConfig.key;
+            const valA = a[key] ?? '';
+            const valB = b[key] ?? '';
+            if (valA < valB) {
                 return sortConfig.direction === 'asc' ? -1 : 1;
             }
-            if (a[sortConfig.key] > b[sortConfig.key]) {
+            if (valA > valB) {
                 return sortConfig.direction === 'asc' ? 1 : -1;
             }
             return 0;
         });
+
     }, [resumen, sortConfig]);
 
     // Data Fetching
@@ -215,7 +219,8 @@ export default function ConsultarSalidas() {
                 .order("fecha_salida", { ascending: false });
 
             if (error) throw error;
-            setSalidas(data || []);
+            setSalidas(data as any[] || []);
+
             if (!data || data.length === 0) {
                 showFeedback("No se encontraron salidas con ese número.", 'info');
             } else {
@@ -347,7 +352,7 @@ export default function ConsultarSalidas() {
                     doc.setFontSize(8);
                     doc.setTextColor(150);
                     doc.text('Sistema de Gestión de Inventario', data.settings.margin.left, doc.internal.pageSize.height - 10);
-                    doc.text('Página ' + doc.internal.getNumberOfPages(), doc.internal.pageSize.width - 30, doc.internal.pageSize.height - 10);
+                    doc.text('Página ' + doc.getNumberOfPages(), doc.internal.pageSize.width - 30, doc.internal.pageSize.height - 10);
                 }
             });
 

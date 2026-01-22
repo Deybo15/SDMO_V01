@@ -6,13 +6,19 @@ import {
     Loader2,
     Building2,
     CheckCircle,
-    Search
+    Search,
+    X
 } from 'lucide-react';
+
 
 // Custom Architecture
 import ArticuloSearchModal from '../components/ArticleSearchModal';
 import ColaboradorSearchModal from '../components/ColaboradorSearchModal';
 import { supabase } from '../lib/supabase';
+import { useTransactionManager } from '../hooks/useTransactionManager';
+import { PageHeader } from '../components/ui/PageHeader';
+import { TransactionTable } from '../components/ui/TransactionTable';
+
 
 interface Dependencia {
     id_dependencia: number;
@@ -199,7 +205,8 @@ export default function Prestamo() {
                                 onRemoveRow={removeRow}
                                 onOpenSearch={handleOpenSearch}
                                 onAddRow={addEmptyRow}
-                                onWarning={(msg) => showAlert(msg, 'warning')}
+                                onWarning={(msg: string) => showAlert(msg, 'warning')}
+
                                 themeColor={colorTheme}
                             />
                         </div>

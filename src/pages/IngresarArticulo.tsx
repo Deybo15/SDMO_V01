@@ -12,12 +12,13 @@ import {
     Trash2,
     Save,
     Loader2,
-    Printer,
     History,
     ChevronRight,
     UserCircle,
     Building2
 } from 'lucide-react';
+
+
 import jsPDF from 'jspdf';
 
 // Shared Components

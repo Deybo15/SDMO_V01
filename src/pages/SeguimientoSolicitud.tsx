@@ -4,33 +4,23 @@ import { useNavigate } from 'react-router-dom';
 import * as XLSX from 'xlsx';
 import {
     Search,
-    Filter,
-    Calendar,
-    FileText,
     Eye,
-    RotateCw,
     CheckCircle,
     XCircle,
     PlayCircle,
     Wrench,
     Package,
     PlusCircle,
-    Save,
     X,
-    Loader2,
-    Info,
-    AlertTriangle,
     History,
     ChevronLeft,
-    ChevronRight,
-    ArrowRight,
     Download,
-    Layers,
     Clock,
     Eraser,
-    TrendingUp
+    LayoutGrid,
+    Calendar // Added for date fields
 } from 'lucide-react';
-import { PageHeader } from '../components/ui/PageHeader';
+import { format, subMonths, startOfMonth, endOfMonth } from 'date-fns';
 import { cn } from '../lib/utils';
 
 // Interfaces
@@ -67,6 +57,34 @@ interface ArticuloAsociado {
     codigo_articulo: string;
 }
 
+// --- Helper Components ---
+
+const TableSkeleton = () => (
+    <>
+        {[...Array(5)].map((_, i) => (
+            <tr key={i} className="animate-pulse border-b border-white/10">
+                <td className="px-8 py-6"><div className="h-4 bg-white/10 rounded w-16"></div></td>
+                <td className="px-8 py-6"><div className="h-4 bg-white/10 rounded w-24"></div></td>
+                <td className="px-8 py-6"><div className="h-4 bg-white/10 rounded w-full"></div></td>
+                <td className="px-8 py-6"><div className="h-4 bg-white/10 rounded w-20"></div></td>
+                <td className="px-8 py-6"><div className="h-6 bg-white/10 rounded-full w-24"></div></td>
+                <td className="px-8 py-6 text-right"><div className="h-8 bg-white/10 rounded w-8 ml-auto"></div></td>
+            </tr>
+        ))}
+    </>
+);
+
+function getEstadoBadge(estado?: string) {
+    if (!estado) return <span className="text-white/40 font-bold text-[10px] uppercase tracking-widest px-4 py-1.5 border border-white/20 rounded-full bg-white/10">Sin Registro</span>;
+    const colors = {
+        'ACTIVA': 'bg-indigo-500/20 border-indigo-500/50 text-indigo-300',
+        'EJECUTADA': 'bg-emerald-500/20 border-emerald-500/50 text-emerald-300',
+        'CANCELADA': 'bg-rose-500/20 border-rose-500/50 text-rose-300'
+    }[estado] || 'bg-slate-500/20 text-slate-300 border-slate-400/40';
+
+    return <span className={cn("px-4 py-1.5 rounded-full font-black text-[10px] uppercase tracking-wider border backdrop-blur-md shadow-lg", colors)}>{estado}</span>;
+}
+
 export default function SeguimientoSolicitud() {
     const navigate = useNavigate();
     const [loading, setLoading] = useState(false);
@@ -79,6 +97,9 @@ export default function SeguimientoSolicitud() {
     const [filterEstado, setFilterEstado] = useState('');
     const [activeSearch, setActiveSearch] = useState('');
     const [activeEstado, setActiveEstado] = useState('');
+    const [filterSupervisor, setFilterSupervisor] = useState('');
+    const [filterDateStart, setFilterDateStart] = useState('');
+    const [filterDateEnd, setFilterDateEnd] = useState('');
 
     // Pagination
     const [page, setPage] = useState(1);
@@ -97,67 +118,71 @@ export default function SeguimientoSolicitud() {
     const [seguimientoData, setSeguimientoData] = useState<Seguimiento | null>(null);
     const [registros, setRegistros] = useState<RegistroSeguimiento[]>([]);
     const [articulos, setArticulos] = useState<ArticuloAsociado[]>([]);
-    const [articulosLoading, setArticulosLoading] = useState(false);
 
-    // Form New Register
     const [showNuevoRegistro, setShowNuevoRegistro] = useState(false);
     const [nuevoRegistro, setNuevoRegistro] = useState({ fecha: new Date().toISOString().split('T')[0], texto: '' });
 
+    // Advanced States
+    const [supervisores, setSupervisores] = useState<{ id: string, alias: string }[]>([]);
+    const [realtimeChange, setRealtimeChange] = useState(0);
+    const [hoveredDescription, setHoveredDescription] = useState<{ id: number; text: string; x: number; y: number } | null>(null);
+    const [editingStatusId, setEditingStatusId] = useState<number | null>(null);
+
     // Notification State
     const [notification, setNotification] = useState<{ message: string; type: 'success' | 'error' | 'info' } | null>(null);
-
-    const themeColor = 'amber';
 
     const showNotification = (message: string, type: 'success' | 'error' | 'info') => {
         setNotification({ message, type });
         setTimeout(() => setNotification(null), 4000);
     };
 
-    // Helper to fetch all records handling 1000-row limit
+    // --- Data Loaders ---
+
+    const loadMetadata = async () => {
+        try {
+            const { data } = await supabase.from('colaboradores_06')
+                .select('identificacion, alias')
+                .not('alias', 'is', null)
+                .order('alias');
+            if (data) setSupervisores(data.map(d => ({ id: d.identificacion, alias: d.alias })));
+        } catch (e) { console.error('Error metadata:', e); }
+    };
+
     const fetchAll = async (table: string, select: string, filterField?: string, filterValue?: string) => {
         let allData: any[] = [];
         let pageIdx = 0;
         const size = 1000;
-        while (true) {
-            let query = supabase
-                .from(table)
-                .select(select)
-                .range(pageIdx * size, (pageIdx + 1) * size - 1);
-
-            if (filterField && filterValue) {
-                query = query.eq(filterField, filterValue);
+        try {
+            while (true) {
+                let query = supabase.from(table).select(select).range(pageIdx * size, (pageIdx + 1) * size - 1);
+                if (filterField && filterValue) query = query.eq(filterField, filterValue);
+                const { data, error } = await query;
+                if (error) throw error;
+                if (!data || data.length === 0) break;
+                allData.push(...data);
+                if (data.length < size) break;
+                pageIdx++;
             }
-
-            const { data, error } = await query;
-            if (error) throw error;
-            if (!data || data.length === 0) break;
-            allData.push(...data);
-            if (data.length < size) break;
-            pageIdx++;
+        } catch (e) {
+            console.error(`Error fetchAll ${table}:`, e);
         }
         return allData;
     };
 
-    // Load Stats
     const loadStats = async () => {
         try {
             const { count: total } = await supabase
                 .from('solicitud_17')
-                .select('*', { count: 'exact', head: true })
+                .select('numero_solicitud', { count: 'exact', head: true })
                 .eq('tipo_solicitud', 'STI');
 
             const allSeguimientos = await fetchAll('seguimiento_solicitud', 'numero_solicitud, estado_actual');
             const allStiIdsData = await fetchAll('solicitud_17', 'numero_solicitud', 'tipo_solicitud', 'STI');
             const stiIdsSet = new Set(allStiIdsData.map((s: any) => s.numero_solicitud));
 
-            const newStats = {
-                total: total || 0,
-                activas: 0,
-                ejecutadas: 0,
-                canceladas: 0
-            };
-
+            const newStats = { total: total || 0, activas: 0, ejecutadas: 0, canceladas: 0 };
             let seguimientosCounted = 0;
+
             allSeguimientos.forEach((s: any) => {
                 if (stiIdsSet.has(s.numero_solicitud)) {
                     seguimientosCounted++;
@@ -170,14 +195,10 @@ export default function SeguimientoSolicitud() {
 
             const sinRegistro = (total || 0) - seguimientosCounted;
             newStats.activas += Math.max(0, sinRegistro);
-
             setStats(newStats);
-        } catch (error) {
-            console.error("Error loading stats:", error);
-        }
+        } catch (error) { console.error("Error loading stats:", error); }
     };
 
-    // Fetch Paginated Data
     const fetchSolicitudes = useCallback(async () => {
         setLoading(true);
         try {
@@ -190,52 +211,47 @@ export default function SeguimientoSolicitud() {
                 const idsData = await fetchAll('seguimiento_solicitud', 'numero_solicitud', 'estado_actual', activeEstado);
                 const ids = idsData.map((i: any) => i.numero_solicitud);
                 if (ids.length === 0) {
-                    setSolicitudes([]);
-                    setTotalRecords(0);
-                    setLoading(false);
-                    return;
+                    setSolicitudes([]); setTotalRecords(0); setLoading(false); return;
                 }
                 query = query.in('numero_solicitud', ids);
             }
 
+            if (filterSupervisor) query = query.eq('supervisor_asignado', filterSupervisor);
+            if (filterDateStart) query = query.gte('fecha_solicitud', filterDateStart);
+            if (filterDateEnd) query = query.lte('fecha_solicitud', filterDateEnd);
+
             if (activeSearch) {
                 const isNumeric = /^\d+$/.test(activeSearch);
-                if (isNumeric) {
-                    query = query.or(`numero_solicitud.eq.${activeSearch},descripcion_solicitud.ilike.%${activeSearch}%`);
-                } else {
-                    query = query.ilike('descripcion_solicitud', `%${activeSearch}%`);
-                }
+                if (isNumeric) query = query.or(`numero_solicitud.eq.${activeSearch},descripcion_solicitud.ilike.%${activeSearch}%`);
+                else query = query.ilike('descripcion_solicitud', `%${activeSearch}%`);
             }
 
             query = query.order(sortCol as any, { ascending: sortDir === 'asc' });
 
             const from = (page - 1) * pageSize;
             const to = from + pageSize - 1;
-            query = query.range(from, to);
+            const { data, count, error } = await query.range(from, to);
 
-            const { data, count, error } = await query;
             if (error) throw error;
-
             if (!data || data.length === 0) {
-                setSolicitudes([]);
-                setTotalRecords(0);
-                return;
+                setSolicitudes([]); setTotalRecords(0); return;
             }
 
             setTotalRecords(count || 0);
 
-            // Fetch relations
             const ids = data.map(s => s.numero_solicitud);
             const supIds = data.map(s => s.supervisor_asignado).filter(Boolean) as string[];
 
             const { data: estadosData } = await supabase.from('seguimiento_solicitud').select('numero_solicitud, estado_actual').in('numero_solicitud', ids);
-            const { data: colabsData } = await supabase.from('colaboradores_06').select('identificacion, alias').in('identificacion', supIds);
+
+            let colabsMap = new Map();
+            if (supIds.length > 0) {
+                const { data: colabsData } = await supabase.from('colaboradores_06').select('identificacion, alias').in('identificacion', supIds);
+                colabsData?.forEach(c => colabsMap.set(c.identificacion, c.alias));
+            }
 
             const estadosMap = new Map();
             estadosData?.forEach(s => estadosMap.set(s.numero_solicitud, s.estado_actual));
-
-            const colabsMap = new Map();
-            colabsData?.forEach(c => colabsMap.set(c.identificacion, c.alias));
 
             setSolicitudes(data.map(s => ({
                 ...s,
@@ -243,34 +259,26 @@ export default function SeguimientoSolicitud() {
                 supervisor_alias: s.supervisor_asignado ? (colabsMap.get(s.supervisor_asignado) || 'No asignado') : 'No asignado'
             })));
 
-        } catch (error) {
-            console.error(error);
-        } finally {
-            setLoading(false);
-        }
-    }, [page, activeSearch, activeEstado, sortCol, sortDir]);
+        } catch (error) { console.error('Fetch error:', error); }
+        finally { setLoading(false); }
+    }, [page, activeSearch, activeEstado, filterSupervisor, filterDateStart, filterDateEnd, sortCol, sortDir]);
 
-    useEffect(() => { loadStats(); }, []);
-    useEffect(() => { fetchSolicitudes(); }, [fetchSolicitudes]);
+    useEffect(() => {
+        loadMetadata(); loadStats();
+        const channel = supabase.channel('tracking-sync')
+            .on('postgres_changes', { event: '*', schema: 'public', table: 'seguimiento_solicitud' }, () => setRealtimeChange(c => c + 1))
+            .subscribe();
+        return () => { supabase.removeChannel(channel); };
+    }, []);
 
-    const handleApplyFilters = () => {
-        setPage(1);
-        setActiveSearch(searchTerm);
-        setActiveEstado(filterEstado);
-    };
+    useEffect(() => { fetchSolicitudes(); }, [fetchSolicitudes, realtimeChange]);
 
-    const clearFilters = () => {
-        setSearchTerm('');
-        setFilterEstado('');
-        setPage(1);
-        setActiveSearch('');
-        setActiveEstado('');
-    };
+    const handleApplyFilters = () => { setPage(1); setActiveSearch(searchTerm); setActiveEstado(filterEstado); };
+    const clearFilters = () => { setSearchTerm(''); setFilterEstado(''); setFilterSupervisor(''); setFilterDateStart(''); setFilterDateEnd(''); setPage(1); setActiveSearch(''); setActiveEstado(''); };
 
     const handleExportExcel = async () => {
         setLoading(true);
         try {
-            // High limit fetch for export
             let query = supabase.from('solicitud_17').select('numero_solicitud, fecha_solicitud, descripcion_solicitud, supervisor_asignado').eq('tipo_solicitud', 'STI');
             if (activeEstado) {
                 const idsData = await fetchAll('seguimiento_solicitud', 'numero_solicitud', 'estado_actual', activeEstado);
@@ -281,28 +289,21 @@ export default function SeguimientoSolicitud() {
                 if (isNumeric) query = query.or(`numero_solicitud.eq.${activeSearch},descripcion_solicitud.ilike.%${activeSearch}%`);
                 else query = query.ilike('descripcion_solicitud', `%${activeSearch}%`);
             }
-
             const { data: allData } = await query.order('numero_solicitud', { ascending: false }).limit(2000);
             if (!allData || allData.length === 0) return;
-
             const ws = XLSX.utils.json_to_sheet(allData);
             const wb = XLSX.utils.book_new();
             XLSX.utils.book_append_sheet(wb, ws, "STI");
             XLSX.writeFile(wb, `Seguimiento_STI_${new Date().toISOString().split('T')[0]}.xlsx`);
-            showNotification('Exportado exitosamente', 'success');
-        } catch (error) {
-            showNotification('Error al exportar', 'error');
-        } finally {
-            setLoading(false);
-        }
+            showNotification('Reporte generado', 'success');
+        } catch (error) { showNotification('Error al exportar', 'error'); }
+        finally { setLoading(false); }
     };
 
-    // Modal Handlers
     const handleOpenModal = async (solicitud: SolicitudSTI) => {
         setSelectedSolicitud(solicitud);
         setIsModalOpen(true);
         setModalLoading(true);
-
         try {
             let { data: segData } = await supabase.from('seguimiento_solicitud').select('*').eq('numero_solicitud', solicitud.numero_solicitud).maybeSingle();
             if (!segData) {
@@ -310,286 +311,367 @@ export default function SeguimientoSolicitud() {
                 segData = newSeg;
             }
             setSeguimientoData(segData);
-
             const { data: regData } = await supabase.from('registro_seguimiento_solicitud').select('*').eq('numero_solicitud', solicitud.numero_solicitud).order('fecha_registro', { ascending: false });
             setRegistros(regData || []);
-
-            // Articulos
             const { data: salidas } = await supabase.from('salida_articulo_08').select(`id_salida, fecha_salida, dato_salida_13(cantidad, articulo, articulo_01(nombre_articulo))`).eq('numero_solicitud', solicitud.numero_solicitud);
             const found: ArticuloAsociado[] = [];
             salidas?.forEach((s: any) => s.dato_salida_13?.forEach((d: any) => found.push({
-                id_salida: s.id_salida,
-                fecha_salida: s.fecha_salida,
-                cantidad: d.cantidad,
-                nombre_articulo: d.articulo_01?.nombre_articulo || 'N/A',
-                codigo_articulo: d.articulo
+                id_salida: s.id_salida, fecha_salida: s.fecha_salida, cantidad: d.cantidad, nombre_articulo: d.articulo_01?.nombre_articulo || 'N/A', codigo_articulo: d.articulo
             })));
             setArticulos(found);
-        } finally {
-            setModalLoading(false);
-        }
+        } finally { setModalLoading(false); }
     };
 
     return (
-        <div className="min-h-screen bg-[#0F172A] text-slate-100 font-sans relative">
-            {/* Background Halos */}
-            <div className="fixed inset-0 z-0 pointer-events-none">
-                <div className="absolute top-[85%] left-[20%] w-[80rem] h-[80rem] bg-amber-500/10 rounded-full blur-[100px] -translate-x-1/2 -translate-y-1/2 animate-pulse"></div>
-                <div className="absolute top-[15%] right-[20%] w-[80rem] h-[80rem] bg-indigo-500/5 rounded-full blur-[100px] translate-x-1/2 -translate-y-1/2"></div>
+        <div className="min-h-screen bg-slate-950 text-slate-100 font-sans relative overflow-x-hidden p-1">
+            <div className="fixed inset-0 pointer-events-none opacity-30">
+                <div className="absolute top-[-10%] left-[-10%] w-[50%] h-[50%] bg-blue-600/20 rounded-full blur-[160px]"></div>
+                <div className="absolute bottom-[-10%] right-[-10%] w-[50%] h-[50%] bg-indigo-600/10 rounded-full blur-[160px]"></div>
             </div>
 
-            {/* Header */}
-            <div className="max-w-7xl mx-auto px-1 pt-6 flex flex-col gap-8 relative z-10">
-                <PageHeader
-                    title="SEGUIMIENTO STI"
-                    icon={Wrench}
-                    themeColor="amber"
-                    backRoute="/cliente-interno"
-                />
+            <div className="max-w-[1400px] mx-auto px-4 py-8 relative z-10 space-y-8">
+                {/* Header */}
+                <header className="flex flex-col md:flex-row md:items-end justify-between gap-6">
+                    <div>
+                        <div className="flex items-center gap-3 mb-2">
+                            <div className="w-12 h-12 rounded-2xl bg-blue-600 flex items-center justify-center shadow-2xl shadow-blue-500/40 transform hover:scale-105 transition-transform">
+                                <Wrench className="w-7 h-7 text-white" />
+                            </div>
+                            <span className="text-xs font-black text-blue-400 uppercase tracking-[0.4em] drop-shadow-sm">Gestión Operativa</span>
+                        </div>
+                        <h1 className="text-5xl md:text-6xl font-black text-white tracking-tighter leading-none">
+                            Seguimiento <span className="text-blue-500">STI</span>
+                        </h1>
+                    </div>
+                    <div className="flex gap-4">
+                        <button onClick={() => navigate('/cliente-interno')} className="h-14 px-8 bg-white/5 border-2 border-white/10 rounded-[1.5rem] text-[11px] font-black uppercase tracking-widest hover:bg-white/10 hover:border-white/20 transition-all flex items-center gap-3 shadow-xl">
+                            <ChevronLeft className="w-5 h-5" /> Regresar
+                        </button>
+                        <button onClick={handleExportExcel} className="h-14 px-8 bg-emerald-500/10 border-2 border-emerald-500/30 text-emerald-400 rounded-[1.5rem] text-[11px] font-black uppercase tracking-widest hover:bg-emerald-500/20 hover:border-emerald-500/50 transition-all flex items-center gap-3 shadow-xl">
+                            <Download className="w-5 h-5" /> Exportar
+                        </button>
+                    </div>
+                </header>
 
-                {/* Metrics Grid */}
-                <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                <div className="grid grid-cols-2 lg:grid-cols-4 gap-6">
                     {[
-                        { label: 'Total Solicitudes', value: stats.total, icon: Layers, color: 'text-amber-400', bg: 'bg-amber-500/10' },
-                        { label: 'En Ejecución', value: stats.activas, icon: PlayCircle, color: 'text-indigo-400', bg: 'bg-indigo-500/10' },
-                        { label: 'Terminadas', value: stats.ejecutadas, icon: CheckCircle, color: 'text-emerald-400', bg: 'bg-emerald-500/10' },
-                        { label: 'Canceladas', value: stats.canceladas, icon: XCircle, color: 'text-rose-400', bg: 'bg-rose-500/10' }
+                        { label: 'Total', value: stats.total, icon: LayoutGrid, color: 'text-blue-400', bg: 'bg-blue-400/20', border: 'border-blue-500/30' },
+                        { label: 'Activas', value: stats.activas, icon: PlayCircle, color: 'text-indigo-400', bg: 'bg-indigo-400/20', border: 'border-indigo-500/30' },
+                        { label: 'Terminadas', value: stats.ejecutadas, icon: CheckCircle, color: 'text-emerald-400', bg: 'bg-emerald-400/20', border: 'border-emerald-500/30' },
+                        { label: 'Canceladas', value: stats.canceladas, icon: XCircle, color: 'text-rose-400', bg: 'bg-rose-400/20', border: 'border-rose-500/30' }
                     ].map((m, i) => (
-                        <div key={i} className="bg-white/5 backdrop-blur-xl border border-white/10 rounded-[1.5rem] p-4 flex items-center gap-3 group hover:bg-white/[0.08] transition-all duration-300">
-                            <div className={`w-10 h-10 rounded-xl ${m.bg} flex items-center justify-center ${m.color}`}>
-                                <m.icon className="w-5 h-5" />
+                        <div key={i} className={cn("bg-white/[0.04] backdrop-blur-3xl border-2 rounded-[2.5rem] p-7 flex items-center gap-6 group hover:bg-white/[0.06] transition-all shadow-2xl", m.border)}>
+                            <div className={cn("w-16 h-16 rounded-3xl flex items-center justify-center transition-transform group-hover:rotate-12", m.bg, m.color)}>
+                                <m.icon className="w-8 h-8" />
                             </div>
                             <div>
-                                <p className="text-[10px] font-black text-gray-500 uppercase tracking-widest">{m.label}</p>
-                                <p className="text-xl font-black text-white mt-1">{m.value}</p>
+                                <p className="text-4xl font-black text-white tracking-tighter leading-none">{m.value}</p>
+                                <p className="text-[11px] font-black text-white/70 uppercase tracking-widest mt-2">{m.label}</p>
                             </div>
                         </div>
                     ))}
                 </div>
-            </div>
 
-            <main className="relative z-10 max-w-7xl mx-auto p-6 space-y-6">
-                {/* Advanced Filters */}
-                <section className="relative group/filters">
-                    <div className="absolute -inset-1 bg-gradient-to-r from-amber-500/20 to-orange-500/20 rounded-[2.5rem] blur opacity-25"></div>
-                    <div className="relative bg-[#1E293B]/40 backdrop-blur-3xl border border-white/10 rounded-[2.5rem] overflow-hidden shadow-2xl">
-                        <div className="p-8 border-b border-white/5 bg-white/[0.02]">
-                            <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-                                <div>
-                                    <h2 className="text-2xl font-black text-white tracking-tight">Filtros Avanzados</h2>
-                                    <p className="text-gray-400 text-sm mt-1">Localiza tickets por descripción, número o estado.</p>
-                                </div>
-                                <div className="flex items-center gap-2">
-                                    <button onClick={handleApplyFilters} className="px-6 py-3 bg-amber-500 text-black font-bold rounded-2xl hover:scale-105 active:scale-95 transition-all shadow-lg flex items-center gap-2">
-                                        <Search className="w-5 h-5" /> APLICAR FILTROS
-                                    </button>
-                                    <button onClick={clearFilters} className="p-3 bg-white/5 hover:bg-white/10 text-gray-400 rounded-2xl border border-white/10"><Eraser className="w-5 h-5" /></button>
-                                    <button onClick={handleExportExcel} className="p-3 bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-400 rounded-2xl border border-emerald-500/20"><Download className="w-5 h-5" /></button>
-                                </div>
+                <section className="bg-white/[0.03] border-2 border-white/20 rounded-[3rem] p-10 space-y-8 shadow-3xl">
+                    <div className="flex items-center gap-3 mb-2 px-2">
+                        <Search className="w-5 h-5 text-blue-500" />
+                        <h2 className="text-sm font-black text-white/90 uppercase tracking-[0.3em]">Criterios de Búsqueda</h2>
+                    </div>
+
+                    <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-end">
+                        <div className="lg:col-span-4 space-y-3">
+                            <label className="text-[11px] font-black text-white/60 uppercase tracking-widest ml-3">Palabra Clave</label>
+                            <div className="relative group">
+                                <Search className="absolute left-5 top-1/2 -translate-y-1/2 w-5 h-5 text-white/30 group-focus-within:text-blue-500 transition-colors" />
+                                <input value={searchTerm} onChange={e => setSearchTerm(e.target.value)} className="w-full bg-slate-900/50 border-2 border-white/10 rounded-3xl h-16 pl-14 pr-6 text-sm text-white font-bold placeholder:text-white/20 focus:border-blue-500 focus:bg-slate-900 transition-all outline-none" placeholder="Ticket o descripción..." />
                             </div>
                         </div>
-                        <div className="p-8 grid grid-cols-1 md:grid-cols-2 gap-6">
-                            <div className="space-y-2">
-                                <label className="text-[10px] font-black text-gray-500 uppercase tracking-widest ml-2">Descripción / # Ticket</label>
-                                <div className="relative group/input">
-                                    <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-500 group-focus-within/input:text-amber-500" />
-                                    <input value={searchTerm} onChange={e => setSearchTerm(e.target.value)} onKeyDown={e => e.key === 'Enter' && handleApplyFilters()} className="w-full bg-black/20 border border-white/10 rounded-2xl py-4 pl-12 pr-4 text-white placeholder:text-gray-600 focus:border-amber-500/50" placeholder="Ej: Fugas de agua o #1024" />
-                                </div>
+                        <div className="lg:col-span-2 space-y-3">
+                            <label className="text-[11px] font-black text-white/60 uppercase tracking-widest ml-3">Estado</label>
+                            <select value={filterEstado} onChange={e => setFilterEstado(e.target.value)} className="w-full bg-slate-900/50 border-2 border-white/10 rounded-3xl h-16 px-6 text-sm text-white font-bold appearance-none cursor-pointer focus:border-blue-500 outline-none transition-all">
+                                <option value="">Todos</option>
+                                <option value="ACTIVA">ACTIVAS</option>
+                                <option value="EJECUTADA">EJECUTADAS</option>
+                                <option value="CANCELADA">CANCELADAS</option>
+                            </select>
+                        </div>
+                        <div className="lg:col-span-3 space-y-3">
+                            <label className="text-[11px] font-black text-white/60 uppercase tracking-widest ml-3">Líder STI</label>
+                            <select value={filterSupervisor} onChange={e => setFilterSupervisor(e.target.value)} className="w-full bg-slate-900/50 border-2 border-white/10 rounded-3xl h-16 px-6 text-sm text-white font-bold appearance-none cursor-pointer focus:border-blue-500 outline-none transition-all">
+                                <option value="">Todos los líderes</option>
+                                {supervisores.map(s => <option key={s.id} value={s.id}>{s.alias}</option>)}
+                            </select>
+                        </div>
+                        <div className="lg:col-span-3 flex gap-4 h-16">
+                            <button onClick={handleApplyFilters} className="flex-1 bg-blue-600 hover:bg-blue-500 rounded-3xl font-black text-[12px] uppercase tracking-widest transition-all shadow-xl shadow-blue-600/20 active:scale-95 text-white">Filtrar</button>
+                            <button onClick={clearFilters} className="w-16 bg-white/5 border-2 border-white/10 rounded-3xl flex items-center justify-center hover:bg-white/10 hover:border-white/30 transition-all text-white/40 hover:text-white group"><Eraser className="w-6 h-6 group-hover:rotate-12 transition-transform" /></button>
+                        </div>
+                    </div>
+
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
+                        <div className="space-y-3">
+                            <label className="text-[11px] font-black text-white/80 uppercase tracking-widest ml-3 flex items-center gap-2 underline decoration-blue-500 decoration-4 underline-offset-8">
+                                <Calendar className="w-5 h-5 text-blue-400" /> Fecha Desde
+                            </label>
+                            <div className="relative">
+                                <input type="date" value={filterDateStart} onChange={e => setFilterDateStart(e.target.value)} className="w-full bg-slate-800 border-2 border-white/30 rounded-3xl h-16 px-6 text-sm font-black text-white focus:border-blue-500 focus:bg-slate-700 outline-none transition-all shadow-lg custom-date-input" />
                             </div>
-                            <div className="space-y-2">
-                                <label className="text-[10px] font-black text-gray-500 uppercase tracking-widest ml-2">Filtrar por Estado</label>
-                                <select value={filterEstado} onChange={e => setFilterEstado(e.target.value)} className="w-full bg-black/20 border border-white/10 rounded-2xl py-4 px-6 text-white appearance-none cursor-pointer">
-                                    <option value="">Todos los Estados</option>
-                                    <option value="ACTIVA">Activa</option>
-                                    <option value="EJECUTADA">Ejecutada</option>
-                                    <option value="CANCELADA">Cancelada</option>
-                                </select>
+                        </div>
+                        <div className="space-y-3">
+                            <label className="text-[11px] font-black text-white/80 uppercase tracking-widest ml-3 flex items-center gap-2 underline decoration-blue-500 decoration-4 underline-offset-8">
+                                <Calendar className="w-5 h-5 text-blue-400" /> Fecha Hasta
+                            </label>
+                            <div className="relative">
+                                <input type="date" value={filterDateEnd} onChange={e => setFilterDateEnd(e.target.value)} className="w-full bg-slate-800 border-2 border-white/30 rounded-3xl h-16 px-6 text-sm font-black text-white focus:border-blue-500 focus:bg-slate-700 outline-none transition-all shadow-lg custom-date-input" />
                             </div>
                         </div>
                     </div>
                 </section>
 
-                {/* Results Table */}
-                <section className="bg-[#1E293B]/40 backdrop-blur-3xl border border-white/10 rounded-[2.5rem] overflow-hidden shadow-2xl">
+                <section className="bg-white/[0.02] border-2 border-white/20 shadow-3xl rounded-[3.5rem] overflow-hidden">
                     <div className="overflow-x-auto">
-                        <table className="w-full text-left">
+                        <table className="w-full text-left border-collapse">
                             <thead>
-                                <tr className="bg-white/5 border-b border-white/5">
-                                    <th className="px-8 py-5 text-[10px] font-black text-gray-500 uppercase tracking-widest cursor-pointer" onClick={() => { setSortCol('numero_solicitud'); setSortDir(sortDir === 'asc' ? 'desc' : 'asc'); }}>Ticket</th>
-                                    <th className="px-8 py-5 text-[10px] font-black text-gray-500 uppercase tracking-widest">Fecha</th>
-                                    <th className="px-8 py-5 text-[10px] font-black text-gray-500 uppercase tracking-widest">Descripción</th>
-                                    <th className="px-8 py-5 text-[10px] font-black text-gray-500 uppercase tracking-widest">Estado</th>
-                                    <th className="px-8 py-5 text-right text-[10px] font-black text-gray-500 uppercase tracking-widest">Detalle</th>
+                                <tr className="bg-white/[0.05] border-b-2 border-white/20 text-[11px] font-black text-white uppercase tracking-[0.2em]">
+                                    <th className="px-10 py-8">Folio</th>
+                                    <th className="px-10 py-8">Fecha</th>
+                                    <th className="px-10 py-8">Descripción STI</th>
+                                    <th className="px-10 py-8 text-center">Líder STI</th>
+                                    <th className="px-10 py-8 text-center">Estado App</th>
+                                    <th className="px-10 py-8 text-right">Detalle</th>
                                 </tr>
                             </thead>
-                            <tbody className="divide-y divide-white/5">
-                                {loading ? (
-                                    <tr><td colSpan={5} className="py-20 text-center"><Loader2 className="w-8 h-8 animate-spin mx-auto text-amber-500" /></td></tr>
-                                ) : solicitudes.map(sol => (
-                                    <tr key={sol.numero_solicitud} className="hover:bg-white/[0.02] transition-colors group">
-                                        <td className="px-8 py-6 font-black text-white italic tracking-tighter text-lg">#{sol.numero_solicitud}</td>
-                                        <td className="px-8 py-6 text-sm text-gray-400">{new Date(sol.fecha_solicitud).toLocaleDateString()}</td>
-                                        <td className="px-8 py-6 text-sm font-medium text-gray-300 max-w-md truncate">{sol.descripcion_solicitud}</td>
-                                        <td className="px-8 py-6">
-                                            <span className={cn(
-                                                "px-4 py-1.5 rounded-full text-[10px] font-black uppercase tracking-widest border",
-                                                sol.estado_actual === 'ACTIVA' ? 'bg-indigo-500/10 border-indigo-500/20 text-indigo-400 shadow-[0_0_10px_rgba(99,102,241,0.1)]' :
-                                                    sol.estado_actual === 'EJECUTADA' ? 'bg-emerald-500/10 border-emerald-500/20 text-emerald-400' :
-                                                        'bg-rose-500/10 border-rose-500/20 text-rose-400'
-                                            )}>
-                                                {sol.estado_actual}
-                                            </span>
+                            <tbody className="divide-y-2 divide-white/10">
+                                {loading ? <TableSkeleton /> : solicitudes.map(sol => (
+                                    <tr key={sol.numero_solicitud} className="hover:bg-white/[0.06] transition-all group">
+                                        <td className="px-10 py-7 font-black text-blue-400 text-lg">#{sol.numero_solicitud}</td>
+                                        <td className="px-10 py-7 text-sm font-bold text-white/80">{new Date(sol.fecha_solicitud).toLocaleDateString()}</td>
+                                        <td className="px-10 py-7 truncate max-w-md italic font-medium text-white/90 relative cursor-default" onMouseEnter={e => setHoveredDescription({ id: sol.numero_solicitud, text: sol.descripcion_solicitud, x: e.clientX, y: e.clientY })} onMouseLeave={() => setHoveredDescription(null)}>
+                                            {sol.descripcion_solicitud}
                                         </td>
-                                        <td className="px-8 py-6 text-right">
-                                            <button onClick={() => handleOpenModal(sol)} className="p-2 bg-white/5 hover:bg-white/10 rounded-xl transition-all border border-white/10 group-hover:border-amber-500/50">
-                                                <Eye className="w-5 h-5" />
+                                        <td className="px-10 py-7 text-xs font-black text-white/70 text-center bg-white/[0.01]">
+                                            <span className="px-4 py-2 bg-white/5 rounded-2xl border border-white/10">{sol.supervisor_alias}</span>
+                                        </td>
+                                        <td className="px-10 py-7 text-center">
+                                            <button onClick={() => setEditingStatusId(sol.numero_solicitud)} className="transition-transform active:scale-90 hover:scale-105">
+                                                {getEstadoBadge(sol.estado_actual)}
                                             </button>
+                                        </td>
+                                        <td className="px-10 py-7 text-right">
+                                            <button onClick={() => handleOpenModal(sol)} className="w-12 h-12 bg-white/5 border-2 border-white/10 rounded-2xl flex items-center justify-center hover:bg-blue-600 hover:border-blue-400 transition-all text-white hover:shadow-2xl hover:shadow-blue-500/40 active:scale-90"><Eye className="w-6 h-6" /></button>
                                         </td>
                                     </tr>
                                 ))}
                             </tbody>
                         </table>
                     </div>
-
-                    {/* Simple Pagination */}
-                    <div className="p-6 bg-black/20 border-t border-white/5 flex items-center justify-between">
-                        <span className="text-[10px] font-black text-gray-500 uppercase tracking-widest pl-2">Total: {totalRecords} Solicitudes</span>
-                        <div className="flex gap-2">
-                            <button disabled={page === 1} onClick={() => setPage(p => p - 1)} className="p-2 bg-white/5 rounded-lg disabled:opacity-20"><ChevronLeft size={20} /></button>
-                            <span className="px-4 py-2 bg-white/5 rounded-lg text-sm font-bold">{page}</span>
-                            <button disabled={page * pageSize >= totalRecords} onClick={() => setPage(p => p + 1)} className="p-2 bg-white/5 rounded-lg disabled:opacity-20"><ChevronRight size={20} /></button>
-                        </div>
-                    </div>
                 </section>
-            </main>
+            </div>
 
-            {/* Modal de Detalle (Glassmorphic) */}
+            {/* Notifications */}
+            {notification && (
+                <div className={cn("fixed bottom-10 right-10 z-[9999] px-8 py-5 rounded-[2rem] shadow-3xl border-2 backdrop-blur-3xl flex items-center gap-5 animate-in slide-in-from-bottom-10",
+                    notification.type === 'success' ? 'bg-emerald-500/20 border-emerald-500/40 text-emerald-300' : 'bg-rose-500/20 border-rose-500/40 text-rose-300'
+                )}>
+                    {notification.type === 'success' ? <CheckCircle className="w-6 h-6" /> : <XCircle className="w-6 h-6" />}
+                    <span className="text-[11px] font-black uppercase tracking-[0.2em]">{notification.message}</span>
+                </div>
+            )}
+
+            {/* Tooltip con más contraste */}
+            {hoveredDescription && (
+                <div className="fixed z-[10000] pointer-events-none p-6 bg-slate-900 border-2 border-white/30 rounded-3xl shadow-4xl max-w-md backdrop-blur-2xl animate-in fade-in zoom-in-95" style={{ left: hoveredDescription.x + 20, top: hoveredDescription.y + 20 }}>
+                    <p className="text-[12px] text-white leading-relaxed italic font-bold">"{hoveredDescription.text}"</p>
+                </div>
+            )}
+
+            {/* Status Quick Picker */}
+            {editingStatusId && (
+                <div className="fixed inset-0 z-[2000] flex items-center justify-center p-6">
+                    <div className="absolute inset-0 bg-black/85 backdrop-blur-xl" onClick={() => setEditingStatusId(null)}></div>
+                    <div className="relative bg-slate-950 border-2 border-white/20 rounded-[3rem] p-10 w-full max-w-sm space-y-5 animate-in zoom-in-95 shadow-4xl">
+                        <p className="text-[11px] font-black text-white/60 uppercase tracking-[0.3em] text-center mb-4">Actualizar Estado STI</p>
+                        {['ACTIVA', 'EJECUTADA', 'CANCELADA'].map(est => (
+                            <button key={est} onClick={async () => {
+                                const { error } = await supabase.from('seguimiento_solicitud').upsert({ numero_solicitud: editingStatusId, estado_actual: est });
+                                if (!error) { showNotification('Estado Sincronizado', 'success'); setEditingStatusId(null); setRealtimeChange(c => c + 1); }
+                            }} className="w-full h-16 rounded-[1.5rem] text-[11px] font-black uppercase tracking-widest border-2 border-white/10 hover:bg-white/10 hover:border-blue-500 transition-all flex items-center justify-center gap-4 text-white hover:text-blue-400 group">
+                                {est === 'ACTIVA' && <PlayCircle className="w-5 h-5 text-indigo-400" />}
+                                {est === 'EJECUTADA' && <CheckCircle className="w-5 h-5 text-emerald-400" />}
+                                {est === 'CANCELADA' && <XCircle className="w-5 h-5 text-rose-400" />}
+                                {est}
+                            </button>
+                        ))}
+                    </div>
+                </div>
+            )}
+
+            {/* Tracking Detail Modal */}
             {isModalOpen && selectedSolicitud && (
-                <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
-                    <div className="absolute inset-0 bg-[#0F172A]/90 backdrop-blur-xl" onClick={() => setIsModalOpen(false)}></div>
-                    <div className="relative w-full max-w-5xl bg-[#1E293B] border border-white/10 rounded-[2.5rem] shadow-3xl overflow-hidden flex flex-col max-h-[90vh] animate-in zoom-in-95 duration-300">
-                        {/* Modal Header */}
-                        <div className="p-8 border-b border-white/5 flex items-center justify-between">
-                            <div className="flex items-center gap-4">
-                                <div className="p-3 bg-amber-500/10 rounded-2xl text-amber-500"><Wrench size={28} /></div>
-                                <div>
-                                    <h2 className="text-2xl font-black text-white italic tracking-tighter">Ticket STI #{selectedSolicitud.numero_solicitud}</h2>
-                                    <p className="text-[10px] font-black text-gray-500 uppercase tracking-widest">Información detallada y bitácora</p>
+                <div className="fixed inset-0 z-[1000] flex items-center justify-center p-6">
+                    <div className="absolute inset-0 bg-black/95 backdrop-blur-2xl" onClick={() => setIsModalOpen(false)}></div>
+                    <div className="relative w-full max-w-6xl bg-slate-950 border-2 border-white/20 rounded-[4rem] shadow-4xl overflow-hidden flex flex-col max-h-[95vh] animate-in zoom-in-95">
+                        <div className="bg-white/5 border-b-2 border-white/10 p-10 flex justify-between items-center">
+                            <div>
+                                <h2 className="text-4xl font-black text-white tracking-tighter">Ticket STI <span className="text-blue-500">#{selectedSolicitud.numero_solicitud}</span></h2>
+                                <p className="text-[11px] font-black text-white/50 uppercase tracking-[0.4em] mt-1">Consola de Seguimiento Técnico</p>
+                            </div>
+                            <button onClick={() => setIsModalOpen(false)} className="w-16 h-16 hover:bg-white/10 rounded-3xl transition-all flex items-center justify-center border-2 border-white/10 text-white/60 hover:text-white hover:border-white/30"><X size={32} /></button>
+                        </div>
+
+                        <div className="p-10 overflow-y-auto custom-scrollbar space-y-10 bg-slate-900/40 flex-1">
+                            <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
+                                <div className="bg-white/[0.05] border-2 border-white/10 p-7 rounded-[2.5rem] shadow-xl">
+                                    <p className="text-[10px] font-black text-white/40 uppercase tracking-widest mb-2">Apertura</p>
+                                    <p className="text-2xl font-black text-white">{new Date(selectedSolicitud.fecha_solicitud).toLocaleDateString()}</p>
+                                </div>
+                                <div className="bg-white/[0.05] border-2 border-white/10 p-7 rounded-[2.5rem] shadow-xl">
+                                    <p className="text-[10px] font-black text-white/40 uppercase tracking-widest mb-2">Estado Actual</p>
+                                    {getEstadoBadge(seguimientoData?.estado_actual)}
+                                </div>
+                                <div className="lg:col-span-2 bg-white/[0.05] border-2 border-white/10 p-7 rounded-[2.5rem] shadow-xl">
+                                    <p className="text-[10px] font-black text-white/40 uppercase tracking-widest mb-2">Responsable Asignado</p>
+                                    <p className="text-2xl font-black text-blue-400 italic tracking-tight">{selectedSolicitud.supervisor_alias}</p>
                                 </div>
                             </div>
-                            <button onClick={() => setIsModalOpen(false)} className="p-2 hover:bg-white/5 rounded-full"><X size={24} /></button>
-                        </div>
 
-                        {/* Modal Content */}
-                        <div className="flex-1 overflow-y-auto p-8 space-y-8 custom-scrollbar">
-                            <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-                                {/* Details Column */}
-                                <div className="lg:col-span-2 space-y-6">
-                                    <div className="bg-indigo-500/5 border border-indigo-500/10 rounded-3xl p-6">
-                                        <h4 className="text-[10px] font-black text-indigo-400 uppercase tracking-widest mb-4 flex items-center gap-2"><Info size={14} />Descripción</h4>
-                                        <p className="text-white font-medium leading-relaxed italic">"{selectedSolicitud.descripcion_solicitud}"</p>
-                                        <div className="grid grid-cols-2 mt-6 gap-4 text-[11px]">
-                                            <div><span className="block text-gray-500 uppercase font-black tracking-tighter">Fecha</span> <span className="text-white font-bold">{new Date(selectedSolicitud.fecha_solicitud).toLocaleDateString()}</span></div>
-                                            <div><span className="block text-gray-500 uppercase font-black tracking-tighter">Supervisor</span> <span className="text-white font-bold">{selectedSolicitud.supervisor_alias}</span></div>
-                                        </div>
-                                    </div>
+                            <div className="bg-blue-600/10 border-2 border-blue-500/30 rounded-[2.5rem] p-10 italic text-blue-50 shadow-inner">
+                                <p className="text-xl font-bold leading-relaxed">"{selectedSolicitud.descripcion_solicitud}"</p>
+                            </div>
 
-                                    {/* Timeline Bitacora */}
-                                    <div className="space-y-4">
-                                        <div className="flex items-center justify-between px-2">
-                                            <h4 className="text-[10px] font-black text-amber-400 uppercase tracking-widest flex items-center gap-2"><History size={14} />Historial de Avance</h4>
-                                            <button onClick={() => setShowNuevoRegistro(!showNuevoRegistro)} className="text-[10px] font-black text-emerald-400 hover:underline">AGREGAR REGISTRO</button>
+                            <div className="grid grid-cols-1 xl:grid-cols-12 gap-10">
+                                <div className="xl:col-span-8 space-y-10">
+                                    <div className="bg-white/[0.03] border-2 border-white/10 rounded-[3rem] p-10 shadow-2xl">
+                                        <div className="flex justify-between items-center mb-8">
+                                            <h5 className="font-black text-white text-[11px] uppercase tracking-[0.3em] flex items-center gap-4"><History className="w-6 h-6 text-indigo-400" /> Bitácora Técnica de Campo</h5>
+                                            <button onClick={() => setShowNuevoRegistro(true)} className="h-12 px-7 bg-indigo-600 text-white rounded-2xl text-[10px] font-black uppercase tracking-widest hover:bg-indigo-500 transition-all flex items-center gap-3 shadow-2xl shadow-indigo-600/30 active:scale-95"><PlusCircle className="w-5 h-5" /> Agregar registro</button>
                                         </div>
 
                                         {showNuevoRegistro && (
-                                            <div className="bg-white/5 border border-emerald-500/20 rounded-[2rem] p-6 space-y-4">
-                                                <input type="date" value={nuevoRegistro.fecha} onChange={e => setNuevoRegistro(p => ({ ...p, fecha: e.target.value }))} className="bg-black/20 border border-white/10 rounded-xl px-4 py-2 text-sm text-white" />
-                                                <textarea value={nuevoRegistro.texto} onChange={e => setNuevoRegistro(p => ({ ...p, texto: e.target.value }))} placeholder="Escriba el detalle del avance..." className="w-full bg-black/20 border border-white/10 rounded-2xl p-4 text-sm text-white min-h-[100px]" />
-                                                <div className="flex justify-end gap-3">
-                                                    <button onClick={() => setShowNuevoRegistro(false)} className="text-xs font-bold text-gray-500">Cancelar</button>
-                                                    <button onClick={async () => {
-                                                        const { error } = await supabase.from('registro_seguimiento_solicitud').insert({ numero_solicitud: selectedSolicitud.numero_solicitud, fecha_registro: nuevoRegistro.fecha, registro_seguimiento: nuevoRegistro.texto });
-                                                        if (!error) { showNotification('Registro guardado', 'success'); setShowNuevoRegistro(false); handleOpenModal(selectedSolicitud); }
-                                                    }} className="bg-emerald-500 text-black px-6 py-2 rounded-xl text-xs font-bold">Guardar</button>
+                                            <div className="bg-white/[0.07] border-2 border-white/20 rounded-[2.5rem] p-8 mb-10 gap-6 flex flex-col animate-in slide-in-from-top-6 shadow-4xl">
+                                                <div className="space-y-2">
+                                                    <label className="text-[10px] font-black text-white/50 uppercase tracking-widest ml-1">Fecha del Movimiento</label>
+                                                    <input type="date" value={nuevoRegistro.fecha} onChange={e => setNuevoRegistro(p => ({ ...p, fecha: e.target.value }))} className="bg-slate-950 border-2 border-white/10 rounded-2xl h-14 px-5 text-sm font-black text-white outline-none focus:border-indigo-500 transition-all" />
                                                 </div>
+                                                <div className="space-y-2">
+                                                    <label className="text-[10px] font-black text-white/50 uppercase tracking-widest ml-1">Detalles Técnicos</label>
+                                                    <textarea value={nuevoRegistro.texto} onChange={e => setNuevoRegistro(p => ({ ...p, texto: e.target.value }))} placeholder="Bitácora de campo..." className="w-full bg-slate-950 border-2 border-white/10 rounded-[2rem] p-6 text-sm min-h-[150px] outline-none focus:border-indigo-500 text-white font-medium italic" />
+                                                </div>
+                                                <div className="flex justify-end gap-5 pt-2"><button onClick={() => setShowNuevoRegistro(false)} className="text-[11px] font-black text-white/40 uppercase tracking-[0.2em] px-6 hover:text-white transition-colors">Descartar</button><button onClick={async () => {
+                                                    const { error } = await supabase.from('registro_seguimiento_solicitud').insert({ numero_solicitud: selectedSolicitud.numero_solicitud, fecha_registro: nuevoRegistro.fecha, registro_seguimiento: nuevoRegistro.texto });
+                                                    if (!error) { showNotification('Movimiento Registrado', 'success'); setShowNuevoRegistro(false); handleOpenModal(selectedSolicitud); }
+                                                }} className="bg-emerald-500 hover:bg-emerald-400 text-black px-10 h-14 rounded-2xl text-[11px] font-black tracking-widest uppercase transition-all shadow-2xl shadow-emerald-500/20 active:scale-95">Sincronizar Bitácora</button></div>
                                             </div>
                                         )}
 
-                                        <div className="space-y-3 max-h-[400px] overflow-y-auto pr-2 custom-scrollbar">
-                                            {registros.map((reg, idx) => (
-                                                <div key={idx} className="bg-white/[0.02] border border-white/5 rounded-2xl p-4 border-l-4 border-l-amber-500/50">
-                                                    <div className="text-[10px] font-black text-amber-500 uppercase tracking-widest mb-1">{new Date(reg.fecha_registro).toLocaleDateString()}</div>
-                                                    <p className="text-sm text-gray-300 italic">"{reg.registro_seguimiento}"</p>
+                                        <div className="space-y-6 max-h-[500px] overflow-y-auto pr-4 custom-scrollbar">
+                                            {registros.length > 0 ? registros.map((reg, i) => (
+                                                <div key={i} className="bg-white/[0.04] border-2 border-white/5 rounded-[2rem] p-8 hover:bg-white/[0.08] hover:border-white/10 transition-all shadow-xl">
+                                                    <div className="flex items-center gap-3 mb-4">
+                                                        <Clock className="w-4 h-4 text-indigo-400" />
+                                                        <p className="text-[11px] font-black text-indigo-400 uppercase tracking-widest">{new Date(reg.fecha_registro).toLocaleDateString()}</p>
+                                                    </div>
+                                                    <p className="text-white text-[15px] leading-relaxed italic font-medium">"{reg.registro_seguimiento}"</p>
                                                 </div>
-                                            ))}
+                                            )) : <div className="text-center py-20 bg-white/[0.02] rounded-[3rem] border-2 border-dashed border-white/10"><p className="text-white/20 font-black uppercase tracking-[0.4em] text-xs">Sin registros de bitácora</p></div>}
+                                        </div>
+                                    </div>
+
+                                    <div className="bg-white/[0.03] border-2 border-white/10 rounded-[3.5rem] overflow-hidden shadow-2xl">
+                                        <div className="p-10 border-b-2 border-white/10 bg-white/5 flex justify-between items-center">
+                                            <h5 className="font-black text-white text-[11px] uppercase tracking-[0.3em] flex items-center gap-4"><Package className="w-6 h-6 text-amber-500" /> Stock de Materiales Aplicados</h5>
+                                            <div className="px-5 h-10 flex items-center bg-amber-500/20 border-2 border-amber-500/40 rounded-full text-[11px] font-black text-amber-400 uppercase tracking-widest shadow-lg shadow-amber-500/10">{articulos.length} Items</div>
+                                        </div>
+                                        <div className="overflow-x-auto">
+                                            <table className="w-full text-sm border-collapse">
+                                                <thead className="bg-white/[0.06]">
+                                                    <tr className="text-[10px] text-white/50 uppercase tracking-[0.2em] font-black">
+                                                        <th className="px-10 py-5 text-left">N° Salida</th>
+                                                        <th className="px-10 py-5 text-left">Insumo Técnico</th>
+                                                        <th className="px-10 py-5 text-right">Cantidad</th>
+                                                    </tr>
+                                                </thead>
+                                                <tbody className="divide-y-2 divide-white/10">
+                                                    {articulos.map((art, i) => (
+                                                        <tr key={i} className="hover:bg-white/[0.05] transition-colors group">
+                                                            <td className="px-10 py-5 text-[11px] font-black text-white/30 group-hover:text-amber-500/60 transition-colors">#{art.id_salida}</td>
+                                                            <td className="px-10 py-5">
+                                                                <p className="font-black text-white text-sm tracking-tight">{art.nombre_articulo}</p>
+                                                                <p className="text-[10px] text-amber-500 font-mono tracking-widest mt-2">{art.codigo_articulo}</p>
+                                                            </td>
+                                                            <td className="px-10 py-5 text-right"><span className="bg-white/10 px-4 py-2 rounded-xl font-black text-blue-400 border border-white/5 shadow-inner">{art.cantidad}</span></td>
+                                                        </tr>
+                                                    ))}
+                                                    {articulos.length === 0 && (
+                                                        <tr><td colSpan={3} className="px-10 py-20 text-center text-white/10 text-[11px] font-black uppercase tracking-[0.4em]">No se registran materiales</td></tr>
+                                                    )}
+                                                </tbody>
+                                            </table>
                                         </div>
                                     </div>
                                 </div>
 
-                                {/* Sidebar Column */}
-                                <div className="space-y-6">
-                                    <div className="bg-white/[0.02] border border-white/10 rounded-[2rem] p-6 space-y-6">
-                                        <h4 className="text-[10px] font-black text-gray-500 uppercase tracking-widest flex items-center gap-2"><Clock size={14} />Gestión de Estado</h4>
-                                        <div className="space-y-4">
-                                            <div className="space-y-1">
-                                                <label className="text-[9px] font-black text-gray-600 uppercase ml-2">Estado Actual</label>
-                                                <select
-                                                    value={seguimientoData?.estado_actual || ''}
-                                                    onChange={e => setSeguimientoData(p => p ? { ...p, estado_actual: e.target.value } : null)}
-                                                    className="w-full bg-black/40 border border-white/10 rounded-2xl py-3 px-4 text-sm font-bold italic"
-                                                >
-                                                    <option value="ACTIVA">ACTIVA</option>
-                                                    <option value="EJECUTADA">EJECUTADA</option>
-                                                    <option value="CANCELADA">CANCELADA</option>
-                                                </select>
-                                            </div>
-                                            <div className="grid grid-cols-1 gap-4">
-                                                <div className="space-y-1">
-                                                    <label className="text-[9px] font-black text-gray-600 uppercase ml-2">Inicio</label>
-                                                    <input type="date" value={seguimientoData?.fecha_inicio || ''} onChange={e => setSeguimientoData(p => p ? { ...p, fecha_inicio: e.target.value } : null)} className="w-full bg-black/40 border border-white/10 rounded-2xl py-2 px-4 text-xs" />
-                                                </div>
-                                                <div className="space-y-1">
-                                                    <label className="text-[9px] font-black text-gray-600 uppercase ml-2">Fin</label>
-                                                    <input type="date" value={seguimientoData?.fecha_finalizacion || ''} onChange={e => setSeguimientoData(p => p ? { ...p, fecha_finalizacion: e.target.value } : null)} className="w-full bg-black/40 border border-white/10 rounded-2xl py-2 px-4 text-xs" />
+                                <div className="xl:col-span-4 space-y-8">
+                                    <div className="bg-white/[0.04] border-2 border-white/20 rounded-[3.5rem] p-10 space-y-8 shadow-4xl group">
+                                        <h6 className="text-[11px] font-black text-white/80 uppercase tracking-[0.3em] italic border-b-2 border-white/10 pb-6 mb-2">Control Maestro STI</h6>
+                                        <div className="space-y-6">
+                                            <div className="space-y-3">
+                                                <label className="text-[11px] text-white/60 font-black uppercase tracking-widest ml-2 flex items-center gap-2">
+                                                    <PlayCircle className="w-4 h-4 text-blue-500" /> Estado del Ticket
+                                                </label>
+                                                <div className="relative">
+                                                    <select key={seguimientoData?.estado_actual} defaultValue={seguimientoData?.estado_actual || 'ACTIVA'} onChange={e => setSeguimientoData(p => p ? { ...p, estado_actual: e.target.value } : null)} className="w-full bg-slate-950 border-2 border-white/10 rounded-[1.5rem] h-16 px-6 text-sm font-black text-white outline-none focus:border-blue-500 focus:bg-slate-900 transition-all appearance-none cursor-pointer shadow-lg">
+                                                        <option value="ACTIVA">🚀 ACTIVA</option>
+                                                        <option value="EJECUTADA">🎉 FINALIZADA</option>
+                                                        <option value="CANCELADA">🚫 CANCELADA</option>
+                                                    </select>
                                                 </div>
                                             </div>
-                                            <button onClick={async () => {
-                                                const { error } = await supabase.from('seguimiento_solicitud').update({
-                                                    estado_actual: seguimientoData?.estado_actual,
-                                                    fecha_inicio: seguimientoData?.fecha_inicio || null,
-                                                    fecha_finalizacion: seguimientoData?.fecha_finalizacion || null
-                                                }).eq('numero_solicitud', selectedSolicitud.numero_solicitud);
-                                                if (!error) { showNotification('Actualizado', 'success'); setIsModalOpen(false); fetchSolicitudes(); loadStats(); }
-                                            }} className="w-full py-4 bg-amber-500 text-black font-black text-[10px] uppercase tracking-[0.2em] rounded-2xl shadow-lg mt-2">GUARDAR CAMBIOS</button>
+                                            <div className="space-y-3">
+                                                <label className="text-[11px] text-white/80 font-black uppercase tracking-widest ml-2 flex items-center gap-2">
+                                                    <Calendar className="w-5 h-5 text-indigo-400" /> F. Inicio de Labores
+                                                </label>
+                                                <input type="date" value={seguimientoData?.fecha_inicio || ''} onChange={e => setSeguimientoData(p => p ? { ...p, fecha_inicio: e.target.value } : null)} className="w-full bg-slate-800 border-2 border-white/30 rounded-[1.5rem] h-16 px-6 text-sm font-black text-white focus:border-indigo-500 focus:bg-slate-700 outline-none transition-all shadow-lg custom-date-input" />
+                                            </div>
+                                            <div className="space-y-3">
+                                                <label className="text-[11px] text-white/80 font-black uppercase tracking-widest ml-2 flex items-center gap-2">
+                                                    <Calendar className="w-5 h-5 text-emerald-400" /> F. Cierre STI
+                                                </label>
+                                                <input type="date" value={seguimientoData?.fecha_finalizacion || ''} onChange={e => setSeguimientoData(p => p ? { ...p, fecha_finalizacion: e.target.value } : null)} className="w-full bg-slate-800 border-2 border-white/30 rounded-[1.5rem] h-16 px-6 text-sm font-black text-white focus:border-emerald-500 focus:bg-slate-700 outline-none transition-all shadow-lg custom-date-input" />
+                                            </div>
+                                            <div className="pt-6">
+                                                <button onClick={async () => {
+                                                    if (seguimientoData?.fecha_inicio && seguimientoData?.fecha_finalizacion && new Date(seguimientoData.fecha_finalizacion) < new Date(seguimientoData.fecha_inicio)) {
+                                                        showNotification('Error cronología de fechas', 'error'); return;
+                                                    }
+                                                    const { error } = await supabase.from('seguimiento_solicitud').upsert({ numero_solicitud: selectedSolicitud.numero_solicitud, estado_actual: seguimientoData?.estado_actual, fecha_inicio: seguimientoData?.fecha_inicio || null, fecha_finalizacion: seguimientoData?.fecha_finalizacion || null });
+                                                    if (!error) { showNotification('Sincronización Exitosa', 'success'); setIsModalOpen(false); fetchSolicitudes(); loadStats(); }
+                                                }} className="w-full h-20 bg-blue-600 hover:bg-blue-500 text-white font-black text-[13px] uppercase tracking-[0.2em] rounded-[1.5rem] shadow-4xl transition-all shadow-blue-600/20 active:scale-95 flex items-center justify-center gap-4">
+                                                    <CheckCircle className="w-6 h-6" /> Guardar Cambios
+                                                </button>
+                                            </div>
                                         </div>
                                     </div>
 
-                                    {/* Articles */}
-                                    <div className="bg-black/20 border border-white/5 rounded-[2rem] p-6 space-y-4">
-                                        <h4 className="text-[10px] font-black text-gray-500 uppercase tracking-widest flex items-center gap-2"><Package size={14} />Materiales ({articulos.length})</h4>
-                                        <div className="space-y-2 max-h-[200px] overflow-y-auto custom-scrollbar">
-                                            {articulos.map((art, idx) => (
-                                                <div key={idx} className="bg-white/5 p-3 rounded-xl flex justify-between items-center text-[11px] group hover:bg-white/10">
-                                                    <div className="truncate"><span className="block font-black text-white italic">{art.nombre_articulo}</span> <span className="text-gray-500">{art.codigo_articulo}</span></div>
-                                                    <div className="font-black text-amber-500 text-sm italic">{art.cantidad}</div>
-                                                </div>
-                                            ))}
-                                            {articulos.length === 0 && <p className="text-center text-[9px] font-black text-gray-700 py-4 uppercase">Sin materiales vinculados</p>}
+                                    <div className="bg-gradient-to-br from-indigo-900/20 to-blue-900/20 border-2 border-white/10 rounded-[3rem] p-10 text-center shadow-3xl">
+                                        <div className="w-14 h-14 bg-indigo-500/20 rounded-2xl flex items-center justify-center mx-auto mb-6 transform -rotate-12 border border-indigo-500/30">
+                                            <History className="w-7 h-7 text-indigo-400" />
                                         </div>
+                                        <p className="text-[11px] font-black text-indigo-300 uppercase tracking-[0.3em] mb-3">Protocolo de Cierre</p>
+                                        <p className="text-sm text-white/50 leading-relaxed italic font-medium">Verifique que todos los materiales estén debidamente asociados y la bitácora técnica refleje fielmente las labores ejecutadas antes de finalizar el ticket.</p>
                                     </div>
                                 </div>
                             </div>
+                        </div>
+
+                        <div className="p-10 border-t-2 border-white/10 bg-black/50 flex justify-end shrink-0">
+                            <button onClick={() => setIsModalOpen(false)} className="h-16 px-12 border-2 border-white/20 bg-white/10 hover:bg-white/20 hover:border-white/40 rounded-[1.5rem] text-[12px] font-black uppercase tracking-[0.2em] text-white transition-all active:scale-95 shadow-2xl">Cerrar Consola</button>
                         </div>
                     </div>
                 </div>
             )}
 
-            <style>{`
-                .custom-scrollbar::-webkit-scrollbar { width: 4px; }
-                .custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
-                .custom-scrollbar::-webkit-scrollbar-thumb { background: rgba(255, 255, 255, 0.05); border-radius: 10px; }
-                .custom-scrollbar::-webkit-scrollbar-thumb:hover { background: rgba(255, 255, 255, 0.1); }
-            `}</style>
+            <style>{`.custom-scrollbar::-webkit-scrollbar { width: 8px; } .custom-scrollbar::-webkit-scrollbar-track { background: rgba(0,0,0,0.2); border-radius: 10px; } .custom-scrollbar::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.1); border-radius: 10px; border: 2px solid rgba(0,0,0,0.2); } .custom-scrollbar::-webkit-scrollbar-thumb:hover { background: rgba(255,255,255,0.2); } .custom-date-input::-webkit-calendar-picker-indicator { filter: invert(1); cursor: pointer; opacity: 0.8; transition: opacity 0.2s; } .custom-date-input::-webkit-calendar-picker-indicator:hover { opacity: 1; }`}</style>
         </div>
     );
 }

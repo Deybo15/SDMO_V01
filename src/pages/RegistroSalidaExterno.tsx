@@ -338,6 +338,14 @@ export default function RegistroSalidaExterno() {
 
             if (detailsError) throw detailsError;
 
+            // 3. Finalize automatically to trigger MAKE
+            const { error: finalError } = await supabase
+                .from('salida_articulo_08')
+                .update({ finalizada: true })
+                .eq('id_salida', newId);
+
+            if (finalError) throw finalError;
+
             showAlert(`Salida registrada (SA-${newId.toString().padStart(4, '0')})`, 'success');
             setFinalizado(true);
 
@@ -562,18 +570,20 @@ export default function RegistroSalidaExterno() {
                                         className="w-full py-5 bg-white text-teal-700 font-black text-xl rounded-2xl shadow-2xl hover:scale-[1.02] active:scale-95 transition-all flex items-center justify-center gap-3 disabled:opacity-50 uppercase tracking-tight"
                                     >
                                         {loading ? <Loader2 className="w-7 h-7 animate-spin" /> : <Save className="w-7 h-7" />}
-                                        Guardar Salida
+                                        Procesar Salida
                                     </button>
                                 ) : (
                                     <button
-                                        onClick={handleFinalizar}
+                                        onClick={() => window.location.reload()}
                                         disabled={loading}
                                         className="w-full py-5 bg-emerald-400 text-emerald-950 font-black text-xl rounded-2xl shadow-2xl hover:scale-[1.02] active:scale-95 transition-all flex items-center justify-center gap-3 disabled:opacity-50 uppercase tracking-tight"
                                     >
-                                        {loading ? <Loader2 className="w-7 h-7 animate-spin" /> : <Printer className="w-7 h-7" />}
-                                        Imprimir
+                                        <Save className="w-7 h-7" />
+                                        Nueva Salida
                                     </button>
                                 )}
+
+
                             </div>
                         </div>
 

@@ -308,6 +308,14 @@ export default function SalidaArticulosModal({ isOpen, onClose, solicitudId }: S
 
             if (detailsError) throw detailsError;
 
+            // 3. Update Header (finalizada: true) automatically for MAKE
+            const { error: finalError } = await supabase
+                .from('salida_articulo_08')
+                .update({ finalizada: true })
+                .eq('id_salida', newId);
+
+            if (finalError) throw finalError;
+
             showNotify(`Salida registrada exitosamente con folio SA-${newId.toString().padStart(4, '0')}`, 'success');
             setStep('success');
 
@@ -319,28 +327,11 @@ export default function SalidaArticulosModal({ isOpen, onClose, solicitudId }: S
         }
     };
 
-    const handleFinalizar = async () => {
-        if (!ultimoIdSalida) return;
-        setLoading(true);
-        try {
-            const { error } = await supabase
-                .from('salida_articulo_08')
-                .update({ finalizada: true })
-                .eq('id_salida', ultimoIdSalida);
-
-            if (error) throw error;
-
-            showNotify('Salida finalizada correctamente', 'success');
-            setTimeout(() => {
-                onClose();
-                navigate('/otras-solicitudes');
-            }, 1500);
-        } catch (error: any) {
-            showNotify('Error al finalizar: ' + error.message, 'error');
-        } finally {
-            setLoading(false);
-        }
+    const handleFinalizar = () => {
+        onClose();
+        navigate('/otras-solicitudes');
     };
+
 
     if (!isOpen) return null;
 
@@ -599,12 +590,13 @@ export default function SalidaArticulosModal({ isOpen, onClose, solicitudId }: S
                                 disabled={loading}
                                 className="px-6 py-2 rounded-xl bg-gradient-to-r from-emerald-600 to-emerald-500 hover:from-emerald-500 hover:to-emerald-400 text-white font-medium shadow-lg shadow-emerald-500/20 flex items-center gap-2 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
                             >
-                                {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Printer className="w-4 h-4" />}
-                                Imprimir y Finalizar
+                                <Save className="w-4 h-4" />
+                                Nueva Salida
                             </button>
                         )}
                     </div>
                 </div>
+
 
                 {/* Modals Overlays */}
 
@@ -678,86 +670,88 @@ export default function SalidaArticulosModal({ isOpen, onClose, solicitudId }: S
             )}
 
             {/* Articulo Search Modal */}
-            {showArticuloModal && createPortal(
-                <div className="fixed inset-0 z-[99999] flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm">
-                    <div className="bg-[#1e2235] w-full max-w-3xl rounded-xl border border-white/10 shadow-2xl flex flex-col max-h-[85vh]">
-                        <div className="p-4 border-b border-white/10 flex justify-between items-center bg-blue-900/20">
-                            <h3 className="text-lg font-bold text-white">Buscar Artículo</h3>
-                            <button onClick={() => setShowArticuloModal(false)} className="text-gray-400 hover:text-white">
-                                <X className="w-5 h-5" />
-                            </button>
-                        </div>
-                        <div className="p-4 border-b border-white/10">
-                            <div className="relative">
-                                <Search className="absolute left-3 top-2.5 w-4 h-4 text-gray-500" />
-                                <input
-                                    type="text"
-                                    placeholder="Buscar por nombre o código..."
-                                    value={articuloSearchTerm}
-                                    onChange={(e) => setArticuloSearchTerm(e.target.value)}
-                                    className="w-full bg-[#1a1d29] border border-gray-700 rounded-lg pl-9 pr-4 py-2 text-sm text-white focus:border-blue-500 outline-none"
-                                    autoFocus
-                                />
+            {
+                showArticuloModal && createPortal(
+                    <div className="fixed inset-0 z-[99999] flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm">
+                        <div className="bg-[#1e2235] w-full max-w-3xl rounded-xl border border-white/10 shadow-2xl flex flex-col max-h-[85vh]">
+                            <div className="p-4 border-b border-white/10 flex justify-between items-center bg-blue-900/20">
+                                <h3 className="text-lg font-bold text-white">Buscar Artículo</h3>
+                                <button onClick={() => setShowArticuloModal(false)} className="text-gray-400 hover:text-white">
+                                    <X className="w-5 h-5" />
+                                </button>
+                            </div>
+                            <div className="p-4 border-b border-white/10">
+                                <div className="relative">
+                                    <Search className="absolute left-3 top-2.5 w-4 h-4 text-gray-500" />
+                                    <input
+                                        type="text"
+                                        placeholder="Buscar por nombre o código..."
+                                        value={articuloSearchTerm}
+                                        onChange={(e) => setArticuloSearchTerm(e.target.value)}
+                                        className="w-full bg-[#1a1d29] border border-gray-700 rounded-lg pl-9 pr-4 py-2 text-sm text-white focus:border-blue-500 outline-none"
+                                        autoFocus
+                                    />
+                                </div>
+                            </div>
+                            <div className="flex-1 overflow-y-auto p-2">
+                                {inventoryLoading && inventoryPage === 1 ? (
+                                    <div className="flex justify-center py-8">
+                                        <Loader2 className="w-8 h-8 animate-spin text-blue-500" />
+                                    </div>
+                                ) : (
+                                    <div className="space-y-2">
+                                        {inventario.map((item) => (
+                                            <div
+                                                key={item.codigo_articulo}
+                                                onClick={() => handleSelectArticulo(item)}
+                                                className="p-3 rounded-lg bg-white/5 hover:bg-white/10 cursor-pointer border border-transparent hover:border-blue-500/30 transition-all flex items-center gap-3"
+                                            >
+                                                <img
+                                                    src={item.imagen_url || 'https://via.placeholder.com/50'}
+                                                    alt={item.nombre_articulo}
+                                                    className="w-10 h-10 rounded bg-gray-800 object-cover hover:scale-110 transition-transform"
+                                                    title="Doble clic para ampliar"
+                                                    onClick={(e) => e.stopPropagation()}
+                                                    onDoubleClick={(e) => {
+                                                        e.stopPropagation();
+                                                        if (item.imagen_url) setPreviewImage(item.imagen_url);
+                                                    }}
+                                                />
+                                                <div className="flex-1">
+                                                    <h4 className="text-sm font-medium text-white">{item.nombre_articulo}</h4>
+                                                    <p className="text-xs text-gray-400">{item.codigo_articulo}</p>
+                                                </div>
+                                                <div className="text-right">
+                                                    <span className="block text-sm font-bold text-emerald-400">{item.cantidad_disponible}</span>
+                                                    <span className="text-xs text-gray-500">{item.unidad}</span>
+                                                </div>
+                                            </div>
+                                        ))}
+                                        {inventario.length === 0 && !inventoryLoading && (
+                                            <div className="text-center py-8 text-gray-500">
+                                                No se encontraron artículos
+                                            </div>
+                                        )}
+                                        {hasMoreInventory && (
+                                            <div className="text-center py-2">
+                                                <button
+                                                    onClick={handleLoadMoreInventory}
+                                                    disabled={inventoryLoading}
+                                                    className="text-xs text-blue-400 hover:text-blue-300"
+                                                >
+                                                    {inventoryLoading ? 'Cargando...' : 'Cargar más resultados'}
+                                                </button>
+                                            </div>
+                                        )}
+                                    </div>
+                                )}
                             </div>
                         </div>
-                        <div className="flex-1 overflow-y-auto p-2">
-                            {inventoryLoading && inventoryPage === 1 ? (
-                                <div className="flex justify-center py-8">
-                                    <Loader2 className="w-8 h-8 animate-spin text-blue-500" />
-                                </div>
-                            ) : (
-                                <div className="space-y-2">
-                                    {inventario.map((item) => (
-                                        <div
-                                            key={item.codigo_articulo}
-                                            onClick={() => handleSelectArticulo(item)}
-                                            className="p-3 rounded-lg bg-white/5 hover:bg-white/10 cursor-pointer border border-transparent hover:border-blue-500/30 transition-all flex items-center gap-3"
-                                        >
-                                            <img
-                                                src={item.imagen_url || 'https://via.placeholder.com/50'}
-                                                alt={item.nombre_articulo}
-                                                className="w-10 h-10 rounded bg-gray-800 object-cover hover:scale-110 transition-transform"
-                                                title="Doble clic para ampliar"
-                                                onClick={(e) => e.stopPropagation()}
-                                                onDoubleClick={(e) => {
-                                                    e.stopPropagation();
-                                                    if (item.imagen_url) setPreviewImage(item.imagen_url);
-                                                }}
-                                            />
-                                            <div className="flex-1">
-                                                <h4 className="text-sm font-medium text-white">{item.nombre_articulo}</h4>
-                                                <p className="text-xs text-gray-400">{item.codigo_articulo}</p>
-                                            </div>
-                                            <div className="text-right">
-                                                <span className="block text-sm font-bold text-emerald-400">{item.cantidad_disponible}</span>
-                                                <span className="text-xs text-gray-500">{item.unidad}</span>
-                                            </div>
-                                        </div>
-                                    ))}
-                                    {inventario.length === 0 && !inventoryLoading && (
-                                        <div className="text-center py-8 text-gray-500">
-                                            No se encontraron artículos
-                                        </div>
-                                    )}
-                                    {hasMoreInventory && (
-                                        <div className="text-center py-2">
-                                            <button
-                                                onClick={handleLoadMoreInventory}
-                                                disabled={inventoryLoading}
-                                                className="text-xs text-blue-400 hover:text-blue-300"
-                                            >
-                                                {inventoryLoading ? 'Cargando...' : 'Cargar más resultados'}
-                                            </button>
-                                        </div>
-                                    )}
-                                </div>
-                            )}
-                        </div>
-                    </div>
-                </div>,
-                document.body
-            )}
-        </div>,
+                    </div>,
+                    document.body
+                )
+            }
+        </div >,
         document.body
     );
 }

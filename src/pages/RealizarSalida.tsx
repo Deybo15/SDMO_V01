@@ -4,7 +4,6 @@ import { useNavigate, useSearchParams } from 'react-router-dom';
 import {
     Box,
     UserCircle,
-    PlusCircle,
     Save,
     Printer,
     CheckCircle,
@@ -15,6 +14,7 @@ import {
     MessageSquare,
     ChevronRight
 } from 'lucide-react';
+
 
 
 
@@ -250,9 +250,7 @@ export default function RealizarSalida() {
                 id_salida: salida.id_salida,
                 articulo: item.codigo_articulo,
                 cantidad: Number(item.cantidad),
-                precio_unitario: Number(item.precio_unitario),
-                subtotal: Number(item.cantidad) * Number(item.precio_unitario),
-                registro_salida: salida.id_salida
+                precio_unitario: Number(item.precio_unitario)
             }));
 
             const { error: errorDetalles } = await supabase
@@ -261,7 +259,15 @@ export default function RealizarSalida() {
 
             if (errorDetalles) throw errorDetalles;
 
-            // 4. Success Actions
+            // 4. Update Header (finalizada: true) to trigger MAKE workflow
+            const { error: errorFinalizar } = await supabase
+                .from('salida_articulo_08')
+                .update({ finalizada: true })
+                .eq('id_salida', salida.id_salida);
+
+            if (errorFinalizar) throw errorFinalizar;
+
+            // 5. Success Actions
             setUltimoIdSalida(salida.id_salida);
             setFinalizado(true);
             showAlert('¡Salida registrada exitosamente!', 'success');

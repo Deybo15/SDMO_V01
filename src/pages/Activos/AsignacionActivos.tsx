@@ -215,7 +215,7 @@ export default function AsignacionActivos() {
 
     // --- Logic for Salida ---
 
-    const handleSelectColaborador = (colaborador: Colaborador) => {
+    const handleSelectColaborador = (colaborador: any) => {
         setSalidaForm(prev => ({
             ...prev,
             usuario_de_activo: colaborador.identificacion,
