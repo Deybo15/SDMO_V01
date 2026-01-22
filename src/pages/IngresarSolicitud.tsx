@@ -100,7 +100,7 @@ export default function IngresarSolicitud() {
                     supabase.from("area_mantenimiento_20").select("id_area_mantenimiento, descripcion_area"),
                     supabase.from("instalaciones_municipales_16").select("id_instalacion_municipal, instalacion_municipal"),
                     supabase.from("colaboradores_06").select("identificacion, alias").eq("supervisor", true).eq("condicion_laboral", false),
-                    supabase.from("colaboradores_06").select("identificacion, alias").eq("autorizado", true),
+                    supabase.from("colaboradores_06").select("identificacion, alias, correo_colaborador").eq("autorizado", true),
                     supabase.from("cliente_interno_15").select("id_cliente, nombre")
                 ]);
 
@@ -115,6 +115,18 @@ export default function IngresarSolicitud() {
                     profesionales: mapData(profesionales.data || [], 'identificacion', 'alias'),
                     clientes: mapData(clientes.data || [], 'id_cliente', 'nombre')
                 });
+
+                const { data: { user } } = await supabase.auth.getUser();
+                const userEmail = user?.email;
+
+                if (userEmail) {
+                    const matched = profesionales.data?.find((c: any) =>
+                        c.correo_colaborador?.toLowerCase() === userEmail.toLowerCase()
+                    );
+                    if (matched) {
+                        setFormData(prev => ({ ...prev, profesional: matched.identificacion }));
+                    }
+                }
             } catch (error) {
                 console.error("Unexpected error loading catalogs:", error);
                 showNotification("Error al cargar algunos datos de los catálogos", "error");
@@ -567,7 +579,6 @@ export default function IngresarSolicitud() {
                 title={searchModal.title}
                 options={searchModal.type ? catalogs[searchModal.type] : []}
                 onSelect={handleSelectOption}
-                themeColor={themeColor}
             />
 
             <style>{`

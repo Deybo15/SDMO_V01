@@ -14,8 +14,11 @@ import {
     AlertTriangle,
     Info,
     Loader2,
-    ArrowLeft
+    ArrowLeft,
+    ChevronRight,
+    Edit
 } from 'lucide-react';
+import { cn } from '../lib/utils';
 
 import { PageHeader } from '../components/ui/PageHeader';
 import { TransactionTable } from '../components/ui/TransactionTable';
@@ -110,7 +113,7 @@ export default function RegistroSalidaExterno() {
                 // 3. Auto-populate Profesional Responsable based on email
                 if (userEmail) {
                     const matchedUser = mappedData.find(c =>
-                        c.correo_colaborador?.toLowerCase() === userEmail.toLowerCase()
+                        c.correo_colaborador?.toLowerCase() === userEmail.toLowerCase() && c.autorizado
                     );
                     if (matchedUser) {
                         setAutoriza(matchedUser.identificacion);
@@ -374,175 +377,216 @@ export default function RegistroSalidaExterno() {
         i.codigo_articulo.toLowerCase().includes(articuloTermino.toLowerCase())
     );
 
+    // Component for Interactive Selector Cards
+    const SelectorCard = ({
+        label,
+        value,
+        displayValue,
+        onOpen,
+        icon: Icon,
+        required = false,
+        disabled = false
+    }: any) => (
+        <div className="space-y-3">
+            <label className={cn(
+                "text-[10px] font-black uppercase tracking-widest ml-1 block opacity-60",
+                required && "after:content-['*'] after:text-teal-500 after:ml-1"
+            )}>
+                {label}
+            </label>
+            <div
+                onClick={!disabled ? onOpen : undefined}
+                className={cn(
+                    "group relative bg-[#1e2235]/40 border border-white/10 rounded-2xl p-4 transition-all flex items-center justify-between shadow-inner",
+                    !disabled ? "cursor-pointer hover:bg-white/5 hover:border-teal-500/30" : "cursor-not-allowed opacity-75"
+                )}
+            >
+                <div className="flex items-center gap-4 min-w-0">
+                    <div className="w-10 h-10 rounded-xl bg-teal-500/10 flex items-center justify-center shrink-0 border border-teal-500/10">
+                        <Icon className={cn(
+                            "w-5 h-5 text-teal-400 transition-transform",
+                            !disabled && "group-hover:scale-110"
+                        )} />
+                    </div>
+                    <div className="min-w-0">
+                        <span className={cn(
+                            "block truncate font-bold tracking-tight",
+                            value ? 'text-white' : 'text-gray-600 italic text-sm'
+                        )}>
+                            {displayValue || 'Seleccionar...'}
+                        </span>
+                        {value && (
+                            <div className="flex items-center gap-1.5 mt-0.5">
+                                <CheckCircle className="w-3 h-3 text-teal-500" />
+                                <span className="text-[9px] text-teal-500/50 font-black uppercase tracking-tighter">Sincronizado</span>
+                            </div>
+                        )}
+                    </div>
+                </div>
+                {!disabled && <ChevronRight className="w-5 h-5 text-gray-700 group-hover:translate-x-1 transition-transform shrink-0" />}
+            </div>
+        </div>
+    );
+
     return (
-        <div className="min-h-screen bg-[#0a0a0a] text-white font-sans p-4 md:p-8 relative overflow-hidden">
-            {/* Background Effects */}
-            <div className="fixed inset-0 pointer-events-none">
-                <div className="absolute top-[-10%] left-[-10%] w-[40%] h-[40%] bg-teal-500/10 rounded-full blur-[120px] animate-pulse" />
-                <div className="absolute bottom-[-10%] right-[-10%] w-[40%] h-[40%] bg-cyan-500/10 rounded-full blur-[120px] animate-pulse" />
+        <div className="min-h-screen bg-[#0f111a] p-4 md:p-8 relative overflow-x-hidden">
+            {/* Ambient Background Elements */}
+            <div className="fixed inset-0 pointer-events-none overflow-hidden">
+                <div className="absolute top-[10%] left-[10%] w-[500px] h-[500px] bg-teal-500/10 rounded-full blur-[120px] animate-pulse" />
+                <div className="absolute bottom-[10%] right-[10%] w-[400px] h-[400px] bg-cyan-600/5 rounded-full blur-[100px]" />
             </div>
 
             {/* Alert/Feedback Toast */}
             {feedback && (
-                <div className="fixed top-6 left-1/2 transform -translate-x-1/2 z-[100] animate-in slide-in-from-top-4 duration-300">
-                    <div className={`px-6 py-4 rounded-xl shadow-2xl border backdrop-blur-xl flex items-center gap-3 ${feedback.type === 'success' ? 'bg-green-500/10 border-green-500/30 text-green-400' :
-                        feedback.type === 'error' ? 'bg-red-500/10 border-red-500/30 text-red-400' :
-                            feedback.type === 'warning' ? 'bg-amber-500/10 border-amber-500/30 text-amber-400' :
-                                'bg-blue-500/10 border-blue-500/30 text-blue-400'
+                <div className="fixed top-8 right-8 z-[100] animate-in slide-in-from-top-4 duration-300">
+                    <div className={`px-6 py-4 rounded-2xl shadow-2xl border backdrop-blur-xl flex items-center gap-3 ${feedback.type === 'success' ? 'bg-emerald-500/20 border-emerald-500/50 text-emerald-400' :
+                        feedback.type === 'error' ? 'bg-rose-500/20 border-rose-500/50 text-rose-400' :
+                            feedback.type === 'warning' ? 'bg-amber-500/20 border-amber-500/50 text-amber-400' :
+                                'bg-blue-500/20 border-blue-500/50 text-blue-400'
                         }`}>
                         {feedback.type === 'success' ? <CheckCircle className="w-5 h-5" /> :
                             feedback.type === 'error' ? <AlertTriangle className="w-5 h-5" /> :
                                 <Info className="w-5 h-5" />}
-                        <span className="font-medium">{feedback.message}</span>
-                        <button onClick={() => setFeedback(null)} className="ml-2 hover:text-white transition-colors">
-                            <X className="w-4 h-4" />
-                        </button>
+                        <span className="font-bold">{feedback.message}</span>
                     </div>
                 </div>
             )}
 
-            <div className="max-w-6xl mx-auto relative z-10">
+            <div className="max-w-6xl mx-auto space-y-8 relative z-10">
                 <PageHeader
-                    title="REGISTRO DE SALIDA EXTERNO"
+                    title="Salida al Cliente"
                     icon={Box}
                     themeColor="teal"
                 />
 
-                <div className="flex items-center gap-2 text-gray-400 font-medium mt-2 mb-6 px-1">
-                    <Calendar className="w-4 h-4 text-teal-400" />
+                <div className="flex items-center gap-3 text-teal-500/60 font-black uppercase tracking-widest text-[10px] bg-teal-500/5 w-fit px-4 py-2 rounded-full border border-teal-500/10">
+                    <Calendar className="w-4 h-4" />
                     {fechaActual}
                 </div>
 
-                <form onSubmit={handleSubmit} className="space-y-8">
-                    {/* Section 1: Info (Premium Selectors) */}
-                    <div className="bg-white/5 border border-white/10 rounded-2xl p-6 md:p-8 backdrop-blur-xl shadow-2xl">
-                        <div className="flex items-center gap-3 mb-8 border-b border-white/10 pb-4">
-                            <div className="w-10 h-10 rounded-xl bg-teal-500/20 flex items-center justify-center">
-                                <User className="w-6 h-6 text-teal-400" />
+                <form onSubmit={handleSubmit} className="grid grid-cols-1 lg:grid-cols-3 gap-8 items-start">
+                    {/* Main Form Section */}
+                    <div className="lg:col-span-2 space-y-8">
+                        <div className="bg-[#1e2235] border border-white/10 rounded-[2.5rem] shadow-2xl p-6 md:p-8 space-y-8">
+                            <div className="flex items-center gap-3 border-b border-white/5 pb-6">
+                                <Edit className="w-5 h-5 text-teal-400" />
+                                <h3 className="text-xl font-black text-white uppercase tracking-tight italic">Detalles de la Transacción</h3>
                             </div>
-                            <h3 className="text-xl font-bold text-teal-400">Información de Responsables</h3>
-                        </div>
 
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mb-8">
-                            {/* Responsable Selector */}
-                            <div className="space-y-2">
-                                <label className="block text-sm font-medium text-gray-400 mb-2 ml-1">
-                                    Profesional Responsable <span className="text-red-400">*</span>
-                                </label>
-                                <div
-                                    className="w-full bg-black/20 border border-white/10 rounded-xl py-4 px-5 text-white cursor-not-allowed flex items-center justify-between group shadow-inner opacity-75"
-                                    title="El responsable se asigna automáticamente según su usuario"
-                                >
-                                    <span className={autoriza ? 'text-teal-400 font-bold' : 'text-gray-500 italic'}>
-                                        {autoriza
-                                            ? colaboradores.todos.find(c => c.identificacion === autoriza)?.alias || colaboradores.todos.find(c => c.identificacion === autoriza)?.colaborador
-                                            : 'Usuario no identificado'}
-                                    </span>
-                                    <User className="w-5 h-5 text-teal-400/50" />
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                                <SelectorCard
+                                    label="Profesional Responsable"
+                                    value={autoriza}
+                                    displayValue={colaboradores.todos.find(c => c.identificacion === autoriza)?.alias || colaboradores.todos.find(c => c.identificacion === autoriza)?.colaborador}
+                                    icon={User}
+                                    disabled
+                                    required
+                                />
+
+                                <SelectorCard
+                                    label="Entregado a (Retira)"
+                                    value={retira}
+                                    displayValue={colaboradores.todos.find((c: any) => c.identificacion === retira)?.colaborador}
+                                    onOpen={() => handleOpenBusqueda('retira')}
+                                    icon={User}
+                                    required
+                                />
+
+                                <div className="md:col-span-2 space-y-3">
+                                    <label className="text-[10px] font-black uppercase tracking-widest ml-1 block opacity-60">
+                                        Número de Solicitud
+                                    </label>
+                                    <div className="relative group/input">
+                                        <div className="absolute left-5 top-1/2 -translate-y-1/2 text-teal-400 font-black italic">#</div>
+                                        <input
+                                            type="text"
+                                            value={numeroSolicitud}
+                                            readOnly
+                                            className="w-full bg-black/30 border border-white/10 rounded-2xl py-4 pl-12 pr-6 text-white font-mono opacity-50 cursor-not-allowed shadow-inner"
+                                        />
+                                    </div>
                                 </div>
-                            </div>
 
-                            {/* Retira Selector */}
-                            <div className="space-y-2">
-                                <label className="block text-sm font-medium text-gray-400 mb-2 ml-1">
-                                    Entregado a (Quien retira) <span className="text-red-400">*</span>
-                                </label>
-                                <button
-                                    type="button"
-                                    onClick={() => handleOpenBusqueda('retira')}
-                                    className="w-full bg-white/5 border border-white/10 rounded-xl py-4 px-5 text-white cursor-pointer hover:bg-white/10 hover:border-teal-500/50 transition-all flex items-center justify-between group shadow-inner"
-                                >
-                                    <span className={retira ? 'text-white font-medium' : 'text-gray-500 italic'}>
-                                        {retira
-                                            ? colaboradores.todos.find((c: any) => c.identificacion === retira)?.colaborador
-                                            : '-- Seleccione quien retira --'}
-                                    </span>
-                                    <User className="w-5 h-5 text-gray-500 group-hover:text-cyan-400 transition-colors" />
-                                </button>
-                            </div>
-
-                            {/* Numero Solicitud */}
-                            <div className="md:col-span-2 space-y-2">
-                                <label className="block text-sm font-medium text-gray-400 mb-2 ml-1">
-                                    Número de solicitud
-                                </label>
-                                <div className="relative group">
-                                    <div className="absolute left-5 top-1/2 -translate-y-1/2 text-teal-400 font-bold group-focus-within:scale-110 transition-transform">#</div>
-                                    <input
-                                        type="text"
-                                        value={numeroSolicitud}
-                                        readOnly
-                                        className="w-full bg-white/5 border border-white/10 rounded-xl py-4 pl-12 pr-5 text-white opacity-60 cursor-not-allowed font-mono shadow-inner"
+                                <div className="md:col-span-2 space-y-3">
+                                    <label className="text-[10px] font-black uppercase tracking-widest ml-1 block opacity-60">Comentarios Adicionales</label>
+                                    <textarea
+                                        value={comentarios}
+                                        onChange={(e) => setComentarios(e.target.value)}
+                                        placeholder="Describa detalles adicionales sobre esta salida externa..."
+                                        className="w-full min-h-[140px] bg-black/30 border border-white/10 rounded-[2rem] p-6 text-white font-medium placeholder-gray-700 focus:outline-none focus:border-teal-500/50 transition-all shadow-inner resize-none leading-relaxed"
                                     />
                                 </div>
                             </div>
                         </div>
 
-                        {/* Comentarios Inline */}
-                        <div className="space-y-2">
-                            <label className="block text-sm font-medium text-gray-400 ml-1">Comentarios adicionales</label>
-                            <textarea
-                                value={comentarios}
-                                onChange={(e) => setComentarios(e.target.value)}
-                                placeholder="Detalles adicionales sobre esta salida..."
-                                className="w-full bg-white/5 border border-white/10 rounded-xl p-4 text-white focus:border-teal-500 focus:ring-4 focus:ring-teal-500/10 outline-none min-h-[120px] transition-all placeholder-gray-600 resize-none shadow-inner"
+                        {/* Articles Table Section */}
+                        <div className="bg-[#1e2235] border border-white/10 rounded-[2.5rem] shadow-2xl p-6 md:p-8 space-y-8">
+                            <div className="flex items-center gap-3 border-b border-white/5 pb-6">
+                                <Box className="w-5 h-5 text-teal-400" />
+                                <h3 className="text-xl font-black text-white uppercase tracking-tight italic">Artículos a Retirar</h3>
+                            </div>
+
+                            <TransactionTable
+                                items={items}
+                                onUpdateRow={updateDetalle}
+                                onRemoveRow={eliminarFila}
+                                onOpenSearch={handleOpenArticulos}
+                                onAddRow={agregarFila}
+                                onWarning={(msg) => showAlert(msg, 'warning')}
+                                themeColor="teal"
                             />
                         </div>
                     </div>
 
-                    {/* Section 2: Articles Table */}
-                    <div className="bg-white/5 border border-white/10 rounded-2xl p-6 md:p-8 backdrop-blur-xl shadow-2xl">
-                        <div className="flex items-center gap-3 mb-8 border-b border-white/10 pb-4">
-                            <div className="w-10 h-10 rounded-xl bg-teal-500/20 flex items-center justify-center">
-                                <Box className="w-6 h-6 text-teal-400" />
+                    {/* Side Sidebar Action Section */}
+                    <div className="space-y-6 lg:sticky lg:top-8">
+                        <div className="bg-gradient-to-br from-teal-600 to-cyan-700 rounded-[2.5rem] p-8 shadow-2xl shadow-teal-900/40 relative overflow-hidden group">
+                            <Box className="absolute -right-4 -top-4 w-32 h-32 text-white/5 -rotate-12 group-hover:scale-110 transition-transform duration-700" />
+
+                            <div className="relative z-10 space-y-6">
+                                <div className="space-y-1">
+                                    <h4 className="text-white font-black text-2xl uppercase tracking-tighter italic">
+                                        {!finalizado ? 'Finalizar Salida' : 'Registro Completo'}
+                                    </h4>
+                                    <p className="text-teal-200 text-[10px] font-bold uppercase tracking-widest opacity-80 leading-relaxed">
+                                        {!finalizado
+                                            ? 'Verifique los artículos y cantidades antes de proceder con el guardado técnico.'
+                                            : 'La salida ha sido registrada. Proceda a generar el comprobante físico.'}
+                                    </p>
+                                </div>
+
+                                {!finalizado ? (
+                                    <button
+                                        onClick={handleSubmit}
+                                        disabled={loading}
+                                        className="w-full py-5 bg-white text-teal-700 font-black text-xl rounded-2xl shadow-2xl hover:scale-[1.02] active:scale-95 transition-all flex items-center justify-center gap-3 disabled:opacity-50 uppercase tracking-tight"
+                                    >
+                                        {loading ? <Loader2 className="w-7 h-7 animate-spin" /> : <Save className="w-7 h-7" />}
+                                        Guardar Salida
+                                    </button>
+                                ) : (
+                                    <button
+                                        onClick={handleFinalizar}
+                                        disabled={loading}
+                                        className="w-full py-5 bg-emerald-400 text-emerald-950 font-black text-xl rounded-2xl shadow-2xl hover:scale-[1.02] active:scale-95 transition-all flex items-center justify-center gap-3 disabled:opacity-50 uppercase tracking-tight"
+                                    >
+                                        {loading ? <Loader2 className="w-7 h-7 animate-spin" /> : <Printer className="w-7 h-7" />}
+                                        Imprimir
+                                    </button>
+                                )}
                             </div>
-                            <h3 className="text-xl font-bold text-teal-400">Artículos a Retirar</h3>
                         </div>
 
-                        <TransactionTable
-                            items={items}
-                            onUpdateRow={updateDetalle}
-                            onRemoveRow={eliminarFila}
-                            onOpenSearch={handleOpenArticulos}
-                            onAddRow={agregarFila}
-                            onWarning={(msg) => showAlert(msg, 'warning')}
-                            themeColor="teal"
-                        />
-                    </div>
-
-                    {/* Summary / Actions */}
-                    <div className="flex justify-end items-center pt-4">
-                        {!finalizado ? (
-                            <button
-                                type="submit"
-                                disabled={loading}
-                                className="px-8 py-3 bg-gradient-to-r from-teal-600 to-cyan-600 text-white font-bold rounded-xl hover:shadow-[0_0_25px_rgba(20,184,166,0.4)] hover:brightness-110 transition-all flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed shadow-lg shadow-teal-500/20"
-                            >
-                                {loading ? <Loader2 className="w-5 h-5 animate-spin" /> : <Save className="w-5 h-5" />}
-                                GUARDAR REGISTRO
-                            </button>
-                        ) : (
-                            <button
-                                type="button"
-                                onClick={handleFinalizar}
-                                disabled={loading}
-                                className="px-8 py-3 bg-gradient-to-r from-emerald-500 to-teal-400 text-white font-bold rounded-xl hover:shadow-[0_0_25px_rgba(34,197,94,0.4)] transition-all flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed animate-in zoom-in"
-                            >
-                                {loading ? <Loader2 className="w-5 h-5 animate-spin" /> : <Printer className="w-5 h-5" />}
-                                IMPRIMIR Y FINALIZAR
-                            </button>
-                        )}
+                        <button
+                            type="button"
+                            onClick={() => navigate('/cliente-externo/realizar')}
+                            className="w-full py-4 border border-white/10 rounded-2xl text-gray-500 font-black uppercase text-xs tracking-[0.2em] hover:bg-white/5 hover:text-white transition-all flex items-center justify-center gap-2"
+                        >
+                            <ArrowLeft className="w-4 h-4 text-teal-500" />
+                            Regresar
+                        </button>
                     </div>
                 </form>
-
-                <button
-                    type="button"
-                    onClick={() => navigate('/cliente-externo/realizar')}
-                    className="flex items-center gap-2 text-gray-500 hover:text-white transition-colors font-medium mt-8"
-                >
-                    <ArrowLeft className="w-5 h-5" />
-                    REGRESAR AL MENÚ
-                </button>
             </div>
 
             {/* Modal: Colaborador Search */}

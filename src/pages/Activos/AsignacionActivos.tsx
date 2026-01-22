@@ -101,12 +101,26 @@ export default function AsignacionActivos() {
         try {
             const [activosRes, colabRes, assignedRes] = await Promise.all([
                 supabase.from('activos_50').select('numero_activo, nombre_corto_activo, marca_activo, numero_serie_activo').order('numero_activo', { ascending: false }),
-                supabase.from('colaboradores_06').select('identificacion, colaborador, alias, autorizado').order('colaborador'),
+                supabase.from('colaboradores_06').select('identificacion, colaborador, alias, autorizado, correo_colaborador').order('colaborador'),
                 supabase.from('dato_salida_activo_56').select('numero_activo')
             ]);
 
             if (activosRes.data) setActivos(activosRes.data as any);
             if (colabRes.data) setColaboradores(colabRes.data as any);
+
+            const { data: { user } } = await supabase.auth.getUser();
+            const userEmail = user?.email;
+
+            if (userEmail && colabRes.data) {
+                const matched = colabRes.data.find(c =>
+                    c.correo_colaborador?.toLowerCase() === userEmail.toLowerCase() && c.autorizado
+                );
+                if (matched) {
+                    setEntradaForm(prev => ({ ...prev, autoriza_entrada_activo: matched.identificacion }));
+                    setSalidaForm(prev => ({ ...prev, autoriza: matched.identificacion }));
+                }
+            }
+
             if (assignedRes.data) {
                 // Extract IDs and filter out nulls if any
                 const ids = assignedRes.data.map(item => item.numero_activo).filter((id): id is number => id !== null);
@@ -444,7 +458,7 @@ export default function AsignacionActivos() {
                                                     <td className="px-6 py-3 text-right">
                                                         <button
                                                             type="button"
-                                                            onClick={() => handleRemoveActivoEntrada(activo.numero_activo)}
+                                                            onClick={() => handleRemoveActivoEntrada()}
                                                             className="text-red-400 hover:text-red-300 p-1 hover:bg-red-400/10 rounded"
                                                         >
                                                             <Trash2 className="w-4 h-4" />

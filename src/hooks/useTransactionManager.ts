@@ -62,7 +62,7 @@ export const useTransactionManager = ({
                         const matched = mappedData.find(c =>
                             c.correo_colaborador?.toLowerCase() === userEmail.toLowerCase()
                         );
-                        if (matched) {
+                        if (matched && matched.autorizado) {
                             setAutorizaId(matched.identificacion);
                         }
                     }
