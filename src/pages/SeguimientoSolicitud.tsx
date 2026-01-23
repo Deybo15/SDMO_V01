@@ -95,11 +95,6 @@ export default function SeguimientoSolicitud() {
     // Filters
     const [searchTerm, setSearchTerm] = useState('');
     const [filterEstado, setFilterEstado] = useState('');
-    const [activeSearch, setActiveSearch] = useState('');
-    const [activeEstado, setActiveEstado] = useState('');
-    const [filterSupervisor, setFilterSupervisor] = useState('');
-    const [filterDateStart, setFilterDateStart] = useState('');
-    const [filterDateEnd, setFilterDateEnd] = useState('');
 
     // Pagination
     const [page, setPage] = useState(1);
@@ -204,26 +199,27 @@ export default function SeguimientoSolicitud() {
         try {
             let query = supabase
                 .from('solicitud_17')
-                .select('numero_solicitud, fecha_solicitud, descripcion_solicitud, tipo_solicitud, supervisor_asignado', { count: 'exact' })
+                .select('numero_solicitud, fecha_solicitud, descripcion_solicitud, tipo_solicitud, supervisor_asignado, seguimiento_solicitud!left(estado_actual)', { count: 'exact' })
                 .eq('tipo_solicitud', 'STI');
 
-            if (activeEstado) {
-                const idsData = await fetchAll('seguimiento_solicitud', 'numero_solicitud', 'estado_actual', activeEstado);
-                const ids = idsData.map((i: any) => i.numero_solicitud);
-                if (ids.length === 0) {
-                    setSolicitudes([]); setTotalRecords(0); setLoading(false); return;
+            if (filterEstado) {
+                if (filterEstado === 'ACTIVA') {
+                    // Filter for ACTIVA: (seguimiento.estado_actual == 'ACTIVA') OR (no seguimiento record exists)
+                    query = query.or(`estado_actual.eq.ACTIVA,estado_actual.is.null`, { foreignTable: 'seguimiento_solicitud' });
+                } else {
+                    // For EJECUTADA or CANCELADA, we only want rows that HAVE an entry with that status
+                    query = query.not('seguimiento_solicitud', 'is', null);
+                    query = query.eq('seguimiento_solicitud.estado_actual', filterEstado);
                 }
-                query = query.in('numero_solicitud', ids);
             }
 
-            if (filterSupervisor) query = query.eq('supervisor_asignado', filterSupervisor);
-            if (filterDateStart) query = query.gte('fecha_solicitud', filterDateStart);
-            if (filterDateEnd) query = query.lte('fecha_solicitud', filterDateEnd);
-
-            if (activeSearch) {
-                const isNumeric = /^\d+$/.test(activeSearch);
-                if (isNumeric) query = query.or(`numero_solicitud.eq.${activeSearch},descripcion_solicitud.ilike.%${activeSearch}%`);
-                else query = query.ilike('descripcion_solicitud', `%${activeSearch}%`);
+            if (searchTerm) {
+                const isNumeric = /^\d+$/.test(searchTerm);
+                if (isNumeric) {
+                    query = query.or(`numero_solicitud.eq.${searchTerm},descripcion_solicitud.ilike.%${searchTerm}%`);
+                } else {
+                    query = query.ilike('descripcion_solicitud', `%${searchTerm}%`);
+                }
             }
 
             query = query.order(sortCol as any, { ascending: sortDir === 'asc' });
@@ -239,29 +235,25 @@ export default function SeguimientoSolicitud() {
 
             setTotalRecords(count || 0);
 
-            const ids = data.map(s => s.numero_solicitud);
             const supIds = data.map(s => s.supervisor_asignado).filter(Boolean) as string[];
-
-            const { data: estadosData } = await supabase.from('seguimiento_solicitud').select('numero_solicitud, estado_actual').in('numero_solicitud', ids);
-
             let colabsMap = new Map();
             if (supIds.length > 0) {
                 const { data: colabsData } = await supabase.from('colaboradores_06').select('identificacion, alias').in('identificacion', supIds);
                 colabsData?.forEach(c => colabsMap.set(c.identificacion, c.alias));
             }
 
-            const estadosMap = new Map();
-            estadosData?.forEach(s => estadosMap.set(s.numero_solicitud, s.estado_actual));
-
-            setSolicitudes(data.map(s => ({
-                ...s,
-                estado_actual: estadosMap.get(s.numero_solicitud) || 'ACTIVA',
-                supervisor_alias: s.supervisor_asignado ? (colabsMap.get(s.supervisor_asignado) || 'No asignado') : 'No asignado'
-            })));
+            setSolicitudes(data.map((s: any) => {
+                const segObj = Array.isArray(s.seguimiento_solicitud) ? s.seguimiento_solicitud[0] : s.seguimiento_solicitud;
+                return {
+                    ...s,
+                    estado_actual: segObj?.estado_actual || 'ACTIVA',
+                    supervisor_alias: s.supervisor_asignado ? (colabsMap.get(s.supervisor_asignado) || 'No asignado') : 'No asignado'
+                };
+            }));
 
         } catch (error) { console.error('Fetch error:', error); }
         finally { setLoading(false); }
-    }, [page, activeSearch, activeEstado, filterSupervisor, filterDateStart, filterDateEnd, sortCol, sortDir]);
+    }, [page, searchTerm, filterEstado, sortCol, sortDir]);
 
     useEffect(() => {
         loadMetadata(); loadStats();
@@ -273,21 +265,20 @@ export default function SeguimientoSolicitud() {
 
     useEffect(() => { fetchSolicitudes(); }, [fetchSolicitudes, realtimeChange]);
 
-    const handleApplyFilters = () => { setPage(1); setActiveSearch(searchTerm); setActiveEstado(filterEstado); };
-    const clearFilters = () => { setSearchTerm(''); setFilterEstado(''); setFilterSupervisor(''); setFilterDateStart(''); setFilterDateEnd(''); setPage(1); setActiveSearch(''); setActiveEstado(''); };
+    const clearFilters = () => { setSearchTerm(''); setFilterEstado(''); setPage(1); };
 
     const handleExportExcel = async () => {
         setLoading(true);
         try {
             let query = supabase.from('solicitud_17').select('numero_solicitud, fecha_solicitud, descripcion_solicitud, supervisor_asignado').eq('tipo_solicitud', 'STI');
-            if (activeEstado) {
-                const idsData = await fetchAll('seguimiento_solicitud', 'numero_solicitud', 'estado_actual', activeEstado);
+            if (filterEstado) {
+                const idsData = await fetchAll('seguimiento_solicitud', 'numero_solicitud, estado_actual', 'estado_actual', filterEstado);
                 query = query.in('numero_solicitud', idsData.map(i => i.numero_solicitud));
             }
-            if (activeSearch) {
-                const isNumeric = /^\d+$/.test(activeSearch);
-                if (isNumeric) query = query.or(`numero_solicitud.eq.${activeSearch},descripcion_solicitud.ilike.%${activeSearch}%`);
-                else query = query.ilike('descripcion_solicitud', `%${activeSearch}%`);
+            if (searchTerm) {
+                const isNumeric = /^\d+$/.test(searchTerm);
+                if (isNumeric) query = query.or(`numero_solicitud.eq.${searchTerm},descripcion_solicitud.ilike.%${searchTerm}%`);
+                else query = query.ilike('descripcion_solicitud', `%${searchTerm}%`);
             }
             const { data: allData } = await query.order('numero_solicitud', { ascending: false }).limit(2000);
             if (!allData || allData.length === 0) return;
@@ -329,7 +320,7 @@ export default function SeguimientoSolicitud() {
                 <div className="absolute bottom-[-10%] right-[-10%] w-[50%] h-[50%] bg-indigo-600/10 rounded-full blur-[160px]"></div>
             </div>
 
-            <div className="max-w-[1400px] mx-auto px-4 py-8 relative z-10 space-y-8">
+            <div className="max-w-[1600px] mx-auto px-4 py-8 relative z-10 space-y-8">
                 {/* Header */}
                 <header className="flex flex-col md:flex-row md:items-end justify-between gap-6">
                     <div>
@@ -379,85 +370,56 @@ export default function SeguimientoSolicitud() {
                     </div>
 
                     <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-end">
-                        <div className="lg:col-span-4 space-y-3">
-                            <label className="text-[11px] font-black text-white/60 uppercase tracking-widest ml-3">Palabra Clave</label>
+                        <div className="lg:col-span-8 space-y-3">
+                            <label className="text-[11px] font-black text-white/60 uppercase tracking-widest ml-3">Búsqueda Unificada</label>
                             <div className="relative group">
                                 <Search className="absolute left-5 top-1/2 -translate-y-1/2 w-5 h-5 text-white/30 group-focus-within:text-blue-500 transition-colors" />
-                                <input value={searchTerm} onChange={e => setSearchTerm(e.target.value)} className="w-full bg-slate-900/50 border-2 border-white/10 rounded-3xl h-16 pl-14 pr-6 text-sm text-white font-bold placeholder:text-white/20 focus:border-blue-500 focus:bg-slate-900 transition-all outline-none" placeholder="Ticket o descripción..." />
+                                <input value={searchTerm} onChange={e => { setSearchTerm(e.target.value); setPage(1); }} className="w-full bg-slate-900/50 border-2 border-white/10 rounded-3xl h-16 pl-14 pr-6 text-sm text-white font-bold placeholder:text-white/20 focus:border-blue-500 focus:bg-slate-900 transition-all outline-none" placeholder="N° Solicitud o descripción..." />
                             </div>
                         </div>
-                        <div className="lg:col-span-2 space-y-3">
+                        <div className="lg:col-span-3 space-y-3">
                             <label className="text-[11px] font-black text-white/60 uppercase tracking-widest ml-3">Estado</label>
-                            <select value={filterEstado} onChange={e => setFilterEstado(e.target.value)} className="w-full bg-slate-900/50 border-2 border-white/10 rounded-3xl h-16 px-6 text-sm text-white font-bold appearance-none cursor-pointer focus:border-blue-500 outline-none transition-all">
+                            <select value={filterEstado} onChange={e => { setFilterEstado(e.target.value); setPage(1); }} className="w-full bg-slate-900/50 border-2 border-white/10 rounded-3xl h-16 px-6 text-sm text-white font-bold appearance-none cursor-pointer focus:border-blue-500 outline-none transition-all">
                                 <option value="">Todos</option>
                                 <option value="ACTIVA">ACTIVAS</option>
                                 <option value="EJECUTADA">EJECUTADAS</option>
                                 <option value="CANCELADA">CANCELADAS</option>
                             </select>
                         </div>
-                        <div className="lg:col-span-3 space-y-3">
-                            <label className="text-[11px] font-black text-white/60 uppercase tracking-widest ml-3">Líder STI</label>
-                            <select value={filterSupervisor} onChange={e => setFilterSupervisor(e.target.value)} className="w-full bg-slate-900/50 border-2 border-white/10 rounded-3xl h-16 px-6 text-sm text-white font-bold appearance-none cursor-pointer focus:border-blue-500 outline-none transition-all">
-                                <option value="">Todos los líderes</option>
-                                {supervisores.map(s => <option key={s.id} value={s.id}>{s.alias}</option>)}
-                            </select>
-                        </div>
-                        <div className="lg:col-span-3 flex gap-4 h-16">
-                            <button onClick={handleApplyFilters} className="flex-1 bg-blue-600 hover:bg-blue-500 rounded-3xl font-black text-[12px] uppercase tracking-widest transition-all shadow-xl shadow-blue-600/20 active:scale-95 text-white">Filtrar</button>
-                            <button onClick={clearFilters} className="w-16 bg-white/5 border-2 border-white/10 rounded-3xl flex items-center justify-center hover:bg-white/10 hover:border-white/30 transition-all text-white/40 hover:text-white group"><Eraser className="w-6 h-6 group-hover:rotate-12 transition-transform" /></button>
-                        </div>
-                    </div>
-
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
-                        <div className="space-y-3">
-                            <label className="text-[11px] font-black text-white/80 uppercase tracking-widest ml-3 flex items-center gap-2 underline decoration-blue-500 decoration-4 underline-offset-8">
-                                <Calendar className="w-5 h-5 text-blue-400" /> Fecha Desde
-                            </label>
-                            <div className="relative">
-                                <input type="date" value={filterDateStart} onChange={e => setFilterDateStart(e.target.value)} className="w-full bg-slate-800 border-2 border-white/30 rounded-3xl h-16 px-6 text-sm font-black text-white focus:border-blue-500 focus:bg-slate-700 outline-none transition-all shadow-lg custom-date-input" />
-                            </div>
-                        </div>
-                        <div className="space-y-3">
-                            <label className="text-[11px] font-black text-white/80 uppercase tracking-widest ml-3 flex items-center gap-2 underline decoration-blue-500 decoration-4 underline-offset-8">
-                                <Calendar className="w-5 h-5 text-blue-400" /> Fecha Hasta
-                            </label>
-                            <div className="relative">
-                                <input type="date" value={filterDateEnd} onChange={e => setFilterDateEnd(e.target.value)} className="w-full bg-slate-800 border-2 border-white/30 rounded-3xl h-16 px-6 text-sm font-black text-white focus:border-blue-500 focus:bg-slate-700 outline-none transition-all shadow-lg custom-date-input" />
-                            </div>
+                        <div className="lg:col-span-1 flex gap-4 h-16">
+                            <button onClick={clearFilters} className="w-full bg-white/5 border-2 border-white/10 rounded-3xl flex items-center justify-center hover:bg-white/10 hover:border-white/30 transition-all text-white/40 hover:text-white group"><Eraser className="w-6 h-6 group-hover:rotate-12 transition-transform" /></button>
                         </div>
                     </div>
                 </section>
 
                 <section className="bg-white/[0.02] border-2 border-white/20 shadow-3xl rounded-[3.5rem] overflow-hidden">
-                    <div className="overflow-x-auto">
-                        <table className="w-full text-left border-collapse">
+                    <div className="overflow-x-auto custom-scrollbar-h">
+                        <table className="w-full text-left border-collapse min-w-[1200px]">
                             <thead>
                                 <tr className="bg-white/[0.05] border-b-2 border-white/20 text-[11px] font-black text-white uppercase tracking-[0.2em]">
-                                    <th className="px-10 py-8">Folio</th>
-                                    <th className="px-10 py-8">Fecha</th>
-                                    <th className="px-10 py-8">Descripción STI</th>
-                                    <th className="px-10 py-8 text-center">Líder STI</th>
-                                    <th className="px-10 py-8 text-center">Estado App</th>
-                                    <th className="px-10 py-8 text-right">Detalle</th>
+                                    <th className="px-6 py-8 cursor-pointer hover:text-blue-400 transition-colors" onClick={() => { setSortCol('numero_solicitud'); setSortDir(sortDir === 'asc' ? 'desc' : 'asc'); }}>N° Solicitud</th>
+                                    <th className="px-6 py-8">Fecha</th>
+                                    <th className="px-6 py-8">Descripción STI</th>
+                                    <th className="px-6 py-8 text-center">Supervisor</th>
+                                    <th className="px-6 py-8 text-center">Estado App</th>
+                                    <th className="px-6 py-8 text-right"></th>
                                 </tr>
                             </thead>
                             <tbody className="divide-y-2 divide-white/10">
                                 {loading ? <TableSkeleton /> : solicitudes.map(sol => (
                                     <tr key={sol.numero_solicitud} className="hover:bg-white/[0.06] transition-all group">
-                                        <td className="px-10 py-7 font-black text-blue-400 text-lg">#{sol.numero_solicitud}</td>
-                                        <td className="px-10 py-7 text-sm font-bold text-white/80">{new Date(sol.fecha_solicitud).toLocaleDateString()}</td>
-                                        <td className="px-10 py-7 truncate max-w-md italic font-medium text-white/90 relative cursor-default" onMouseEnter={e => setHoveredDescription({ id: sol.numero_solicitud, text: sol.descripcion_solicitud, x: e.clientX, y: e.clientY })} onMouseLeave={() => setHoveredDescription(null)}>
+                                        <td className="px-6 py-7 font-black text-blue-400 text-lg">#{sol.numero_solicitud}</td>
+                                        <td className="px-6 py-7 text-sm font-bold text-white/80">{new Date(sol.fecha_solicitud).toLocaleDateString()}</td>
+                                        <td className="px-6 py-7 truncate max-w-[250px] italic font-medium text-white/90 relative cursor-default" onMouseEnter={e => setHoveredDescription({ id: sol.numero_solicitud, text: sol.descripcion_solicitud, x: e.clientX, y: e.clientY })} onMouseLeave={() => setHoveredDescription(null)}>
                                             {sol.descripcion_solicitud}
                                         </td>
-                                        <td className="px-10 py-7 text-xs font-black text-white/70 text-center bg-white/[0.01]">
-                                            <span className="px-4 py-2 bg-white/5 rounded-2xl border border-white/10">{sol.supervisor_alias}</span>
+                                        <td className="px-6 py-7 text-xs font-black text-white/70 text-center whitespace-nowrap">
+                                            <span className="px-4 py-2 bg-white/5 rounded-2xl border border-white/10 uppercase tracking-tighter">{sol.supervisor_alias}</span>
                                         </td>
-                                        <td className="px-10 py-7 text-center">
-                                            <button onClick={() => setEditingStatusId(sol.numero_solicitud)} className="transition-transform active:scale-90 hover:scale-105">
-                                                {getEstadoBadge(sol.estado_actual)}
-                                            </button>
+                                        <td className="px-6 py-7 text-center">
+                                            {getEstadoBadge(sol.estado_actual)}
                                         </td>
-                                        <td className="px-10 py-7 text-right">
+                                        <td className="px-6 py-7 text-right">
                                             <button onClick={() => handleOpenModal(sol)} className="w-12 h-12 bg-white/5 border-2 border-white/10 rounded-2xl flex items-center justify-center hover:bg-blue-600 hover:border-blue-400 transition-all text-white hover:shadow-2xl hover:shadow-blue-500/40 active:scale-90"><Eye className="w-6 h-6" /></button>
                                         </td>
                                     </tr>
@@ -490,15 +452,12 @@ export default function SeguimientoSolicitud() {
                 <div className="fixed inset-0 z-[2000] flex items-center justify-center p-6">
                     <div className="absolute inset-0 bg-black/85 backdrop-blur-xl" onClick={() => setEditingStatusId(null)}></div>
                     <div className="relative bg-slate-950 border-2 border-white/20 rounded-[3rem] p-10 w-full max-w-sm space-y-5 animate-in zoom-in-95 shadow-4xl">
-                        <p className="text-[11px] font-black text-white/60 uppercase tracking-[0.3em] text-center mb-4">Actualizar Estado STI</p>
+                        <p className="text-[11px] font-black text-white/60 uppercase tracking-[0.3em] text-center mb-4">Actualizar Estado Solicitud</p>
                         {['ACTIVA', 'EJECUTADA', 'CANCELADA'].map(est => (
                             <button key={est} onClick={async () => {
                                 const { error } = await supabase.from('seguimiento_solicitud').upsert({ numero_solicitud: editingStatusId, estado_actual: est });
                                 if (!error) { showNotification('Estado Sincronizado', 'success'); setEditingStatusId(null); setRealtimeChange(c => c + 1); }
                             }} className="w-full h-16 rounded-[1.5rem] text-[11px] font-black uppercase tracking-widest border-2 border-white/10 hover:bg-white/10 hover:border-blue-500 transition-all flex items-center justify-center gap-4 text-white hover:text-blue-400 group">
-                                {est === 'ACTIVA' && <PlayCircle className="w-5 h-5 text-indigo-400" />}
-                                {est === 'EJECUTADA' && <CheckCircle className="w-5 h-5 text-emerald-400" />}
-                                {est === 'CANCELADA' && <XCircle className="w-5 h-5 text-rose-400" />}
                                 {est}
                             </button>
                         ))}
@@ -510,10 +469,10 @@ export default function SeguimientoSolicitud() {
             {isModalOpen && selectedSolicitud && (
                 <div className="fixed inset-0 z-[1000] flex items-center justify-center p-6">
                     <div className="absolute inset-0 bg-black/95 backdrop-blur-2xl" onClick={() => setIsModalOpen(false)}></div>
-                    <div className="relative w-full max-w-6xl bg-slate-950 border-2 border-white/20 rounded-[4rem] shadow-4xl overflow-hidden flex flex-col max-h-[95vh] animate-in zoom-in-95">
+                    <div className="relative w-full max-w-7xl bg-slate-950 border-2 border-white/20 rounded-[3rem] shadow-4xl overflow-hidden flex flex-col max-h-[96vh] animate-in zoom-in-95">
                         <div className="bg-white/5 border-b-2 border-white/10 p-10 flex justify-between items-center">
                             <div>
-                                <h2 className="text-4xl font-black text-white tracking-tighter">Ticket STI <span className="text-blue-500">#{selectedSolicitud.numero_solicitud}</span></h2>
+                                <h2 className="text-4xl font-black text-white tracking-tighter">Solicitud <span className="text-blue-500">#{selectedSolicitud.numero_solicitud}</span></h2>
                                 <p className="text-[11px] font-black text-white/50 uppercase tracking-[0.4em] mt-1">Consola de Seguimiento Técnico</p>
                             </div>
                             <button onClick={() => setIsModalOpen(false)} className="w-16 h-16 hover:bg-white/10 rounded-3xl transition-all flex items-center justify-center border-2 border-white/10 text-white/60 hover:text-white hover:border-white/30"><X size={32} /></button>
@@ -613,29 +572,29 @@ export default function SeguimientoSolicitud() {
 
                                 <div className="xl:col-span-4 space-y-8">
                                     <div className="bg-white/[0.04] border-2 border-white/20 rounded-[3.5rem] p-10 space-y-8 shadow-4xl group">
-                                        <h6 className="text-[11px] font-black text-white/80 uppercase tracking-[0.3em] italic border-b-2 border-white/10 pb-6 mb-2">Control Maestro STI</h6>
+
                                         <div className="space-y-6">
                                             <div className="space-y-3">
                                                 <label className="text-[11px] text-white/60 font-black uppercase tracking-widest ml-2 flex items-center gap-2">
-                                                    <PlayCircle className="w-4 h-4 text-blue-500" /> Estado del Ticket
+                                                    <PlayCircle className="w-4 h-4 text-blue-500" /> Estado de la Solicitud
                                                 </label>
                                                 <div className="relative">
                                                     <select key={seguimientoData?.estado_actual} defaultValue={seguimientoData?.estado_actual || 'ACTIVA'} onChange={e => setSeguimientoData(p => p ? { ...p, estado_actual: e.target.value } : null)} className="w-full bg-slate-950 border-2 border-white/10 rounded-[1.5rem] h-16 px-6 text-sm font-black text-white outline-none focus:border-blue-500 focus:bg-slate-900 transition-all appearance-none cursor-pointer shadow-lg">
-                                                        <option value="ACTIVA">🚀 ACTIVA</option>
-                                                        <option value="EJECUTADA">🎉 FINALIZADA</option>
-                                                        <option value="CANCELADA">🚫 CANCELADA</option>
+                                                        <option value="ACTIVA">ACTIVA</option>
+                                                        <option value="EJECUTADA">FINALIZADA</option>
+                                                        <option value="CANCELADA">CANCELADA</option>
                                                     </select>
                                                 </div>
                                             </div>
                                             <div className="space-y-3">
                                                 <label className="text-[11px] text-white/80 font-black uppercase tracking-widest ml-2 flex items-center gap-2">
-                                                    <Calendar className="w-5 h-5 text-indigo-400" /> F. Inicio de Labores
+                                                    <Calendar className="w-5 h-5 text-indigo-400" /> FECHA DE INICIO DE LABORES
                                                 </label>
                                                 <input type="date" value={seguimientoData?.fecha_inicio || ''} onChange={e => setSeguimientoData(p => p ? { ...p, fecha_inicio: e.target.value } : null)} className="w-full bg-slate-800 border-2 border-white/30 rounded-[1.5rem] h-16 px-6 text-sm font-black text-white focus:border-indigo-500 focus:bg-slate-700 outline-none transition-all shadow-lg custom-date-input" />
                                             </div>
                                             <div className="space-y-3">
                                                 <label className="text-[11px] text-white/80 font-black uppercase tracking-widest ml-2 flex items-center gap-2">
-                                                    <Calendar className="w-5 h-5 text-emerald-400" /> F. Cierre STI
+                                                    <Calendar className="w-5 h-5 text-emerald-400" /> FECHA DE CIERRE DE LABORES
                                                 </label>
                                                 <input type="date" value={seguimientoData?.fecha_finalizacion || ''} onChange={e => setSeguimientoData(p => p ? { ...p, fecha_finalizacion: e.target.value } : null)} className="w-full bg-slate-800 border-2 border-white/30 rounded-[1.5rem] h-16 px-6 text-sm font-black text-white focus:border-emerald-500 focus:bg-slate-700 outline-none transition-all shadow-lg custom-date-input" />
                                             </div>
@@ -658,20 +617,18 @@ export default function SeguimientoSolicitud() {
                                             <History className="w-7 h-7 text-indigo-400" />
                                         </div>
                                         <p className="text-[11px] font-black text-indigo-300 uppercase tracking-[0.3em] mb-3">Protocolo de Cierre</p>
-                                        <p className="text-sm text-white/50 leading-relaxed italic font-medium">Verifique que todos los materiales estén debidamente asociados y la bitácora técnica refleje fielmente las labores ejecutadas antes de finalizar el ticket.</p>
+                                        <p className="text-sm text-white/50 leading-relaxed italic font-medium">Verifique que todos los materiales estén debidamente asociados y la bitácora técnica refleje fielmente las labores ejecutadas antes de finalizar la solicitud.</p>
                                     </div>
                                 </div>
                             </div>
                         </div>
 
-                        <div className="p-10 border-t-2 border-white/10 bg-black/50 flex justify-end shrink-0">
-                            <button onClick={() => setIsModalOpen(false)} className="h-16 px-12 border-2 border-white/20 bg-white/10 hover:bg-white/20 hover:border-white/40 rounded-[1.5rem] text-[12px] font-black uppercase tracking-[0.2em] text-white transition-all active:scale-95 shadow-2xl">Cerrar Consola</button>
-                        </div>
+
                     </div>
                 </div>
             )}
 
-            <style>{`.custom-scrollbar::-webkit-scrollbar { width: 8px; } .custom-scrollbar::-webkit-scrollbar-track { background: rgba(0,0,0,0.2); border-radius: 10px; } .custom-scrollbar::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.1); border-radius: 10px; border: 2px solid rgba(0,0,0,0.2); } .custom-scrollbar::-webkit-scrollbar-thumb:hover { background: rgba(255,255,255,0.2); } .custom-date-input::-webkit-calendar-picker-indicator { filter: invert(1); cursor: pointer; opacity: 0.8; transition: opacity 0.2s; } .custom-date-input::-webkit-calendar-picker-indicator:hover { opacity: 1; }`}</style>
+            <style>{`.custom-scrollbar::-webkit-scrollbar { width: 8px; } .custom-scrollbar::-webkit-scrollbar-track { background: rgba(0,0,0,0.2); border-radius: 10px; } .custom-scrollbar::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.1); border-radius: 10px; border: 2px solid rgba(0,0,0,0.2); } .custom-scrollbar::-webkit-scrollbar-thumb:hover { background: rgba(255,255,255,0.2); } .custom-scrollbar-h::-webkit-scrollbar { height: 8px; } .custom-scrollbar-h::-webkit-scrollbar-track { background: rgba(0,0,0,0.2); border-radius: 10px; } .custom-scrollbar-h::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.1); border-radius: 10px; border: 2px solid rgba(0,0,0,0.2); } .custom-scrollbar-h::-webkit-scrollbar-thumb:hover { background: rgba(255,255,255,0.2); } .custom-date-input::-webkit-calendar-picker-indicator { filter: invert(1); cursor: pointer; opacity: 0.8; transition: opacity 0.2s; } .custom-date-input::-webkit-calendar-picker-indicator:hover { opacity: 1; }`}</style>
         </div>
     );
 }

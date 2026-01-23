@@ -89,7 +89,7 @@ export default function IngresarSolicitud() {
     const [isCameraOpen, setIsCameraOpen] = useState(false);
     const [cameraStream, setCameraStream] = useState<MediaStream | null>(null);
 
-    const themeColor = 'purple';
+    const themeColor = 'blue';
 
     // Load Data
     useEffect(() => {
@@ -336,8 +336,8 @@ export default function IngresarSolicitud() {
                 className="group relative bg-[#1e2235]/40 border border-white/10 rounded-2xl p-4 cursor-pointer hover:bg-white/5 hover:border-purple-500/30 transition-all flex items-center justify-between shadow-inner"
             >
                 <div className="flex items-center gap-4 min-w-0">
-                    <div className="w-10 h-10 rounded-xl bg-purple-500/10 flex items-center justify-center shrink-0 border border-purple-500/10">
-                        <Icon className="w-5 h-5 text-purple-400 group-hover:scale-110 transition-transform" />
+                    <div className="w-10 h-10 rounded-xl bg-blue-500/10 flex items-center justify-center shrink-0 border border-blue-500/10">
+                        <Icon className="w-5 h-5 text-blue-400 group-hover:scale-110 transition-transform" />
                     </div>
                     <div className="min-w-0">
                         <span className={cn(
@@ -346,7 +346,7 @@ export default function IngresarSolicitud() {
                         )}>
                             {displayValue || 'Seleccionar...'}
                         </span>
-                        {value && <span className="text-[9px] text-purple-500/50 font-black uppercase tracking-tighter">Sincronizado</span>}
+                        {value && <span className="text-[9px] text-blue-500/50 font-black uppercase tracking-tighter">Sincronizado</span>}
                     </div>
                 </div>
                 <ChevronRight className="w-5 h-5 text-gray-700 group-hover:translate-x-1 transition-transform shrink-0" />
@@ -358,8 +358,8 @@ export default function IngresarSolicitud() {
         <div className="min-h-screen bg-[#0f111a] p-4 md:p-8 relative">
             {/* Ambient Background Elements */}
             <div className="fixed inset-0 pointer-events-none overflow-hidden">
-                <div className="absolute top-[10%] left-[10%] w-[500px] h-[500px] bg-purple-500/10 rounded-full blur-[120px] animate-pulse" />
-                <div className="absolute bottom-[10%] right-[10%] w-[400px] h-[400px] bg-violet-600/5 rounded-full blur-[100px]" />
+                <div className="absolute top-[10%] left-[10%] w-[500px] h-[500px] bg-blue-500/10 rounded-full blur-[120px] animate-pulse" />
+                <div className="absolute bottom-[10%] right-[10%] w-[400px] h-[400px] bg-cyan-600/5 rounded-full blur-[100px]" />
             </div>
 
             <PageHeader
@@ -387,7 +387,7 @@ export default function IngresarSolicitud() {
                     <div className="lg:col-span-2 space-y-6">
                         <div className="bg-[#1e2235] border border-white/10 rounded-[2.5rem] shadow-2xl p-6 md:p-8 space-y-8">
                             <div className="flex items-center gap-3 mb-2">
-                                <Edit className="w-5 h-5 text-purple-400" />
+                                <Edit className="w-5 h-5 text-blue-400" />
                                 <h3 className="text-xl font-black text-white uppercase tracking-tight italic">Detalles del Requerimiento</h3>
                             </div>
 
@@ -401,7 +401,7 @@ export default function IngresarSolicitud() {
                                     <textarea
                                         value={formData.descripcion}
                                         onChange={(e) => setFormData(prev => ({ ...prev, descripcion: e.target.value }))}
-                                        className="w-full min-h-[160px] bg-black/30 border border-white/10 rounded-3xl py-5 pl-14 pr-6 text-white font-medium placeholder-gray-700 focus:outline-none focus:border-purple-500/50 transition-all shadow-inner resize-none leading-relaxed"
+                                        className="w-full min-h-[160px] bg-black/30 border border-white/10 rounded-3xl py-5 pl-14 pr-6 text-white font-medium placeholder-gray-700 focus:outline-none focus:border-blue-500/50 transition-all shadow-inner resize-none leading-relaxed"
                                         placeholder="Describa detalladamente el requerimiento o falla técnica..."
                                     />
                                 </div>
@@ -460,7 +460,7 @@ export default function IngresarSolicitud() {
                         {/* Evidence Upload Box */}
                         <div className="bg-[#1e2235] border border-white/10 rounded-[2.5rem] shadow-2xl p-6 md:p-8 space-y-6">
                             <div className="flex items-center gap-3">
-                                <Camera className="w-5 h-5 text-purple-400" />
+                                <Camera className="w-5 h-5 text-blue-400" />
                                 <h3 className="text-xl font-black text-white uppercase tracking-tight italic">Evidencia</h3>
                             </div>
 
@@ -481,12 +481,12 @@ export default function IngresarSolicitud() {
                                 <div className="grid grid-cols-1 gap-4">
                                     <button
                                         onClick={startCamera}
-                                        className="h-32 rounded-3xl bg-black/30 border border-white/5 border-dashed hover:border-purple-500/40 hover:bg-purple-500/5 transition-all flex flex-col items-center justify-center gap-3 group/opt"
+                                        className="h-32 rounded-3xl bg-black/30 border border-white/5 border-dashed hover:border-blue-500/40 hover:bg-blue-500/5 transition-all flex flex-col items-center justify-center gap-3 group/opt"
                                     >
-                                        <div className="w-10 h-10 rounded-xl bg-purple-500/10 flex items-center justify-center text-purple-400 group-hover/opt:scale-110 transition-transform">
+                                        <div className="w-10 h-10 rounded-xl bg-blue-500/10 flex items-center justify-center text-blue-400 group-hover/opt:scale-110 transition-transform">
                                             <Camera className="w-6 h-6" />
                                         </div>
-                                        <span className="text-[10px] font-black uppercase tracking-[0.2em] text-gray-600 group-hover/opt:text-purple-400">Tomar Foto</span>
+                                        <span className="text-[10px] font-black uppercase tracking-[0.2em] text-gray-600 group-hover/opt:text-blue-400">Tomar Foto</span>
                                     </button>
                                     <label
                                         htmlFor="file-upload"
@@ -503,19 +503,19 @@ export default function IngresarSolicitud() {
                         </div>
 
                         {/* Save Button Container */}
-                        <div className="bg-gradient-to-br from-purple-600 to-violet-700 rounded-[2.5rem] p-8 shadow-2xl shadow-purple-900/40 relative overflow-hidden group">
+                        <div className="bg-gradient-to-br from-blue-600 to-cyan-700 rounded-[2.5rem] p-8 shadow-2xl shadow-blue-900/40 relative overflow-hidden group">
                             <Zap className="absolute -right-4 -top-4 w-32 h-32 text-white/5 -rotate-12 group-hover:scale-110 transition-transform duration-700" />
 
                             <div className="relative z-10 space-y-6">
                                 <div className="space-y-1">
                                     <h4 className="text-white font-black text-2xl uppercase tracking-tighter italic">Finalizar</h4>
-                                    <p className="text-purple-200 text-[10px] font-bold uppercase tracking-widest opacity-80">Asegúrese que los datos son correctos</p>
+                                    <p className="text-blue-100 text-[10px] font-bold uppercase tracking-widest opacity-80">Asegúrese que los datos son correctos</p>
                                 </div>
 
                                 <button
                                     onClick={handleSave}
                                     disabled={saving || loading}
-                                    className="w-full py-5 bg-white text-purple-700 font-black text-xl rounded-2xl shadow-2xl hover:scale-[1.02] active:scale-95 transition-all flex items-center justify-center gap-3 disabled:opacity-50 uppercase tracking-tight"
+                                    className="w-full py-5 bg-white text-blue-700 font-black text-xl rounded-2xl shadow-2xl hover:scale-[1.02] active:scale-95 transition-all flex items-center justify-center gap-3 disabled:opacity-50 uppercase tracking-tight"
                                 >
                                     {saving ? <Loader2 className="w-7 h-7 animate-spin" /> : <Save className="w-7 h-7" />}
                                     Guardar STI
