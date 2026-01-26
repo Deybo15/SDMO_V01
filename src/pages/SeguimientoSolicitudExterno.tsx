@@ -749,23 +749,48 @@ export default function SeguimientoSolicitudExterno() {
                                         </div>
                                         <div className="space-y-2">
                                             <label className="text-sm font-medium text-gray-300">Fecha Ingreso</label>
-                                            <input type="date" className="w-full bg-[#1e2230] border border-white/10 rounded-lg p-2.5 text-white focus:border-[#8e44ad] outline-none" value={seguimientoData.fecha_ingreso || ''} onChange={(e) => setSeguimientoData({ ...seguimientoData, fecha_ingreso: e.target.value })} />
+                                            <input
+                                                type="date"
+                                                className="w-full bg-[#1e2230] border border-white/10 rounded-lg p-2.5 text-white focus:border-[#8e44ad] outline-none [color-scheme:dark]"
+                                                value={seguimientoData.fecha_ingreso || ''}
+                                                onChange={(e) => setSeguimientoData({ ...seguimientoData, fecha_ingreso: e.target.value })}
+                                            />
                                         </div>
                                         <div className="space-y-2">
                                             <label className="text-sm font-medium text-gray-300">Fecha Inicio</label>
-                                            <input type="date" className="w-full bg-[#1e2230] border border-white/10 rounded-lg p-2.5 text-white focus:border-[#8e44ad] outline-none" value={seguimientoData.fecha_inicio || ''} onChange={(e) => setSeguimientoData({ ...seguimientoData, fecha_inicio: e.target.value })} />
+                                            <input
+                                                type="date"
+                                                className="w-full bg-[#1e2230] border border-white/10 rounded-lg p-2.5 text-white focus:border-[#8e44ad] outline-none [color-scheme:dark]"
+                                                value={seguimientoData.fecha_inicio || ''}
+                                                onChange={(e) => setSeguimientoData({ ...seguimientoData, fecha_inicio: e.target.value })}
+                                            />
                                         </div>
                                         <div className="space-y-2">
                                             <label className="text-sm font-medium text-gray-300">Fecha Asignación</label>
-                                            <input type="date" className="w-full bg-[#1e2230] border border-white/10 rounded-lg p-2.5 text-white focus:border-[#8e44ad] outline-none" value={seguimientoData.fecha_asignacion || ''} onChange={(e) => setSeguimientoData({ ...seguimientoData, fecha_asignacion: e.target.value })} />
+                                            <input
+                                                type="date"
+                                                className="w-full bg-[#1e2230] border border-white/10 rounded-lg p-2.5 text-white focus:border-[#8e44ad] outline-none [color-scheme:dark]"
+                                                value={seguimientoData.fecha_asignacion || ''}
+                                                onChange={(e) => setSeguimientoData({ ...seguimientoData, fecha_asignacion: e.target.value })}
+                                            />
                                         </div>
                                         <div className="space-y-2">
                                             <label className="text-sm font-medium text-gray-300">Fecha Valoración</label>
-                                            <input type="date" className="w-full bg-[#1e2230] border border-white/10 rounded-lg p-2.5 text-white focus:border-[#8e44ad] outline-none" value={seguimientoData.fecha_valoracion || ''} onChange={(e) => setSeguimientoData({ ...seguimientoData, fecha_valoracion: e.target.value })} />
+                                            <input
+                                                type="date"
+                                                className="w-full bg-[#1e2230] border border-white/10 rounded-lg p-2.5 text-white focus:border-[#8e44ad] outline-none [color-scheme:dark]"
+                                                value={seguimientoData.fecha_valoracion || ''}
+                                                onChange={(e) => setSeguimientoData({ ...seguimientoData, fecha_valoracion: e.target.value })}
+                                            />
                                         </div>
                                         <div className="space-y-2">
                                             <label className="text-sm font-medium text-gray-300">Fecha Finalización</label>
-                                            <input type="date" className="w-full bg-[#1e2230] border border-white/10 rounded-lg p-2.5 text-white focus:border-[#8e44ad] outline-none" value={seguimientoData.fecha_finalizacion || ''} onChange={(e) => setSeguimientoData({ ...seguimientoData, fecha_finalizacion: e.target.value })} />
+                                            <input
+                                                type="date"
+                                                className="w-full bg-[#1e2230] border border-white/10 rounded-lg p-2.5 text-white focus:border-[#8e44ad] outline-none [color-scheme:dark]"
+                                                value={seguimientoData.fecha_finalizacion || ''}
+                                                onChange={(e) => setSeguimientoData({ ...seguimientoData, fecha_finalizacion: e.target.value })}
+                                            />
                                         </div>
                                     </div>
                                 </div>
@@ -896,7 +921,7 @@ export default function SeguimientoSolicitudExterno() {
                                 <label className="text-sm font-medium text-gray-300">Fecha *</label>
                                 <input
                                     type="date"
-                                    className="w-full bg-[#1e2230] border border-white/10 rounded-lg p-2.5 text-white focus:border-[#8e44ad] outline-none"
+                                    className="w-full bg-[#1e2230] border border-white/10 rounded-lg p-2.5 text-white focus:border-[#8e44ad] outline-none [color-scheme:dark]"
                                     value={nuevoRegistro.fecha}
                                     onChange={(e) => setNuevoRegistro({ ...nuevoRegistro, fecha: e.target.value })}
                                 />

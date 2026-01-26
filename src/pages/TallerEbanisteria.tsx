@@ -32,6 +32,7 @@ export default function TallerEbanisteria() {
         onSuccess: () => {
             setRetira('');
             setComentarios('');
+            showAlert('Solicitud procesada y ventana reiniciada', 'success');
         }
     });
 
@@ -39,6 +40,12 @@ export default function TallerEbanisteria() {
     const [autoriza, setAutoriza] = useState('');
     const [retira, setRetira] = useState('');
     const [comentarios, setComentarios] = useState('');
+
+    // 3. Validation
+    const isFormValid =
+        autoriza !== '' &&
+        retira !== '' &&
+        items.some(item => item.codigo_articulo && Number(item.cantidad) > 0);
     const [showSearch, setShowSearch] = useState(false);
     const [currentRowIndex, setCurrentRowIndex] = useState<number>(0);
 
@@ -157,16 +164,14 @@ export default function TallerEbanisteria() {
                         </div>
 
                         {/* Actions */}
-                        <div className="flex justify-end pt-4">
-                            <button
-                                type="submit"
-                                disabled={loading}
-                                className={`w-full md:w-auto px-8 py-4 bg-gradient-to-r from-${colorTheme}-600 to-${colorTheme}-400 text-white font-black rounded-xl hover:brightness-110 transition-all flex items-center justify-center gap-3 disabled:opacity-50 shadow-xl shadow-${colorTheme}-500/20 active:scale-95`}
-                            >
-                                {loading ? <Loader2 className="w-6 h-6 animate-spin" /> : <Save className="w-6 h-6" />}
-                                <span className="text-lg">Procesar Solicitud</span>
-                            </button>
-                        </div>
+                        <button
+                            type="submit"
+                            disabled={loading || !isFormValid}
+                            className={`w-full md:w-auto px-8 py-4 bg-gradient-to-r from-${colorTheme}-600 to-${colorTheme}-400 text-white font-black rounded-xl hover:brightness-110 transition-all flex items-center justify-center gap-3 disabled:opacity-50 disabled:grayscale disabled:cursor-not-allowed shadow-xl shadow-${colorTheme}-500/20 active:scale-95`}
+                        >
+                            {loading ? <Loader2 className="w-6 h-6 animate-spin" /> : <Save className="w-6 h-6" />}
+                            <span className="text-lg">Procesar Solicitud</span>
+                        </button>
                     </form>
                 </div>
             </div>

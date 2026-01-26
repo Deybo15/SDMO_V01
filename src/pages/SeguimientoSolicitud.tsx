@@ -546,6 +546,7 @@ export default function SeguimientoSolicitud() {
                                                 <thead className="bg-white/[0.06]">
                                                     <tr className="text-[10px] text-white/50 uppercase tracking-[0.2em] font-black">
                                                         <th className="px-10 py-5 text-left">N° Salida</th>
+                                                        <th className="px-10 py-5 text-left">Fecha</th>
                                                         <th className="px-10 py-5 text-left">Insumo Técnico</th>
                                                         <th className="px-10 py-5 text-right">Cantidad</th>
                                                     </tr>
@@ -555,6 +556,9 @@ export default function SeguimientoSolicitud() {
                                                         <tr key={i} className="hover:bg-white/[0.05] transition-colors group">
                                                             <td className="px-10 py-5 text-[11px] font-black text-white/30 group-hover:text-amber-500/60 transition-colors">#{art.id_salida}</td>
                                                             <td className="px-10 py-5">
+                                                                <p className="text-xs font-black text-white/70 uppercase tracking-tighter Otros">{new Date(art.fecha_salida).toLocaleDateString('es-ES', { day: '2-digit', month: '2-digit', year: 'numeric' })}</p>
+                                                            </td>
+                                                            <td className="px-10 py-5">
                                                                 <p className="font-black text-white text-sm tracking-tight">{art.nombre_articulo}</p>
                                                                 <p className="text-[10px] text-amber-500 font-mono tracking-widest mt-2">{art.codigo_articulo}</p>
                                                             </td>
@@ -562,7 +566,7 @@ export default function SeguimientoSolicitud() {
                                                         </tr>
                                                     ))}
                                                     {articulos.length === 0 && (
-                                                        <tr><td colSpan={3} className="px-10 py-20 text-center text-white/10 text-[11px] font-black uppercase tracking-[0.4em]">No se registran materiales</td></tr>
+                                                        <tr><td colSpan={4} className="px-10 py-20 text-center text-white/10 text-[11px] font-black uppercase tracking-[0.4em]">No se registran materiales</td></tr>
                                                     )}
                                                 </tbody>
                                             </table>
@@ -604,7 +608,15 @@ export default function SeguimientoSolicitud() {
                                                         showNotification('Error cronología de fechas', 'error'); return;
                                                     }
                                                     const { error } = await supabase.from('seguimiento_solicitud').upsert({ numero_solicitud: selectedSolicitud.numero_solicitud, estado_actual: seguimientoData?.estado_actual, fecha_inicio: seguimientoData?.fecha_inicio || null, fecha_finalizacion: seguimientoData?.fecha_finalizacion || null });
-                                                    if (!error) { showNotification('Sincronización Exitosa', 'success'); setIsModalOpen(false); fetchSolicitudes(); loadStats(); }
+                                                    if (error) {
+                                                        console.error("Error al sincronizar:", error);
+                                                        showNotification(`Error: ${error.message}`, 'error');
+                                                    } else {
+                                                        showNotification('Sincronización Exitosa', 'success');
+                                                        setIsModalOpen(false);
+                                                        fetchSolicitudes();
+                                                        loadStats();
+                                                    }
                                                 }} className="w-full h-20 bg-blue-600 hover:bg-blue-500 text-white font-black text-[13px] uppercase tracking-[0.2em] rounded-[1.5rem] shadow-4xl transition-all shadow-blue-600/20 active:scale-95 flex items-center justify-center gap-4">
                                                     <CheckCircle className="w-6 h-6" /> Guardar Cambios
                                                 </button>

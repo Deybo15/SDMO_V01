@@ -138,7 +138,7 @@ export default function VirtualizedTable<T>({
                                     <div
                                         style={style}
                                         className={cn(
-                                            "flex items-center hover:bg-slate-50 dark:hover:bg-slate-700/50 transition-colors border-b border-slate-100 dark:border-slate-800",
+                                            "flex items-start hover:bg-slate-50 dark:hover:bg-slate-700/50 transition-colors border-b border-slate-100 dark:border-slate-800 overflow-hidden",
                                             index % 2 === 0 ? "bg-white dark:bg-slate-900/10" : "bg-white dark:bg-transparent"
                                         )}
                                     >
@@ -146,7 +146,7 @@ export default function VirtualizedTable<T>({
                                             <div
                                                 key={colIdx}
                                                 style={{ width: col.width, minWidth: 0 }}
-                                                className={cn("px-3 py-4", col.className)}
+                                                className={cn("px-3 py-4 flex flex-col justify-start", col.className)}
                                             >
                                                 {renderCell(item, colIdx, index)}
                                             </div>
