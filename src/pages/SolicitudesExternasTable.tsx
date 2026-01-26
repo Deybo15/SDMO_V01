@@ -68,8 +68,9 @@ export default function SolicitudesExternasTable() {
         try {
             let query = supabase
                 .from('solicitud_17')
-                .select('numero_solicitud, descripcion_solicitud, fecha_solicitud', { count: 'exact' })
-                .eq('tipo_solicitud', 'STE');
+                .select('numero_solicitud, descripcion_solicitud, fecha_solicitud, seguimiento_solicitud!inner(estado_actual)', { count: 'exact' })
+                .eq('tipo_solicitud', 'STE')
+                .eq('seguimiento_solicitud.estado_actual', 'ACTIVA');
 
             if (filtroNumero && !isNaN(Number(filtroNumero))) {
                 query = query.eq('numero_solicitud', Number(filtroNumero));
@@ -118,8 +119,27 @@ export default function SolicitudesExternasTable() {
         if ((currentPage * itemsPerPage) < totalItems) setCurrentPage(prev => prev + 1);
     };
 
-    const exportToExcel = () => {
-        const ws = XLSX.utils.json_to_sheet(solicitudes.map(s => ({
+    const getExportData = async () => {
+        let query = supabase
+            .from('solicitud_17')
+            .select('numero_solicitud, descripcion_solicitud, fecha_solicitud, seguimiento_solicitud!inner(estado_actual)')
+            .eq('tipo_solicitud', 'STE')
+            .eq('seguimiento_solicitud.estado_actual', 'ACTIVA');
+
+        if (filtroNumero && !isNaN(Number(filtroNumero))) {
+            query = query.eq('numero_solicitud', Number(filtroNumero));
+        }
+        if (filtroDescripcion) {
+            query = query.ilike('descripcion_solicitud', `%${filtroDescripcion}%`);
+        }
+
+        const { data } = await query.order('numero_solicitud', { ascending: false });
+        return data || [];
+    };
+
+    const exportToExcel = async () => {
+        const data = await getExportData();
+        const ws = XLSX.utils.json_to_sheet(data.map(s => ({
             'Número de Solicitud': s.numero_solicitud,
             'Descripción': s.descripcion_solicitud,
             'Fecha': new Date(s.fecha_solicitud).toLocaleDateString('es-CR')
@@ -129,11 +149,12 @@ export default function SolicitudesExternasTable() {
         XLSX.writeFile(wb, 'Solicitudes_Cliente_Externo.xlsx');
     };
 
-    const exportToPDF = () => {
+    const exportToPDF = async () => {
+        const data = await getExportData();
         const doc = new jsPDF();
         autoTable(doc, {
             head: [['Número', 'Descripción', 'Fecha']],
-            body: solicitudes.map(s => [
+            body: data.map(s => [
                 s.numero_solicitud,
                 s.descripcion_solicitud,
                 new Date(s.fecha_solicitud).toLocaleDateString('es-CR')

@@ -437,9 +437,9 @@ export default function RealizarSalida() {
                                     <input
                                         type="text"
                                         value={numeroSolicitud}
-                                        onChange={(e) => setNumeroSolicitud(e.target.value)}
-                                        className="w-full bg-black/30 border border-white/10 rounded-2xl py-4 pl-14 pr-4 text-white font-bold placeholder-gray-700 focus:outline-none focus:border-teal-500/50 transition-all shadow-inner"
-                                        placeholder="Ejem: 8639..."
+                                        readOnly
+                                        className="w-full bg-black/10 border border-white/5 rounded-2xl py-4 pl-14 pr-4 text-slate-400 font-bold cursor-not-allowed opacity-80 shadow-inner"
+                                        placeholder="Sin número..."
                                     />
                                 </div>
                             </div>

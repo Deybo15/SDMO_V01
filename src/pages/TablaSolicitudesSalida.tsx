@@ -82,8 +82,9 @@ export default function TablaSolicitudesSalida() {
         try {
             let query = supabase
                 .from('solicitud_17')
-                .select('numero_solicitud, fecha_solicitud, descripcion_solicitud, instalaciones_municipales_16(instalacion_municipal)', { count: 'exact' })
-                .eq('tipo_solicitud', 'STI');
+                .select('numero_solicitud, fecha_solicitud, descripcion_solicitud, instalaciones_municipales_16(instalacion_municipal), seguimiento_solicitud!inner(estado_actual)', { count: 'exact' })
+                .eq('tipo_solicitud', 'STI')
+                .eq('seguimiento_solicitud.estado_actual', 'ACTIVA');
 
             // Apply filters
             if (searchNum) {
@@ -124,8 +125,9 @@ export default function TablaSolicitudesSalida() {
         // Fetch all matching records for export
         let query = supabase
             .from('solicitud_17')
-            .select('numero_solicitud, fecha_solicitud, descripcion_solicitud, instalaciones_municipales_16(instalacion_municipal)')
-            .eq('tipo_solicitud', 'STI');
+            .select('numero_solicitud, fecha_solicitud, descripcion_solicitud, instalaciones_municipales_16(instalacion_municipal), seguimiento_solicitud!inner(estado_actual)')
+            .eq('tipo_solicitud', 'STI')
+            .eq('seguimiento_solicitud.estado_actual', 'ACTIVA');
 
         if (searchNum) query = query.eq('numero_solicitud', searchNum);
         if (searchDesc) query = query.ilike('descripcion_solicitud', `%${searchDesc}%`);
@@ -148,8 +150,9 @@ export default function TablaSolicitudesSalida() {
     const handleExportPDF = async () => {
         let query = supabase
             .from('solicitud_17')
-            .select('numero_solicitud, fecha_solicitud, descripcion_solicitud, instalaciones_municipales_16(instalacion_municipal)')
-            .eq('tipo_solicitud', 'STI');
+            .select('numero_solicitud, fecha_solicitud, descripcion_solicitud, instalaciones_municipales_16(instalacion_municipal), seguimiento_solicitud!inner(estado_actual)')
+            .eq('tipo_solicitud', 'STI')
+            .eq('seguimiento_solicitud.estado_actual', 'ACTIVA');
 
         if (searchNum) query = query.eq('numero_solicitud', searchNum);
         if (searchDesc) query = query.ilike('descripcion_solicitud', `%${searchDesc}%`);
