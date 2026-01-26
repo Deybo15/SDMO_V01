@@ -16,7 +16,8 @@ import {
     Loader2,
     ArrowLeft,
     ChevronRight,
-    Edit
+    Edit,
+    Shield
 } from 'lucide-react';
 import { cn } from '../lib/utils';
 
@@ -385,7 +386,6 @@ export default function RegistroSalidaExterno() {
         i.codigo_articulo.toLowerCase().includes(articuloTermino.toLowerCase())
     );
 
-    // Component for Interactive Selector Cards
     const SelectorCard = ({
         label,
         value,
@@ -393,7 +393,8 @@ export default function RegistroSalidaExterno() {
         onOpen,
         icon: Icon,
         required = false,
-        disabled = false
+        disabled = false,
+        locked = false
     }: any) => (
         <div className="space-y-3">
             <label className={cn(
@@ -403,17 +404,20 @@ export default function RegistroSalidaExterno() {
                 {label}
             </label>
             <div
-                onClick={!disabled ? onOpen : undefined}
+                onClick={(!disabled && !locked) ? onOpen : undefined}
                 className={cn(
-                    "group relative bg-[#1e2235]/40 border border-white/10 rounded-2xl p-4 transition-all flex items-center justify-between shadow-inner",
-                    !disabled ? "cursor-pointer hover:bg-white/5 hover:border-teal-500/30" : "cursor-not-allowed opacity-75"
+                    "group relative border rounded-2xl p-4 transition-all flex items-center justify-between shadow-inner",
+                    (disabled || locked) ? "bg-black/10 border-white/5 cursor-not-allowed opacity-80" : "bg-[#1e2235]/40 border-white/10 cursor-pointer hover:bg-white/5 hover:border-teal-500/30"
                 )}
             >
                 <div className="flex items-center gap-4 min-w-0">
-                    <div className="w-10 h-10 rounded-xl bg-teal-500/10 flex items-center justify-center shrink-0 border border-teal-500/10">
+                    <div className={cn(
+                        "w-10 h-10 rounded-xl flex items-center justify-center shrink-0 border",
+                        (disabled || locked) ? "bg-slate-800 border-white/5" : "bg-teal-500/10 border-teal-500/10"
+                    )}>
                         <Icon className={cn(
-                            "w-5 h-5 text-teal-400 transition-transform",
-                            !disabled && "group-hover:scale-110"
+                            "w-5 h-5 transition-transform",
+                            (disabled || locked) ? "text-slate-500" : "text-teal-400 group-hover:scale-110"
                         )} />
                     </div>
                     <div className="min-w-0">
@@ -425,13 +429,19 @@ export default function RegistroSalidaExterno() {
                         </span>
                         {value && (
                             <div className="flex items-center gap-1.5 mt-0.5">
-                                <CheckCircle className="w-3 h-3 text-teal-500" />
-                                <span className="text-[9px] text-teal-500/50 font-black uppercase tracking-tighter">Sincronizado</span>
+                                <Shield className={cn("w-3 h-3", locked ? "text-slate-500" : "text-teal-500")} />
+                                <span className={cn(
+                                    "text-[9px] font-black uppercase tracking-tighter",
+                                    locked ? "text-slate-600" : "text-teal-500/50"
+                                )}>
+                                    {locked ? "Asignado automáticamente" : "Sincronizado"}
+                                </span>
                             </div>
                         )}
                     </div>
                 </div>
-                {!disabled && <ChevronRight className="w-5 h-5 text-gray-700 group-hover:translate-x-1 transition-transform shrink-0" />}
+                {!disabled && !locked && <ChevronRight className="w-5 h-5 text-gray-700 group-hover:translate-x-1 transition-transform shrink-0" />}
+                {(disabled || locked) && <Shield className="w-4 h-4 text-slate-700 shrink-0" />}
             </div>
         </div>
     );
@@ -489,6 +499,7 @@ export default function RegistroSalidaExterno() {
                                     icon={User}
                                     disabled
                                     required
+                                    locked={!!autoriza}
                                 />
 
                                 <SelectorCard

@@ -12,8 +12,10 @@ import {
     Loader2,
     Ticket,
     MessageSquare,
-    ChevronRight
+    ChevronRight,
+    Shield
 } from 'lucide-react';
+import { cn } from '../lib/utils';
 
 
 
@@ -380,21 +382,28 @@ export default function RealizarSalida() {
                             <div className="space-y-3">
                                 <label className="text-[10px] font-black text-gray-500 uppercase tracking-widest ml-1 block">Responsable (Autoriza)</label>
                                 <div
-                                    onClick={() => handleOpenBusqueda('autoriza')}
-                                    className="group relative bg-black/30 border border-white/10 rounded-2xl p-4 cursor-pointer hover:bg-white/5 hover:border-teal-500/30 transition-all flex items-center justify-between shadow-inner"
+                                    onClick={autorizaId ? undefined : () => handleOpenBusqueda('autoriza')}
+                                    className={cn(
+                                        "group relative border rounded-2xl p-4 transition-all flex items-center justify-between shadow-inner",
+                                        autorizaId ? "bg-black/10 border-white/5 cursor-not-allowed" : "bg-black/30 border-white/10 cursor-pointer hover:bg-white/5 hover:border-teal-500/30"
+                                    )}
                                 >
                                     <div className="flex items-center gap-4 min-w-0">
-                                        <div className={`w-10 h-10 rounded-xl bg-${themeColor}-500/10 flex items-center justify-center shrink-0`}>
-                                            <UserCircle className={`w-5 h-5 text-${themeColor}-400 group-hover:scale-110 transition-transform`} />
+                                        <div className={cn(
+                                            "w-10 h-10 rounded-xl flex items-center justify-center shrink-0",
+                                            autorizaId ? "bg-slate-800" : `bg-${themeColor}-500/10`
+                                        )}>
+                                            <UserCircle className={cn("w-5 h-5 transition-transform", autorizaId ? "text-slate-500" : `text-${themeColor}-400 group-hover:scale-110`)} />
                                         </div>
                                         <div className="min-w-0">
-                                            <span className={`block truncate font-bold ${autorizaId ? 'text-white' : 'text-gray-600 italic'}`}>
+                                            <span className={cn("block truncate font-bold", autorizaId ? 'text-slate-300' : 'text-gray-600 italic')}>
                                                 {autorizaAlias || 'Seleccionar...'}
                                             </span>
-                                            {autorizaId && <span className="text-[9px] text-gray-500 font-mono tracking-tighter uppercase">{autorizaId}</span>}
+                                            {autorizaId && <span className="text-[9px] text-gray-500 font-mono tracking-tighter uppercase">Asignado: {autorizaId}</span>}
                                         </div>
                                     </div>
-                                    <ChevronRight className="w-5 h-5 text-gray-700 group-hover:translate-x-1 transition-transform shrink-0" />
+                                    {!autorizaId && <ChevronRight className="w-5 h-5 text-gray-700 group-hover:translate-x-1 transition-transform shrink-0" />}
+                                    {autorizaId && <Shield className="w-4 h-4 text-slate-700 shrink-0" />}
                                 </div>
                             </div>
 

@@ -1,15 +1,17 @@
-import { Search, X, LucideIcon } from 'lucide-react';
+import { Search, X, LucideIcon, Shield } from 'lucide-react';
+import { cn } from '../lib/utils';
 
 interface FormSelectProps {
     label: string;
     value: string | number;
     displayValue: string;
     placeholder?: string;
-    onOpenSearch: () => void;
-    onClear: () => void;
+    onOpenSearch?: () => void;
+    onClear?: () => void;
     loading?: boolean;
     disabled?: boolean;
     required?: boolean;
+    locked?: boolean;
     icon?: LucideIcon;
 }
 
@@ -23,7 +25,8 @@ export default function FormSelect({
     icon: Icon,
     loading = false,
     disabled = false,
-    required = false
+    required = false,
+    locked = false
 }: FormSelectProps) {
     return (
         <div className="space-y-2">
@@ -35,9 +38,12 @@ export default function FormSelect({
                 <div className="absolute -inset-1 bg-gradient-to-r from-purple-500/10 to-violet-500/10 rounded-xl blur opacity-0 group-hover/field:opacity-100 transition duration-500"></div>
 
                 <div
-                    onClick={() => !disabled && !loading && onOpenSearch()}
-                    className={`relative w-full bg-[#1E293B]/40 backdrop-blur-xl border border-white/10 rounded-xl px-4 py-3.5 text-[#e4e6ea] transition-all flex items-center justify-between ${disabled || loading ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer group-hover/field:border-purple-500/40 group-hover/field:bg-white/5'
-                        }`}
+                    onClick={() => !disabled && !loading && !locked && onOpenSearch?.()}
+                    className={cn(
+                        "relative w-full bg-[#1E293B]/40 backdrop-blur-xl border rounded-xl px-4 py-3.5 text-[#e4e6ea] transition-all flex items-center justify-between",
+                        (disabled || loading || locked) ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer group-hover/field:border-purple-500/40 group-hover/field:bg-white/5',
+                        locked ? 'border-purple-500/20 bg-purple-500/5' : 'border-white/10'
+                    )}
                 >
                     <div className="flex items-center gap-3 flex-1 min-w-0">
                         {Icon && <Icon className={`w-4 h-4 ${value ? 'text-purple-400' : 'text-slate-500'}`} />}
@@ -48,7 +54,7 @@ export default function FormSelect({
 
                     {/* Action Group */}
                     <div className="flex items-center gap-2">
-                        {value && !disabled && !loading && (
+                        {value && !disabled && !loading && !locked && onClear && (
                             <button
                                 onClick={(e) => {
                                     e.stopPropagation();
@@ -60,8 +66,18 @@ export default function FormSelect({
                                 <span className="text-[10px] font-black uppercase tracking-tighter">Limpiar</span>
                             </button>
                         )}
+                        {locked && (
+                            <div className="flex items-center gap-1.5 px-2 py-1 bg-purple-500/10 border border-purple-500/20 rounded-lg">
+                                <Shield className="w-3 h-3 text-purple-400" />
+                                <span className="text-[9px] font-black text-purple-400 uppercase tracking-tighter">Asignado</span>
+                            </div>
+                        )}
                         <div className="w-px h-4 bg-white/10 mx-1"></div>
-                        <Search className={`w-4 h-4 transition-transform duration-300 group-hover/field:scale-110 ${value ? 'text-purple-400' : 'text-slate-400'}`} />
+                        <Search className={cn(
+                            "w-4 h-4 transition-transform duration-300",
+                            !locked && "group-hover/field:scale-110",
+                            (value || locked) ? 'text-purple-400' : 'text-slate-400'
+                        )} />
                     </div>
                 </div>
             </div>

@@ -1,7 +1,8 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '../../lib/supabase';
-import { ArrowLeft, Save, Plus, Trash2, Calendar, User, FileText, ArrowDownCircle, ArrowUpCircle, Search, UserPlus, ChevronLeft } from 'lucide-react';
+import { ArrowLeft, Save, Plus, Trash2, Calendar, User, FileText, ArrowDownCircle, ArrowUpCircle, Search, UserPlus, ChevronLeft, Shield } from 'lucide-react';
+import { cn } from '../../lib/utils';
 import { Toast, ToastType } from '../../components/ui/Toast';
 import { ConfirmationModal } from '../../components/ui/ConfirmationModal';
 import { ColaboradorSearchModal } from './components/ColaboradorSearchModal';
@@ -382,9 +383,13 @@ export default function AsignacionActivos() {
                                 </label>
                                 <select
                                     required
+                                    disabled={!!entradaForm.autoriza_entrada_activo}
                                     value={entradaForm.autoriza_entrada_activo}
                                     onChange={e => setEntradaForm({ ...entradaForm, autoriza_entrada_activo: e.target.value })}
-                                    className="w-full px-4 py-3 bg-slate-900/50 border border-slate-600 rounded-xl text-slate-200 focus:ring-2 focus:ring-emerald-500/50 focus:border-emerald-500 outline-none transition-all"
+                                    className={cn(
+                                        "w-full px-4 py-3 bg-slate-900/50 border rounded-xl text-slate-200 outline-none transition-all",
+                                        entradaForm.autoriza_entrada_activo ? "border-emerald-500/20 bg-emerald-500/5 opacity-80 cursor-not-allowed" : "border-slate-600 focus:ring-2 focus:ring-emerald-500/50 focus:border-emerald-500"
+                                    )}
                                 >
                                     <option value="">Seleccionar funcionario...</option>
                                     {colaboradores.filter(c => c.autorizado).map(col => (
@@ -393,6 +398,11 @@ export default function AsignacionActivos() {
                                         </option>
                                     ))}
                                 </select>
+                                {entradaForm.autoriza_entrada_activo && (
+                                    <p className="text-[10px] text-emerald-500/70 font-bold uppercase mt-1 ml-1 flex items-center gap-1">
+                                        <Shield className="w-3 h-3" /> Asignado automáticamente
+                                    </p>
+                                )}
                             </div>
                         </div>
 
@@ -536,9 +546,13 @@ export default function AsignacionActivos() {
                                 </label>
                                 <select
                                     required
+                                    disabled={!!salidaForm.autoriza}
                                     value={salidaForm.autoriza}
                                     onChange={e => setSalidaForm({ ...salidaForm, autoriza: e.target.value })}
-                                    className="w-full px-4 py-3 bg-slate-900/50 border border-slate-600 rounded-xl text-slate-200 focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500 outline-none transition-all"
+                                    className={cn(
+                                        "w-full px-4 py-3 bg-slate-900/50 border rounded-xl text-slate-200 outline-none transition-all",
+                                        salidaForm.autoriza ? "border-blue-500/20 bg-blue-500/5 opacity-80 cursor-not-allowed" : "border-slate-600 focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500"
+                                    )}
                                 >
                                     <option value="">Seleccionar funcionario...</option>
                                     {colaboradores.filter(c => c.autorizado).map(col => (
@@ -547,6 +561,11 @@ export default function AsignacionActivos() {
                                         </option>
                                     ))}
                                 </select>
+                                {salidaForm.autoriza && (
+                                    <p className="text-[10px] text-blue-500/70 font-bold uppercase mt-1 ml-1 flex items-center gap-1">
+                                        <Shield className="w-3 h-3" /> Asignado automáticamente
+                                    </p>
+                                )}
                             </div>
                             <div className="space-y-2">
                                 <label className="text-sm font-medium text-slate-300 flex items-center gap-2">

@@ -322,7 +322,8 @@ export default function IngresarSolicitud() {
         displayValue,
         onOpen,
         icon: Icon,
-        required = false
+        required = false,
+        locked = false
     }: any) => (
         <div className="space-y-3">
             <label className={cn(
@@ -332,12 +333,18 @@ export default function IngresarSolicitud() {
                 {label}
             </label>
             <div
-                onClick={onOpen}
-                className="group relative bg-[#1e2235]/40 border border-white/10 rounded-2xl p-4 cursor-pointer hover:bg-white/5 hover:border-purple-500/30 transition-all flex items-center justify-between shadow-inner"
+                onClick={locked ? undefined : onOpen}
+                className={cn(
+                    "group relative bg-[#1e2235]/40 border rounded-2xl p-4 transition-all flex items-center justify-between shadow-inner",
+                    locked ? "border-white/5 bg-black/20 cursor-not-allowed" : "border-white/10 cursor-pointer hover:bg-white/5 hover:border-purple-500/30"
+                )}
             >
                 <div className="flex items-center gap-4 min-w-0">
-                    <div className="w-10 h-10 rounded-xl bg-blue-500/10 flex items-center justify-center shrink-0 border border-blue-500/10">
-                        <Icon className="w-5 h-5 text-blue-400 group-hover:scale-110 transition-transform" />
+                    <div className={cn(
+                        "w-10 h-10 rounded-xl flex items-center justify-center shrink-0 border",
+                        locked ? "bg-slate-800 border-white/5" : "bg-blue-500/10 border-blue-500/10"
+                    )}>
+                        <Icon className={cn("w-5 h-5 transition-transform", locked ? "text-slate-500" : "text-blue-400 group-hover:scale-110")} />
                     </div>
                     <div className="min-w-0">
                         <span className={cn(
@@ -346,10 +353,18 @@ export default function IngresarSolicitud() {
                         )}>
                             {displayValue || 'Seleccionar...'}
                         </span>
-                        {value && <span className="text-[9px] text-blue-500/50 font-black uppercase tracking-tighter">Sincronizado</span>}
+                        {value && (
+                            <span className={cn(
+                                "text-[9px] font-black uppercase tracking-tighter",
+                                locked ? "text-slate-600" : "text-blue-500/50"
+                            )}>
+                                {locked ? "Asignado automáticamente" : "Sincronizado"}
+                            </span>
+                        )}
                     </div>
                 </div>
-                <ChevronRight className="w-5 h-5 text-gray-700 group-hover:translate-x-1 transition-transform shrink-0" />
+                {!locked && <ChevronRight className="w-5 h-5 text-gray-700 group-hover:translate-x-1 transition-transform shrink-0" />}
+                {locked && <Shield className="w-4 h-4 text-slate-700 shrink-0" />}
             </div>
         </div>
     );
@@ -437,9 +452,10 @@ export default function IngresarSolicitud() {
                                     label="Profesional Responsable"
                                     value={formData.profesional}
                                     displayValue={getSelectedLabel('profesionales', formData.profesional)}
-                                    onOpen={() => handleOpenSearch('profesionales', 'Seleccionar Responsable')}
+                                    onOpen={formData.profesional ? undefined : () => handleOpenSearch('profesionales', 'Seleccionar Responsable')}
                                     icon={Users}
                                     required
+                                    locked={!!formData.profesional}
                                 />
                                 <div className="md:col-span-2">
                                     <SelectorCard

@@ -141,6 +141,19 @@ export default function IngresarSolicitudExterno() {
                     clientesExternos: mapData(clientesExt.data || [], 'id_cliente_externo', 'nombre_ce'),
                     clientesInternos: mapData(clientesInt.data || [], 'id_cliente', 'nombre')
                 });
+
+                // Auto-fill Profesional Responsable based on logged-in user
+                const { data: { user } } = await supabase.auth.getUser();
+                const userEmail = user?.email;
+
+                if (userEmail) {
+                    const matched = profesionales.data?.find((c: any) =>
+                        c.correo_colaborador?.toLowerCase() === userEmail.toLowerCase()
+                    );
+                    if (matched) {
+                        setFormData(prev => ({ ...prev, profesional: matched.identificacion.toString() }));
+                    }
+                }
             } catch (error) {
                 console.error("Unexpected error loading catalogs:", error);
                 showNotification("Error al cargar algunos datos de los catálogos", "error");
@@ -659,10 +672,11 @@ export default function IngresarSolicitudExterno() {
                                     label="Profesional Responsable"
                                     value={formData.profesional}
                                     displayValue={getSelectedLabel('profesionales', formData.profesional)}
-                                    onOpenSearch={() => handleOpenSearch('profesionales', 'Buscar Profesional')}
-                                    onClear={() => setFormData(prev => ({ ...prev, profesional: '' }))}
+                                    onOpenSearch={formData.profesional ? undefined : () => handleOpenSearch('profesionales', 'Buscar Profesional')}
+                                    onClear={formData.profesional ? undefined : () => setFormData(prev => ({ ...prev, profesional: '' }))}
                                     required
                                     icon={Users}
+                                    locked={!!formData.profesional}
                                 />
                             </div>
 
