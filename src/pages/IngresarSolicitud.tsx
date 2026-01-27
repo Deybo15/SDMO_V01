@@ -88,6 +88,7 @@ export default function IngresarSolicitud() {
     const [imagePreview, setImagePreview] = useState<string | null>(null);
     const [isCameraOpen, setIsCameraOpen] = useState(false);
     const [cameraStream, setCameraStream] = useState<MediaStream | null>(null);
+    const [defaultProfessionalId, setDefaultProfessionalId] = useState<string>('');
 
     const themeColor = 'blue';
 
@@ -125,6 +126,7 @@ export default function IngresarSolicitud() {
                     );
                     if (matched) {
                         setFormData(prev => ({ ...prev, profesional: matched.identificacion }));
+                        setDefaultProfessionalId(matched.identificacion);
                     }
                 }
             } catch (error) {
@@ -299,7 +301,7 @@ export default function IngresarSolicitud() {
                 area: '',
                 instalacion: '',
                 supervisor: '',
-                profesional: '',
+                profesional: defaultProfessionalId,
                 cliente: ''
             });
             handleRemoveImage();
