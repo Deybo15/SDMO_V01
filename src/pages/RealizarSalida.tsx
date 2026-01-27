@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { supabase } from '../lib/supabase';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import {
@@ -71,6 +71,18 @@ export default function RealizarSalida() {
     const [currentRowIndex, setCurrentRowIndex] = useState<number>(0);
 
     const themeColor = 'teal';
+
+    // 5. Validation Logic
+    const isFormValid = useMemo(() => {
+        const hasAutoriza = !!autorizaId;
+        const hasRetira = !!retiraId;
+        const hasVaildItems = items.some(item =>
+            item.codigo_articulo.trim() !== '' &&
+            Number(item.cantidad) > 0
+        );
+
+        return hasAutoriza && hasRetira && hasVaildItems;
+    }, [autorizaId, retiraId, items]);
 
     // Initialize
     useEffect(() => {
@@ -477,8 +489,13 @@ export default function RealizarSalida() {
                         {!finalizado ? (
                             <button
                                 type="submit"
-                                disabled={loading}
-                                className="w-full md:w-auto px-12 py-5 bg-gradient-to-r from-teal-600 to-teal-400 text-white font-black text-xl rounded-2xl hover:brightness-110 active:scale-95 transition-all flex items-center justify-center gap-3 disabled:opacity-50 shadow-xl shadow-teal-500/20 uppercase tracking-tight"
+                                disabled={loading || !isFormValid}
+                                className={cn(
+                                    "w-full md:w-auto px-12 py-5 text-white font-black text-xl rounded-2xl transition-all flex items-center justify-center gap-3 shadow-xl uppercase tracking-tight",
+                                    (loading || !isFormValid)
+                                        ? "bg-slate-700 opacity-50 cursor-not-allowed shadow-none"
+                                        : "bg-gradient-to-r from-teal-600 to-teal-400 hover:brightness-110 active:scale-95 shadow-teal-500/20"
+                                )}
                             >
                                 {loading ? <Loader2 className="w-7 h-7 animate-spin" /> : <Save className="w-7 h-7" />}
                                 Procesar Salida

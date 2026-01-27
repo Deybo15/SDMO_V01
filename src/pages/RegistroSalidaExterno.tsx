@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { supabase } from '../lib/supabase';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import {
@@ -58,7 +58,6 @@ export default function RegistroSalidaExterno() {
         todos: []
     });
     const [inventario, setInventario] = useState<Articulo[]>([]);
-    const [fechaActual, setFechaActual] = useState('');
 
     // 4. Modals State
     const [showBusquedaModal, setShowBusquedaModal] = useState(false);
@@ -75,15 +74,21 @@ export default function RegistroSalidaExterno() {
     const [totalInventory, setTotalInventory] = useState(0);
     const ITEMS_PER_PAGE = 1000;
 
-    // Effects
+    const themeColor = 'teal';
+
+    // 5. Validation Logic
+    const isFormValid = useMemo(() => {
+        const hasAutoriza = !!autoriza;
+        const hasRetira = !!retira;
+        const hasValidItems = items.some(item =>
+            item.codigo_articulo.trim() !== '' &&
+            Number(item.cantidad) > 0
+        );
+
+        return hasAutoriza && hasRetira && hasValidItems;
+    }, [autoriza, retira, items]);
+
     useEffect(() => {
-        const now = new Date();
-        setFechaActual(now.toLocaleDateString('es-ES', {
-            weekday: 'long',
-            year: 'numeric',
-            month: 'long',
-            day: 'numeric'
-        }));
         cargarColaboradores();
     }, []);
 
@@ -386,226 +391,165 @@ export default function RegistroSalidaExterno() {
         i.codigo_articulo.toLowerCase().includes(articuloTermino.toLowerCase())
     );
 
-    const SelectorCard = ({
-        label,
-        value,
-        displayValue,
-        onOpen,
-        icon: Icon,
-        required = false,
-        disabled = false,
-        locked = false
-    }: any) => (
-        <div className="space-y-3">
-            <label className={cn(
-                "text-[10px] font-black uppercase tracking-widest ml-1 block opacity-60",
-                required && "after:content-['*'] after:text-teal-500 after:ml-1"
-            )}>
-                {label}
-            </label>
-            <div
-                onClick={(!disabled && !locked) ? onOpen : undefined}
-                className={cn(
-                    "group relative border rounded-2xl p-4 transition-all flex items-center justify-between shadow-inner",
-                    (disabled || locked) ? "bg-black/10 border-white/5 cursor-not-allowed opacity-80" : "bg-[#1e2235]/40 border-white/10 cursor-pointer hover:bg-white/5 hover:border-teal-500/30"
-                )}
-            >
-                <div className="flex items-center gap-4 min-w-0">
-                    <div className={cn(
-                        "w-10 h-10 rounded-xl flex items-center justify-center shrink-0 border",
-                        (disabled || locked) ? "bg-slate-800 border-white/5" : "bg-teal-500/10 border-teal-500/10"
-                    )}>
-                        <Icon className={cn(
-                            "w-5 h-5 transition-transform",
-                            (disabled || locked) ? "text-slate-500" : "text-teal-400 group-hover:scale-110"
-                        )} />
-                    </div>
-                    <div className="min-w-0">
-                        <span className={cn(
-                            "block truncate font-bold tracking-tight",
-                            value ? 'text-white' : 'text-gray-600 italic text-sm'
-                        )}>
-                            {displayValue || 'Seleccionar...'}
-                        </span>
-                        {value && (
-                            <div className="flex items-center gap-1.5 mt-0.5">
-                                <Shield className={cn("w-3 h-3", locked ? "text-slate-500" : "text-teal-500")} />
-                                <span className={cn(
-                                    "text-[9px] font-black uppercase tracking-tighter",
-                                    locked ? "text-slate-600" : "text-teal-500/50"
-                                )}>
-                                    {locked ? "Asignado automáticamente" : "Sincronizado"}
-                                </span>
-                            </div>
-                        )}
-                    </div>
-                </div>
-                {!disabled && !locked && <ChevronRight className="w-5 h-5 text-gray-700 group-hover:translate-x-1 transition-transform shrink-0" />}
-                {(disabled || locked) && <Shield className="w-4 h-4 text-slate-700 shrink-0" />}
-            </div>
-        </div>
-    );
-
     return (
-        <div className="min-h-screen bg-[#0f111a] p-4 md:p-8 relative overflow-x-hidden">
-            {/* Ambient Background Elements */}
-            <div className="fixed inset-0 pointer-events-none overflow-hidden">
-                <div className="absolute top-[10%] left-[10%] w-[500px] h-[500px] bg-teal-500/10 rounded-full blur-[120px] animate-pulse" />
-                <div className="absolute bottom-[10%] right-[10%] w-[400px] h-[400px] bg-cyan-600/5 rounded-full blur-[100px]" />
-            </div>
+        <div className="min-h-screen bg-[#0f111a] p-4 md:p-8">
+            <PageHeader
+                title="Registro de Salida Externo"
+                icon={Box}
+                themeColor={themeColor}
+            />
 
-            {/* Alert/Feedback Toast */}
-            {feedback && (
-                <div className="fixed top-8 right-8 z-[100] animate-in slide-in-from-top-4 duration-300">
-                    <div className={`px-6 py-4 rounded-2xl shadow-2xl border backdrop-blur-xl flex items-center gap-3 ${feedback.type === 'success' ? 'bg-emerald-500/20 border-emerald-500/50 text-emerald-400' :
+            <div className="max-w-6xl mx-auto">
+                {/* Feedback Toast */}
+                {feedback && (
+                    <div className={`fixed top-8 right-8 z-[100] px-6 py-4 rounded-2xl shadow-2xl backdrop-blur-xl border flex items-center gap-3 animate-in slide-in-from-top-4 duration-300 ${feedback.type === 'success' ? 'bg-emerald-500/20 border-emerald-500/50 text-emerald-400' :
                         feedback.type === 'error' ? 'bg-rose-500/20 border-rose-500/50 text-rose-400' :
                             feedback.type === 'warning' ? 'bg-amber-500/20 border-amber-500/50 text-amber-400' :
                                 'bg-blue-500/20 border-blue-500/50 text-blue-400'
                         }`}>
-                        {feedback.type === 'success' ? <CheckCircle className="w-5 h-5" /> :
-                            feedback.type === 'error' ? <AlertTriangle className="w-5 h-5" /> :
-                                <Info className="w-5 h-5" />}
+                        {feedback.type === 'success' && <CheckCircle className="w-5 h-5" />}
+                        {feedback.type === 'error' && <AlertTriangle className="w-5 h-5" />}
+                        {feedback.type === 'warning' && <AlertTriangle className="w-5 h-5" />}
+                        {feedback.type === 'info' && <Info className="w-5 h-5" />}
                         <span className="font-bold">{feedback.message}</span>
                     </div>
-                </div>
-            )}
+                )}
 
-            <div className="max-w-6xl mx-auto space-y-8 relative z-10">
-                <PageHeader
-                    title="Salida al Cliente"
-                    icon={Box}
-                    themeColor="teal"
-                />
+                <form onSubmit={handleSubmit} className="space-y-6">
+                    {/* Section 1: Header Information */}
+                    <div className="bg-[#1e2235] border border-white/10 rounded-3xl shadow-2xl overflow-hidden p-6 md:p-8">
+                        <div className="flex items-center gap-3 mb-8 border-b border-white/10 pb-4">
+                            <Info className={`w-5 h-5 text-${themeColor}-400`} />
+                            <h3 className="text-xl font-black text-white uppercase tracking-tight">Información de la Salida Externa</h3>
+                        </div>
 
-                <div className="flex items-center gap-3 text-teal-500/60 font-black uppercase tracking-widest text-[10px] bg-teal-500/5 w-fit px-4 py-2 rounded-full border border-teal-500/10">
-                    <Calendar className="w-4 h-4" />
-                    {fechaActual}
-                </div>
-
-                <form onSubmit={handleSubmit} className="grid grid-cols-1 lg:grid-cols-3 gap-8 items-start">
-                    {/* Main Form Section */}
-                    <div className="lg:col-span-2 space-y-8">
-                        <div className="bg-[#1e2235] border border-white/10 rounded-[2.5rem] shadow-2xl p-6 md:p-8 space-y-8">
-                            <div className="flex items-center gap-3 border-b border-white/5 pb-6">
-                                <Edit className="w-5 h-5 text-teal-400" />
-                                <h3 className="text-xl font-black text-white uppercase tracking-tight italic">Detalles de la Transacción</h3>
+                        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+                            {/* Autoriza Selector */}
+                            <div className="space-y-3">
+                                <label className="text-[10px] font-black text-gray-500 uppercase tracking-widest ml-1 block">Responsable (Autoriza)</label>
+                                <div
+                                    className="group relative bg-black/10 border border-white/5 rounded-2xl p-4 cursor-not-allowed transition-all flex items-center justify-between shadow-inner"
+                                    title="Campo bloqueado por auditoría: Se asigna automáticamente al responsable titular."
+                                >
+                                    <div className="flex items-center gap-4 min-w-0">
+                                        <div className="w-10 h-10 rounded-xl bg-slate-800 flex items-center justify-center shrink-0 border border-white/5">
+                                            <Shield className="w-5 h-5 text-teal-500" />
+                                        </div>
+                                        <div className="min-w-0">
+                                            <span className="block truncate font-bold text-slate-300">
+                                                {colaboradores.todos.find(c => c.identificacion === autoriza)?.alias || colaboradores.todos.find(c => c.identificacion === autoriza)?.colaborador || 'Cargando responsable...'}
+                                            </span>
+                                            {autoriza && <span className="text-[9px] text-gray-500 font-mono tracking-tighter uppercase">Asignado: {autoriza}</span>}
+                                        </div>
+                                    </div>
+                                    <Shield className="w-4 h-4 text-slate-700 shrink-0" />
+                                </div>
                             </div>
 
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                                <SelectorCard
-                                    label="Profesional Responsable"
-                                    value={autoriza}
-                                    displayValue={colaboradores.todos.find(c => c.identificacion === autoriza)?.alias || colaboradores.todos.find(c => c.identificacion === autoriza)?.colaborador}
-                                    icon={User}
-                                    disabled
-                                    required
-                                    locked={!!autoriza}
-                                />
-
-                                <SelectorCard
-                                    label="Entregado a (Retira)"
-                                    value={retira}
-                                    displayValue={colaboradores.todos.find((c: any) => c.identificacion === retira)?.colaborador}
-                                    onOpen={() => handleOpenBusqueda('retira')}
-                                    icon={User}
-                                    required
-                                />
-
-                                <div className="md:col-span-2 space-y-3">
-                                    <label className="text-[10px] font-black uppercase tracking-widest ml-1 block opacity-60">
-                                        Número de Solicitud
-                                    </label>
-                                    <div className="relative group/input">
-                                        <div className="absolute left-5 top-1/2 -translate-y-1/2 text-teal-400 font-black italic">#</div>
-                                        <input
-                                            type="text"
-                                            value={numeroSolicitud}
-                                            readOnly
-                                            className="w-full bg-black/30 border border-white/10 rounded-2xl py-4 pl-12 pr-6 text-white font-mono opacity-50 cursor-not-allowed shadow-inner"
-                                        />
+                            {/* Retira Selector */}
+                            <div className="space-y-3">
+                                <label className="text-[10px] font-black text-gray-500 uppercase tracking-widest ml-1 block">Entregado a (Retira)</label>
+                                <div
+                                    onClick={() => handleOpenBusqueda('retira')}
+                                    className="group relative bg-black/30 border border-white/10 rounded-2xl p-4 cursor-pointer hover:bg-white/5 hover:border-teal-500/30 transition-all flex items-center justify-between shadow-inner"
+                                >
+                                    <div className="flex items-center gap-4 min-w-0">
+                                        <div className={`w-10 h-10 rounded-xl bg-${themeColor}-500/10 flex items-center justify-center shrink-0 border border-teal-500/10`}>
+                                            <User className={`w-5 h-5 text-${themeColor}-400 group-hover:scale-110 transition-transform`} />
+                                        </div>
+                                        <div className="min-w-0">
+                                            <span className={`block truncate font-bold ${retira ? 'text-white' : 'text-gray-600 italic text-sm'}`}>
+                                                {colaboradores.todos.find((c: any) => c.identificacion === retira)?.colaborador || 'Seleccionar...'}
+                                            </span>
+                                            {retira && <span className="text-[9px] text-gray-500 font-mono tracking-tighter uppercase">{retira}</span>}
+                                        </div>
                                     </div>
+                                    <ChevronRight className="w-5 h-5 text-gray-700 group-hover:translate-x-1 transition-transform shrink-0" />
                                 </div>
+                            </div>
 
-                                <div className="md:col-span-2 space-y-3">
-                                    <label className="text-[10px] font-black uppercase tracking-widest ml-1 block opacity-60">Comentarios Adicionales</label>
-                                    <textarea
-                                        value={comentarios}
-                                        onChange={(e) => setComentarios(e.target.value)}
-                                        placeholder="Describa detalles adicionales sobre esta salida externa..."
-                                        className="w-full min-h-[140px] bg-black/30 border border-white/10 rounded-[2rem] p-6 text-white font-medium placeholder-gray-700 focus:outline-none focus:border-teal-500/50 transition-all shadow-inner resize-none leading-relaxed"
+                            {/* Solicitud Input */}
+                            <div className="space-y-3">
+                                <label className="text-[10px] font-black text-gray-500 uppercase tracking-widest ml-1 block">Número de Solicitud</label>
+                                <div className="relative group">
+                                    <div className="absolute left-5 top-1/2 -translate-y-1/2 text-teal-400 font-black italic">#</div>
+                                    <input
+                                        type="text"
+                                        value={numeroSolicitud}
+                                        readOnly
+                                        className="w-full bg-black/10 border border-white/5 rounded-2xl py-4 pl-12 pr-4 text-slate-400 font-bold cursor-not-allowed opacity-80 shadow-inner"
+                                        placeholder="Sin número..."
                                     />
                                 </div>
                             </div>
                         </div>
 
-                        {/* Articles Table Section */}
-                        <div className="bg-[#1e2235] border border-white/10 rounded-[2.5rem] shadow-2xl p-6 md:p-8 space-y-8">
-                            <div className="flex items-center gap-3 border-b border-white/5 pb-6">
-                                <Box className="w-5 h-5 text-teal-400" />
-                                <h3 className="text-xl font-black text-white uppercase tracking-tight italic">Artículos a Retirar</h3>
+                        <div className="space-y-3">
+                            <label className="text-[10px] font-black text-gray-500 uppercase tracking-widest ml-1 block">Observaciones adicionales</label>
+                            <div className="relative group">
+                                <Info className="absolute left-5 top-5 w-5 h-5 text-gray-600 group-focus-within:text-teal-400 transition-colors" />
+                                <textarea
+                                    value={comentarios}
+                                    onChange={(e) => setComentarios(e.target.value)}
+                                    className="w-full bg-black/30 border border-white/10 rounded-2xl py-5 pl-14 pr-6 text-white font-medium placeholder-gray-700 focus:outline-none focus:border-teal-500/50 transition-all shadow-inner min-h-[120px] resize-none"
+                                    placeholder="Detalles sobre la entrega, destino o requerimientos especiales..."
+                                />
                             </div>
-
-                            <TransactionTable
-                                items={items}
-                                onUpdateRow={updateDetalle}
-                                onRemoveRow={eliminarFila}
-                                onOpenSearch={handleOpenArticulos}
-                                onAddRow={agregarFila}
-                                onWarning={(msg) => showAlert(msg, 'warning')}
-                                themeColor="teal"
-                            />
                         </div>
                     </div>
 
-                    {/* Side Sidebar Action Section */}
-                    <div className="space-y-6 lg:sticky lg:top-8">
-                        <div className="bg-gradient-to-br from-teal-600 to-cyan-700 rounded-[2.5rem] p-8 shadow-2xl shadow-teal-900/40 relative overflow-hidden group">
-                            <Box className="absolute -right-4 -top-4 w-32 h-32 text-white/5 -rotate-12 group-hover:scale-110 transition-transform duration-700" />
-
-                            <div className="relative z-10 space-y-6">
-                                <div className="space-y-1">
-                                    <h4 className="text-white font-black text-2xl uppercase tracking-tighter italic">
-                                        {!finalizado ? 'Finalizar Salida' : 'Registro Completo'}
-                                    </h4>
-                                    <p className="text-teal-200 text-[10px] font-bold uppercase tracking-widest opacity-80 leading-relaxed">
-                                        {!finalizado
-                                            ? 'Verifique los artículos y cantidades antes de proceder con el guardado técnico.'
-                                            : 'La salida ha sido registrada. Proceda a generar el comprobante físico.'}
-                                    </p>
-                                </div>
-
-                                {!finalizado ? (
-                                    <button
-                                        onClick={handleSubmit}
-                                        disabled={loading}
-                                        className="w-full py-5 bg-white text-teal-700 font-black text-xl rounded-2xl shadow-2xl hover:scale-[1.02] active:scale-95 transition-all flex items-center justify-center gap-3 disabled:opacity-50 uppercase tracking-tight"
-                                    >
-                                        {loading ? <Loader2 className="w-7 h-7 animate-spin" /> : <Save className="w-7 h-7" />}
-                                        Procesar Salida
-                                    </button>
-                                ) : (
-                                    <button
-                                        onClick={() => window.location.reload()}
-                                        disabled={loading}
-                                        className="w-full py-5 bg-emerald-400 text-emerald-950 font-black text-xl rounded-2xl shadow-2xl hover:scale-[1.02] active:scale-95 transition-all flex items-center justify-center gap-3 disabled:opacity-50 uppercase tracking-tight"
-                                    >
-                                        <Save className="w-7 h-7" />
-                                        Nueva Salida
-                                    </button>
-                                )}
-
-
-                            </div>
+                    {/* Section 2: Items Table */}
+                    <div className="bg-[#1e2235] border border-white/10 rounded-3xl shadow-2xl overflow-hidden p-6 md:p-8">
+                        <div className="flex items-center gap-3 mb-8 border-b border-white/10 pb-4">
+                            <Box className={`w-5 h-5 text-${themeColor}-400`} />
+                            <h3 className="text-xl font-black text-white uppercase tracking-tight">Artículos a Retirar</h3>
                         </div>
+                        <TransactionTable
+                            items={items}
+                            onUpdateRow={updateDetalle}
+                            onRemoveRow={eliminarFila}
+                            onOpenSearch={handleOpenArticulos}
+                            onAddRow={agregarFila}
+                            onWarning={(msg) => showAlert(msg, 'warning')}
+                            themeColor={themeColor}
+                        />
+                    </div>
 
+                    {/* Form Controls */}
+                    <div className="flex justify-between items-center pt-4">
                         <button
                             type="button"
                             onClick={() => navigate('/cliente-externo/realizar')}
-                            className="w-full py-4 border border-white/10 rounded-2xl text-gray-500 font-black uppercase text-xs tracking-[0.2em] hover:bg-white/5 hover:text-white transition-all flex items-center justify-center gap-2"
+                            className="px-8 py-4 border border-white/10 rounded-2xl text-gray-500 font-black uppercase text-xs tracking-widest hover:bg-white/5 hover:text-white transition-all flex items-center gap-2"
                         >
-                            <ArrowLeft className="w-4 h-4 text-teal-500" />
-                            Regresar
+                            <ArrowLeft className="w-4 h-4" />
+                            Cancelar
                         </button>
+
+                        {!finalizado ? (
+                            <button
+                                type="submit"
+                                disabled={loading || !isFormValid}
+                                className={cn(
+                                    "px-12 py-5 text-white font-black text-xl rounded-2xl transition-all flex items-center justify-center gap-3 shadow-xl uppercase tracking-tight",
+                                    (loading || !isFormValid)
+                                        ? "bg-slate-700 opacity-50 cursor-not-allowed shadow-none"
+                                        : "bg-gradient-to-r from-teal-600 to-teal-400 hover:brightness-110 active:scale-95 shadow-teal-500/20"
+                                )}
+                            >
+                                {loading ? <Loader2 className="w-7 h-7 animate-spin" /> : <Save className="w-7 h-7" />}
+                                Procesar Salida
+                            </button>
+                        ) : (
+                            <button
+                                type="button"
+                                onClick={() => window.location.reload()}
+                                className="px-12 py-5 bg-gradient-to-r from-emerald-600 to-emerald-400 text-white font-black text-xl rounded-2xl hover:brightness-110 active:scale-95 transition-all flex items-center justify-center gap-3 shadow-xl shadow-emerald-500/20 uppercase tracking-tight"
+                            >
+                                <PlusCircle className="w-7 h-7" />
+                                Nueva Salida
+                            </button>
+                        )}
                     </div>
                 </form>
             </div>

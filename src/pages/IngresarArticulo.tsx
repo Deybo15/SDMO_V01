@@ -15,7 +15,8 @@ import {
     History,
     ChevronRight,
     UserCircle,
-    Building2
+    Building2,
+    Shield
 } from 'lucide-react';
 
 
@@ -104,10 +105,11 @@ export default function IngresarArticulo() {
                 if (origenesError) throw origenesError;
                 setOrigenes(origenesData || []);
 
+
                 // Load Colaboradores
                 const { data: colabData, error: colabError } = await supabase
                     .from('colaboradores_06')
-                    .select('identificacion, alias, colaborador, autorizado');
+                    .select('identificacion, alias, colaborador, autorizado, correo_colaborador');
                 if (colabError) throw colabError;
 
                 if (colabData) {
@@ -116,14 +118,29 @@ export default function IngresarArticulo() {
                         alias: c.alias,
                         colaborador: c.colaborador
                     }));
+
+                    const autorizados = colabData.filter(c => c.autorizado).map(c => ({
+                        identificacion: c.identificacion,
+                        alias: c.alias,
+                        colaborador: c.colaborador,
+                        correo: c.correo_colaborador
+                    }));
+
                     setColaboradoresData({
-                        autorizados: colabData.filter(c => c.autorizado).map(c => ({
-                            identificacion: c.identificacion,
-                            alias: c.alias,
-                            colaborador: c.colaborador
-                        })),
+                        autorizados: autorizados,
                         todos: formatted
                     });
+
+                    // Auto-detect logged user
+                    const { data: { user } } = await supabase.auth.getUser();
+                    if (user?.email) {
+                        const currentUser = autorizados.find(c =>
+                            c.correo?.toLowerCase() === user.email?.toLowerCase()
+                        );
+                        if (currentUser) {
+                            setSelectedAutoriza(currentUser);
+                        }
+                    }
                 }
 
             } catch (error: any) {
@@ -280,7 +297,7 @@ export default function IngresarArticulo() {
             setDetalles([{ id: crypto.randomUUID(), articulo: null, cantidad: '' }]);
             setJustificacion('');
             setSelectedOrigen(null);
-            setSelectedAutoriza(null);
+            // selectedAutoriza is PERSISTENT for security/audit (logged user)
             setSelectedRecibe(null);
 
         } catch (error: any) {
@@ -348,23 +365,35 @@ export default function IngresarArticulo() {
                                     </div>
                                 </div>
 
-                                {/* Autoriza Selector */}
+                                {/* Autoriza Selector - BLOQUEADO POR SEGURIDAD */}
                                 <div className="space-y-2">
-                                    <label className="block text-sm font-black text-gray-500 uppercase tracking-widest">Autoriza</label>
+                                    <div className="flex justify-between items-end">
+                                        <label className="block text-sm font-black text-gray-500 uppercase tracking-widest">Autoriza</label>
+                                        {selectedAutoriza && (
+                                            <span className="text-[10px] font-black text-emerald-500/70 bg-emerald-500/5 px-2 py-0.5 rounded border border-emerald-500/10 mb-1 flex items-center gap-1">
+                                                <Shield className="w-2.5 h-2.5" />
+                                                ASIGNADO: {selectedAutoriza.identificacion}
+                                            </span>
+                                        )}
+                                    </div>
                                     <div
-                                        onClick={() => {
-                                            setColaboradorField('autoriza');
-                                            setShowColaboradorModal(true);
-                                        }}
-                                        className="group relative bg-white/5 border border-white/10 rounded-xl p-4 cursor-pointer hover:bg-white/10 hover:border-emerald-500/30 transition-all flex items-center justify-between"
+                                        className="group relative bg-[#0f111a]/40 border border-white/5 rounded-xl p-4 cursor-default transition-all flex items-center justify-between"
+                                        title="Campo bloqueado por auditoría: Se asigna automáticamente al responsable titular."
                                     >
                                         <div className="flex items-center gap-3 min-w-0">
-                                            <UserCircle className="w-5 h-5 text-emerald-500/50 group-hover:text-emerald-400 transition-colors shrink-0" />
-                                            <span className={`truncate font-bold ${selectedAutoriza ? 'text-white' : 'text-gray-500 italic'}`}>
-                                                {selectedAutoriza ? selectedAutoriza.alias || selectedAutoriza.colaborador : '¿Quién autoriza?'}
-                                            </span>
+                                            <Shield className="w-5 h-5 text-emerald-500 transition-colors shrink-0" />
+                                            <div className="flex flex-col min-w-0">
+                                                <span className={`truncate font-bold ${selectedAutoriza ? 'text-white' : 'text-gray-500 italic'}`}>
+                                                    {selectedAutoriza ? selectedAutoriza.alias || selectedAutoriza.colaborador : 'Cargando responsable...'}
+                                                </span>
+                                                {selectedAutoriza && (
+                                                    <span className="text-[10px] text-gray-500 font-bold uppercase truncate">Titular Responsable</span>
+                                                )}
+                                            </div>
                                         </div>
-                                        <ChevronRight className="w-5 h-5 text-gray-600 group-hover:translate-x-1 transition-transform shrink-0" />
+                                        <div className="p-1 px-2 bg-emerald-500/10 rounded-lg border border-emerald-500/20">
+                                            <Info className="w-4 h-4 text-emerald-500/50" />
+                                        </div>
                                     </div>
                                 </div>
 
