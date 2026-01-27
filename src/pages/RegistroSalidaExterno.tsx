@@ -17,13 +17,15 @@ import {
     ArrowLeft,
     ChevronRight,
     Edit,
-    Shield
+    Shield,
+    ClipboardList
 } from 'lucide-react';
 import { cn } from '../lib/utils';
 
 import { PageHeader } from '../components/ui/PageHeader';
 import { TransactionTable } from '../components/ui/TransactionTable';
 import ColaboradorSearchModal from '../components/ColaboradorSearchModal';
+import HistorialMaterialesModal from '../components/HistorialMaterialesModal';
 import { Articulo, DetalleSalida, Colaborador } from '../types/inventory';
 
 export default function RegistroSalidaExterno() {
@@ -63,6 +65,7 @@ export default function RegistroSalidaExterno() {
     const [showBusquedaModal, setShowBusquedaModal] = useState(false);
     const [busquedaTipo, setBusquedaTipo] = useState<'autoriza' | 'retira'>('autoriza');
     const [showArticulosModal, setShowArticulosModal] = useState(false);
+    const [showHistorialModal, setShowHistorialModal] = useState(false);
     const [currentRowIndex, setCurrentRowIndex] = useState<number>(0);
     const [showImageModal, setShowImageModal] = useState(false);
     const [selectedImage, setSelectedImage] = useState<{ src: string, alt: string } | null>(null);
@@ -353,7 +356,22 @@ export default function RegistroSalidaExterno() {
             if (finalError) throw finalError;
 
             showAlert(`Salida registrada (SA-${newId.toString().padStart(4, '0')})`, 'success');
-            setFinalizado(true);
+
+            // Reset Form State
+            setAutoriza('');
+            setRetira('');
+            setComentarios('');
+            setItems([{
+                codigo_articulo: '',
+                articulo: '',
+                cantidad: 0,
+                unidad: '',
+                precio_unitario: 0,
+                marca: '',
+                cantidad_disponible: 0
+            }]);
+            setFinalizado(false);
+            setUltimoIdSalida(null);
 
         } catch (error: any) {
             console.error('Error submitting:', error);
@@ -471,15 +489,26 @@ export default function RegistroSalidaExterno() {
                             {/* Solicitud Input */}
                             <div className="space-y-3">
                                 <label className="text-[10px] font-black text-gray-500 uppercase tracking-widest ml-1 block">Número de Solicitud</label>
-                                <div className="relative group">
-                                    <div className="absolute left-5 top-1/2 -translate-y-1/2 text-teal-400 font-black italic">#</div>
-                                    <input
-                                        type="text"
-                                        value={numeroSolicitud}
-                                        readOnly
-                                        className="w-full bg-black/10 border border-white/5 rounded-2xl py-4 pl-12 pr-4 text-slate-400 font-bold cursor-not-allowed opacity-80 shadow-inner"
-                                        placeholder="Sin número..."
-                                    />
+                                <div className="relative group flex gap-2">
+                                    <div className="relative flex-1">
+                                        <div className="absolute left-5 top-1/2 -translate-y-1/2 text-teal-400 font-black italic">#</div>
+                                        <input
+                                            type="text"
+                                            value={numeroSolicitud}
+                                            readOnly
+                                            className="w-full bg-black/10 border border-white/5 rounded-2xl py-4 pl-12 pr-4 text-slate-400 font-bold cursor-not-allowed opacity-80 shadow-inner"
+                                            placeholder="Sin número..."
+                                        />
+                                    </div>
+                                    <button
+                                        type="button"
+                                        onClick={() => setShowHistorialModal(true)}
+                                        disabled={!numeroSolicitud}
+                                        className="px-4 bg-purple-500/10 border border-purple-500/20 rounded-2xl text-purple-400 hover:bg-purple-500/20 transition-all disabled:opacity-30 disabled:cursor-not-allowed group/btn"
+                                        title="Ver historial de materiales entregados"
+                                    >
+                                        <ClipboardList className="w-6 h-6 group-hover/btn:scale-110 transition-transform" />
+                                    </button>
                                 </div>
                             </div>
                         </div>
@@ -526,30 +555,19 @@ export default function RegistroSalidaExterno() {
                             Cancelar
                         </button>
 
-                        {!finalizado ? (
-                            <button
-                                type="submit"
-                                disabled={loading || !isFormValid}
-                                className={cn(
-                                    "px-12 py-5 text-white font-black text-xl rounded-2xl transition-all flex items-center justify-center gap-3 shadow-xl uppercase tracking-tight",
-                                    (loading || !isFormValid)
-                                        ? "bg-slate-700 opacity-50 cursor-not-allowed shadow-none"
-                                        : "bg-gradient-to-r from-teal-600 to-teal-400 hover:brightness-110 active:scale-95 shadow-teal-500/20"
-                                )}
-                            >
-                                {loading ? <Loader2 className="w-7 h-7 animate-spin" /> : <Save className="w-7 h-7" />}
-                                Procesar Salida
-                            </button>
-                        ) : (
-                            <button
-                                type="button"
-                                onClick={() => window.location.reload()}
-                                className="px-12 py-5 bg-gradient-to-r from-emerald-600 to-emerald-400 text-white font-black text-xl rounded-2xl hover:brightness-110 active:scale-95 transition-all flex items-center justify-center gap-3 shadow-xl shadow-emerald-500/20 uppercase tracking-tight"
-                            >
-                                <PlusCircle className="w-7 h-7" />
-                                Nueva Salida
-                            </button>
-                        )}
+                        <button
+                            type="submit"
+                            disabled={loading || !isFormValid}
+                            className={cn(
+                                "px-12 py-5 text-white font-black text-xl rounded-2xl transition-all flex items-center justify-center gap-3 shadow-xl uppercase tracking-tight",
+                                (loading || !isFormValid)
+                                    ? "bg-slate-700 opacity-50 cursor-not-allowed shadow-none"
+                                    : "bg-gradient-to-r from-teal-600 to-teal-400 hover:brightness-110 active:scale-95 shadow-teal-500/20"
+                            )}
+                        >
+                            {loading ? <Loader2 className="w-7 h-7 animate-spin" /> : <Save className="w-7 h-7" />}
+                            Procesar Salida
+                        </button>
                     </div>
                 </form>
             </div>
@@ -727,6 +745,12 @@ export default function RegistroSalidaExterno() {
                     </div>
                 </div>
             )}
+            {/* Historial Modal */}
+            <HistorialMaterialesModal
+                isOpen={showHistorialModal}
+                onClose={() => setShowHistorialModal(false)}
+                numeroSolicitud={numeroSolicitud}
+            />
         </div>
     );
 }

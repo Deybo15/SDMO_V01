@@ -13,7 +13,8 @@ import {
     Ticket,
     MessageSquare,
     ChevronRight,
-    Shield
+    Shield,
+    ClipboardList
 } from 'lucide-react';
 import { cn } from '../lib/utils';
 
@@ -28,6 +29,7 @@ import { PageHeader } from '../components/ui/PageHeader';
 import { TransactionTable } from '../components/ui/TransactionTable';
 import ArticuloSearchModal from '../components/ArticleSearchModal';
 import ColaboradorSearchModal from '../components/ColaboradorSearchModal';
+import HistorialMaterialesModal from '../components/HistorialMaterialesModal';
 import { DetalleSalida, Colaborador } from '../types/inventory';
 
 export default function RealizarSalida() {
@@ -68,6 +70,7 @@ export default function RealizarSalida() {
     const [showBusquedaModal, setShowBusquedaModal] = useState(false);
     const [busquedaTipo, setBusquedaTipo] = useState<'autoriza' | 'retira'>('autoriza');
     const [showArticulosModal, setShowArticulosModal] = useState(false);
+    const [showHistorialModal, setShowHistorialModal] = useState(false);
     const [currentRowIndex, setCurrentRowIndex] = useState<number>(0);
 
     const themeColor = 'teal';
@@ -286,6 +289,21 @@ export default function RealizarSalida() {
             setFinalizado(true);
             showAlert('¡Salida registrada exitosamente!', 'success');
 
+            // Reset Data States (Keep finalizado: true to show print button)
+            setRetiraId('');
+            setRetiraName('');
+            setNumeroSolicitud('');
+            setComentarios('');
+            setItems([{
+                codigo_articulo: '',
+                articulo: '',
+                cantidad: 0,
+                unidad: '',
+                precio_unitario: 0,
+                marca: '',
+                cantidad_disponible: 0
+            }]);
+
         } catch (err: any) {
             console.error('Error guardando salida:', err);
             showAlert(err.message || 'Error al guardar la salida', 'error');
@@ -444,15 +462,26 @@ export default function RealizarSalida() {
                             {/* Solicitud Input */}
                             <div className="space-y-3">
                                 <label className="text-[10px] font-black text-gray-500 uppercase tracking-widest ml-1 block">Número de Solicitud</label>
-                                <div className="relative group">
-                                    <Ticket className="absolute left-5 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-600 group-focus-within:text-teal-400 transition-colors" />
-                                    <input
-                                        type="text"
-                                        value={numeroSolicitud}
-                                        readOnly
-                                        className="w-full bg-black/10 border border-white/5 rounded-2xl py-4 pl-14 pr-4 text-slate-400 font-bold cursor-not-allowed opacity-80 shadow-inner"
-                                        placeholder="Sin número..."
-                                    />
+                                <div className="relative group flex gap-2">
+                                    <div className="relative flex-1">
+                                        <Ticket className="absolute left-5 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-600 group-focus-within:text-teal-400 transition-colors" />
+                                        <input
+                                            type="text"
+                                            value={numeroSolicitud}
+                                            readOnly
+                                            className="w-full bg-black/10 border border-white/5 rounded-2xl py-4 pl-14 pr-4 text-slate-400 font-bold cursor-not-allowed opacity-80 shadow-inner"
+                                            placeholder="Sin número..."
+                                        />
+                                    </div>
+                                    <button
+                                        type="button"
+                                        onClick={() => setShowHistorialModal(true)}
+                                        disabled={!numeroSolicitud}
+                                        className="px-4 bg-purple-500/10 border border-purple-500/20 rounded-2xl text-purple-400 hover:bg-purple-500/20 transition-all disabled:opacity-30 disabled:cursor-not-allowed group/btn"
+                                        title="Ver historial de materiales"
+                                    >
+                                        <ClipboardList className="w-6 h-6 group-hover/btn:scale-110 transition-transform" />
+                                    </button>
                                 </div>
                             </div>
                         </div>
@@ -486,12 +515,22 @@ export default function RealizarSalida() {
 
                     {/* Form Controls */}
                     <div className="flex justify-end pt-4">
-                        {!finalizado ? (
+                        <div className="flex gap-4">
+                            {finalizado && (
+                                <button
+                                    type="button"
+                                    onClick={generarPDF}
+                                    className="px-8 py-5 bg-white/5 border border-white/10 text-teal-400 font-black text-lg rounded-2xl hover:bg-white/10 active:scale-95 transition-all flex items-center justify-center gap-3 shadow-xl uppercase tracking-tight animate-in zoom-in duration-300"
+                                >
+                                    <Printer className="w-6 h-6" />
+                                    Imprimir Comprobante
+                                </button>
+                            )}
                             <button
                                 type="submit"
                                 disabled={loading || !isFormValid}
                                 className={cn(
-                                    "w-full md:w-auto px-12 py-5 text-white font-black text-xl rounded-2xl transition-all flex items-center justify-center gap-3 shadow-xl uppercase tracking-tight",
+                                    "px-12 py-5 text-white font-black text-xl rounded-2xl transition-all flex items-center justify-center gap-3 shadow-xl uppercase tracking-tight",
                                     (loading || !isFormValid)
                                         ? "bg-slate-700 opacity-50 cursor-not-allowed shadow-none"
                                         : "bg-gradient-to-r from-teal-600 to-teal-400 hover:brightness-110 active:scale-95 shadow-teal-500/20"
@@ -500,16 +539,7 @@ export default function RealizarSalida() {
                                 {loading ? <Loader2 className="w-7 h-7 animate-spin" /> : <Save className="w-7 h-7" />}
                                 Procesar Salida
                             </button>
-                        ) : (
-                            <button
-                                type="button"
-                                onClick={handleFinalizar}
-                                className="w-full md:w-auto px-12 py-5 bg-gradient-to-r from-emerald-600 to-emerald-400 text-white font-black text-xl rounded-2xl hover:brightness-110 active:scale-95 transition-all flex items-center justify-center gap-3 shadow-xl shadow-emerald-500/20 uppercase tracking-tight animate-in zoom-in duration-300"
-                            >
-                                <Printer className="w-7 h-7" />
-                                Finalizar e Imprimir
-                            </button>
-                        )}
+                        </div>
                     </div>
                 </form>
             </div>
@@ -531,6 +561,12 @@ export default function RealizarSalida() {
                 onClose={() => setShowArticulosModal(false)}
                 onSelect={handleSelectArticulo}
                 themeColor={themeColor}
+            />
+
+            <HistorialMaterialesModal
+                isOpen={showHistorialModal}
+                onClose={() => setShowHistorialModal(false)}
+                numeroSolicitud={numeroSolicitud}
             />
         </div>
     );
