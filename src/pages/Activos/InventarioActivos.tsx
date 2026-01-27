@@ -376,7 +376,7 @@ export default function InventarioActivos() {
                                 <X className="w-6 h-6" />
                             </button>
                         </div>
-                        <div className="p-0">
+                        <div className="p-0 max-h-[85vh] overflow-y-auto custom-scrollbar">
                             {/* Image Header with Overlay */}
                             <div className="relative w-full aspect-[4/3] md:aspect-video bg-slate-800 border-b border-slate-700 group overflow-hidden">
                                 {selectedActivo.imagen_activo ? (

@@ -5,7 +5,8 @@ import {
     UserPlus,
     Wrench,
     ChevronRight,
-    Briefcase
+    Briefcase,
+    SearchCode
 } from 'lucide-react';
 import { PageHeader } from '../components/ui/PageHeader';
 
@@ -40,6 +41,13 @@ export default function Activos() {
             path: '/activos/accesorios',
             color: 'orange',
             description: 'Control, registro y vinculación de complementos para activos específicos'
+        },
+        {
+            title: 'Consulta por Descripción',
+            icon: <SearchCode className="w-8 h-8" />,
+            path: '/activos/consulta',
+            color: 'cyan',
+            description: 'Localización rápida de responsables y estado actual por descripción del equipo'
         }
     ];
 

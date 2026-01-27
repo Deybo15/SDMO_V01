@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import { supabase } from '../lib/supabase';
 import {
     Users, Search, Eraser, Download, Eye,
@@ -33,6 +34,8 @@ interface ArticuloSalida {
 }
 
 export default function InformeColaboradores() {
+    const [searchParams] = useSearchParams();
+    const initialColaborador = searchParams.get('colaborador') || '';
     // -- State --
     const [loading, setLoading] = useState(false);
     const [colaboradores, setColaboradores] = useState<Colaborador[]>([]);
@@ -48,7 +51,7 @@ export default function InformeColaboradores() {
 
     // Filters
     const [filters, setFilters] = useState({
-        colaborador: '',
+        colaborador: initialColaborador,
         alias: '',
         correo: '',
         autorizado: '',

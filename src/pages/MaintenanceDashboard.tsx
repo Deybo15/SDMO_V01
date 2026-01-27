@@ -61,6 +61,7 @@ interface DashboardMetrics {
     solicitudesPorMes: { month: string; total: number; executed: number; percentage: number }[];
     solicitudesPorArea: { area: string; total: number; executed: number; percentage: number }[];
     performanceSupervisores: { supervisor: string; total: number; executed: number; pending: number; percentage: number }[];
+    stalledRequests: number;
 }
 
 interface ComparisonMetrics {
@@ -78,6 +79,7 @@ export default function MaintenanceDashboard() {
     const [selectedSupervisor, setSelectedSupervisor] = useState<string | null>(null);
     const [selectedMonth, setSelectedMonth] = useState<string | null>(null);
     const [selectedInstallation, setSelectedInstallation] = useState<string | null>(null);
+    const [showCriticalOnly, setShowCriticalOnly] = useState(false);
 
     // Default to current year (Jan 1 - Today)
     const [startDate, setStartDate] = useState<string>(() => {
@@ -123,6 +125,10 @@ export default function MaintenanceDashboard() {
             query = query.gte('fecha_solicitud', mStart).lte('fecha_solicitud', `${mLast} 23:59:59`);
         }
 
+        if (showCriticalOnly) {
+            query = query.lte('fecha_solicitud', subDays(new Date(), 10).toISOString());
+        }
+
         // Corregir sintaxis para excluir estados finalizados
         query = query.not('status_normalized', 'in', '(EJECUTADA,FINALIZADA,COMPLETADA,CERRADA)');
 
@@ -165,7 +171,7 @@ export default function MaintenanceDashboard() {
                 }
             }
 
-            const [curRes, prevRes] = await Promise.all([
+            const [curRes, prevRes, stalledRes]: [any, any, any] = await Promise.all([
                 supabase.rpc('get_dashboard_metrics_v2', {
                     p_start_date: startDate,
                     p_end_date: endDate,
@@ -177,7 +183,12 @@ export default function MaintenanceDashboard() {
                     p_end_date: prevEndDateStr,
                     ...rpcParams,
                     p_month_filter: monthParam
-                })
+                }),
+                supabase
+                    .from('vw_dashboard_analyzed')
+                    .select('numero_solicitud', { count: 'exact', head: true })
+                    .lte('fecha_solicitud', subDays(new Date(), 10).toISOString())
+                    .not('status_normalized', 'in', '(EJECUTADA,FINALIZADA,COMPLETADA,CERRADA,CANCELADA)')
             ]);
 
             if (curRes.error) throw curRes.error;
@@ -233,7 +244,8 @@ export default function MaintenanceDashboard() {
                     topInstalaciones,
                     solicitudesPorArea,
                     solicitudesPorMes,
-                    performanceSupervisores
+                    performanceSupervisores,
+                    stalledRequests: stalledRes?.count || 0
                 });
 
                 const calcChange = (c: number, p: number) => p === 0 ? (c > 0 ? 100 : 0) : ((c - p) / p) * 100;
@@ -257,7 +269,7 @@ export default function MaintenanceDashboard() {
     useEffect(() => {
         loadDashboard();
         setCurrentPage(1);
-    }, [startDate, endDate, selectedArea, selectedSupervisor, selectedMonth, selectedInstallation]);
+    }, [startDate, endDate, selectedArea, selectedSupervisor, selectedMonth, selectedInstallation, showCriticalOnly]);
 
     useEffect(() => {
         fetchTableData(currentPage);
@@ -416,6 +428,11 @@ export default function MaintenanceDashboard() {
                                         Instalación: {selectedInstallation.split('(')[0]} <XCircle className="w-4 h-4" />
                                     </button>
                                 )}
+                                {showCriticalOnly && (
+                                    <button onClick={() => setShowCriticalOnly(false)} className="flex items-center gap-2 bg-red-500/20 border border-red-500/30 text-red-400 px-3 py-1.5 rounded-full text-xs font-bold animate-pulse shadow-lg shadow-red-500/20">
+                                        FILTRO: ALERTAS CRÍTICAS <XCircle className="w-4 h-4" />
+                                    </button>
+                                )}
                             </div>
                         </div>
                     </div>
@@ -445,24 +462,36 @@ export default function MaintenanceDashboard() {
                 </div>
 
                 {/* Metrics Grid */}
-                <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 px-4">
+                <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4 px-4">
                     {[
                         { label: 'Solicitudes Totales', value: metrics.totalSolicitudes, icon: Layers, color: 'text-blue-400', bg: 'bg-blue-500/10', trend: comparison?.totalSolicitudesChange, badge: 'VOLUMEN' },
-                        { label: 'Completadas', value: metrics.totalEjecutadas, icon: CheckCircle, color: 'text-emerald-400', bg: 'bg-emerald-500/10', trend: comparison?.totalEjecutadasChange, badge: 'ÉXITO' },
+                        { label: 'Ejecutadas', value: metrics.totalEjecutadas, icon: CheckCircle, color: 'text-emerald-400', bg: 'bg-emerald-500/10', trend: comparison?.totalEjecutadasChange, badge: 'ÉXITO' },
+                        { label: 'Alertas Críticas', value: metrics.stalledRequests, icon: AlertCircle, color: 'text-red-400', bg: 'bg-red-500/10', trend: metrics.stalledRequests > 0 ? 100 : 0, badge: 'URGENTE', pulse: metrics.stalledRequests > 0 },
                         { label: 'Instalaciones', value: metrics.instalacionesIntervenidas, icon: Building2, color: 'text-orange-400', bg: 'bg-orange-500/10', trend: comparison?.instalacionesIntervenidasChange, badge: 'COBERTURA' },
                         { label: 'Eficiencia Global', value: `${metrics.porcentajeEjecucion.toFixed(1)}%`, icon: Activity, color: 'text-purple-400', bg: 'bg-purple-500/10', trend: comparison?.porcentajeEjecucionChange, badge: 'DESEMPEÑO', isPercentage: true }
                     ].map((m, i) => (
-                        <div key={i} className="bg-slate-800/50 border border-white/5 rounded-2xl p-6 flex flex-col group hover:bg-slate-800/80 transition-all duration-300 relative overflow-hidden">
+                        <div
+                            key={i}
+                            onClick={() => m.label === 'Alertas Críticas' && setShowCriticalOnly(!showCriticalOnly)}
+                            className={cn(
+                                "bg-slate-800/50 border border-white/5 rounded-2xl p-6 flex flex-col group transition-all duration-300 relative overflow-hidden",
+                                m.label === 'Alertas Críticas' ? "cursor-pointer hover:bg-red-500/5 hover:border-red-500/50" : "hover:bg-slate-800/80",
+                                m.pulse && "border-red-500/30 animate-pulse shadow-[0_0_15px_rgba(239,68,68,0.1)]",
+                                showCriticalOnly && m.label === 'Alertas Críticas' && "border-red-500 ring-2 ring-red-500/20 bg-red-500/10"
+                            )}>
                             <div className="flex justify-between items-start mb-6">
                                 <div className={`w-12 h-12 rounded-2xl ${m.bg} flex items-center justify-center ${m.color} group-hover:scale-110 transition-transform`}>
                                     <m.icon className="w-6 h-6" />
                                 </div>
-                                <span className="bg-white/5 text-gray-500 text-[9px] font-black tracking-widest uppercase px-3 py-1 rounded-full border border-white/5">{m.badge}</span>
+                                <span className={cn(
+                                    "bg-white/5 text-gray-500 text-[9px] font-black tracking-widest uppercase px-3 py-1 rounded-full border border-white/5",
+                                    m.pulse && "bg-red-500/10 text-red-500 border-red-500/20"
+                                )}>{m.badge}</span>
                             </div>
                             <div>
                                 <p className="text-[10px] font-black text-gray-500 uppercase tracking-widest leading-none">{m.label}</p>
-                                <p className="text-4xl font-black text-white mt-2 italic tracking-tighter leading-none">{m.value}</p>
-                                <TrendBadge value={m.trend} isPercentage={m.isPercentage} />
+                                <p className={cn("text-4xl font-black text-white mt-2 italic tracking-tighter leading-none", m.pulse && "text-red-500")}>{m.value}</p>
+                                {m.trend !== undefined && <TrendBadge value={m.trend} isPercentage={m.isPercentage} />}
                             </div>
                         </div>
                     ))}
@@ -590,8 +619,9 @@ export default function MaintenanceDashboard() {
                                                 { header: 'Ubicación', width: '28%' },
                                                 { header: 'Instalación', width: '15%' },
                                                 { header: 'Área', width: '12%' },
-                                                { header: 'Supervisor', width: '18%' },
-                                                { header: 'Estado', width: '13%' },
+                                                { header: 'Supervisor', width: '15%' },
+                                                { header: 'Prioridad', width: '10%' },
+                                                { header: 'Estado', width: '12%' },
                                             ]}
                                             renderCell={(item, colIdx) => {
                                                 switch (colIdx) {
@@ -614,7 +644,24 @@ export default function MaintenanceDashboard() {
                                                             </span>
                                                         </div>
                                                     );
-                                                    case 6: return (
+                                                    case 6: {
+                                                        const days = differenceInDays(new Date(), parseISO(item.fecha_solicitud));
+                                                        const isFinished = ['EJECUTADA', 'FINALIZADA', 'COMPLETADA', 'CERRADA'].includes(item.status_normalized);
+
+                                                        if (isFinished) return <span className="block text-[9px] text-slate-500 text-center">-</span>;
+
+                                                        return (
+                                                            <div className="flex flex-col items-center gap-1">
+                                                                <div className={cn(
+                                                                    "w-3 h-3 rounded-full shadow-lg",
+                                                                    days > 10 ? "bg-red-500 animate-pulse" :
+                                                                        days > 5 ? "bg-orange-500" : "bg-slate-600"
+                                                                )} />
+                                                                <span className="text-[8px] font-black text-slate-400">{days}d</span>
+                                                            </div>
+                                                        );
+                                                    }
+                                                    case 7: return (
                                                         <span className={cn(
                                                             "block text-center px-2 py-1 rounded-full text-[9px] font-black uppercase break-words whitespace-normal",
                                                             item.status_normalized === 'ACTIVA' ? 'bg-amber-500/10 text-amber-500 border border-amber-500/20' :

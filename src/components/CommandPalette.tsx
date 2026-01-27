@@ -8,7 +8,9 @@ import {
     Package,
     Command,
     ChevronRight,
-    Loader2
+    Loader2,
+    Users,
+    Construction
 } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import { cn } from '../lib/utils';
@@ -17,7 +19,7 @@ type SearchResult = {
     id: string | number;
     title: string;
     subtitle: string;
-    type: 'solicitud' | 'instalacion' | 'articulo' | 'page';
+    type: 'solicitud' | 'instalacion' | 'articulo' | 'page' | 'activo' | 'colaborador';
     path: string;
 };
 
@@ -63,10 +65,12 @@ export default function CommandPalette() {
             const searchTerm = `%${query}%`;
 
             try {
-                const [solicitudes, instalaciones, articulos] = await Promise.all([
+                const [solicitudes, instalaciones, articulos, activos, colaboradores] = await Promise.all([
                     supabase.from('solicitud_17').select('numero_solicitud, descripcion').ilike('numero_solicitud::text', searchTerm).limit(3),
                     supabase.from('ubicaciones_01').select('id, nombre_ubicacion, alias').or(`nombre_ubicacion.ilike.${searchTerm},alias.ilike.${searchTerm}`).limit(3),
-                    supabase.from('articulo_01').select('codigo_articulo, nombre_articulo').or(`nombre_articulo.ilike.${searchTerm},codigo_articulo.ilike.${searchTerm}`).limit(3)
+                    supabase.from('articulo_01').select('codigo_articulo, nombre_articulo').or(`nombre_articulo.ilike.${searchTerm},codigo_articulo.ilike.${searchTerm}`).limit(3),
+                    supabase.from('activos_50').select('numero_activo, nombre_corto_activo').or(`nombre_corto_activo.ilike.${searchTerm},numero_activo::text.ilike.${searchTerm}`).limit(3),
+                    supabase.from('colaboradores_06').select('identificacion, colaborador, alias').or(`colaborador.ilike.${searchTerm},identificacion.ilike.${searchTerm}`).limit(3)
                 ]);
 
                 const formattedResults: SearchResult[] = [
@@ -91,6 +95,20 @@ export default function CommandPalette() {
                         subtitle: a.codigo_articulo || 'Sin código',
                         type: 'articulo' as const,
                         path: `/articulos?search=${a.codigo_articulo}`
+                    })) || []),
+                    ...(activos.data?.map(a => ({
+                        id: a.numero_activo,
+                        title: a.nombre_corto_activo,
+                        subtitle: `Activo #${a.numero_activo}`,
+                        type: 'activo' as const,
+                        path: `/activos/consulta?search=${a.numero_activo}`
+                    })) || []),
+                    ...(colaboradores.data?.map(c => ({
+                        id: c.identificacion,
+                        title: c.colaborador,
+                        subtitle: `${c.identificacion} ${c.alias ? `(${c.alias})` : ''}`,
+                        type: 'colaborador' as const,
+                        path: `/gestion-interna/colaboradores?colaborador=${encodeURIComponent(c.colaborador)}`
                     })) || []),
                 ];
 
@@ -173,6 +191,8 @@ export default function CommandPalette() {
                                         {result.type === 'solicitud' && <FileText className="w-5 h-5 text-blue-400 group-hover:text-white" />}
                                         {result.type === 'instalacion' && <MapPin className="w-5 h-5 text-emerald-400 group-hover:text-white" />}
                                         {result.type === 'articulo' && <Package className="w-5 h-5 text-orange-400 group-hover:text-white" />}
+                                        {result.type === 'activo' && <Construction className="w-5 h-5 text-amber-500 group-hover:text-white" />}
+                                        {result.type === 'colaborador' && <Users className="w-5 h-5 text-sky-400 group-hover:text-white" />}
                                         {result.type === 'page' && <ChevronRight className="w-5 h-5 text-purple-400 group-hover:text-white" />}
                                     </div>
 
