@@ -3,7 +3,7 @@ import { supabase } from '../lib/supabase';
 import { useNavigate } from 'react-router-dom';
 import * as XLSX from 'xlsx';
 import jsPDF from 'jspdf';
-import 'jspdf-autotable';
+import autoTable from 'jspdf-autotable';
 import {
     Table,
     ArrowLeft,
@@ -117,7 +117,7 @@ export default function RealizarSolicitudExterno() {
             new Date(s.fecha_solicitud).toLocaleDateString('es-CR')
         ]);
 
-        (doc as any).autoTable({
+        autoTable(doc, {
             head: [['Número', 'Descripción', 'Fecha']],
             body: tableData,
             startY: 20,

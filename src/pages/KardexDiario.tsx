@@ -30,12 +30,7 @@ import {
 } from 'recharts';
 import * as XLSX from 'xlsx';
 import jsPDF from 'jspdf';
-import 'jspdf-autotable';
-
-// Extend jsPDF type to include autoTable
-interface jsPDFWithAutoTable extends jsPDF {
-    autoTable: (options: any) => void;
-}
+import autoTable from 'jspdf-autotable';
 
 interface Articulo {
     codigo_articulo: string;
@@ -351,7 +346,7 @@ export default function KardexDiario() {
     const exportToPDF = () => {
         if (kardexData.length === 0) return;
 
-        const doc = new jsPDF() as jsPDFWithAutoTable;
+        const doc = new jsPDF();
 
         // Header
         doc.setFontSize(18);
@@ -374,7 +369,7 @@ export default function KardexDiario() {
             ])
         ];
 
-        doc.autoTable({
+        autoTable(doc, {
             startY: 50,
             head: [['Fecha', 'Entradas', 'Salidas', 'Saldo Día', 'Saldo Acum.']],
             body: tableBody,
@@ -735,14 +730,14 @@ export default function KardexDiario() {
                 {statusMessage && (
                     <div className="fixed bottom-8 right-8 z-50 max-w-md w-full animate-in slide-in-from-bottom-5 fade-in duration-300">
                         <div className={`p-4 rounded-xl flex items-start gap-4 shadow-2xl backdrop-blur-xl border ${statusMessage.type === 'error' ? 'bg-red-500/20 border-red-500/30 text-red-100' :
-                                statusMessage.type === 'success' ? 'bg-emerald-500/20 border-emerald-500/30 text-emerald-100' :
-                                    statusMessage.type === 'warning' ? 'bg-amber-500/20 border-amber-500/30 text-amber-100' :
-                                        'bg-blue-500/20 border-blue-500/30 text-blue-100'
+                            statusMessage.type === 'success' ? 'bg-emerald-500/20 border-emerald-500/30 text-emerald-100' :
+                                statusMessage.type === 'warning' ? 'bg-amber-500/20 border-amber-500/30 text-amber-100' :
+                                    'bg-blue-500/20 border-blue-500/30 text-blue-100'
                             }`}>
                             <div className={`p-2 rounded-full shrink-0 ${statusMessage.type === 'error' ? 'bg-red-500/20' :
-                                    statusMessage.type === 'success' ? 'bg-emerald-500/20' :
-                                        statusMessage.type === 'warning' ? 'bg-amber-500/20' :
-                                            'bg-blue-500/20'
+                                statusMessage.type === 'success' ? 'bg-emerald-500/20' :
+                                    statusMessage.type === 'warning' ? 'bg-amber-500/20' :
+                                        'bg-blue-500/20'
                                 }`}>
                                 {statusMessage.type === 'error' && <AlertTriangle className="w-5 h-5" />}
                                 {statusMessage.type === 'success' && <CheckCircle2 className="w-5 h-5" />}
