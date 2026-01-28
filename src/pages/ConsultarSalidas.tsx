@@ -59,6 +59,8 @@ interface ResumenDiario {
     nombre_dependencia: string;
     area_mantenimiento: string;
     cantidad_total: number;
+    costo_unitario: number;
+    total_costo: number;
     instalacion_municipal?: string;
 }
 
@@ -319,7 +321,7 @@ export default function ConsultarSalidas() {
             doc.text(`Generado: ${format(new Date(), 'dd/MM/yyyy HH:mm')}`, 20, 35);
             doc.text(`Total de registros: ${resumen.length}`, 20, 40);
 
-            const columnas = ['Fecha', 'Código', 'Artículo', 'Solicitud', 'Instalación', 'Área', 'Cantidad'];
+            const columnas = ['Fecha', 'Código', 'Artículo', 'Solicitud', 'Instalación', 'Área', 'Cant.', 'Costo U.', 'Total'];
 
             const filas = sortedResumen.map(item => [
                 formatDate(item.fecha),
@@ -328,7 +330,9 @@ export default function ConsultarSalidas() {
                 item.numero_solicitud || '',
                 item.instalacion_municipal || '',
                 item.area_mantenimiento || '',
-                Number(item.cantidad_total || 0).toFixed(2)
+                Number(item.cantidad_total || 0).toFixed(2),
+                formatearMoneda(item.costo_unitario || 0),
+                formatearMoneda(item.total_costo || 0)
             ]);
 
             autoTable(doc, {
@@ -343,9 +347,11 @@ export default function ConsultarSalidas() {
                     1: { cellWidth: 18, halign: 'center', fontSize: 6 },
                     2: { cellWidth: 70, overflow: 'linebreak' },
                     3: { cellWidth: 20, halign: 'center' },
-                    4: { cellWidth: 50, overflow: 'linebreak' },
-                    5: { cellWidth: 40, overflow: 'linebreak' },
-                    6: { cellWidth: 22, halign: 'right' }
+                    4: { cellWidth: 40, overflow: 'linebreak' },
+                    5: { cellWidth: 35, overflow: 'linebreak' },
+                    6: { cellWidth: 15, halign: 'right' },
+                    7: { cellWidth: 25, halign: 'right' },
+                    8: { cellWidth: 25, halign: 'right' }
                 },
                 margin: { left: 15, right: 15 },
                 didDrawPage: function (data: any) {
@@ -375,7 +381,9 @@ export default function ConsultarSalidas() {
                 'Solicitud': item.numero_solicitud,
                 'Instalación': item.instalacion_municipal,
                 'Área': item.area_mantenimiento,
-                'Cantidad': Number(item.cantidad_total)
+                'Cantidad': Number(item.cantidad_total),
+                'Costo Unitario': Number(item.costo_unitario),
+                'Total': Number(item.total_costo)
             }));
 
             const ws = XLSX.utils.json_to_sheet(dataToExport);
@@ -388,7 +396,9 @@ export default function ConsultarSalidas() {
                 { wch: 15 }, // Solicitud
                 { wch: 30 }, // Instalación
                 { wch: 25 }, // Área
-                { wch: 10 }  // Cantidad
+                { wch: 10 }, // Cantidad
+                { wch: 15 }, // Costo Unitario
+                { wch: 15 }  // Total
             ];
             ws['!cols'] = wscols;
 
@@ -681,7 +691,7 @@ export default function ConsultarSalidas() {
                                 <span className="text-white font-medium">
                                     {activeTab === 'solicitud'
                                         ? `Se encontraron ${salidas.length} salida${salidas.length !== 1 ? 's' : ''} (${salidas.filter(s => s.finalizada).length} finalizadas) - Total: ${formatearMoneda(salidas.reduce((sum, s) => sum + calcularTotalSalida(s), 0))}`
-                                        : `${resumen.length} registros encontrados en ${new Set(resumen.map(r => r.fecha)).size} días - Cantidad total: ${resumen.reduce((sum, r) => sum + Number(r.cantidad_total || 0), 0).toFixed(2)}`
+                                        : `${resumen.length} registros encontrados en ${new Set(resumen.map(r => r.fecha)).size} días - Total General: ${formatearMoneda(resumen.reduce((sum, r) => sum + Number(r.total_costo || 0), 0))}`
                                     }
                                 </span>
                             </div>
@@ -812,7 +822,9 @@ export default function ConsultarSalidas() {
                                                     { key: 'numero_solicitud', label: 'Solicitud' },
                                                     { key: 'instalacion_municipal', label: 'Instalación' },
                                                     { key: 'area_mantenimiento', label: 'Área' },
-                                                    { key: 'cantidad_total', label: 'Cantidad', align: 'right' }
+                                                    { key: 'cantidad_total', label: 'Cantidad', align: 'right' },
+                                                    { key: 'costo_unitario', label: 'Costo U.', align: 'right' },
+                                                    { key: 'total_costo', label: 'Total', align: 'right' }
                                                 ].map((col) => (
                                                     <th
                                                         key={col.key}
@@ -847,10 +859,10 @@ export default function ConsultarSalidas() {
                                                     <td className="px-4 py-3 text-white/80 whitespace-normal break-words" title={item.instalacion_municipal}>
                                                         {item.instalacion_municipal || 'N/A'}
                                                     </td>
-                                                    <td className="px-4 py-3 text-white/80 whitespace-normal break-words" title={item.area_mantenimiento}>
-                                                        {item.area_mantenimiento}
-                                                    </td>
-                                                    <td className="px-4 py-3 text-right font-medium text-white">{Number(item.cantidad_total).toFixed(2)}</td>
+                                                    <td className="px-4 py-3 text-white/70">{item.area_mantenimiento}</td>
+                                                    <td className="px-4 py-3 text-right text-white font-medium">{Number(item.cantidad_total || 0).toFixed(2)}</td>
+                                                    <td className="px-4 py-3 text-right text-white font-medium">{formatearMoneda(item.costo_unitario || 0)}</td>
+                                                    <td className="px-4 py-3 text-right text-purple-300 font-bold">{formatearMoneda(item.total_costo || 0)}</td>
                                                 </tr>
                                             ))}
                                         </tbody>
