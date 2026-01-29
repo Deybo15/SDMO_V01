@@ -88,28 +88,38 @@ export const TransactionTable = ({
                                 <td className="py-4">
                                     <div className="relative max-w-[120px]">
                                         <input
-                                            type="number"
-                                            min="0"
-                                            step="any"
-                                            max={item.cantidad_disponible}
-                                            value={Number(item.cantidad) === 0 ? '' : item.cantidad}
+                                            type="text"
+                                            inputMode="decimal"
+                                            value={item.cantidad === 0 ? '' : item.cantidad}
                                             onChange={(e) => {
-                                                const val = e.target.value;
+                                                const val = e.target.value.replace(',', '.');
+                                                // Permitir solo números y un punto decimal
+                                                if (val !== '' && !/^\d*\.?\d*$/.test(val)) return;
+
                                                 if (val === '') {
                                                     onUpdateRow(index, 'cantidad', 0);
                                                     return;
                                                 }
+
                                                 let numVal = parseFloat(val);
                                                 let finalVal: string | number = val;
+
                                                 if (item.cantidad_disponible !== undefined && numVal > item.cantidad_disponible) {
                                                     finalVal = item.cantidad_disponible;
                                                     if (onWarning) onWarning(`Stock insuficiente (${item.cantidad_disponible})`);
                                                 }
-                                                if (numVal < 0) finalVal = 0;
+
                                                 onUpdateRow(index, 'cantidad', finalVal);
                                             }}
+                                            onBlur={(e) => {
+                                                // Al salir, si es un decimal como .225, formatear a 0.225
+                                                const val = e.target.value;
+                                                if (val.startsWith('.')) {
+                                                    onUpdateRow(index, 'cantidad', '0' + val);
+                                                }
+                                            }}
                                             onFocus={(e) => e.target.select()}
-                                            className={`w-full bg-white/5 border border-white/10 rounded-xl py-3 px-4 text-white text-base font-black ${focusClass} focus:outline-none focus:ring-4 focus:ring-${themeColor}-500/10 placeholder-gray-600 shadow-inner`}
+                                            className={`w-full bg-white/5 border border-white/10 rounded-xl py-3 px-4 text-white text-base font-black ${focusClass} focus:outline-none focus:ring-4 focus:ring-${themeColor}-500/10 placeholder-gray-600 shadow-inner transition-all`}
                                             placeholder="0"
                                         />
                                         {item.cantidad_disponible !== undefined && item.codigo_articulo && (
@@ -170,11 +180,13 @@ export const TransactionTable = ({
                                 <label className="text-[10px] font-black text-gray-500 uppercase tracking-widest mb-2 block">Cantidad</label>
                                 <div className="relative">
                                     <input
-                                        type="number"
+                                        type="text"
                                         inputMode="decimal"
-                                        value={Number(item.cantidad) === 0 ? '' : item.cantidad}
+                                        value={item.cantidad === 0 ? '' : item.cantidad}
                                         onChange={(e) => {
-                                            const val = e.target.value;
+                                            const val = e.target.value.replace(',', '.');
+                                            if (val !== '' && !/^\d*\.?\d*$/.test(val)) return;
+
                                             if (val === '') {
                                                 onUpdateRow(index, 'cantidad', 0);
                                                 return;
@@ -185,8 +197,13 @@ export const TransactionTable = ({
                                                 finalVal = item.cantidad_disponible;
                                                 if (onWarning) onWarning(`Máximo ${item.cantidad_disponible}`);
                                             }
-                                            if (numVal < 0) finalVal = 0;
                                             onUpdateRow(index, 'cantidad', finalVal);
+                                        }}
+                                        onBlur={(e) => {
+                                            const val = e.target.value;
+                                            if (val.startsWith('.')) {
+                                                onUpdateRow(index, 'cantidad', '0' + val);
+                                            }
                                         }}
                                         className={`w-full bg-black/40 border border-white/10 rounded-xl p-4 text-white text-xl font-black focus:border-${themeColor}-500 outline-none transition-all shadow-inner`}
                                         placeholder="0"

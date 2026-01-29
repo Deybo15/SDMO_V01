@@ -12,11 +12,13 @@ import {
 import { useTransactionManager } from '../hooks/useTransactionManager';
 import { PageHeader } from '../components/ui/PageHeader';
 import { TransactionTable } from '../components/ui/TransactionTable';
+import { Card } from '../components/ui/Card';
 import { Equipo } from '../types/inventory';
 import ArticuloSearchModal from '../components/ArticleSearchModal';
 import ColaboradorSearchModal from '../components/ColaboradorSearchModal';
 import EquipoSearchModal from '../components/EquipoSearchModal';
 import { supabase } from '../lib/supabase';
+import { cn } from '../lib/utils';
 
 export default function EquiposActivos() {
     const [searchParams] = useSearchParams();
@@ -115,27 +117,27 @@ export default function EquiposActivos() {
 
 
     return (
-        <div className="min-h-screen bg-[#0f111a] font-['Inter']">
+        <div className="min-h-screen bg-[#0f111a]">
             <PageHeader
                 title="Equipos y Activos"
                 icon={Monitor}
                 themeColor={colorTheme}
-                gradientFrom="from-blue-900"
-                gradientTo="to-slate-900"
             />
 
-            <div className="max-w-7xl mx-auto p-6">
+            <div className="max-w-7xl mx-auto p-4 md:p-8 pb-20">
                 {/* Feedback Toast */}
                 {feedback && (
-                    <div className={`fixed top-4 right-4 z-[100] px-6 py-4 rounded-xl shadow-2xl backdrop-blur-md border animate-fade-in-down flex items-center gap-3 ${feedback.type === 'success' ? 'bg-green-500/20 border-green-500/50 text-green-400' :
-                        feedback.type === 'error' ? 'bg-red-500/20 border-red-500/50 text-red-400' :
-                            'bg-yellow-500/20 border-yellow-500/50 text-yellow-400'
-                        }`}>
+                    <div className={cn(
+                        "fixed top-4 right-4 z-[100] px-6 py-4 rounded-xl shadow-2xl backdrop-blur-md border animate-fade-in-down flex items-center gap-3",
+                        feedback.type === 'success' ? 'bg-green-500/20 border-green-500/50 text-green-400' :
+                            feedback.type === 'error' ? 'bg-red-500/20 border-red-500/50 text-red-400' :
+                                'bg-yellow-500/20 border-yellow-500/50 text-yellow-400'
+                    )}>
                         {feedback.message}
                     </div>
                 )}
 
-                <div className="bg-[#1e2235] border border-white/10 rounded-2xl shadow-xl overflow-hidden">
+                <Card className="overflow-hidden border-white/10 shadow-2xl">
                     <form onSubmit={handleProcess} className="p-4 md:p-8">
                         {/* Headers Section */}
                         <div className="bg-white/5 border border-white/10 rounded-xl p-4 md:p-6 mb-8">
@@ -238,7 +240,7 @@ export default function EquiposActivos() {
                             <span className="text-lg">Procesar Solicitud</span>
                         </button>
                     </form>
-                </div>
+                </Card>
             </div>
 
             {/* Colaborador Modal */}
@@ -261,7 +263,7 @@ export default function EquiposActivos() {
                 isOpen={isEquipoModalOpen}
                 onClose={() => setIsEquipoModalOpen(false)}
                 equipos={equipos}
-                onSelect={(e) => {
+                onSelect={(e: any) => {
                     setSelectedEquipoValue(e.numero_activo.toString());
                     setIsEquipoModalOpen(false);
                 }}

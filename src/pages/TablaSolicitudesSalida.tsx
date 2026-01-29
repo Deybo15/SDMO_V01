@@ -15,17 +15,19 @@ import {
     X,
     Package,
     Calendar,
-    Info
+    Info,
+    AlertOctagon
 } from 'lucide-react';
 import * as XLSX from 'xlsx';
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
+import { PageHeader } from '../components/ui/PageHeader';
 
 interface Solicitud {
     numero_solicitud: string;
     fecha_solicitud: string;
     descripcion_solicitud: string;
-    instalacion_municipal?: string; // Mapped from join
+    instalacion_municipal?: string;
     instalaciones_municipales_16?: {
         instalacion_municipal: string;
     };
@@ -44,8 +46,6 @@ interface DetalleSalida {
         }[];
     }[];
 }
-
-
 
 export default function TablaSolicitudesSalida() {
     const navigate = useNavigate();
@@ -86,16 +86,13 @@ export default function TablaSolicitudesSalida() {
                 .eq('tipo_solicitud', 'STI')
                 .eq('seguimiento_solicitud.estado_actual', 'ACTIVA');
 
-            // Apply filters
             if (searchNum) {
-                // Use exact match for numeric column
                 query = query.eq('numero_solicitud', searchNum);
             }
             if (searchDesc) {
                 query = query.ilike('descripcion_solicitud', `%${searchDesc}%`);
             }
 
-            // Apply pagination
             const from = (page - 1) * ITEMS_PER_PAGE;
             const to = from + ITEMS_PER_PAGE - 1;
 
@@ -105,7 +102,6 @@ export default function TablaSolicitudesSalida() {
 
             if (error) throw error;
 
-            // Flatten/Map data for easier usage
             const mappedData = (data || []).map((item: any) => ({
                 ...item,
                 instalacion_municipal: item.instalaciones_municipales_16?.instalacion_municipal || 'N/A'
@@ -122,7 +118,6 @@ export default function TablaSolicitudesSalida() {
     };
 
     const handleExportExcel = async () => {
-        // Fetch all matching records for export
         let query = supabase
             .from('solicitud_17')
             .select('numero_solicitud, fecha_solicitud, descripcion_solicitud, instalaciones_municipales_16(instalacion_municipal), seguimiento_solicitud!inner(estado_actual)')
@@ -173,26 +168,17 @@ export default function TablaSolicitudesSalida() {
         });
         doc.save("solicitudes_cliente_interno.pdf");
     };
-    const handlePrintRow = async (numeroSolicitud: string, _descripcion?: string) => {
-        try {
-            // El archivo debe existir en el bucket 'ordenes-trabajo'
-            // Formato: OT-{numero_solicitud}-CI.pdf (Cliente Interno)
-            const fileName = `OT-${numeroSolicitud}-CI.pdf`;
 
-            // Intentar abrir directamente la URL pública
-            const { data } = supabase.storage
-                .from('ordenes-trabajo')
-                .getPublicUrl(fileName);
+    const handlePrintRow = (numeroSolicitud: string) => {
+        const fileName = `OT-${numeroSolicitud}-CI.pdf`;
+        const { data } = supabase.storage
+            .from('ordenes-trabajo')
+            .getPublicUrl(fileName);
 
-            if (data && data.publicUrl) {
-                window.open(data.publicUrl, '_blank');
-            } else {
-                alert('No se pudo obtener el enlace del archivo.');
-            }
-
-        } catch (error: any) {
-            console.error('Error en handlePrintRow:', error);
-            alert('Ocurrió un error inesperado al intentar abrir el PDF.');
+        if (data && data.publicUrl) {
+            window.open(data.publicUrl, '_blank');
+        } else {
+            alert('No se pudo obtener el enlace del archivo.');
         }
     };
 
@@ -223,7 +209,6 @@ export default function TablaSolicitudesSalida() {
             setDetailsData(data || []);
         } catch (error) {
             console.error('Error fetching details:', error);
-            alert('Error al cargar los detalles de la solicitud.');
         } finally {
             setLoadingDetails(false);
         }
@@ -232,318 +217,239 @@ export default function TablaSolicitudesSalida() {
     const totalPages = Math.ceil(totalRecords / ITEMS_PER_PAGE);
 
     return (
-        <div className="min-h-screen bg-[#1a1d29] text-[#e4e6ea] font-sans p-4 md:p-8 relative" >
-            {/* Background Effects */}
-            < div className="fixed inset-0 pointer-events-none" >
-                <div className="absolute top-[20%] left-[20%] w-96 h-96 bg-[#7877c6]/10 rounded-full blur-[100px]" />
-                <div className="absolute bottom-[20%] right-[20%] w-96 h-96 bg-[#3b82f6]/10 rounded-full blur-[100px]" />
-            </div >
+        <div className="min-h-screen bg-[#0f111a] text-slate-100 p-4 md:p-8 relative overflow-hidden">
+            {/* Ambient Background */}
+            <div className="absolute top-0 left-0 w-full h-full overflow-hidden pointer-events-none -z-10">
+                <div className="absolute top-[-20%] left-[-10%] w-[60%] h-[60%] bg-purple-500/5 rounded-full blur-[120px]" />
+                <div className="absolute bottom-[-20%] right-[-10%] w-[60%] h-[60%] bg-blue-500/5 rounded-full blur-[120px]" />
+            </div>
 
-            <div className="max-w-7xl mx-auto relative z-10">
-                {/* Header */}
-                <div className="sticky top-0 z-50 flex flex-col sm:flex-row items-start sm:items-center justify-between mb-6 md:mb-8 -mx-4 md:-mx-8 -mt-4 md:-mt-8 px-4 md:px-8 py-4 bg-[#1a1d29]/90 backdrop-blur-xl border-b border-white/10 shadow-lg gap-4">
-                    <div className="flex items-center gap-3 md:gap-4">
-                        <div className="w-10 h-10 md:w-12 md:h-12 rounded-xl bg-gradient-to-br from-purple-500/20 to-blue-600/20 border border-white/20 flex items-center justify-center shadow-lg shadow-purple-500/10">
-                            <FileText className="w-5 h-5 md:w-6 md:h-6 text-purple-400" />
-                        </div>
-                        <div>
-                            <h1 className="text-lg md:text-2xl font-black text-white tracking-tight leading-tight">Salidas de Cliente Interno</h1>
-                            <p className="text-[10px] font-bold text-gray-500 uppercase tracking-widest mt-0.5 hidden md:block">Gestión de órdenes de trabajo ST-I</p>
-                        </div>
+            <div className="max-w-7xl mx-auto space-y-6 relative z-10">
+                {/* Header Section */}
+                <div className="flex flex-col md:flex-row justify-between items-end gap-6 pb-2 border-b border-white/5">
+                    <div className="space-y-1">
+                        <PageHeader title="Salidas de Cliente Interno" icon={FileText} themeColor="purple" />
+                        <p className="text-slate-500 text-sm font-medium tracking-wide">
+                            Gestión y entrega de materiales para órdenes de trabajo activas ST-I.
+                        </p>
                     </div>
-                    <button
-                        onClick={() => navigate('/')}
-                        className="w-full sm:w-auto px-4 py-2 bg-white/5 hover:bg-white/10 border border-white/10 rounded-xl text-xs font-bold uppercase tracking-widest transition-all active:scale-95"
-                    >
-                        Regresar
-                    </button>
+                    <div className="flex gap-3">
+                        <button onClick={handleExportPDF} className="glass-button px-5 py-2.5 flex items-center gap-2 text-rose-400 hover:text-white rounded-xl">
+                            <File className="w-4 h-4" />
+                            <span className="font-bold text-xs">PDF LISTADO</span>
+                        </button>
+                        <button onClick={handleExportExcel} className="glass-button px-5 py-2.5 flex items-center gap-2 text-emerald-400 hover:text-white rounded-xl">
+                            <FileSpreadsheet className="w-4 h-4" />
+                            <span className="font-bold text-xs">EXCEL COMPLETO</span>
+                        </button>
+                    </div>
                 </div>
 
-                {/* Main Content Area */}
-                <div className="space-y-4 md:space-y-6">
-                    {/* Filters & Actions Card */}
-                    <div className="bg-[#1e2330]/60 backdrop-blur-xl border border-white/10 rounded-3xl p-5 md:p-8 shadow-2xl">
-                        {/* Filters */}
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-3 md:gap-4 mb-6">
-                            <div className="relative group">
-                                <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-500 group-focus-within:text-purple-400 transition-colors" />
-                                <input
-                                    type="text"
-                                    placeholder="Buscar por número..."
-                                    value={searchNum}
-                                    onChange={(e) => setSearchNum(e.target.value)}
-                                    className="w-full bg-[#13161c] border border-white/10 rounded-xl py-3.5 pl-11 pr-4 text-sm text-white focus:border-purple-500/50 focus:ring-4 focus:ring-purple-500/5 outline-none transition-all placeholder-gray-600"
-                                />
-                            </div>
-                            <div className="relative group">
-                                <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-500 group-focus-within:text-purple-400 transition-colors" />
-                                <input
-                                    type="text"
-                                    placeholder="Buscar por descripción..."
-                                    value={searchDesc}
-                                    onChange={(e) => setSearchDesc(e.target.value)}
-                                    className="w-full bg-[#13161c] border border-white/10 rounded-xl py-3.5 pl-11 pr-4 text-sm text-white focus:border-purple-500/50 focus:ring-4 focus:ring-purple-500/5 outline-none transition-all placeholder-gray-600"
-                                />
-                            </div>
+                {/* Filters Row */}
+                <div className="glass-card p-5 flex flex-col lg:flex-row gap-4 items-center justify-between">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4 w-full lg:w-[75%]">
+                        <div className="relative group">
+                            <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-600 group-focus-within:text-purple-400 transition-colors" />
+                            <input
+                                type="text"
+                                placeholder="Buscar por número de solicitud..."
+                                value={searchNum}
+                                onChange={e => setSearchNum(e.target.value)}
+                                className="w-full bg-slate-950/50 border border-white/10 rounded-2xl pl-12 pr-4 py-3.5 text-sm text-slate-200 focus:ring-1 focus:ring-purple-500/50 outline-none transition-all placeholder:text-slate-700 font-medium"
+                            />
                         </div>
-
-                        {/* Actions */}
-                        <div className="flex flex-col sm:flex-row gap-2 md:gap-3">
-                            <button
-                                onClick={() => navigate(-1)}
-                                className="flex-1 sm:flex-none px-4 py-2.5 bg-[#2d3342]/50 hover:bg-[#363c4e] text-white rounded-xl flex items-center justify-center gap-2 transition-all text-xs font-bold uppercase tracking-widest border border-white/5"
-                            >
-                                <ArrowLeft className="w-4 h-4" /> Regresar
-                            </button>
-                            <button
-                                onClick={handleExportExcel}
-                                className="flex-1 sm:flex-none px-4 py-2.5 bg-purple-600/10 hover:bg-purple-600/20 text-purple-400 rounded-xl flex items-center justify-center gap-2 transition-all text-xs font-bold uppercase tracking-widest border border-purple-500/20"
-                            >
-                                <FileSpreadsheet className="w-4 h-4" /> Excel
-                            </button>
-                            <button
-                                onClick={handleExportPDF}
-                                className="flex-1 sm:flex-none px-4 py-2.5 bg-purple-600/10 hover:bg-purple-600/20 text-purple-400 rounded-xl flex items-center justify-center gap-2 transition-all text-xs font-bold uppercase tracking-widest border border-purple-500/20"
-                            >
-                                <File className="w-4 h-4" /> PDF
-                            </button>
+                        <div className="relative group">
+                            <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-600 group-focus-within:text-purple-400 transition-colors" />
+                            <input
+                                type="text"
+                                placeholder="Buscar por descripción..."
+                                value={searchDesc}
+                                onChange={e => setSearchDesc(e.target.value)}
+                                className="w-full bg-slate-950/50 border border-white/10 rounded-2xl pl-12 pr-4 py-3.5 text-sm text-slate-200 focus:ring-1 focus:ring-purple-500/50 outline-none transition-all placeholder:text-slate-700 font-medium"
+                            />
                         </div>
                     </div>
+                    <div className="flex items-center gap-4 w-full lg:w-auto">
+                        <button onClick={() => navigate('/')} className="glass-button w-full lg:w-auto px-6 py-3.5 rounded-2xl text-xs font-black uppercase tracking-widest flex items-center justify-center gap-2 text-slate-400 hover:text-white">
+                            <ArrowLeft className="w-4 h-4" /> Regresar
+                        </button>
+                    </div>
+                </div>
 
-                    {/* Records List/Table */}
-                    <div className="bg-[#1e2330]/40 backdrop-blur-md border border-white/5 rounded-3xl overflow-hidden shadow-xl">
-                        {/* Desktop Table View */}
-                        <div className="hidden lg:block overflow-x-auto">
-                            <table className="w-full text-left border-collapse">
-                                <thead className="bg-purple-500/5 text-gray-400 text-[10px] font-black uppercase tracking-widest">
+                {/* Table Section */}
+                <div className="glass-card overflow-hidden flex flex-col min-h-[600px]">
+                    <div className="overflow-x-auto">
+                        <table className="w-full text-left border-collapse">
+                            <thead>
+                                <tr className="bg-white/5 text-slate-500 text-[10px] font-black tracking-widest uppercase italic border-b border-white/5">
+                                    <th className="p-6 text-center w-[12%]">NÚMERO</th>
+                                    <th className="p-6 w-[38%]">DESCRIPCIÓN DE LA SOLICITUD</th>
+                                    <th className="p-6 w-[20%]">INSTALACIÓN</th>
+                                    <th className="p-6 text-center w-[15%]">FECHA</th>
+                                    <th className="p-6 text-center w-[15%]">ACCIONES</th>
+                                </tr>
+                            </thead>
+                            <tbody className={`text-sm divide-y divide-white/[0.03] transition-opacity duration-500 ${loading ? 'opacity-30 pointer-events-none' : 'opacity-100'}`}>
+                                {solicitudes.length === 0 && !loading ? (
                                     <tr>
-                                        <th className="p-4 text-center w-[12%] border-b border-white/5">Número</th>
-                                        <th className="p-4 w-[38%] border-b border-white/5">Descripción</th>
-                                        <th className="p-4 w-[20%] border-b border-white/5">Instalación</th>
-                                        <th className="p-4 text-center w-[15%] border-b border-white/5">Fecha</th>
-                                        <th className="p-4 text-center w-[15%] border-b border-white/5">Acciones</th>
+                                        <td colSpan={5} className="py-32 text-center">
+                                            <div className="flex flex-col items-center gap-4">
+                                                <AlertOctagon className="w-12 h-12 text-slate-800" />
+                                                <p className="text-xs font-black uppercase text-slate-700 tracking-widest">No se encontraron solicitudes activas</p>
+                                            </div>
+                                        </td>
                                     </tr>
-                                </thead>
-                                <tbody className="divide-y divide-white/5 text-sm">
-                                    {loading ? (
-                                        <tr>
-                                            <td colSpan={5} className="p-12 text-center text-slate-500">
-                                                <div className="flex flex-col items-center justify-center gap-3">
-                                                    <Loader2 className="w-8 h-8 animate-spin text-purple-500" />
-                                                    <span className="font-bold uppercase tracking-widest text-xs">Cargando registros...</span>
-                                                </div>
-                                            </td>
-                                        </tr>
-                                    ) : solicitudes.length === 0 ? (
-                                        <tr>
-                                            <td colSpan={5} className="p-12 text-center text-slate-500 font-bold uppercase tracking-widest text-xs">
-                                                No se encontraron solicitudes
-                                            </td>
-                                        </tr>
-                                    ) : (
-                                        solicitudes.map((sol) => (
-                                            <tr key={sol.numero_solicitud} className="hover:bg-white/[0.02] transition-colors group">
-                                                <td
-                                                    className="p-4 font-black text-purple-400 text-center cursor-pointer hover:bg-purple-500/10 transition-all rounded-lg"
+                                ) : (
+                                    solicitudes.map((sol) => (
+                                        <tr key={sol.numero_solicitud} className="hover:bg-white/[0.02] transition-colors group h-24">
+                                            <td className="p-6 text-center">
+                                                <span
+                                                    className="inline-block px-4 py-2 rounded-xl bg-purple-500/10 text-purple-400 text-sm font-black italic cursor-help ring-1 ring-purple-500/20 shadow-2xl shadow-purple-500/5 hover:scale-105 transition-all"
                                                     onDoubleClick={() => handleDoubleClick(sol.numero_solicitud)}
                                                     title="Doble clic para ver materiales"
                                                 >
                                                     {sol.numero_solicitud}
-                                                </td>
-                                                <td className="p-4 text-slate-300">
-                                                    <div className="line-clamp-2 leading-relaxed" title={sol.descripcion_solicitud}>
-                                                        {sol.descripcion_solicitud}
-                                                    </div>
-                                                </td>
-                                                <td className="p-4 text-slate-400">
-                                                    <div className="line-clamp-1 text-xs font-medium" title={sol.instalacion_municipal}>
-                                                        {sol.instalacion_municipal}
-                                                    </div>
-                                                </td>
-                                                <td className="p-4 text-slate-400 text-center text-xs font-bold">
-                                                    {new Date(sol.fecha_solicitud).toLocaleDateString()}
-                                                </td>
-                                                <td className="p-4">
-                                                    <div className="flex items-center justify-center gap-2">
-                                                        <button
-                                                            onClick={() => navigate(`/cliente-interno/realizar-salidas/formulario?numero=${sol.numero_solicitud}`)}
-                                                            className="px-3 py-1.5 bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-400 border border-emerald-500/20 rounded-xl flex items-center gap-2 transition-all text-[10px] font-black uppercase tracking-tighter shadow-lg shadow-emerald-500/5"
-                                                        >
-                                                            <ExternalLink className="w-3.5 h-3.5" /> Salida
-                                                        </button>
-                                                        <button
-                                                            onClick={() => handlePrintRow(sol.numero_solicitud)}
-                                                            className="px-3 py-1.5 bg-rose-500/10 hover:bg-rose-500/20 text-rose-400 border border-rose-500/20 rounded-xl flex items-center gap-2 transition-all text-[10px] font-black uppercase tracking-tighter shadow-lg shadow-rose-500/5"
-                                                        >
-                                                            <Printer className="w-3.5 h-3.5" /> Imprimir
-                                                        </button>
-                                                    </div>
-                                                </td>
-                                            </tr>
-                                        ))
-                                    )}
-                                </tbody>
-                            </table>
-                        </div>
-
-                        {/* Mobile & Tablet Card List View */}
-                        <div className="lg:hidden divide-y divide-white/5">
-                            {loading ? (
-                                <div className="p-12 text-center text-slate-500 flex flex-col items-center gap-4">
-                                    <Loader2 className="w-10 h-10 animate-spin text-purple-500" />
-                                    <span className="font-bold uppercase tracking-widest text-xs">Cargando datos...</span>
-                                </div>
-                            ) : solicitudes.length === 0 ? (
-                                <div className="p-12 text-center text-slate-500 font-bold uppercase tracking-widest text-xs">
-                                    Sin resultados
-                                </div>
-                            ) : (
-                                solicitudes.map((sol) => (
-                                    <div key={sol.numero_solicitud} className="p-4 md:p-6 active:bg-white/[0.02] transition-colors relative group">
-                                        <div className="flex justify-between items-start mb-3">
-                                            <div className="flex flex-col">
-                                                <span className="text-[10px] font-black text-gray-500 uppercase tracking-[0.2em] mb-1">Orden de Trabajo</span>
-                                                <span
-                                                    className="text-lg font-black text-purple-400"
-                                                    onClick={() => handleDoubleClick(sol.numero_solicitud)}
-                                                >
-                                                    #{sol.numero_solicitud}
                                                 </span>
-                                            </div>
-                                            <div className="text-right">
-                                                <span className="text-[10px] font-black text-gray-500 uppercase tracking-[0.2em] mb-1 block">Fecha</span>
-                                                <span className="text-xs font-bold text-gray-400">{new Date(sol.fecha_solicitud).toLocaleDateString()}</span>
-                                            </div>
-                                        </div>
-
-                                        <div className="space-y-4 mb-5">
-                                            <div>
-                                                <span className="text-[9px] font-black text-gray-600 uppercase tracking-widest block mb-1">Descripción</span>
-                                                <p className="text-sm text-slate-300 leading-relaxed font-medium line-clamp-3">{sol.descripcion_solicitud}</p>
-                                            </div>
-                                            <div className="flex items-center gap-2 bg-white/5 rounded-xl p-3 border border-white/5">
-                                                <div className="w-8 h-8 rounded-lg bg-white/5 flex items-center justify-center shrink-0">
-                                                    <Package className="w-4 h-4 text-gray-500" />
+                                            </td>
+                                            <td className="p-6">
+                                                <p className="text-[13px] font-black text-white uppercase italic tracking-tight leading-relaxed line-clamp-2 max-w-2xl group-hover:text-purple-400 transition-colors" title={sol.descripcion_solicitud}>
+                                                    {sol.descripcion_solicitud}
+                                                </p>
+                                            </td>
+                                            <td className="p-6">
+                                                <div className="flex items-center gap-2">
+                                                    <div className="p-1.5 bg-white/5 rounded-lg">
+                                                        <Package className="w-3.5 h-3.5 text-slate-600" />
+                                                    </div>
+                                                    <span className="text-[10px] font-black text-slate-500 uppercase tracking-widest">{sol.instalacion_municipal}</span>
                                                 </div>
-                                                <div className="min-w-0">
-                                                    <span className="text-[9px] font-black text-gray-600 uppercase tracking-widest block">Instalación</span>
-                                                    <p className="text-xs text-gray-400 font-bold truncate uppercase">{sol.instalacion_municipal}</p>
+                                            </td>
+                                            <td className="p-6 text-center">
+                                                <div className="flex flex-col items-center">
+                                                    <div className="p-1.5 bg-white/5 rounded-lg mb-1">
+                                                        <Calendar className="w-3.5 h-3.5 text-slate-600" />
+                                                    </div>
+                                                    <span className="text-[11px] font-mono font-black text-slate-400">{new Date(sol.fecha_solicitud).toLocaleDateString()}</span>
                                                 </div>
-                                            </div>
-                                        </div>
+                                            </td>
+                                            <td className="p-6">
+                                                <div className="flex items-center justify-center gap-3">
+                                                    <button
+                                                        onClick={() => navigate(`/cliente-interno/realizar-salidas/formulario?numero=${sol.numero_solicitud}`)}
+                                                        className="glass-button p-2.5 rounded-xl text-emerald-400 hover:text-white hover:bg-emerald-500/20 group/btn transition-all"
+                                                        title="Realizar Salida"
+                                                    >
+                                                        <ExternalLink className="w-5 h-5 group-hover/btn:scale-110 transition-transform" />
+                                                    </button>
+                                                    <button
+                                                        onClick={() => handlePrintRow(sol.numero_solicitud)}
+                                                        className="glass-button p-2.5 rounded-xl text-rose-400 hover:text-white hover:bg-rose-500/20 group/btn transition-all"
+                                                        title="Imprimir Orden"
+                                                    >
+                                                        <Printer className="w-5 h-5 group-hover/btn:scale-110 transition-transform" />
+                                                    </button>
+                                                </div>
+                                            </td>
+                                        </tr>
+                                    ))
+                                )}
+                            </tbody>
+                        </table>
+                    </div>
 
-                                        <div className="grid grid-cols-2 gap-3">
-                                            <button
-                                                onClick={() => navigate(`/cliente-interno/realizar-salidas/formulario?numero=${sol.numero_solicitud}`)}
-                                                className="w-full flex items-center justify-center gap-2 px-4 py-3 bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 rounded-2xl text-[10px] font-black uppercase tracking-widest active:scale-[0.98] transition-all"
-                                            >
-                                                <ExternalLink className="w-4 h-4" /> Salida
-                                            </button>
-                                            <button
-                                                onClick={() => handlePrintRow(sol.numero_solicitud)}
-                                                className="w-full flex items-center justify-center gap-2 px-4 py-3 bg-rose-500/10 text-rose-400 border border-rose-500/20 rounded-2xl text-[10px] font-black uppercase tracking-widest active:scale-[0.98] transition-all"
-                                            >
-                                                <Printer className="w-4 h-4" /> Imprimir
-                                            </button>
-                                        </div>
-                                    </div>
-                                ))
-                            )}
+                    {/* Pagination Footer */}
+                    <div className="mt-auto p-6 border-t border-white/5 bg-black/20 flex items-center justify-between">
+                        <div className="text-[10px] font-black text-slate-500 uppercase tracking-widest italic">
+                            Mostrando página <span className="text-purple-400 mx-1 text-sm font-black">{currentPage}</span> de <span className="text-white mx-1">{totalPages || 1}</span>
+                            <span className="ml-4 opacity-40">({totalRecords} registros totales)</span>
                         </div>
-
-                        {/* Pagination Footer */}
-                        <div className="flex flex-col sm:flex-row items-center justify-between p-4 md:p-6 bg-white/[0.02] border-t border-white/5 gap-4">
-                            <span className="text-xs font-bold text-gray-500 uppercase tracking-widest order-2 sm:order-1">
-                                Página {currentPage} de {totalPages || 1} <span className="text-gray-700 mx-1">/</span> {totalRecords} registros
-                            </span>
-
-                            <div className="flex items-center gap-2 w-full sm:w-auto order-1 sm:order-2">
-                                <button
-                                    onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
-                                    disabled={currentPage === 1 || loading}
-                                    className="flex-1 sm:flex-none px-4 py-2 bg-[#2d3342] hover:bg-[#363c4e] text-white rounded-xl flex items-center justify-center gap-2 transition-all disabled:opacity-20 disabled:grayscale text-xs font-bold uppercase tracking-widest border border-white/5"
-                                >
-                                    <ChevronLeft className="w-4 h-4" /> Anterior
-                                </button>
-                                <button
-                                    onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
-                                    disabled={currentPage === totalPages || loading}
-                                    className="flex-1 sm:flex-none px-4 py-2 bg-[#2d3342] hover:bg-[#363c4e] text-white rounded-xl flex items-center justify-center gap-2 transition-all disabled:opacity-20 disabled:grayscale text-xs font-bold uppercase tracking-widest border border-white/5"
-                                >
-                                    Siguiente <ChevronRight className="w-4 h-4" />
-                                </button>
-                            </div>
+                        <div className="flex gap-2">
+                            <button
+                                disabled={currentPage <= 1 || loading}
+                                onClick={() => setCurrentPage(p => p - 1)}
+                                className="glass-button p-3 rounded-xl disabled:opacity-20 transition-all hover:bg-white/10"
+                            >
+                                <ChevronLeft className="w-5 h-5 text-slate-400" />
+                            </button>
+                            <button
+                                disabled={currentPage >= totalPages || loading}
+                                onClick={() => setCurrentPage(p => p + 1)}
+                                className="glass-button p-3 rounded-xl disabled:opacity-20 transition-all hover:bg-white/10"
+                            >
+                                <ChevronRight className="w-5 h-5 text-slate-400" />
+                            </button>
                         </div>
                     </div>
                 </div>
             </div>
 
-            {/* Modal de Detalles */}
+            {/* Premium Details Modal */}
             {showDetailsModal && (
-                <div className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-in fade-in">
-                    <div className="w-full max-w-4xl bg-[#1a1d29] border border-white/10 rounded-2xl shadow-2xl overflow-hidden flex flex-col max-h-[85vh]">
-                        <div className="p-6 border-b border-white/10 flex justify-between items-center bg-[#1e2330]">
-                            <div className="flex items-center gap-3">
-                                <div className="p-2 bg-purple-500/20 rounded-lg">
-                                    <Package className="w-6 h-6 text-purple-400" />
+                <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-[#020617]/90 backdrop-blur-md animate-in fade-in duration-300">
+                    <div className="w-full max-w-4xl glass-card bg-slate-900 shadow-[0_32px_128px_rgba(0,0,0,0.8)] overflow-hidden flex flex-col max-h-[85vh] border-white/10">
+                        <div className="p-8 border-b border-white/5 flex justify-between items-center bg-white/[0.02]">
+                            <div className="flex items-center gap-4">
+                                <div className="p-3 bg-purple-500/10 rounded-2xl ring-1 ring-purple-500/20">
+                                    <Package className="w-7 h-7 text-purple-400" />
                                 </div>
                                 <div>
-                                    <h3 className="text-xl font-bold text-white">Detalle de Materiales Entregados</h3>
-                                    <p className="text-sm text-slate-400">Solicitud #{selectedSolicitudNum}</p>
+                                    <h3 className="text-2xl font-black text-white italic uppercase tracking-tighter">Materiales Entregados</h3>
+                                    <p className="text-xs font-black text-slate-500 uppercase tracking-widest mt-1">Órden de Trabajo #{selectedSolicitudNum}</p>
                                 </div>
                             </div>
                             <button
                                 onClick={() => setShowDetailsModal(false)}
-                                className="p-2 hover:bg-white/10 rounded-full transition-colors text-slate-400 hover:text-white"
+                                className="p-3 hover:bg-white/5 rounded-2xl transition-all text-slate-500 hover:text-white border border-transparent hover:border-white/10"
                             >
                                 <X className="w-6 h-6" />
                             </button>
                         </div>
 
-                        <div className="flex-1 overflow-y-auto p-6 custom-scrollbar space-y-6">
+                        <div className="flex-1 overflow-y-auto p-8 custom-scrollbar space-y-8 bg-slate-950/20">
                             {loadingDetails ? (
-                                <div className="flex flex-col items-center justify-center py-12 text-slate-400">
-                                    <Loader2 className="w-8 h-8 animate-spin mb-3 text-purple-500" />
-                                    <p>Cargando información...</p>
+                                <div className="flex flex-col items-center justify-center py-24 text-slate-400 space-y-4">
+                                    <div className="w-12 h-12 border-4 border-purple-500/20 border-t-purple-500 rounded-full animate-spin" />
+                                    <p className="font-black text-[10px] uppercase tracking-[0.3em]">Recuperando historial...</p>
                                 </div>
                             ) : detailsData.length === 0 ? (
-                                <div className="flex flex-col items-center justify-center py-12 text-slate-500 bg-white/5 rounded-xl border border-white/5">
-                                    <Info className="w-12 h-12 mb-3 opacity-50" />
-                                    <p className="text-lg font-medium">No hay salidas registradas</p>
-                                    <p className="text-sm">Esta solicitud aún no tiene materiales entregados.</p>
+                                <div className="flex flex-col items-center justify-center py-32 text-slate-800 space-y-4">
+                                    <Info className="w-16 h-16 opacity-10" />
+                                    <p className="text-sm font-black uppercase tracking-widest">Sin entregas registradas</p>
                                 </div>
                             ) : (
                                 detailsData.map((salida) => (
-                                    <div key={salida.id_salida} className="bg-white/5 border border-white/10 rounded-xl overflow-hidden">
-                                        <div className="px-6 py-3 bg-white/5 border-b border-white/10 flex items-center justify-between">
-                                            <div className="flex items-center gap-2">
-                                                <span className="text-purple-400 font-bold">Salida #{salida.id_salida}</span>
+                                    <div key={salida.id_salida} className="bg-white/[0.03] border border-white/5 rounded-3xl overflow-hidden shadow-xl">
+                                        <div className="px-8 py-5 bg-white/5 border-b border-white/5 flex items-center justify-between">
+                                            <div className="flex items-center gap-3">
+                                                <span className="text-purple-400 font-black text-sm italic">SALIDA #{salida.id_salida}</span>
                                             </div>
-                                            <div className="flex items-center gap-2 text-sm text-slate-400">
-                                                <Calendar className="w-4 h-4" />
-                                                {new Date(salida.fecha_salida).toLocaleDateString()} {new Date(salida.fecha_salida).toLocaleTimeString()}
+                                            <div className="flex items-center gap-2 text-[11px] font-black text-slate-500 uppercase tracking-widest">
+                                                <Calendar className="w-4 h-4 text-slate-700" />
+                                                {new Date(salida.fecha_salida).toLocaleDateString()} <span className="text-slate-700 mx-1">•</span> {new Date(salida.fecha_salida).toLocaleTimeString()}
                                             </div>
                                         </div>
-                                        <div className="overflow-x-auto">
-                                            <table className="w-full text-left text-sm">
-                                                <thead className="bg-black/20 text-slate-400">
-                                                    <tr>
-                                                        <th className="px-6 py-3 font-medium">Código</th>
-                                                        <th className="px-6 py-3 font-medium">Artículo</th>
-                                                        <th className="px-6 py-3 font-medium text-right">Cantidad</th>
+                                        <div className="p-2">
+                                            <table className="w-full text-left">
+                                                <thead>
+                                                    <tr className="text-slate-600 text-[9px] font-black uppercase tracking-[0.2em]">
+                                                        <th className="px-6 py-4">CÓDIGO</th>
+                                                        <th className="px-6 py-4">ARTÍCULO / MATERIAL</th>
+                                                        <th className="px-6 py-4 text-right">CANTIDAD</th>
                                                     </tr>
                                                 </thead>
-                                                <tbody className="divide-y divide-white/5">
+                                                <tbody className="divide-y divide-white/[0.02]">
                                                     {salida.dato_salida_13.map((item, idx) => {
                                                         const nombreArticulo = Array.isArray(item.articulo_01)
                                                             ? item.articulo_01[0]?.nombre_articulo
                                                             : item.articulo_01?.nombre_articulo;
 
                                                         return (
-                                                            <tr key={idx} className="hover:bg-white/5">
-                                                                <td className="px-6 py-3 font-mono text-slate-400">{item.articulo}</td>
-                                                                <td className="px-6 py-3 text-slate-200">{nombreArticulo || 'Desconocido'}</td>
-                                                                <td className="px-6 py-3 text-right font-medium text-white">{item.cantidad}</td>
+                                                            <tr key={idx} className="hover:bg-white/[0.01] transition-colors">
+                                                                <td className="px-6 py-4 font-mono text-[11px] font-black text-slate-500">#{item.articulo}</td>
+                                                                <td className="px-6 py-4 text-[12px] font-black text-slate-200 uppercase italic tracking-tight">{nombreArticulo || 'Desconocido'}</td>
+                                                                <td className="px-6 py-4 text-right">
+                                                                    <span className="bg-emerald-500/10 text-emerald-400 px-3 py-1 rounded-lg font-black text-xs ring-1 ring-emerald-500/20">{item.cantidad}</span>
+                                                                </td>
                                                             </tr>
                                                         );
                                                     })}
@@ -555,17 +461,17 @@ export default function TablaSolicitudesSalida() {
                             )}
                         </div>
 
-                        <div className="p-4 border-t border-white/10 bg-[#1e2330] flex justify-end">
+                        <div className="p-6 border-t border-white/5 bg-white/[0.02] flex justify-end">
                             <button
                                 onClick={() => setShowDetailsModal(false)}
-                                className="px-6 py-2 bg-white/10 hover:bg-white/20 text-white rounded-lg transition-colors font-medium"
+                                className="glass-button px-8 py-3 rounded-2xl text-xs font-black uppercase tracking-widest text-white hover:bg-white/10 transition-all"
                             >
-                                Cerrar
+                                Cerrar Ventana
                             </button>
                         </div>
                     </div>
                 </div>
             )}
-        </div >
+        </div>
     );
 }

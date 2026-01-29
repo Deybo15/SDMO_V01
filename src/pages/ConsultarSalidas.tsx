@@ -1,7 +1,7 @@
 import { useState, useEffect, useMemo } from 'react';
 import { supabase } from '../lib/supabase';
 import { useNavigate } from 'react-router-dom';
-import { format, startOfWeek, endOfWeek, startOfMonth, endOfMonth, subDays } from 'date-fns';
+import { format, startOfWeek, endOfWeek, startOfMonth, endOfMonth, parseISO } from 'date-fns';
 import { es } from 'date-fns/locale';
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
@@ -20,7 +20,7 @@ import {
     Info,
     FileX,
     Package,
-    CheckCircle,
+    CheckCircle2,
     Clock,
     ChevronDown,
     Banknote,
@@ -31,8 +31,13 @@ import {
     FileSpreadsheet,
     AlertCircle,
     X,
-    Filter
+    Filter,
+    FileSearch,
+    CheckCircle
 } from 'lucide-react';
+
+// Shared Components
+import { PageHeader } from '../components/ui/PageHeader';
 
 // Interfaces
 interface Salida {
@@ -69,11 +74,6 @@ type SortConfig = {
     direction: 'asc' | 'desc';
 } | null;
 
-type FeedbackType = {
-    message: string;
-    type: 'success' | 'error' | 'info';
-} | null;
-
 export default function ConsultarSalidas() {
     const navigate = useNavigate();
 
@@ -89,9 +89,8 @@ export default function ConsultarSalidas() {
     const [hasSearched, setHasSearched] = useState(false);
     const [expandedSalidas, setExpandedSalidas] = useState<number[]>([]);
 
-    // New State for improvements
     const [sortConfig, setSortConfig] = useState<SortConfig>(null);
-    const [feedback, setFeedback] = useState<FeedbackType>(null);
+    const [statusMessage, setStatusMessage] = useState<{ type: 'success' | 'error' | 'warning' | 'info', message: string } | null>(null);
 
     // Initialize dates
     useEffect(() => {
@@ -101,12 +100,6 @@ export default function ConsultarSalidas() {
         setFechaDesde(desde);
         setFechaHasta(hasta);
     }, []);
-
-    // Feedback Helper
-    const showFeedback = (message: string, type: 'success' | 'error' | 'info') => {
-        setFeedback({ message, type });
-        setTimeout(() => setFeedback(null), 4000);
-    };
 
     // Helper functions
     const formatearMoneda = (valor: number) => {
@@ -126,7 +119,6 @@ export default function ConsultarSalidas() {
 
     const formatDate = (dateStr: string) => {
         if (!dateStr) return '';
-        // Handle YYYY-MM-DD or ISO string safely without timezone conversion
         return dateStr.split('T')[0].split('-').reverse().join('/');
     };
 
@@ -147,7 +139,7 @@ export default function ConsultarSalidas() {
                 end = hoy;
                 break;
             case 'week':
-                start = startOfWeek(hoy, { weekStartsOn: 1 }); // Monday start
+                start = startOfWeek(hoy, { weekStartsOn: 1 });
                 end = endOfWeek(hoy, { weekStartsOn: 1 });
                 break;
             case 'month':
@@ -158,7 +150,8 @@ export default function ConsultarSalidas() {
 
         setFechaDesde(format(start, 'yyyy-MM-dd'));
         setFechaHasta(format(end, 'yyyy-MM-dd'));
-        showFeedback(`Filtro aplicado: ${type === 'today' ? 'Hoy' : type === 'week' ? 'Esta Semana' : 'Este Mes'}`, 'info');
+        setStatusMessage({ type: 'info', message: `Rango ajustado: ${type === 'today' ? 'Hoy' : type === 'week' ? 'Esta Semana' : 'Este Mes'}` });
+        setTimeout(() => setStatusMessage(null), 3000);
     };
 
     // Sorting Logic
@@ -191,13 +184,14 @@ export default function ConsultarSalidas() {
     // Data Fetching
     const handleBuscarSolicitud = async () => {
         if (!solicitudInput.trim()) {
-            showFeedback("Por favor, ingresa un número de solicitud válido.", 'error');
+            setStatusMessage({ type: 'error', message: "Ingrese un número de solicitud." });
             return;
         }
 
         setLoading(true);
         setHasSearched(true);
         setSalidas([]);
+        setStatusMessage(null);
 
         try {
             const { data, error } = await supabase
@@ -224,13 +218,13 @@ export default function ConsultarSalidas() {
             setSalidas(data as any[] || []);
 
             if (!data || data.length === 0) {
-                showFeedback("No se encontraron salidas con ese número.", 'info');
+                setStatusMessage({ type: 'info', message: "No se encontraron resultados." });
             } else {
-                showFeedback(`Se encontraron ${data.length} salidas.`, 'success');
+                setStatusMessage({ type: 'success', message: `Localizadas ${data.length} salidas.` });
             }
         } catch (error: any) {
             console.error("Error al obtener salidas:", error);
-            showFeedback("Error al cargar las salidas: " + error.message, 'error');
+            setStatusMessage({ type: 'error', message: "Error: " + error.message });
         } finally {
             setLoading(false);
         }
@@ -238,18 +232,19 @@ export default function ConsultarSalidas() {
 
     const handleBuscarResumen = async () => {
         if (!fechaDesde || !fechaHasta) {
-            showFeedback("Por favor, selecciona ambas fechas.", 'error');
+            setStatusMessage({ type: 'error', message: "Seleccione el rango de fechas." });
             return;
         }
 
         if (new Date(fechaDesde) > new Date(fechaHasta)) {
-            showFeedback("La fecha desde no puede ser mayor que la fecha hasta.", 'error');
+            setStatusMessage({ type: 'error', message: "Rango de fechas inválido." });
             return;
         }
 
         setLoading(true);
         setHasSearched(true);
         setResumen([]);
+        setStatusMessage(null);
 
         try {
             const { data, error } = await supabase
@@ -264,7 +259,6 @@ export default function ConsultarSalidas() {
 
             let finalData = data || [];
 
-            // Fetch installations for the fetched records
             if (finalData.length > 0) {
                 const solicitudes = [...new Set(finalData.map(d => d.numero_solicitud).filter(Boolean))];
 
@@ -291,13 +285,13 @@ export default function ConsultarSalidas() {
             setResumen(finalData);
 
             if (!finalData || finalData.length === 0) {
-                showFeedback("No se encontraron registros en el período seleccionado.", 'info');
+                setStatusMessage({ type: 'info', message: "Sin movimientos en este período." });
             } else {
-                showFeedback(`Se cargaron ${finalData.length} registros exitosamente.`, 'success');
+                setStatusMessage({ type: 'success', message: `${finalData.length} registros cargados.` });
             }
         } catch (error: any) {
             console.error("Error al obtener resumen diario:", error);
-            showFeedback("Error al cargar el resumen: " + error.message, 'error');
+            setStatusMessage({ type: 'error', message: "Error al cargar: " + error.message });
         } finally {
             setLoading(false);
         }
@@ -309,20 +303,13 @@ export default function ConsultarSalidas() {
 
         try {
             const doc = new jsPDF('l', 'mm', 'a4');
-
             doc.setFont('helvetica');
             doc.setFontSize(16);
-            doc.setTextColor(40, 40, 40);
             doc.text('Resumen Diario de Salidas', 20, 20);
-
             doc.setFontSize(10);
-            doc.setTextColor(100, 100, 100);
             doc.text(`Período: ${format(new Date(fechaDesde), 'dd/MM/yyyy')} - ${format(new Date(fechaHasta), 'dd/MM/yyyy')}`, 20, 30);
-            doc.text(`Generado: ${format(new Date(), 'dd/MM/yyyy HH:mm')}`, 20, 35);
-            doc.text(`Total de registros: ${resumen.length}`, 20, 40);
 
             const columnas = ['Fecha', 'Código', 'Artículo', 'Solicitud', 'Instalación', 'Área', 'Cant.', 'Costo U.', 'Total'];
-
             const filas = sortedResumen.map(item => [
                 formatDate(item.fecha),
                 item.codigo_articulo || '',
@@ -339,34 +326,15 @@ export default function ConsultarSalidas() {
                 head: [columnas],
                 body: filas,
                 startY: 50,
-                styles: { fontSize: 7, cellPadding: 2, valign: 'middle', overflow: 'linebreak', cellWidth: 'wrap' },
-                headStyles: { fillColor: [63, 81, 181], textColor: 255, fontSize: 8, fontStyle: 'bold', halign: 'center' },
-                alternateRowStyles: { fillColor: [245, 245, 245] },
-                columnStyles: {
-                    0: { cellWidth: 22, halign: 'center' },
-                    1: { cellWidth: 18, halign: 'center', fontSize: 6 },
-                    2: { cellWidth: 70, overflow: 'linebreak' },
-                    3: { cellWidth: 20, halign: 'center' },
-                    4: { cellWidth: 40, overflow: 'linebreak' },
-                    5: { cellWidth: 35, overflow: 'linebreak' },
-                    6: { cellWidth: 15, halign: 'right' },
-                    7: { cellWidth: 25, halign: 'right' },
-                    8: { cellWidth: 25, halign: 'right' }
-                },
-                margin: { left: 15, right: 15 },
-                didDrawPage: function (data: any) {
-                    doc.setFontSize(8);
-                    doc.setTextColor(150);
-                    doc.text('Sistema de Gestión de Inventario', data.settings.margin.left, doc.internal.pageSize.height - 10);
-                    doc.text('Página ' + doc.getNumberOfPages(), doc.internal.pageSize.width - 30, doc.internal.pageSize.height - 10);
-                }
+                styles: { fontSize: 7, cellPadding: 2 },
+                headStyles: { fillColor: [245, 158, 11], textColor: 0, fontStyle: 'bold' }, // Amber accent
+                alternateRowStyles: { fillColor: [250, 250, 250] },
             });
 
             doc.save(`resumen_salidas_${fechaDesde}_${fechaHasta}.pdf`);
-            showFeedback("PDF generado correctamente.", 'success');
+            setStatusMessage({ type: 'success', message: 'PDF generado.' });
         } catch (error: any) {
-            console.error('Error al generar PDF:', error);
-            showFeedback('Error al generar el PDF: ' + error.message, 'error');
+            setStatusMessage({ type: 'error', message: 'Fallo al generar PDF.' });
         }
     };
 
@@ -387,284 +355,191 @@ export default function ConsultarSalidas() {
             }));
 
             const ws = XLSX.utils.json_to_sheet(dataToExport);
-
-            // Adjust column widths
-            const wscols = [
-                { wch: 12 }, // Fecha
-                { wch: 10 }, // Código
-                { wch: 40 }, // Artículo
-                { wch: 15 }, // Solicitud
-                { wch: 30 }, // Instalación
-                { wch: 25 }, // Área
-                { wch: 10 }, // Cantidad
-                { wch: 15 }, // Costo Unitario
-                { wch: 15 }  // Total
-            ];
-            ws['!cols'] = wscols;
-
             const wb = XLSX.utils.book_new();
             XLSX.utils.book_append_sheet(wb, ws, "Resumen Salidas");
-
             XLSX.writeFile(wb, `resumen_salidas_${fechaDesde}_${fechaHasta}.xlsx`);
-            showFeedback("Excel generado correctamente.", 'success');
+            setStatusMessage({ type: 'success', message: 'Excel generado.' });
         } catch (error: any) {
-            console.error('Error al generar Excel:', error);
-            showFeedback('Error al generar el Excel: ' + error.message, 'error');
+            setStatusMessage({ type: 'error', message: 'Fallo al generar Excel.' });
         }
     };
 
     return (
-        <div className="min-h-[calc(100vh-4rem)] bg-[#0f1419] text-slate-200 font-sans relative">
-            <style>{`
-                .glass {
-                    background: rgba(255, 255, 255, 0.05);
-                    backdrop-filter: blur(20px);
-                    border: 1px solid rgba(255, 255, 255, 0.1);
-                    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
-                }
-                .glass-dark {
-                    background: rgba(0, 0, 0, 0.25);
-                    backdrop-filter: blur(20px);
-                    border: 1px solid rgba(255, 255, 255, 0.1);
-                }
-                .glass-button {
-                    background: rgba(255, 255, 255, 0.1);
-                    backdrop-filter: blur(15px);
-                    border: 1px solid rgba(255, 255, 255, 0.15);
-                    transition: all 0.3s ease;
-                }
-                .glass-button:hover {
-                    background: rgba(255, 255, 255, 0.15);
-                    border-color: rgba(255, 255, 255, 0.3);
-                    box-shadow: 0 12px 40px rgba(0, 0, 0, 0.4);
-                }
-                .glass-input {
-                    background: rgba(255, 255, 255, 0.05);
-                    backdrop-filter: blur(15px);
-                    border: 1px solid rgba(255, 255, 255, 0.1);
-                    color: white;
-                }
-                .glass-input:focus {
-                    background: rgba(255, 255, 255, 0.1);
-                    border-color: rgba(168, 85, 247, 0.5);
-                    outline: none;
-                }
-                .gradient-text {
-                    background: linear-gradient(135deg, #a855f7, #3b82f6, #06b6d4, #10b981);
-                    -webkit-background-clip: text;
-                    -webkit-text-fill-color: transparent;
-                    background-clip: text;
-                }
-                .status-finalizada {
-                    background: linear-gradient(135deg, rgba(34, 197, 94, 0.2), rgba(34, 197, 94, 0.1));
-                    border: 1px solid rgba(34, 197, 94, 0.4);
-                    color: #4ade80;
-                }
-                .status-pendiente {
-                    background: linear-gradient(135deg, rgba(251, 191, 36, 0.2), rgba(251, 191, 36, 0.1));
-                    border: 1px solid rgba(251, 191, 36, 0.4);
-                    color: #fbbf24;
-                }
-                .table-glass th {
-                    background: linear-gradient(135deg, rgba(0, 0, 0, 0.3), rgba(0, 0, 0, 0.2));
-                    color: rgba(255, 255, 255, 0.95);
-                    cursor: pointer;
-                    transition: background 0.2s;
-                }
-                .table-glass th:hover {
-                    background: rgba(255, 255, 255, 0.1);
-                }
-                .table-glass tbody tr:hover {
-                    background: rgba(255, 255, 255, 0.08);
-                }
-                .resumen-glass {
-                    background: linear-gradient(135deg, rgba(168, 85, 247, 0.15), rgba(59, 130, 246, 0.15));
-                    border: 1px solid rgba(168, 85, 247, 0.3);
-                    backdrop-filter: blur(15px);
-                }
-                .tab-button.active {
-                    background: linear-gradient(135deg, rgba(168, 85, 247, 0.25), rgba(59, 130, 246, 0.25));
-                    border-color: rgba(168, 85, 247, 0.4);
-                    box-shadow: 0 0 30px rgba(168, 85, 247, 0.2);
-                }
-                .feedback-toast {
-                    animation: slideIn 0.3s ease-out forwards;
-                }
-                @keyframes slideIn {
-                    from { transform: translateY(-100%); opacity: 0; }
-                    to { transform: translateY(0); opacity: 1; }
-                }
-            `}</style>
-
-            {/* Feedback Toast */}
-            {feedback && (
-                <div className="fixed top-6 left-1/2 transform -translate-x-1/2 z-50 feedback-toast">
-                    <div className={`glass px-6 py-4 rounded-xl shadow-2xl border flex items-center space-x-3 ${feedback.type === 'success' ? 'border-green-500/30 bg-green-500/10' :
-                        feedback.type === 'error' ? 'border-red-500/30 bg-red-500/10' :
-                            'border-blue-500/30 bg-blue-500/10'
-                        }`}>
-                        {feedback.type === 'success' && <CheckCircle className="w-5 h-5 text-green-400" />}
-                        {feedback.type === 'error' && <AlertCircle className="w-5 h-5 text-red-400" />}
-                        {feedback.type === 'info' && <Info className="w-5 h-5 text-blue-400" />}
-                        <span className="text-white font-medium">{feedback.message}</span>
-                        <button onClick={() => setFeedback(null)} className="ml-2 text-white/50 hover:text-white">
-                            <X className="w-4 h-4" />
-                        </button>
-                    </div>
-                </div>
-            )}
-
-            {/* Header */}
-            <div className="sticky top-0 z-40 flex flex-col md:flex-row md:items-center justify-between gap-4 py-6 mb-8 bg-[#0f1419]/90 backdrop-blur-xl -mx-4 px-4 md:-mx-8 md:px-8 -mt-8 border-b border-white/5 shadow-lg shadow-black/20 transition-all">
-                <div className="flex items-center gap-4">
-                    <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-purple-500/20 to-blue-600/20 border border-white/20 flex items-center justify-center">
-                        <Database className="w-6 h-6 text-white/90" />
-                    </div>
-                    <div>
-                        <h1 className="text-2xl font-bold gradient-text">
-                            Consulta de Salidas
-                        </h1>
-                    </div>
-                </div>
-                <button
-                    onClick={() => navigate(-1)}
-                    className="glass-button flex items-center gap-2 px-4 py-2 text-white/80 hover:text-white rounded-xl transition-all shadow-sm"
-                >
-                    <ArrowLeft className="w-4 h-4" />
-                    Regresar
-                </button>
+        <div className="min-h-screen bg-[#0f111a] text-slate-100 p-4 md:p-8 relative overflow-hidden">
+            {/* Ambient Effects */}
+            <div className="absolute top-0 left-0 w-full h-full overflow-hidden pointer-events-none -z-10">
+                <div className="absolute top-[10%] left-[-5%] w-[50%] h-[50%] bg-amber-500/5 rounded-full blur-[120px]" />
+                <div className="absolute bottom-[-10%] right-[-5%] w-[50%] h-[50%] bg-orange-500/5 rounded-full blur-[120px]" />
             </div>
 
-            <main className="max-w-7xl mx-auto px-6 py-8">
-                {/* Control Panel */}
-                <div className="glass rounded-2xl shadow-2xl border border-white/10 p-8 mb-10">
-                    {/* Tabs */}
-                    <div className="flex items-center justify-center mb-8">
-                        <div className="glass-dark rounded-xl p-2 flex space-x-2 border border-white/10 overflow-x-auto">
+            <div className="max-w-7xl mx-auto space-y-8 relative z-10">
+                {/* Header */}
+                <div className="flex flex-col md:flex-row justify-between items-end gap-6 pb-2 border-b border-white/5">
+                    <div className="space-y-1">
+                        <PageHeader title="Historial de Salidas" icon={FileSearch} themeColor="amber" />
+                        <p className="text-slate-500 text-sm font-medium tracking-wide">
+                            Consulta avanzada de movimientos por número de solicitud o resumen temporal.
+                        </p>
+                    </div>
+                    <button
+                        onClick={() => navigate(-1)}
+                        className="glass-button px-6 py-2.5 rounded-xl text-xs font-black uppercase tracking-widest flex items-center gap-2 text-slate-200"
+                    >
+                        <ArrowLeft className="w-4 h-4 text-amber-500" />
+                        Regresar
+                    </button>
+                </div>
+
+                {/* Status Float Messages */}
+                {statusMessage && (
+                    <div className={`fixed top-8 right-8 z-[100] px-6 py-5 rounded-2xl shadow-[0_20px_50px_rgba(0,0,0,0.5)] backdrop-blur-xl border animate-in slide-in-from-right-4 flex items-center gap-4
+                        ${statusMessage.type === 'success' ? 'bg-emerald-500/20 border-emerald-500/40 text-emerald-100' :
+                            statusMessage.type === 'error' ? 'bg-rose-500/20 border-rose-500/40 text-rose-100' :
+                                'bg-amber-500/20 border-amber-500/40 text-amber-100'
+                        }`}>
+                        <div className="p-2 rounded-xl bg-white/10 shrink-0">
+                            {statusMessage.type === 'error' ? <AlertCircle className="w-5 h-5 text-rose-400" /> :
+                                statusMessage.type === 'success' ? <CheckCircle2 className="w-5 h-5 text-emerald-400" /> :
+                                    <Info className="w-5 h-5 text-amber-400" />}
+                        </div>
+                        <span className="font-black uppercase tracking-widest text-[11px] leading-relaxed">{statusMessage.message}</span>
+                        <button onClick={() => setStatusMessage(null)} className="ml-auto p-1 hover:bg-white/10 rounded-lg transition-colors">
+                            <X className="w-4 h-4 text-slate-500" />
+                        </button>
+                    </div>
+                )}
+
+                {/* Filter Panel */}
+                <div className="glass-card p-8 bg-slate-900/40 relative group">
+                    <div className="absolute top-0 right-0 w-32 h-32 bg-amber-500/5 rounded-full blur-3xl -mr-16 -mt-16" />
+
+                    {/* Tabs Selector */}
+                    <div className="flex justify-center mb-10">
+                        <div className="bg-slate-950/60 p-1.5 rounded-2xl border border-white/5 flex gap-2">
                             <button
                                 onClick={() => { setActiveTab('solicitud'); setHasSearched(false); }}
-                                className={`tab-button glass-button px-6 py-3 text-white font-medium rounded-lg flex items-center space-x-2 transition-all duration-300 min-w-[180px] justify-center ${activeTab === 'solicitud' ? 'active' : ''}`}
+                                className={`px-8 py-3 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all flex items-center gap-3
+                                     ${activeTab === 'solicitud' ? 'bg-amber-500 text-black shadow-lg shadow-amber-900/40' : 'text-slate-500 hover:text-slate-300'}`}
                             >
                                 <FileText className="w-4 h-4" />
-                                <span>Consulta por Solicitud</span>
+                                Consulta por Solicitud
                             </button>
                             <button
                                 onClick={() => { setActiveTab('fecha'); setHasSearched(false); }}
-                                className={`tab-button glass-button px-6 py-3 text-white font-medium rounded-lg flex items-center space-x-2 transition-all duration-300 min-w-[140px] justify-center ${activeTab === 'fecha' ? 'active' : ''}`}
+                                className={`px-8 py-3 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all flex items-center gap-3
+                                     ${activeTab === 'fecha' ? 'bg-amber-500 text-black shadow-lg shadow-amber-900/40' : 'text-slate-500 hover:text-slate-300'}`}
                             >
                                 <Calendar className="w-4 h-4" />
-                                <span>Resumen Diario</span>
+                                Resumen Diario
                             </button>
                         </div>
                     </div>
 
-                    {/* Solicitud Form */}
+                    {/* Form: Por Solicitud */}
                     {activeTab === 'solicitud' && (
-                        <div className="max-w-2xl mx-auto animate-in fade-in slide-in-from-bottom-4 duration-500">
-                            <div className="text-center mb-6">
-                                <h3 className="text-lg font-semibold text-white/90 mb-2">Búsqueda por Número de Solicitud</h3>
-                                <p className="text-sm text-white/60">Ingresa el número de solicitud para ver todas las salidas asociadas</p>
+                        <div className="max-w-3xl mx-auto space-y-6 animate-in fade-in zoom-in-95 duration-500">
+                            <div className="text-center space-y-2 mb-8">
+                                <h3 className="text-xl font-black text-white italic uppercase tracking-tighter">Búsqueda Unitaria</h3>
+                                <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest">Ingrese el identificador único para desplegar el desglose de materiales.</p>
                             </div>
-                            <div className="flex flex-col sm:flex-row gap-4 items-end">
-                                <div className="flex-1 w-full">
-                                    <label className="block text-sm font-semibold text-white/90 mb-3">
-                                        Número de Solicitud
-                                    </label>
+
+                            <div className="flex flex-col md:flex-row gap-4">
+                                <div className="flex-1 relative group/input">
+                                    <Search className="absolute left-6 top-1/2 -translate-y-1/2 w-6 h-6 text-slate-600 group-focus-within/input:text-amber-500 transition-colors" />
                                     <input
                                         type="text"
-                                        placeholder="Ej: 2025-000123"
+                                        placeholder="Número de Solicitud (Ej: 2025-000123)"
                                         value={solicitudInput}
                                         onChange={(e) => setSolicitudInput(e.target.value)}
                                         onKeyDown={(e) => e.key === 'Enter' && handleBuscarSolicitud()}
-                                        className="glass-input w-full rounded-xl px-5 py-4 text-white placeholder-white/50 focus:outline-none transition-all duration-300 text-lg font-medium border border-white/20 focus:border-purple-400/50"
+                                        className="w-full h-16 bg-slate-950/60 border border-white/10 rounded-2xl pl-16 pr-6 text-xl text-white font-bold placeholder-slate-700 focus:outline-none focus:ring-4 focus:ring-amber-500/20 focus:border-amber-500/40 transition-all shadow-inner uppercase"
                                     />
                                 </div>
                                 <button
                                     onClick={handleBuscarSolicitud}
                                     disabled={loading}
-                                    className="glass-button px-8 py-4 text-white font-bold rounded-xl focus:outline-none disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-300 flex items-center space-x-3 border border-white/20 hover:border-white/40 hover:scale-105 shadow-lg w-full sm:w-auto justify-center"
+                                    className="h-16 px-10 bg-amber-600 hover:bg-amber-500 text-black font-black uppercase tracking-widest text-xs rounded-2xl shadow-xl shadow-amber-900/20 active:scale-95 transition-all flex items-center justify-center gap-3 disabled:opacity-50"
                                 >
-                                    {loading ? <Loader2 className="w-5 h-5 animate-spin" /> : <Search className="w-5 h-5" />}
-                                    <span>Buscar Salidas</span>
+                                    {loading ? <Loader2 className="w-5 h-5 animate-spin" /> : <CalendarSearch className="w-5 h-5" />}
+                                    Consultar
                                 </button>
                             </div>
                         </div>
                     )}
 
-                    {/* Fecha Form */}
+                    {/* Form: Por Fecha / Resumen */}
                     {activeTab === 'fecha' && (
-                        <div className="max-w-4xl mx-auto animate-in fade-in slide-in-from-bottom-4 duration-500">
-                            <div className="text-center mb-6">
-                                <h3 className="text-lg font-semibold text-white/90 mb-2">Resumen Diario de Salidas</h3>
-                                <p className="text-sm text-white/60">Selecciona un rango de fechas para generar el resumen diario</p>
+                        <div className="max-w-5xl mx-auto space-y-8 animate-in fade-in zoom-in-95 duration-500">
+                            <div className="text-center space-y-2 mb-6">
+                                <h3 className="text-xl font-black text-white italic uppercase tracking-tighter">Resumen Cronológico</h3>
+                                <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest">Generación masiva de consumos agrupados por artículo y ubicación.</p>
                             </div>
 
                             {/* Quick Filters */}
-                            <div className="flex justify-center mb-6 space-x-2">
-                                <button onClick={() => applyQuickFilter('today')} className="glass-button px-3 py-1.5 text-xs text-white/80 hover:text-white rounded-lg flex items-center space-x-1">
-                                    <CalendarCheck className="w-3 h-3" /> <span>Hoy</span>
-                                </button>
-                                <button onClick={() => applyQuickFilter('week')} className="glass-button px-3 py-1.5 text-xs text-white/80 hover:text-white rounded-lg flex items-center space-x-1">
-                                    <CalendarDays className="w-3 h-3" /> <span>Esta Semana</span>
-                                </button>
-                                <button onClick={() => applyQuickFilter('month')} className="glass-button px-3 py-1.5 text-xs text-white/80 hover:text-white rounded-lg flex items-center space-x-1">
-                                    <Calendar className="w-3 h-3" /> <span>Este Mes</span>
-                                </button>
+                            <div className="flex justify-center gap-3">
+                                {['today', 'week', 'month'].map((f) => (
+                                    <button
+                                        key={f}
+                                        onClick={() => applyQuickFilter(f as any)}
+                                        className="px-4 py-2 glass-button text-[9px] font-black uppercase tracking-widest text-slate-400 hover:text-amber-400 hover:border-amber-500/30 transition-all flex items-center gap-2 rounded-xl"
+                                    >
+                                        <Clock className="w-3 h-3" />
+                                        {f === 'today' ? 'Hoy' : f === 'week' ? 'Esta Semana' : 'Este Mes'}
+                                    </button>
+                                ))}
                             </div>
 
-                            <div className="grid grid-cols-1 md:grid-cols-4 gap-4 items-end">
-                                <div>
-                                    <label className="block text-sm font-semibold text-white/90 mb-3">
-                                        <CalendarDays className="w-4 h-4 inline mr-2" />
-                                        Fecha Desde
-                                    </label>
-                                    <input
-                                        type="date"
-                                        value={fechaDesde}
-                                        onChange={(e) => setFechaDesde(e.target.value)}
-                                        className="glass-input w-full rounded-xl px-4 py-4 text-white focus:outline-none transition-all duration-300 border border-white/20 focus:border-purple-400/50"
-                                    />
+                            <div className="grid grid-cols-1 md:grid-cols-12 gap-6 items-end bg-black/20 p-8 rounded-3xl border border-white/5 shadow-inner">
+                                <div className="md:col-span-4">
+                                    <label className="block text-[10px] font-black text-slate-500 uppercase tracking-[0.2em] mb-3 ml-1">Fecha Inicial</label>
+                                    <div className="relative group/date">
+                                        <CalendarDays className="absolute left-5 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-600 group-focus-within/date:text-amber-500 transition-colors pointer-events-none" />
+                                        <input
+                                            type="date"
+                                            value={fechaDesde}
+                                            onChange={(e) => setFechaDesde(e.target.value)}
+                                            className="w-full h-14 bg-slate-950/60 border border-white/10 rounded-2xl pl-14 pr-4 font-bold text-white focus:outline-none focus:ring-2 focus:ring-amber-500/30 transition-all [color-scheme:dark]"
+                                        />
+                                    </div>
                                 </div>
-                                <div>
-                                    <label className="block text-sm font-semibold text-white/90 mb-3">
-                                        <CalendarCheck className="w-4 h-4 inline mr-2" />
-                                        Fecha Hasta
-                                    </label>
-                                    <input
-                                        type="date"
-                                        value={fechaHasta}
-                                        onChange={(e) => setFechaHasta(e.target.value)}
-                                        className="glass-input w-full rounded-xl px-4 py-4 text-white focus:outline-none transition-all duration-300 border border-white/20 focus:border-purple-400/50"
-                                    />
+                                <div className="md:col-span-4">
+                                    <label className="block text-[10px] font-black text-slate-500 uppercase tracking-[0.2em] mb-3 ml-1">Fecha Final</label>
+                                    <div className="relative group/date">
+                                        <CalendarCheck className="absolute left-5 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-600 group-focus-within/date:text-amber-500 transition-colors pointer-events-none" />
+                                        <input
+                                            type="date"
+                                            value={fechaHasta}
+                                            onChange={(e) => setFechaHasta(e.target.value)}
+                                            className="w-full h-14 bg-slate-950/60 border border-white/10 rounded-2xl pl-14 pr-4 font-bold text-white focus:outline-none focus:ring-2 focus:ring-amber-500/30 transition-all [color-scheme:dark]"
+                                        />
+                                    </div>
                                 </div>
-                                <div className="md:col-span-2">
-                                    <div className="flex space-x-3">
+                                <div className="md:col-span-4 flex gap-3">
+                                    <button
+                                        onClick={handleBuscarResumen}
+                                        disabled={loading}
+                                        className="flex-1 h-14 bg-amber-600 hover:bg-amber-500 text-black font-black uppercase tracking-widest text-xs rounded-2xl shadow-xl shadow-amber-900/20 active:scale-95 transition-all flex items-center justify-center gap-2"
+                                    >
+                                        {loading ? <Loader2 className="w-5 h-5 animate-spin" /> : <Search className="w-5 h-5" />}
+                                        Consultar
+                                    </button>
+                                    <div className="flex gap-2">
                                         <button
-                                            onClick={handleBuscarResumen}
-                                            disabled={loading}
-                                            className="glass-button px-6 py-4 text-white font-bold rounded-xl focus:outline-none disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-300 flex items-center space-x-2 flex-1 border border-white/20 hover:border-white/40 hover:scale-105 shadow-lg justify-center"
+                                            onClick={generarPDF}
+                                            disabled={resumen.length === 0}
+                                            className="w-14 h-14 glass-button rounded-2xl flex items-center justify-center text-slate-300 hover:text-amber-400 hover:border-amber-500/30 transition-all disabled:opacity-20"
+                                            title="Generar PDF"
                                         >
-                                            {loading ? <Loader2 className="w-5 h-5 animate-spin" /> : <CalendarSearch className="w-5 h-5" />}
-                                            <span>Consultar</span>
+                                            <Download className="w-5 h-5" />
                                         </button>
-                                        <div className="flex space-x-2">
-                                            <button
-                                                onClick={generarPDF}
-                                                disabled={resumen.length === 0}
-                                                className="glass-button px-4 py-4 text-white font-bold rounded-xl focus:outline-none disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-300 flex items-center justify-center border border-white/20 hover:border-white/40 hover:scale-105 shadow-lg"
-                                                title="Exportar PDF"
-                                            >
-                                                <Download className="w-5 h-5" />
-                                            </button>
-                                            <button
-                                                onClick={generarExcel}
-                                                disabled={resumen.length === 0}
-                                                className="glass-button px-4 py-4 text-white font-bold rounded-xl focus:outline-none disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-300 flex items-center justify-center border border-white/20 hover:border-green-400/40 hover:scale-105 shadow-lg"
-                                                title="Exportar Excel"
-                                            >
-                                                <FileSpreadsheet className="w-5 h-5 text-green-400" />
-                                            </button>
-                                        </div>
+                                        <button
+                                            onClick={generarExcel}
+                                            disabled={resumen.length === 0}
+                                            className="w-14 h-14 glass-button rounded-2xl flex items-center justify-center text-slate-300 hover:text-emerald-400 hover:border-emerald-500/50 transition-all disabled:opacity-20"
+                                            title="Exportar Excel"
+                                        >
+                                            <FileSpreadsheet className="w-5 h-5" />
+                                        </button>
                                     </div>
                                 </div>
                             </div>
@@ -673,206 +548,270 @@ export default function ConsultarSalidas() {
                 </div>
 
                 {/* Results Area */}
-                {loading && (
-                    <div className="glass rounded-xl shadow-xl border border-white/20 p-8 text-center animate-in fade-in">
-                        <div className="inline-flex items-center space-x-3">
-                            <Loader2 className="w-6 h-6 animate-spin text-purple-400" />
-                            <span className="text-white/80 font-medium">Cargando datos...</span>
+                {!hasSearched ? (
+                    <div className="py-40 flex flex-col items-center justify-center text-center group animate-in fade-in zoom-in duration-700">
+                        <div className="relative mb-10">
+                            <div className="absolute inset-0 bg-amber-500/10 rounded-full blur-3xl scale-150 group-hover:scale-200 transition-transform duration-1000" />
+                            <div className="w-32 h-32 glass-card rounded-[3rem] flex items-center justify-center relative z-10 border-white/10 group-hover:rotate-6 transition-all duration-700">
+                                <FileSearch className="w-16 h-16 text-slate-800" />
+                            </div>
                         </div>
+                        <h3 className="text-3xl font-black text-slate-700 uppercase italic tracking-tighter">Sin Datos Consultados</h3>
+                        <p className="text-slate-600 mt-3 max-w-sm mx-auto font-medium text-sm leading-relaxed tracking-wide">
+                            Seleccione el método de búsqueda y aplique los filtros necesarios para desplegar el historial de movimientos.
+                        </p>
                     </div>
-                )}
-
-                {!loading && hasSearched && (
-                    <div className="animate-in fade-in slide-in-from-bottom-8 duration-500">
-                        {/* Summary Banner */}
+                ) : loading ? (
+                    <div className="py-40 flex flex-col items-center justify-center space-y-6">
+                        <Loader2 className="w-16 h-16 animate-spin text-amber-500" />
+                        <p className="text-[10px] font-black uppercase tracking-[0.3em] text-white/50 animate-pulse">Recuperando registros del servidor...</p>
+                    </div>
+                ) : (
+                    <div className="space-y-8 animate-in fade-in duration-700">
+                        {/* Summary Stats Banner */}
                         {(salidas.length > 0 || resumen.length > 0) && (
-                            <div className="resumen-glass rounded-lg p-4 mb-6 flex items-center space-x-2">
-                                <Info className="w-5 h-5 text-purple-300" />
-                                <span className="text-white font-medium">
-                                    {activeTab === 'solicitud'
-                                        ? `Se encontraron ${salidas.length} salida${salidas.length !== 1 ? 's' : ''} (${salidas.filter(s => s.finalizada).length} finalizadas) - Total: ${formatearMoneda(salidas.reduce((sum, s) => sum + calcularTotalSalida(s), 0))}`
-                                        : `${resumen.length} registros encontrados en ${new Set(resumen.map(r => r.fecha)).size} días - Total General: ${formatearMoneda(resumen.reduce((sum, r) => sum + Number(r.total_costo || 0), 0))}`
-                                    }
-                                </span>
+                            <div className="glass-card p-6 bg-slate-900/60 border-l-4 border-amber-500/50 flex flex-col md:flex-row items-center justify-between gap-6 overflow-hidden relative group">
+                                <div className="absolute inset-0 bg-gradient-to-r from-amber-500/[0.03] to-transparent pointer-events-none" />
+                                <div className="flex items-center gap-6">
+                                    <div className="p-4 rounded-2xl bg-amber-500/10 border border-amber-500/20">
+                                        <Info className="w-6 h-6 text-amber-500" />
+                                    </div>
+                                    <div className="space-y-1">
+                                        <h4 className="text-[10px] font-black text-amber-600 uppercase tracking-widest leading-none">Resultados de la Búsqueda</h4>
+                                        <p className="text-lg font-black text-white italic truncate uppercase">
+                                            {activeTab === 'solicitud'
+                                                ? `${salidas.length} Salidas Localizadas • Solicitud: ${solicitudInput}`
+                                                : `${resumen.length} Movimientos Registrados • ${new Set(resumen.map(r => r.fecha)).size} Días`
+                                            }
+                                        </p>
+                                    </div>
+                                </div>
+                                <div className="flex items-center gap-8 md:pr-4">
+                                    <div className="text-right">
+                                        <span className="text-[9px] font-black text-slate-500 uppercase tracking-widest block mb-1">Monto Total Consultas</span>
+                                        <p className="text-3xl font-black text-amber-400 italic leading-none font-mono">
+                                            {activeTab === 'solicitud'
+                                                ? formatearMoneda(salidas.reduce((sum, s) => sum + calcularTotalSalida(s), 0))
+                                                : formatearMoneda(resumen.reduce((sum, r) => sum + Number(r.total_costo || 0), 0))
+                                            }
+                                        </p>
+                                    </div>
+                                </div>
                             </div>
                         )}
 
-                        {/* Empty State */}
+                        {/* Empty results */}
                         {((activeTab === 'solicitud' && salidas.length === 0) || (activeTab === 'fecha' && resumen.length === 0)) && (
-                            <div className="glass rounded-xl shadow-xl border border-white/20 p-12 text-center">
-                                <FileX className="w-12 h-12 text-white/40 mx-auto mb-4" />
-                                <h3 className="text-lg font-semibold text-white mb-2">No se encontraron resultados</h3>
-                                <p className="text-white/60">No hay datos para los criterios de búsqueda especificados.</p>
+                            <div className="py-40 flex flex-col items-center justify-center text-center glass-card bg-slate-900/40">
+                                <FileX className="w-16 h-16 text-slate-700 mb-6" />
+                                <h3 className="text-xl font-bold text-slate-400 uppercase tracking-widest">No hay registros</h3>
+                                <p className="text-slate-600 mt-2 font-medium">No se localizó información que cumpla con los criterios especificados.</p>
                             </div>
                         )}
 
-                        {/* Solicitud Results */}
+                        {/* Results: Solicitud Cards */}
                         {activeTab === 'solicitud' && salidas.length > 0 && (
-                            <div className="space-y-4">
+                            <div className="grid grid-cols-1 gap-6">
                                 {salidas.map((salida) => {
                                     const totalSalida = calcularTotalSalida(salida);
                                     const isExpanded = expandedSalidas.includes(salida.id_salida);
 
                                     return (
-                                        <div key={salida.id_salida} className="glass rounded-xl shadow-xl border border-white/20 hover:shadow-2xl transition-all duration-300 hover:scale-[1.01]">
-                                            <div className="p-6">
-                                                <div className="flex items-center justify-between mb-4">
-                                                    <div className="flex items-center space-x-3">
-                                                        <div className="flex items-center space-x-2">
-                                                            <Package className="w-5 h-5 text-white/70" />
-                                                            <h3 className="text-lg font-semibold text-white">Salida #{salida.id_salida}</h3>
+                                        <div key={salida.id_salida} className={`glass-card overflow-hidden bg-slate-900/40 border border-white/5 transition-all duration-300 ${isExpanded ? 'border-amber-500/20 shadow-2xl' : 'hover:border-white/10'}`}>
+                                            <div className="p-8 flex flex-col lg:flex-row items-start lg:items-center justify-between gap-8">
+                                                <div className="flex items-center gap-6">
+                                                    <div className="w-16 h-16 rounded-[1.5rem] bg-slate-950/60 border border-white/10 flex items-center justify-center text-slate-500 group-hover:text-amber-500 transition-colors">
+                                                        <Package className="w-8 h-8" />
+                                                    </div>
+                                                    <div className="space-y-1">
+                                                        <div className="flex items-center gap-3">
+                                                            <span className="text-[10px] font-black text-slate-500 uppercase tracking-widest leading-none">ID Salida</span>
+                                                            {salida.finalizada ? (
+                                                                <div className="flex items-center gap-1.5 px-2 py-0.5 bg-emerald-500/10 border border-emerald-500/20 rounded-md">
+                                                                    <CheckCircle className="w-3 h-3 text-emerald-500" />
+                                                                    <span className="text-[8px] font-black text-emerald-500 uppercase tracking-widest">Finalizada</span>
+                                                                </div>
+                                                            ) : (
+                                                                <div className="flex items-center gap-1.5 px-2 py-0.5 bg-amber-500/10 border border-amber-500/20 rounded-md">
+                                                                    <Clock className="w-3 h-3 text-amber-500" />
+                                                                    <span className="text-[8px] font-black text-amber-500 uppercase tracking-widest">Pendiente</span>
+                                                                </div>
+                                                            )}
                                                         </div>
-                                                        {salida.finalizada ? (
-                                                            <span className="status-finalizada inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium border">
-                                                                <CheckCircle className="w-3 h-3 mr-1" /> Finalizada
-                                                            </span>
-                                                        ) : (
-                                                            <span className="status-pendiente inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium border">
-                                                                <Clock className="w-3 h-3 mr-1" /> Pendiente
-                                                            </span>
-                                                        )}
-                                                    </div>
-                                                    <button
-                                                        onClick={() => toggleSalidaDetails(salida.id_salida)}
-                                                        className="glass-button px-3 py-1 text-sm text-white/80 hover:text-white font-medium flex items-center space-x-1 rounded-lg"
-                                                    >
-                                                        <span>{isExpanded ? 'Ocultar detalles' : 'Ver detalles'}</span>
-                                                        <ChevronDown className={`w-4 h-4 transition-transform duration-200 ${isExpanded ? 'rotate-180' : ''}`} />
-                                                    </button>
-                                                </div>
-
-                                                <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
-                                                    <div className="flex items-center space-x-2 text-sm text-white/70">
-                                                        <Calendar className="w-4 h-4" />
-                                                        <span>{formatDate(salida.fecha_salida)}</span>
-                                                    </div>
-                                                    <div className="flex items-center space-x-2 text-sm text-white/70">
-                                                        <Hash className="w-4 h-4" />
-                                                        <span>{salida.dato_salida_13?.length || 0} artículos</span>
-                                                    </div>
-                                                    <div className="flex items-center space-x-2 text-sm font-semibold text-white">
-                                                        <Banknote className="w-4 h-4" />
-                                                        <span>{formatearMoneda(totalSalida)}</span>
+                                                        <h4 className="text-2xl font-black text-white italic tracking-tighter uppercase"># {salida.id_salida}</h4>
                                                     </div>
                                                 </div>
 
-                                                {isExpanded && (
-                                                    <div className="border-t border-white/20 pt-4 animate-in fade-in slide-in-from-top-2">
-                                                        <div className="overflow-x-auto">
-                                                            <table className="table-glass w-full text-sm rounded-lg overflow-hidden">
-                                                                <thead>
-                                                                    <tr className="border-b border-white/20">
-                                                                        <th className="px-4 py-3 text-left font-medium">Código</th>
-                                                                        <th className="px-4 py-3 text-left font-medium">Artículo</th>
-                                                                        <th className="px-4 py-3 text-right font-medium">Cantidad</th>
-                                                                        <th className="px-4 py-3 text-right font-medium">Subtotal</th>
-                                                                    </tr>
-                                                                </thead>
-                                                                <tbody>
-                                                                    {salida.dato_salida_13?.map((item, idx) => (
-                                                                        <tr key={idx} className="border-b border-white/5 hover:bg-white/5">
-                                                                            <td className="px-4 py-2 font-mono text-xs text-white/70">{item.articulo}</td>
-                                                                            <td className="px-4 py-2 text-white/90">{item.articulo_01?.nombre_articulo}</td>
-                                                                            <td className="px-4 py-2 text-right text-white/90">{item.cantidad}</td>
-                                                                            <td className="px-4 py-2 text-right text-white/90">{formatearMoneda(item.subtotal)}</td>
-                                                                        </tr>
-                                                                    ))}
-                                                                </tbody>
-                                                                <tfoot>
-                                                                    <tr>
-                                                                        <td colSpan={3} className="px-4 py-3 text-right font-semibold text-white">Total:</td>
-                                                                        <td className="px-4 py-3 text-right font-bold text-lg text-white">{formatearMoneda(totalSalida)}</td>
-                                                                    </tr>
-                                                                </tfoot>
-                                                            </table>
-                                                        </div>
+                                                <div className="grid grid-cols-2 md:grid-cols-4 gap-x-12 gap-y-4">
+                                                    <div>
+                                                        <span className="text-[9px] font-black text-slate-500 uppercase tracking-widest block mb-1">Fecha</span>
+                                                        <p className="font-bold text-slate-200 text-sm">{formatDate(salida.fecha_salida)}</p>
                                                     </div>
-                                                )}
+                                                    <div>
+                                                        <span className="text-[9px] font-black text-slate-500 uppercase tracking-widest block mb-1">Contenido</span>
+                                                        <p className="font-bold text-slate-200 text-sm">{salida.dato_salida_13?.length || 0} Líneas</p>
+                                                    </div>
+                                                    <div className="col-span-2">
+                                                        <span className="text-[9px] font-black text-slate-500 uppercase tracking-widest block mb-1">Monto de Salida</span>
+                                                        <p className="font-black text-white text-xl font-mono">{formatearMoneda(totalSalida)}</p>
+                                                    </div>
+                                                </div>
+
+                                                <button
+                                                    onClick={() => toggleSalidaDetails(salida.id_salida)}
+                                                    className={`px-6 py-3 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all flex items-center gap-3
+                                                         ${isExpanded ? 'bg-amber-500 text-black shadow-lg shadow-amber-900/40' : 'glass-button text-slate-300'}`}
+                                                >
+                                                    {isExpanded ? 'Cerrar Desglose' : 'Ver Desglose'}
+                                                    <ChevronDown className={`w-4 h-4 transition-transform duration-300 ${isExpanded ? 'rotate-180' : ''}`} />
+                                                </button>
                                             </div>
+
+                                            {isExpanded && (
+                                                <div className="px-8 pb-8 pt-4 bg-black/20 border-t border-white/5 animate-in slide-in-from-top-4 duration-500">
+                                                    <div className="overflow-x-auto rounded-2xl border border-white/5 bg-slate-900/40">
+                                                        <table className="w-full text-left border-collapse">
+                                                            <thead>
+                                                                <tr className="bg-slate-950/80 text-white text-[9px] font-black uppercase tracking-[0.2em] border-b border-white/5">
+                                                                    <th className="p-5">Código Art.</th>
+                                                                    <th className="p-5">Descripción Detallada</th>
+                                                                    <th className="p-5 text-right">Cantidad</th>
+                                                                    <th className="p-5 text-right">Subtotal</th>
+                                                                </tr>
+                                                            </thead>
+                                                            <tbody className="divide-y divide-white/[0.03]">
+                                                                {salida.dato_salida_13?.map((item, idx) => (
+                                                                    <tr key={idx} className="hover:bg-white/[0.02] transition-colors group h-14">
+                                                                        <td className="p-5">
+                                                                            <span className="font-mono text-xs font-black text-amber-500/80 group-hover:text-amber-400 transition-colors">{item.articulo}</span>
+                                                                        </td>
+                                                                        <td className="p-5">
+                                                                            <p className="text-slate-300 font-bold text-xs uppercase italic">{item.articulo_01?.nombre_articulo}</p>
+                                                                        </td>
+                                                                        <td className="p-5 text-right">
+                                                                            <span className="text-sm font-black text-white font-mono">{item.cantidad.toLocaleString()}</span>
+                                                                        </td>
+                                                                        <td className="p-5 text-right">
+                                                                            <span className="text-sm font-black text-slate-200 font-mono">{formatearMoneda(item.subtotal)}</span>
+                                                                        </td>
+                                                                    </tr>
+                                                                ))}
+                                                            </tbody>
+                                                            <tfoot>
+                                                                <tr className="bg-amber-500/5">
+                                                                    <td colSpan={3} className="p-6 text-right font-black text-slate-400 uppercase tracking-widest text-[10px]">Total Acumulado de Salida</td>
+                                                                    <td className="p-6 text-right">
+                                                                        <span className="text-2xl font-black text-white italic font-mono">{formatearMoneda(totalSalida)}</span>
+                                                                    </td>
+                                                                </tr>
+                                                            </tfoot>
+                                                        </table>
+                                                    </div>
+                                                </div>
+                                            )}
                                         </div>
                                     );
                                 })}
                             </div>
                         )}
 
-                        {/* Resumen Results */}
+                        {/* Results: Resumen Table */}
                         {activeTab === 'fecha' && resumen.length > 0 && (
-                            <div className="glass rounded-xl shadow-xl border border-white/20 p-6">
-                                <div className="flex items-center justify-between mb-6">
-                                    <h2 className="text-xl font-bold gradient-text">Resumen Diario de Salidas</h2>
-                                    <div className="flex items-center space-x-4">
-                                        <div className="flex items-center space-x-2 text-sm text-white/70 bg-white/5 px-3 py-1 rounded-lg border border-white/10">
-                                            <Filter className="w-4 h-4" />
-                                            <span>Ordenado por: {sortConfig ? `${sortConfig.key} (${sortConfig.direction === 'asc' ? 'Asc' : 'Desc'})` : 'Defecto'}</span>
-                                        </div>
-                                        <div className="flex items-center space-x-2 text-sm text-white/70">
-                                            <CalendarDays className="w-4 h-4" />
-                                            <span>{new Set(resumen.map(r => r.fecha)).size} días</span>
-                                        </div>
+                            <div className="space-y-6">
+                                <div className="flex items-center justify-between px-2">
+                                    <h3 className="text-xs font-black text-slate-500 uppercase tracking-[0.3em] flex items-center gap-3">
+                                        <Filter className="w-5 h-5 text-amber-500" />
+                                        Matriz de Resumen Consolidada
+                                    </h3>
+                                    <div className="flex items-center gap-4">
+                                        <span className="text-[9px] font-black text-slate-600 uppercase tracking-widest">Registros: {resumen.length}</span>
+                                        <div className="w-1 h-1 rounded-full bg-slate-800" />
+                                        <span className="text-[9px] font-black text-amber-500 uppercase tracking-widest">
+                                            {sortConfig ? `Orden x ${sortConfig.key} (${sortConfig.direction})` : 'Carga Predeterminada'}
+                                        </span>
                                     </div>
                                 </div>
-                                <div className="overflow-x-auto">
-                                    <table className="table-glass w-full text-sm rounded-lg overflow-hidden">
-                                        <thead>
-                                            <tr className="border-b border-white/20">
-                                                {[
-                                                    { key: 'fecha', label: 'Fecha' },
-                                                    { key: 'codigo_articulo', label: 'Código' },
-                                                    { key: 'nombre_articulo', label: 'Artículo' },
-                                                    { key: 'numero_solicitud', label: 'Solicitud' },
-                                                    { key: 'instalacion_municipal', label: 'Instalación' },
-                                                    { key: 'area_mantenimiento', label: 'Área' },
-                                                    { key: 'cantidad_total', label: 'Cantidad', align: 'right' },
-                                                    { key: 'costo_unitario', label: 'Costo U.', align: 'right' },
-                                                    { key: 'total_costo', label: 'Total', align: 'right' }
-                                                ].map((col) => (
-                                                    <th
-                                                        key={col.key}
-                                                        onClick={() => handleSort(col.key as keyof ResumenDiario)}
-                                                        className={`px-4 py-3 font-medium select-none group ${col.align === 'right' ? 'text-right' : 'text-left'}`}
-                                                    >
-                                                        <div className={`flex items-center space-x-1 ${col.align === 'right' ? 'justify-end' : 'justify-start'}`}>
-                                                            <span>{col.label}</span>
-                                                            <div className="text-white/30 group-hover:text-white/70 transition-colors">
-                                                                {sortConfig?.key === col.key ? (
-                                                                    sortConfig.direction === 'asc' ? <ArrowUp className="w-3 h-3" /> : <ArrowDown className="w-3 h-3" />
-                                                                ) : (
-                                                                    <ArrowUpDown className="w-3 h-3 opacity-0 group-hover:opacity-100" />
-                                                                )}
+
+                                <div className="glass-card overflow-hidden bg-slate-900/40 border border-white/5">
+                                    <div className="overflow-x-auto">
+                                        <table className="w-full text-left border-collapse">
+                                            <thead>
+                                                <tr className="bg-slate-950/80 text-white text-[9px] font-black uppercase tracking-[0.2em] border-b border-white/5">
+                                                    {[
+                                                        { key: 'fecha', label: 'Fecha' },
+                                                        { key: 'codigo_articulo', label: 'Código' },
+                                                        { key: 'nombre_articulo', label: 'Descripción' },
+                                                        { key: 'numero_solicitud', label: 'Solicitud' },
+                                                        { key: 'instalacion_municipal', label: 'Ubicación' },
+                                                        { key: 'area_mantenimiento', label: 'Área' },
+                                                        { key: 'cantidad_total', label: 'Cant.', align: 'right' },
+                                                        { key: 'costo_unitario', label: 'Costo U.', align: 'right' },
+                                                        { key: 'total_costo', label: 'Total', align: 'right' }
+                                                    ].map((col) => (
+                                                        <th
+                                                            key={col.key}
+                                                            onClick={() => handleSort(col.key as keyof ResumenDiario)}
+                                                            className={`px-5 py-6 font-black select-none cursor-pointer group hover:bg-white/[0.03] transition-colors ${col.align === 'right' ? 'text-right' : 'text-left'}`}
+                                                        >
+                                                            <div className={`flex items-center gap-1.5 ${col.align === 'right' ? 'justify-end' : 'justify-start'}`}>
+                                                                <span>{col.label}</span>
+                                                                <div className="text-amber-500/20 group-hover:text-amber-500 transition-colors">
+                                                                    {sortConfig?.key === col.key ? (
+                                                                        sortConfig.direction === 'asc' ? <ArrowUp className="w-3 h-3" /> : <ArrowDown className="w-3 h-3" />
+                                                                    ) : (
+                                                                        <ArrowUpDown className="w-3 h-3" />
+                                                                    )}
+                                                                </div>
                                                             </div>
-                                                        </div>
-                                                    </th>
-                                                ))}
-                                            </tr>
-                                        </thead>
-                                        <tbody className="divide-y divide-white/10">
-                                            {sortedResumen.map((item, idx) => (
-                                                <tr key={idx} className="hover:bg-white/5 transition-colors duration-200">
-                                                    <td className="px-4 py-3 text-white/80 font-medium">
-                                                        {formatDate(item.fecha)}
-                                                    </td>
-                                                    <td className="px-4 py-3 font-mono text-xs text-white/80">{item.codigo_articulo}</td>
-                                                    <td className="px-4 py-3 text-white whitespace-normal break-words" title={item.nombre_articulo}>
-                                                        {item.nombre_articulo}
-                                                    </td>
-                                                    <td className="px-4 py-3 text-white/80">{item.numero_solicitud}</td>
-                                                    <td className="px-4 py-3 text-white/80 whitespace-normal break-words" title={item.instalacion_municipal}>
-                                                        {item.instalacion_municipal || 'N/A'}
-                                                    </td>
-                                                    <td className="px-4 py-3 text-white/70">{item.area_mantenimiento}</td>
-                                                    <td className="px-4 py-3 text-right text-white font-medium">{Number(item.cantidad_total || 0).toFixed(2)}</td>
-                                                    <td className="px-4 py-3 text-right text-white font-medium">{formatearMoneda(item.costo_unitario || 0)}</td>
-                                                    <td className="px-4 py-3 text-right text-purple-300 font-bold">{formatearMoneda(item.total_costo || 0)}</td>
+                                                        </th>
+                                                    ))}
                                                 </tr>
-                                            ))}
-                                        </tbody>
-                                    </table>
+                                            </thead>
+                                            <tbody className="divide-y divide-white/[0.03]">
+                                                {sortedResumen.map((item, idx) => (
+                                                    <tr key={idx} className="hover:bg-white/[0.02] transition-all duration-200 group h-16">
+                                                        <td className="p-5">
+                                                            <span className="font-bold text-slate-200 text-xs block min-w-[70px]">{formatDate(item.fecha)}</span>
+                                                        </td>
+                                                        <td className="p-5">
+                                                            <span className="font-mono text-[10px] font-black text-amber-500/80 group-hover:text-amber-400 transition-colors">{item.codigo_articulo}</span>
+                                                        </td>
+                                                        <td className="p-5">
+                                                            <p className="text-white font-black text-[11px] uppercase italic leading-tight max-w-[200px] truncate" title={item.nombre_articulo}>
+                                                                {item.nombre_articulo}
+                                                            </p>
+                                                        </td>
+                                                        <td className="p-5">
+                                                            <span className="text-[10px] font-black text-slate-400 font-mono">{item.numero_solicitud}</span>
+                                                        </td>
+                                                        <td className="p-5">
+                                                            <p className="text-slate-400 font-bold text-[10px] uppercase truncate max-w-[150px]" title={item.instalacion_municipal}>
+                                                                {item.instalacion_municipal || 'N/A'}
+                                                            </p>
+                                                        </td>
+                                                        <td className="p-5">
+                                                            <span className="text-[10px] font-black text-slate-500 uppercase tracking-tighter">{item.area_mantenimiento}</span>
+                                                        </td>
+                                                        <td className="p-5 text-right">
+                                                            <span className="text-sm font-black text-white font-mono">{Number(item.cantidad_total || 0).toFixed(2)}</span>
+                                                        </td>
+                                                        <td className="p-5 text-right">
+                                                            <span className="text-xs font-black text-slate-400 font-mono">{formatearMoneda(item.costo_unitario || 0)}</span>
+                                                        </td>
+                                                        <td className="p-5 text-right">
+                                                            <span className="text-sm font-black text-amber-400 font-mono group-hover:scale-110 transition-transform block">{formatearMoneda(item.total_costo || 0)}</span>
+                                                        </td>
+                                                    </tr>
+                                                ))}
+                                            </tbody>
+                                        </table>
+                                    </div>
                                 </div>
                             </div>
                         )}
                     </div>
                 )}
-            </main>
+            </div>
         </div>
     );
 }

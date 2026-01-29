@@ -10,6 +10,7 @@ import {
 import { useTransactionManager } from '../hooks/useTransactionManager';
 import { PageHeader } from '../components/ui/PageHeader';
 import { TransactionTable } from '../components/ui/TransactionTable';
+import { Card } from '../components/ui/Card';
 import ArticuloSearchModal from '../components/ArticleSearchModal';
 import ColaboradorSearchModal from '../components/ColaboradorSearchModal';
 
@@ -90,8 +91,8 @@ export default function TallerEbanisteria() {
                 themeColor={colorTheme}
             />
 
-            <div className="max-w-7xl mx-auto space-y-6">
-                <div className="bg-[#1e2235] border border-white/10 rounded-2xl shadow-xl overflow-hidden">
+            <div className="max-w-7xl mx-auto space-y-6 pb-20">
+                <Card className="overflow-hidden border-white/10 shadow-2xl">
                     <form onSubmit={handleProcess} className="p-4 md:p-8">
                         {/* Headers Section */}
                         <div className="bg-white/5 border border-white/10 rounded-xl p-4 md:p-6 mb-8">
@@ -173,7 +174,7 @@ export default function TallerEbanisteria() {
                             <span className="text-lg">Procesar Solicitud</span>
                         </button>
                     </form>
-                </div>
+                </Card>
             </div>
 
             {/* Colaborador Modal */}

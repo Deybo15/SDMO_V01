@@ -17,9 +17,13 @@ import {
     Calendar,
     Printer,
     Filter,
-    Info
+    Info,
+    AlertOctagon,
+    FileSpreadsheet,
+    File
 } from 'lucide-react';
 import autoTable from 'jspdf-autotable';
+import { PageHeader } from '../components/ui/PageHeader';
 
 // Interface for the request data
 interface Solicitud {
@@ -56,14 +60,14 @@ export default function SolicitudesExternasTable() {
     // Pagination state
     const [currentPage, setCurrentPage] = useState(1);
     const [totalItems, setTotalItems] = useState(0);
-    const itemsPerPage = 10;
+    const itemsPerPage = 25;
 
     // Filter state
     const [filtroNumero, setFiltroNumero] = useState('');
     const [filtroDescripcion, setFiltroDescripcion] = useState('');
 
     // Load data
-    const cargarDatos = async () => {
+    const cargarDatos = async (page: number) => {
         setLoading(true);
         try {
             let query = supabase
@@ -79,14 +83,18 @@ export default function SolicitudesExternasTable() {
                 query = query.ilike('descripcion_solicitud', `%${filtroDescripcion}%`);
             }
 
+            const from = (page - 1) * itemsPerPage;
+            const to = from + itemsPerPage - 1;
+
             const { data, count, error } = await query
                 .order('numero_solicitud', { ascending: false })
-                .range((currentPage - 1) * itemsPerPage, (currentPage * itemsPerPage) - 1);
+                .range(from, to);
 
             if (error) throw error;
 
             setSolicitudes(data || []);
             setTotalItems(count || 0);
+            setCurrentPage(page);
 
         } catch (error) {
             console.error('Error loading data:', error);
@@ -97,14 +105,13 @@ export default function SolicitudesExternasTable() {
 
     // Effects
     useEffect(() => {
-        cargarDatos();
-    }, [currentPage]); // Reload when page changes
+        cargarDatos(currentPage);
+    }, [currentPage]);
 
     // Debounce filters
     useEffect(() => {
         const timer = setTimeout(() => {
-            setCurrentPage(1); // Reset to page 1 on filter change
-            cargarDatos();
+            cargarDatos(1);
         }, 500);
         return () => clearTimeout(timer);
     }, [filtroNumero, filtroDescripcion]);
@@ -190,197 +197,150 @@ export default function SolicitudesExternasTable() {
             setDetailsData(data || []);
         } catch (error) {
             console.error('Error fetching details:', error);
-            alert('Error al cargar los detalles de la solicitud.');
         } finally {
             setLoadingDetails(false);
         }
     };
 
-    const handlePrintRow = async (numeroSolicitud: number) => {
-        try {
-            // El archivo debe existir en el bucket 'ordenes-trabajo'
-            // Formato: OT-{numero_solicitud}-CE.pdf (Cliente Externo - Assuming suffix, adjusting if needed based on internal logic)
-            // Correction: Check internal logic. Internal uses CI. External likely uses CE or similar?
-            // Actually, internal used OT-{numeroSolicitud}-CI.pdf.
-            // Let's assume standard behavior or just warn user.
-            // Or better, just try to open it.
+    const handlePrintRow = (numeroSolicitud: number) => {
+        const fileName = `OT-${numeroSolicitud}-CE.pdf`;
+        const { data } = supabase.storage
+            .from('ordenes-trabajo')
+            .getPublicUrl(fileName);
 
-            // Wait, does the user want the print button? The request didn't explicitly ask for it, BUT verification mentions matching 'Realizar Salidas'.
-            // 'Realizar Salidas' has a print button. I'll add it for consistency.
-            // Assuming nomenclature might be CE for Cliente Externo?
-            const fileName = `OT-${numeroSolicitud}-CE.pdf`;
-
-            const { data } = supabase.storage
-                .from('ordenes-trabajo')
-                .getPublicUrl(fileName);
-
-            if (data && data.publicUrl) {
-                window.open(data.publicUrl, '_blank');
-            } else {
-                alert('No se pudo obtener el enlace del archivo.');
-            }
-
-        } catch (error: any) {
-            console.error('Error en handlePrintRow:', error);
-            alert('Ocurrió un error inesperado al intentar abrir el PDF.');
+        if (data && data.publicUrl) {
+            window.open(data.publicUrl, '_blank');
+        } else {
+            alert('No se pudo obtener el enlace del archivo.');
         }
     };
 
+    const totalPages = Math.ceil(totalItems / itemsPerPage);
 
     return (
-        <div className="min-h-screen bg-[#0f111a] text-[#e4e6ea] font-sans p-4 md:p-8 relative overflow-x-hidden">
-            {/* Ambient Background Elements */}
-            <div className="fixed inset-0 pointer-events-none overflow-hidden">
-                <div className="absolute top-[10%] left-[5%] w-[600px] h-[600px] bg-purple-600/10 rounded-full blur-[140px] animate-pulse" />
-                <div className="absolute bottom-[10%] right-[5%] w-[500px] h-[500px] bg-blue-600/5 rounded-full blur-[120px]" />
-                <div className="absolute top-[40%] right-[20%] w-[300px] h-[300px] bg-teal-500/5 rounded-full blur-[100px]" />
+        <div className="min-h-screen bg-[#0f111a] text-slate-100 p-4 md:p-8 relative overflow-hidden">
+            {/* Ambient Background */}
+            <div className="absolute top-0 left-0 w-full h-full overflow-hidden pointer-events-none -z-10">
+                <div className="absolute top-[-20%] left-[-10%] w-[60%] h-[60%] bg-purple-500/5 rounded-full blur-[120px]" />
+                <div className="absolute bottom-[-20%] right-[-10%] w-[60%] h-[60%] bg-blue-500/5 rounded-full blur-[120px]" />
             </div>
 
-            <div className="max-w-7xl mx-auto space-y-8 relative z-10">
-                {/* Premium Header */}
-                <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 pb-4">
-                    <div className="flex items-center gap-5">
-                        <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-purple-600/20 to-blue-700/20 border border-white/10 flex items-center justify-center shadow-2xl relative group">
-                            <div className="absolute inset-0 bg-purple-500/10 rounded-2xl blur-xl group-hover:bg-purple-500/20 transition-all" />
-                            <Table className="w-8 h-8 text-purple-400 relative z-10" />
-                        </div>
-                        <div>
-                            <h1 className="text-3xl font-black text-white uppercase tracking-tighter italic leading-none mb-2">
-                                Salidas de Cliente Externo
-                            </h1>
-                            <div className="flex items-center gap-2 text-purple-500/60 font-black uppercase tracking-widest text-[10px]">
-                                <Calendar className="w-4 h-4" />
-                                Lista Maestra de Solicitudes
-                            </div>
-                        </div>
+            <div className="max-w-7xl mx-auto space-y-6 relative z-10">
+                {/* Header Section */}
+                <div className="flex flex-col md:flex-row justify-between items-end gap-6 pb-2 border-b border-white/5">
+                    <div className="space-y-1">
+                        <PageHeader title="Salidas de Cliente Externo" icon={Table} themeColor="purple" />
+                        <p className="text-slate-500 text-sm font-medium tracking-wide">
+                            Lista maestra de solicitudes activas para clientes externos.
+                        </p>
                     </div>
-
-                    <div className="flex items-center gap-3">
-                        <button
-                            onClick={() => navigate('/cliente-externo')}
-                            className="px-6 py-3 bg-white/5 hover:bg-white/10 border border-white/10 rounded-2xl text-[10px] font-black uppercase tracking-[0.2em] transition-all flex items-center gap-2"
-                        >
-                            <ArrowLeft className="w-4 h-4 text-purple-500" />
-                            Regresar
+                    <div className="flex gap-3">
+                        <button onClick={exportToPDF} className="glass-button px-5 py-2.5 flex items-center gap-2 text-rose-400 hover:text-white rounded-xl">
+                            <File className="w-4 h-4" />
+                            <span className="font-bold text-xs uppercase tracking-widest">PDF</span>
+                        </button>
+                        <button onClick={exportToExcel} className="glass-button px-5 py-2.5 flex items-center gap-2 text-emerald-400 hover:text-white rounded-xl">
+                            <FileSpreadsheet className="w-4 h-4" />
+                            <span className="font-bold text-xs uppercase tracking-widest">Excel</span>
                         </button>
                     </div>
                 </div>
 
-                {/* Search & Actions Bar */}
-                <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-end">
-                    <div className="lg:col-span-8 grid grid-cols-1 sm:grid-cols-2 gap-4">
-                        <div className="space-y-2">
-                            <label className="text-[9px] font-black uppercase tracking-widest ml-1 opacity-40">Filtrar por Número</label>
-                            <div className="relative group/input">
-                                <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-600 group-focus-within/input:text-purple-400 transition-colors" />
-                                <input
-                                    type="text"
-                                    placeholder="Ejem: 10855..."
-                                    value={filtroNumero}
-                                    onChange={(e) => setFiltroNumero(e.target.value)}
-                                    className="w-full bg-[#1e2235]/60 backdrop-blur-xl border border-white/10 rounded-[1.25rem] py-4 pl-12 pr-4 text-white font-bold placeholder-slate-700 focus:outline-none focus:border-purple-500/50 transition-all shadow-inner"
-                                />
-                            </div>
+                {/* Filters Row */}
+                <div className="glass-card p-5 flex flex-col lg:flex-row gap-4 items-center justify-between">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4 w-full lg:w-[75%]">
+                        <div className="relative group">
+                            <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-600 group-focus-within:text-purple-400 transition-colors" />
+                            <input
+                                type="text"
+                                placeholder="Filtrar por número de solicitud..."
+                                value={filtroNumero}
+                                onChange={e => setFiltroNumero(e.target.value)}
+                                className="w-full bg-slate-950/50 border border-white/10 rounded-2xl pl-12 pr-4 py-3.5 text-sm text-slate-200 focus:ring-1 focus:ring-purple-500/50 outline-none transition-all placeholder:text-slate-700 font-medium"
+                            />
                         </div>
-                        <div className="space-y-2">
-                            <label className="text-[9px] font-black uppercase tracking-widest ml-1 opacity-40">Filtrar por Descripción</label>
-                            <div className="relative group/input">
-                                <Filter className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-600 group-focus-within/input:text-purple-400 transition-colors" />
-                                <input
-                                    type="text"
-                                    placeholder="Buscar palabras clave..."
-                                    value={filtroDescripcion}
-                                    onChange={(e) => setFiltroDescripcion(e.target.value)}
-                                    className="w-full bg-[#1e2235]/60 backdrop-blur-xl border border-white/10 rounded-[1.25rem] py-4 pl-12 pr-4 text-white font-bold placeholder-slate-700 focus:outline-none focus:border-purple-500/50 transition-all shadow-inner"
-                                />
-                            </div>
+                        <div className="relative group">
+                            <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-600 group-focus-within:text-purple-400 transition-colors" />
+                            <input
+                                type="text"
+                                placeholder="Filtrar por descripción..."
+                                value={filtroDescripcion}
+                                onChange={e => setFiltroDescripcion(e.target.value)}
+                                className="w-full bg-slate-950/50 border border-white/10 rounded-2xl pl-12 pr-4 py-3.5 text-sm text-slate-200 focus:ring-1 focus:ring-purple-500/50 outline-none transition-all placeholder:text-slate-700 font-medium"
+                            />
                         </div>
                     </div>
-
-                    <div className="lg:col-span-4 flex items-center gap-2">
-                        <button
-                            onClick={exportToExcel}
-                            className="flex-1 py-4 bg-emerald-500/10 hover:bg-emerald-500/20 border border-emerald-500/20 text-emerald-400 rounded-[1.25rem] text-[10px] font-black uppercase tracking-widest transition-all shadow-lg shadow-emerald-500/5"
-                        >
-                            Exportar Excel
-                        </button>
-                        <button
-                            onClick={exportToPDF}
-                            className="flex-1 py-4 bg-purple-500/10 hover:bg-purple-500/20 border border-purple-500/20 text-purple-450 rounded-[1.25rem] text-[10px] font-black uppercase tracking-widest transition-all shadow-lg shadow-purple-500/5"
-                        >
-                            Exportar PDF
+                    <div className="flex items-center gap-4 w-full lg:w-auto">
+                        <button onClick={() => navigate('/cliente-externo')} className="glass-button w-full lg:w-auto px-6 py-3.5 rounded-2xl text-xs font-black uppercase tracking-widest flex items-center justify-center gap-2 text-slate-400 hover:text-white">
+                            <ArrowLeft className="w-4 h-4 text-purple-500" /> Regresar
                         </button>
                     </div>
                 </div>
 
-                {/* Main Table Content */}
-                <div className="bg-[#1e2235]/40 backdrop-blur-3xl border border-white/10 rounded-[2.5rem] overflow-hidden shadow-2xl">
+                {/* Table Section */}
+                <div className="glass-card overflow-hidden flex flex-col min-h-[600px]">
                     <div className="overflow-x-auto">
                         <table className="w-full text-left border-collapse">
                             <thead>
-                                <tr className="border-b border-white/5 bg-white/[0.02]">
-                                    <th className="p-6 text-[10px] font-black uppercase tracking-[0.2em] text-slate-500 w-[15%] text-center">N° Solicitud</th>
-                                    <th className="p-6 text-[10px] font-black uppercase tracking-[0.2em] text-slate-500 w-[45%]">Descripción</th>
-                                    <th className="p-6 text-[10px] font-black uppercase tracking-[0.2em] text-slate-500 w-[20%] text-center">Fecha</th>
-                                    <th className="p-6 text-[10px] font-black uppercase tracking-[0.2em] text-slate-500 w-[20%] text-center">Acción</th>
+                                <tr className="bg-white/5 text-slate-500 text-[10px] font-black tracking-widest uppercase italic border-b border-white/5">
+                                    <th className="p-6 text-center w-[15%]">N° SOLICITUD</th>
+                                    <th className="p-6 w-[45%]">DESCRIPCIÓN</th>
+                                    <th className="p-6 text-center w-[20%]">FECHA</th>
+                                    <th className="p-6 text-center w-[20%]">ACCIONES</th>
                                 </tr>
                             </thead>
-                            <tbody className="divide-y divide-white/5">
-                                {loading ? (
+                            <tbody className={`text-sm divide-y divide-white/[0.03] transition-opacity duration-500 ${loading ? 'opacity-30 pointer-events-none' : 'opacity-100'}`}>
+                                {solicitudes.length === 0 && !loading ? (
                                     <tr>
-                                        <td colSpan={4} className="p-20 text-center">
-                                            <div className="flex flex-col items-center justify-center gap-4">
-                                                <Loader2 className="w-10 h-10 text-purple-500 animate-spin" />
-                                                <span className="text-slate-500 font-bold uppercase text-[10px] tracking-widest animate-pulse">Consultando registros...</span>
-                                            </div>
-                                        </td>
-                                    </tr>
-                                ) : solicitudes.length === 0 ? (
-                                    <tr>
-                                        <td colSpan={4} className="p-20 text-center">
-                                            <div className="flex flex-col items-center justify-center gap-4 opacity-30">
-                                                <X className="w-12 h-12 text-slate-500" />
-                                                <span className="text-slate-500 font-bold uppercase text-[10px] tracking-widest">No hay resultados coincidentes</span>
+                                        <td colSpan={4} className="py-32 text-center">
+                                            <div className="flex flex-col items-center gap-4">
+                                                <AlertOctagon className="w-12 h-12 text-slate-800" />
+                                                <p className="text-xs font-black uppercase text-slate-700 tracking-widest">No hay resultados coincidentes</p>
                                             </div>
                                         </td>
                                     </tr>
                                 ) : (
                                     solicitudes.map((sol) => (
-                                        <tr key={sol.numero_solicitud} className="group hover:bg-white/[0.03] transition-colors relative">
+                                        <tr key={sol.numero_solicitud} className="group hover:bg-white/[0.02] transition-colors h-24">
                                             <td className="p-6 text-center">
-                                                <div
-                                                    className="inline-block px-4 py-2 bg-purple-500/10 border border-purple-500/20 rounded-xl text-purple-400 font-black font-mono text-sm cursor-pointer hover:bg-purple-500 hover:text-white transition-all shadow-inner"
+                                                <span
+                                                    className="inline-block px-4 py-2 rounded-xl bg-purple-500/10 text-purple-400 text-sm font-black italic cursor-help ring-1 ring-purple-500/20 shadow-2xl hover:scale-105 transition-all"
                                                     onDoubleClick={() => handleDoubleClick(sol.numero_solicitud)}
-                                                    title="Doble clic para ver detalles"
+                                                    title="Doble clic para ver materiales"
                                                 >
                                                     {sol.numero_solicitud}
-                                                </div>
+                                                </span>
                                             </td>
                                             <td className="p-6">
-                                                <p className="text-slate-200 font-medium leading-relaxed line-clamp-2 max-w-lg group-hover:text-white transition-colors" title={sol.descripcion_solicitud}>
+                                                <p className="text-[13px] font-black text-white uppercase italic tracking-tight leading-relaxed line-clamp-2 max-w-xl group-hover:text-purple-400 transition-colors" title={sol.descripcion_solicitud}>
                                                     {sol.descripcion_solicitud}
                                                 </p>
                                             </td>
                                             <td className="p-6 text-center">
-                                                <span className="text-slate-500 font-bold text-xs uppercase tracking-tighter">
-                                                    {new Date(sol.fecha_solicitud).toLocaleDateString('es-CR', { day: '2-digit', month: '2-digit', year: 'numeric' })}
-                                                </span>
+                                                <div className="flex flex-col items-center">
+                                                    <div className="p-1.5 bg-white/5 rounded-lg mb-1">
+                                                        <Calendar className="w-3.5 h-3.5 text-slate-600" />
+                                                    </div>
+                                                    <span className="text-[11px] font-mono font-black text-slate-400 uppercase tracking-tighter">
+                                                        {new Date(sol.fecha_solicitud).toLocaleDateString('es-CR')}
+                                                    </span>
+                                                </div>
                                             </td>
                                             <td className="p-6">
                                                 <div className="flex items-center justify-center gap-3">
                                                     <button
                                                         onClick={() => navigate(`/cliente-externo/registro-salida?numero=${sol.numero_solicitud}`)}
-                                                        className="px-4 py-2 bg-teal-500/10 hover:bg-teal-500 text-teal-400 hover:text-black border border-teal-500/20 rounded-xl flex items-center gap-2 transition-all text-[10px] font-black uppercase tracking-widest group/btn"
+                                                        className="glass-button p-2.5 rounded-xl text-teal-400 hover:text-white hover:bg-teal-500/20 group/btn transition-all"
+                                                        title="Realizar Salida"
                                                     >
-                                                        <ExternalLink className="w-3.5 h-3.5 group-hover/btn:scale-110 transition-transform" />
-                                                        Salida
+                                                        <ExternalLink className="w-5 h-5 group-hover/btn:scale-110 transition-transform" />
                                                     </button>
                                                     <button
                                                         onClick={() => handlePrintRow(sol.numero_solicitud)}
-                                                        className="p-2.5 bg-rose-500/10 hover:bg-rose-500 text-rose-400 hover:text-white border border-rose-500/20 rounded-xl transition-all group/print"
+                                                        className="glass-button p-2.5 rounded-xl text-rose-400 hover:text-white hover:bg-rose-500/20 group/btn transition-all"
                                                         title="Imprimir Orden"
                                                     >
-                                                        <Printer className="w-4 h-4 group-hover/print:rotate-12 transition-transform" />
+                                                        <Printer className="w-5 h-5 group-hover/btn:scale-110 transition-transform" />
                                                     </button>
                                                 </div>
                                             </td>
@@ -391,32 +351,27 @@ export default function SolicitudesExternasTable() {
                         </table>
                     </div>
 
-                    {/* Premium Pagination */}
-                    <div className="p-8 border-t border-white/5 bg-white/[0.01] flex flex-col sm:flex-row items-center justify-between gap-6">
-                        <div className="flex items-center gap-4 order-2 sm:order-1">
-                            <button
-                                onClick={handlePrevPage}
-                                disabled={currentPage === 1 || loading}
-                                className="w-12 h-12 rounded-2xl bg-white/5 border border-white/10 flex items-center justify-center text-slate-400 hover:text-white hover:bg-white/10 hover:border-purple-500/50 disabled:opacity-20 disabled:cursor-not-allowed transition-all"
-                            >
-                                <ChevronLeft className="w-6 h-6" />
-                            </button>
-                            <button
-                                onClick={handleNextPage}
-                                disabled={(currentPage * itemsPerPage) >= totalItems || loading}
-                                className="w-12 h-12 rounded-2xl bg-white/5 border border-white/10 flex items-center justify-center text-slate-400 hover:text-white hover:bg-white/10 hover:border-purple-500/50 disabled:opacity-20 disabled:cursor-not-allowed transition-all"
-                            >
-                                <ChevronRight className="w-6 h-6" />
-                            </button>
+                    {/* Pagination Footer */}
+                    <div className="mt-auto p-6 border-t border-white/5 bg-black/20 flex items-center justify-between">
+                        <div className="text-[10px] font-black text-slate-500 uppercase tracking-widest italic">
+                            Mostrando <span className="text-purple-400 mx-1 text-sm font-black">{currentPage}</span> de <span className="text-white mx-1">{totalPages || 1}</span>
+                            <span className="ml-4 opacity-40">({totalItems} registros totales)</span>
                         </div>
-
-                        <div className="flex flex-col items-center sm:items-end gap-1 order-1 sm:order-2">
-                            <span className="text-[10px] font-black uppercase tracking-[0.3em] text-purple-500/60">Paginación Dinámica</span>
-                            <span className="text-slate-400 text-xs font-bold">
-                                Página <span className="text-white">{currentPage}</span> de <span className="text-white">{Math.max(1, Math.ceil(totalItems / itemsPerPage))}</span>
-                                <span className="mx-3 opacity-20">|</span>
-                                <span className="text-white">{totalItems}</span> Registros Totales
-                            </span>
+                        <div className="flex gap-2">
+                            <button
+                                disabled={currentPage <= 1 || loading}
+                                onClick={handlePrevPage}
+                                className="glass-button p-3 rounded-xl disabled:opacity-20 transition-all hover:bg-white/10"
+                            >
+                                <ChevronLeft className="w-5 h-5 text-slate-400" />
+                            </button>
+                            <button
+                                disabled={(currentPage * itemsPerPage) >= totalItems || loading}
+                                onClick={handleNextPage}
+                                className="glass-button p-3 rounded-xl disabled:opacity-20 transition-all hover:bg-white/10"
+                            >
+                                <ChevronRight className="w-5 h-5 text-slate-400" />
+                            </button>
                         </div>
                     </div>
                 </div>
@@ -424,86 +379,78 @@ export default function SolicitudesExternasTable() {
 
             {/* Premium Details Modal */}
             {showDetailsModal && (
-                <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 md:p-6 animate-in fade-in duration-300">
-                    <div className="absolute inset-0 bg-black/60 backdrop-blur-md" onClick={() => setShowDetailsModal(false)} />
-
-                    <div className="relative w-full max-w-4xl bg-[#0f111a]/90 border border-white/10 rounded-[2.5rem] shadow-[0_0_50px_rgba(0,0,0,0.5)] overflow-hidden flex flex-col h-[80vh] animate-in zoom-in-95 duration-300 transition-all">
-                        {/* Modal Header */}
-                        <div className="px-8 py-6 border-b border-white/10 flex justify-between items-center bg-gradient-to-r from-purple-500/10 to-blue-500/10 shrink-0">
+                <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-[#020617]/90 backdrop-blur-md animate-in fade-in duration-300">
+                    <div className="w-full max-w-4xl glass-card bg-slate-900 shadow-[0_32px_128px_rgba(0,0,0,0.8)] overflow-hidden flex flex-col max-h-[85vh] border-white/10">
+                        <div className="p-8 border-b border-white/5 flex justify-between items-center bg-white/[0.02]">
                             <div className="flex items-center gap-4">
-                                <div className="w-12 h-12 rounded-2xl bg-purple-500/20 flex items-center justify-center shadow-inner">
-                                    <Package className="w-6 h-6 text-purple-400" />
+                                <div className="p-3 bg-purple-500/10 rounded-2xl ring-1 ring-purple-500/20">
+                                    <Package className="w-7 h-7 text-purple-400" />
                                 </div>
                                 <div>
-                                    <h3 className="text-xl font-black text-white uppercase tracking-tight italic">Detalles de Materiales</h3>
-                                    <p className="text-[10px] font-black text-purple-500/60 uppercase tracking-widest mt-1">Solicitud Identificada: #{selectedSolicitudNum}</p>
+                                    <h3 className="text-2xl font-black text-white italic uppercase tracking-tighter">Materiales Entregados</h3>
+                                    <p className="text-xs font-black text-slate-500 uppercase tracking-widest mt-1">Solicitud Identificada: #{selectedSolicitudNum}</p>
                                 </div>
                             </div>
                             <button
                                 onClick={() => setShowDetailsModal(false)}
-                                className="p-3 hover:bg-white/10 rounded-2xl transition-all text-slate-500 hover:text-white"
+                                className="p-3 hover:bg-white/5 rounded-2xl transition-all text-slate-500 hover:text-white"
                             >
                                 <X className="w-6 h-6" />
                             </button>
                         </div>
 
-                        {/* Modal Content */}
-                        <div className="flex-1 overflow-y-auto p-8 space-y-8 custom-scrollbar">
+                        <div className="flex-1 overflow-y-auto p-8 custom-scrollbar space-y-8 bg-slate-950/20">
                             {loadingDetails ? (
-                                <div className="flex flex-col items-center justify-center py-20 gap-4">
-                                    <Loader2 className="w-12 h-12 text-purple-500 animate-spin" />
-                                    <p className="text-slate-500 font-black uppercase text-xs tracking-widest animate-pulse">Sincronizando información galáctica...</p>
+                                <div className="flex flex-col items-center justify-center py-24 text-slate-400 space-y-4">
+                                    <div className="w-12 h-12 border-4 border-purple-500/20 border-t-purple-500 rounded-full animate-spin" />
+                                    <p className="font-black text-[10px] uppercase tracking-[0.3em]">Recuperando historial histórico...</p>
                                 </div>
                             ) : detailsData.length === 0 ? (
-                                <div className="flex flex-col items-center justify-center py-20 gap-6 grayscale opacity-20">
-                                    <Info className="w-20 h-20" />
-                                    <div className="text-center space-y-2">
-                                        <p className="text-2xl font-black uppercase italic tracking-tighter">Sin Entregas</p>
-                                        <p className="text-sm font-bold uppercase tracking-widest leading-loose">No se ha registrado movimiento de materiales<br />para esta solicitud todavía.</p>
+                                <div className="flex flex-col items-center justify-center py-32 text-slate-800 space-y-4 grayscale opacity-20">
+                                    <Info className="w-16 h-16" />
+                                    <div className="text-center">
+                                        <p className="text-sm font-black uppercase tracking-widest">Sin entregas registradas</p>
+                                        <p className="text-[10px] font-bold text-slate-700 mt-2">No se han encontrado suministros vinculados a esta orden.</p>
                                     </div>
                                 </div>
                             ) : (
                                 detailsData.map((salida) => (
-                                    <div key={salida.id_salida} className="bg-white/5 border border-white/10 rounded-[2rem] overflow-hidden shadow-2xl relative group/card">
-                                        <div className="absolute top-0 right-0 p-4 opacity-0 group-hover/card:opacity-100 transition-opacity">
-                                            <div className="px-3 py-1 bg-purple-500 text-black text-[9px] font-black uppercase tracking-widest rounded-full shadow-lg">Registrado</div>
-                                        </div>
-
-                                        <div className="px-8 py-5 bg-white/5 border-b border-white/5 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                                    <div key={salida.id_salida} className="bg-white/[0.03] border border-white/5 rounded-3xl overflow-hidden shadow-2xl">
+                                        <div className="px-8 py-5 bg-white/5 border-b border-white/5 flex items-center justify-between">
                                             <div className="flex items-center gap-3">
-                                                <div className="w-8 h-8 rounded-lg bg-purple-500/20 flex items-center justify-center">
-                                                    <FileText className="w-4 h-4 text-purple-400" />
-                                                </div>
-                                                <span className="text-white font-black uppercase tracking-tight italic">Transacción #S-{salida.id_salida}</span>
+                                                <span className="text-purple-400 font-black text-sm italic">TRANSACCIÓN #S-{salida.id_salida}</span>
                                             </div>
-                                            <div className="flex items-center gap-2 text-[10px] font-black text-slate-500 uppercase tracking-widest bg-black/40 px-4 py-2 rounded-full border border-white/5">
-                                                <Calendar className="w-3.5 h-3.5" />
-                                                {new Date(salida.fecha_salida).toLocaleDateString()} — {new Date(salida.fecha_salida).toLocaleTimeString()}
+                                            <div className="flex items-center gap-2 text-[11px] font-black text-slate-500 uppercase tracking-widest bg-black/40 px-4 py-2 rounded-full border border-white/5">
+                                                <Calendar className="w-4 h-4 text-slate-700" />
+                                                {new Date(salida.fecha_salida).toLocaleDateString()} <span className="text-slate-700 mx-1">•</span> {new Date(salida.fecha_salida).toLocaleTimeString()}
                                             </div>
                                         </div>
-
-                                        <div className="p-0 overflow-x-auto">
+                                        <div className="p-2">
                                             <table className="w-full text-left">
-                                                <thead className="bg-black/30 text-slate-500">
-                                                    <tr>
-                                                        <th className="px-8 py-4 text-[9px] font-black uppercase tracking-widest">Código</th>
-                                                        <th className="px-8 py-4 text-[9px] font-black uppercase tracking-widest">Artículo</th>
-                                                        <th className="px-8 py-4 text-[9px] font-black uppercase tracking-widest text-right">Cantidad</th>
+                                                <thead>
+                                                    <tr className="text-slate-600 text-[9px] font-black uppercase tracking-[0.2em]">
+                                                        <th className="px-8 py-4">CÓDIGO</th>
+                                                        <th className="px-8 py-4">ARTÍCULO / MATERIAL</th>
+                                                        <th className="px-8 py-4 text-right">CANTIDAD</th>
                                                     </tr>
                                                 </thead>
-                                                <tbody className="divide-y divide-white/5">
+                                                <tbody className="divide-y divide-white/[0.02]">
                                                     {salida.dato_salida_13.map((item, idx) => {
                                                         const nombreArticulo = Array.isArray(item.articulo_01)
                                                             ? item.articulo_01[0]?.nombre_articulo
                                                             : item.articulo_01?.nombre_articulo;
 
                                                         return (
-                                                            <tr key={idx} className="hover:bg-white/[0.02] transition-colors">
-                                                                <td className="px-8 py-5 font-mono text-xs text-purple-400/70 font-bold">{item.articulo}</td>
-                                                                <td className="px-8 py-5 text-sm font-bold text-slate-200">{nombreArticulo || '—'}</td>
-                                                                <td className="px-8 py-5 text-right font-black text-white text-lg lowercase">
-                                                                    {item.cantidad}
-                                                                    <span className="ml-2 text-[10px] uppercase text-slate-600 tracking-tighter">unidades</span>
+                                                            <tr key={idx} className="hover:bg-white/[0.01] transition-colors">
+                                                                <td className="px-8 py-4 font-mono text-[11px] font-black text-slate-500">#{item.articulo}</td>
+                                                                <td className="px-8 py-4 text-[13px] font-black text-slate-200 uppercase italic tracking-tight">{nombreArticulo || '—'}</td>
+                                                                <td className="px-8 py-4 text-right">
+                                                                    <div className="flex flex-col items-end">
+                                                                        <span className="bg-emerald-500/10 text-emerald-400 px-4 py-1.5 rounded-xl font-black text-sm ring-1 ring-emerald-500/20 shadow-lg shadow-emerald-500/5">
+                                                                            {item.cantidad}
+                                                                        </span>
+                                                                        <span className="text-[8px] font-black text-slate-700 uppercase mt-1 tracking-widest">Unidades</span>
+                                                                    </div>
                                                                 </td>
                                                             </tr>
                                                         );
@@ -516,11 +463,10 @@ export default function SolicitudesExternasTable() {
                             )}
                         </div>
 
-                        {/* Modal Footer */}
-                        <div className="p-8 border-t border-white/10 bg-black/40 flex justify-end">
+                        <div className="p-6 border-t border-white/5 bg-white/[0.02] flex justify-end">
                             <button
                                 onClick={() => setShowDetailsModal(false)}
-                                className="px-10 py-4 bg-white/5 hover:bg-white/10 border border-white/10 rounded-2xl text-[10px] font-black uppercase tracking-[0.2em] transition-all hover:border-purple-500/50"
+                                className="glass-button px-10 py-3.5 rounded-2xl text-xs font-black uppercase tracking-widest text-white hover:bg-white/10 transition-all border border-white/5"
                             >
                                 Cerrar Ventana
                             </button>

@@ -15,9 +15,16 @@ import {
     Table,
     Inbox,
     Loader2,
-    ChevronLeft,
+    ArrowLeft,
     ChevronRight,
-    Download
+    Download,
+    History,
+    FileSpreadsheet,
+    Activity,
+    LineChart as LineChartIcon,
+    AlertCircle,
+    CheckCircle2,
+    Info
 } from 'lucide-react';
 import {
     ComposedChart,
@@ -28,19 +35,23 @@ import {
     CartesianGrid,
     Tooltip,
     Legend,
-    ResponsiveContainer
+    ResponsiveContainer,
+    Area
 } from 'recharts';
 import { format, subDays, parseISO } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { utils, writeFile } from 'xlsx';
 
+// Shared Components
+import { PageHeader } from '../components/ui/PageHeader';
+
 // Interfaces
 interface Articulo {
     codigo_articulo: string;
     nombre_articulo: string;
+    unidad?: string;
+    imagen_url?: string | null;
 }
-
-
 
 interface SalidaProcessed {
     id_salida: number;
@@ -67,17 +78,12 @@ export default function HistorialArticulo() {
     const [selectedArticle, setSelectedArticle] = useState<Articulo | null>(null);
     const [showSearchModal, setShowSearchModal] = useState(false);
 
-    const [dateFrom, setDateFrom] = useState(format(subDays(new Date(), 30), 'yyyy-MM-dd'));
+    const [dateFrom, setDateFrom] = useState(format(subDays(new Date(), 365), 'yyyy-MM-dd'));
     const [dateTo, setDateTo] = useState(format(new Date(), 'yyyy-MM-dd'));
 
     const [salidas, setSalidas] = useState<SalidaProcessed[]>([]);
     const [hasSearched, setHasSearched] = useState(false);
-
-    const [showModal, setShowModal] = useState(false);
-
-
-
-
+    const [statusMessage, setStatusMessage] = useState<{ type: 'success' | 'error' | 'warning' | 'info', message: string } | null>(null);
 
     // Search Articles
     useEffect(() => {
@@ -91,12 +97,11 @@ export default function HistorialArticulo() {
             try {
                 const { data, error } = await supabase
                     .from('articulo_01')
-                    .select('codigo_articulo, nombre_articulo')
+                    .select('codigo_articulo, nombre_articulo, unidad, imagen_url')
                     .or(`nombre_articulo.ilike.%${searchTerm}%,codigo_articulo.ilike.%${searchTerm}%`)
                     .limit(15);
 
                 if (error) throw error;
-                setArticulosFound(data || []);
                 setArticulosFound(data || []);
             } catch (error) {
                 console.error('Error searching articles:', error);
@@ -112,16 +117,17 @@ export default function HistorialArticulo() {
     // Consultar Salidas
     const handleConsultar = async () => {
         if (!selectedArticle) {
-            alert('Seleccione un artículo');
+            setStatusMessage({ type: 'warning', message: 'Por favor seleccione un artículo primero.' });
             return;
         }
         if (!dateFrom || !dateTo) {
-            alert('Seleccione las fechas');
+            setStatusMessage({ type: 'warning', message: 'Por favor seleccione el rango de fechas.' });
             return;
         }
 
         setLoading(true);
         setHasSearched(true);
+        setStatusMessage(null);
         try {
             const { data, error } = await supabase
                 .from('dato_salida_13')
@@ -150,9 +156,12 @@ export default function HistorialArticulo() {
                 .sort((a, b) => new Date(a.fecha_salida).getTime() - new Date(b.fecha_salida).getTime());
 
             setSalidas(processed);
+            if (processed.length > 0) {
+                setStatusMessage({ type: 'success', message: `${processed.length} registros encontrados.` });
+            }
         } catch (error: any) {
             console.error('Error fetching salidas:', error);
-            alert('Error: ' + error.message);
+            setStatusMessage({ type: 'error', message: 'Error al consultar: ' + error.message });
         } finally {
             setLoading(false);
         }
@@ -163,39 +172,23 @@ export default function HistorialArticulo() {
         try {
             if (salidas.length === 0) return;
 
-            // Prepare data for Excel
             const dataToExport = salidas.map(s => ({
                 'ID Salida': s.id_salida,
                 'Fecha': format(parseISO(s.fecha_salida), 'dd/MM/yyyy'),
-                'Cantidad': s.cantidad,
-                'Registro': s.registro
+                'Cantidad': s.cantidad
             }));
 
-            // Create worksheet
             const ws = utils.json_to_sheet(dataToExport);
-
-            // Auto-width columns
-            const wscols = [
-                { wch: 10 }, // ID
-                { wch: 15 }, // Fecha
-                { wch: 10 }, // Cantidad
-                { wch: 50 }  // Registro
-            ];
+            const wscols = [{ wch: 10 }, { wch: 15 }, { wch: 10 }];
             ws['!cols'] = wscols;
 
-            // Create workbook
             const wb = utils.book_new();
             utils.book_append_sheet(wb, ws, "Historial");
-
-            // Generate filename
-            const fileName = `historial_${selectedArticle?.codigo_articulo || 'articulo'}_${dateFrom}_${dateTo}.xlsx`;
-
-            // Save file
-            writeFile(wb, fileName);
-
+            writeFile(wb, `historial_${selectedArticle?.codigo_articulo}_${dateFrom}_${dateTo}.xlsx`);
+            setStatusMessage({ type: 'success', message: 'Excel exportado correctamente.' });
         } catch (error) {
             console.error('Error exporting Excel:', error);
-            alert('Error al exportar: ' + (error as Error).message);
+            setStatusMessage({ type: 'error', message: 'Error al exportar Excel.' });
         }
     };
 
@@ -204,20 +197,17 @@ export default function HistorialArticulo() {
         const totalSalidas = salidas.length;
         const cantidadTotal = salidas.reduce((sum, s) => sum + s.cantidad, 0);
         const salidasUnicas = new Set(salidas.map(s => s.id_salida)).size;
-
         const meses = new Set(salidas.map(s => s.fecha_salida.substring(0, 7))); // YYYY-MM
         const promedioMensual = meses.size > 0 ? Math.round(cantidadTotal / meses.size) : 0;
-
         return { totalSalidas, cantidadTotal, promedioMensual, salidasUnicas };
     }, [salidas]);
 
     const chartData = useMemo(() => {
         if (salidas.length === 0) return { data: [], regression: null };
 
-        // Group by month
         const grouped: Record<string, number> = {};
         salidas.forEach(s => {
-            const monthKey = s.fecha_salida.substring(0, 7); // YYYY-MM
+            const monthKey = s.fecha_salida.substring(0, 7);
             grouped[monthKey] = (grouped[monthKey] || 0) + s.cantidad;
         });
 
@@ -232,24 +222,20 @@ export default function HistorialArticulo() {
             };
         });
 
-        // Linear Regression
         const n = data.length;
         let regressionInfo = null;
 
         if (n >= 2) {
             const x = data.map((_, i) => i);
             const y = data.map(d => d.cantidad);
-
             const sumX = x.reduce((a, b) => a + b, 0);
             const sumY = y.reduce((a, b) => a + b, 0);
             const sumXY = x.reduce((sum, xi, i) => sum + xi * y[i], 0);
             const sumXX = x.reduce((sum, xi) => sum + xi * xi, 0);
 
-
             const slope = (n * sumXY - sumX * sumY) / (n * sumXX - sumX * sumX);
             const intercept = (sumY - slope * sumX) / n;
 
-            // R2
             const yMean = sumY / n;
             const totalSumSquares = y.reduce((sum, yi) => sum + Math.pow(yi - yMean, 2), 0);
             const residualSumSquares = y.reduce((sum, yi, i) => {
@@ -258,19 +244,14 @@ export default function HistorialArticulo() {
             }, 0);
             const r2 = 1 - (residualSumSquares / totalSumSquares);
 
-            // Add regression points
             data.forEach((d, i) => {
                 d.regression = slope * i + intercept;
             });
 
-            const nextMonthPrediction = slope * n + intercept;
-
             regressionInfo = {
-                slope,
-                intercept,
-                r2,
+                slope, intercept, r2,
                 equation: `y = ${slope.toFixed(2)}x + ${intercept.toFixed(2)}`,
-                prediction: Math.round(nextMonthPrediction)
+                prediction: Math.round(slope * n + intercept)
             };
         }
 
@@ -278,125 +259,86 @@ export default function HistorialArticulo() {
     }, [salidas]);
 
     return (
-        <div className="min-h-screen bg-[#0f1419] text-slate-200 font-sans relative">
-            {/* Custom Styles from User Request */}
-            <style>{`
-                .glass {
-                    background: rgba(255, 255, 255, 0.05);
-                    backdrop-filter: blur(10px);
-                    border: 1px solid rgba(255, 255, 255, 0.1);
-                }
-                .glass-dark {
-                    background: rgba(0, 0, 0, 0.2);
-                    backdrop-filter: blur(15px);
-                    border: 1px solid rgba(255, 255, 255, 0.1);
-                }
-                .glass-button {
-                    background: rgba(255, 255, 255, 0.1);
-                    backdrop-filter: blur(10px);
-                    border: 1px solid rgba(255, 255, 255, 0.2);
-                    transition: all 0.3s ease;
-                }
-                .glass-button:hover {
-                    background: rgba(255, 255, 255, 0.2);
-                    transform: translateY(-2px);
-                    box-shadow: 0 8px 25px rgba(0, 0, 0, 0.3);
-                }
-                .glass-input {
-                    background: rgba(255, 255, 255, 0.05);
-                    backdrop-filter: blur(10px);
-                    border: 1px solid rgba(255, 255, 255, 0.1);
-                    color: white;
-                }
-                .glass-input:focus {
-                    background: rgba(255, 255, 255, 0.1);
-                    border-color: rgba(168, 85, 247, 0.5);
-                    outline: none;
-                }
-                .gradient-text {
-                    background: linear-gradient(135deg, #a855f7, #3b82f6, #06b6d4);
-                    -webkit-background-clip: text;
-                    -webkit-text-fill-color: transparent;
-                    background-clip: text;
-                }
-                .stat-card-blue { background: linear-gradient(135deg, rgba(59, 130, 246, 0.2), rgba(59, 130, 246, 0.05)); border: 1px solid rgba(59, 130, 246, 0.3); }
-                .stat-card-emerald { background: linear-gradient(135deg, rgba(16, 185, 129, 0.2), rgba(16, 185, 129, 0.05)); border: 1px solid rgba(16, 185, 129, 0.3); }
-                .stat-card-purple { background: linear-gradient(135deg, rgba(168, 85, 247, 0.2), rgba(168, 85, 247, 0.05)); border: 1px solid rgba(168, 85, 247, 0.3); }
-                .stat-card-orange { background: linear-gradient(135deg, rgba(249, 115, 22, 0.2), rgba(249, 115, 22, 0.05)); border: 1px solid rgba(249, 115, 22, 0.3); }
-                .regression-info {
-                    background: linear-gradient(135deg, rgba(255, 193, 7, 0.15), rgba(255, 193, 7, 0.05));
-                    border: 1px solid rgba(255, 193, 7, 0.3);
-                    backdrop-filter: blur(10px);
-                }
-            `}</style>
-
-            {/* Header */}
-            {/* Header Standardized */}
-            <div className="sticky top-0 z-40 flex flex-col md:flex-row md:items-center justify-between gap-4 py-6 mb-8 bg-[#0f1419]/90 backdrop-blur-xl -mx-4 px-4 md:-mx-8 md:px-8 border-b border-white/5 shadow-lg shadow-black/20 transition-all">
-                <div className="flex items-center gap-4">
-                    <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-indigo-500 to-purple-700 flex items-center justify-center shadow-lg shadow-indigo-500/30">
-                        <TrendingUp className="w-6 h-6 text-white" />
-                    </div>
-                    <div>
-                        <h1 className="text-2xl font-bold bg-clip-text text-transparent bg-gradient-to-br from-white to-slate-400">
-                            Historial de Artículo
-                        </h1>
-                    </div>
-                </div>
-                <button
-                    onClick={() => navigate(-1)}
-                    className="flex items-center gap-2 px-4 py-2 bg-slate-800 text-slate-200 border border-white/10 rounded-xl hover:bg-slate-700 transition-all shadow-sm"
-                >
-                    <ChevronLeft className="w-4 h-4" />
-                    Regresar
-                </button>
+        <div className="min-h-screen bg-[#0f111a] text-slate-100 p-4 md:p-8 relative overflow-hidden">
+            {/* Ambient Effects */}
+            <div className="absolute top-0 left-0 w-full h-full overflow-hidden pointer-events-none -z-10">
+                <div className="absolute top-[10%] left-[-5%] w-[50%] h-[50%] bg-purple-500/5 rounded-full blur-[120px]" />
+                <div className="absolute bottom-[-10%] right-[-5%] w-[50%] h-[50%] bg-indigo-500/5 rounded-full blur-[120px]" />
             </div>
 
-            <main className="max-w-7xl mx-auto px-6 py-8">
-                {/* Filters */}
-                <div className="glass rounded-xl shadow-xl border border-white/20 p-6 mb-8">
-                    <h2 className="text-lg font-bold text-white mb-4 flex items-center">
-                        <Filter className="w-5 h-5 mr-2 text-purple-300" />
-                        Filtros de Consulta
+            <div className="max-w-7xl mx-auto space-y-8 relative z-10">
+                {/* Header */}
+                <div className="flex flex-col md:flex-row justify-between items-end gap-6 pb-2 border-b border-white/5">
+                    <div className="space-y-1">
+                        <PageHeader title="Historial de Artículo" icon={History} themeColor="purple" />
+                        <p className="text-slate-500 text-sm font-medium tracking-wide">
+                            Análisis cronológico de consumos y proyecciones basadas en regresión lineal.
+                        </p>
+                    </div>
+                    <button
+                        onClick={() => navigate(-1)}
+                        className="glass-button px-6 py-2.5 rounded-xl text-xs font-black uppercase tracking-widest flex items-center gap-2 text-slate-200"
+                    >
+                        <ArrowLeft className="w-4 h-4 text-purple-500" />
+                        Regresar
+                    </button>
+                </div>
+
+                {/* Status Float Messages */}
+                {statusMessage && (
+                    <div className={`fixed top-8 right-8 z-[100] px-6 py-5 rounded-2xl shadow-[0_20px_50px_rgba(0,0,0,0.5)] backdrop-blur-xl border animate-in slide-in-from-right-4 flex items-center gap-4
+                        ${statusMessage.type === 'success' ? 'bg-emerald-500/20 border-emerald-500/40 text-emerald-100' :
+                            statusMessage.type === 'error' ? 'bg-rose-500/20 border-rose-500/40 text-rose-100' :
+                                statusMessage.type === 'warning' ? 'bg-amber-500/20 border-amber-500/40 text-amber-100' :
+                                    'bg-blue-500/20 border-blue-500/40 text-blue-100'
+                        }`}>
+                        <div className="p-2 rounded-xl bg-white/10 shrink-0">
+                            {statusMessage.type === 'error' ? <AlertCircle className="w-5 h-5 text-rose-400" /> :
+                                statusMessage.type === 'success' ? <CheckCircle2 className="w-5 h-5 text-emerald-400" /> :
+                                    <Info className="w-5 h-5 text-amber-400" />}
+                        </div>
+                        <span className="font-black uppercase tracking-widest text-[11px] leading-relaxed">{statusMessage.message}</span>
+                        <button onClick={() => setStatusMessage(null)} className="ml-auto p-1 hover:bg-white/10 rounded-lg transition-colors">
+                            <X className="w-4 h-4 text-slate-500" />
+                        </button>
+                    </div>
+                )}
+
+                {/* Filters Section */}
+                <div className="glass-card p-6 md:p-8 bg-slate-900/40 relative group">
+                    <div className="absolute top-0 right-0 w-32 h-32 bg-purple-500/5 rounded-full blur-3xl -mr-16 -mt-16" />
+
+                    <h2 className="text-[10px] font-black text-slate-400 uppercase tracking-[0.3em] mb-8 flex items-center gap-3">
+                        <Filter className="w-4 h-4 text-purple-500" />
+                        Filtros de Análisis
                     </h2>
 
-                    <div className="grid grid-cols-1 lg:grid-cols-5 gap-4">
-                        {/* Search */}
-                        {/* Search Trigger */}
-                        <div className="lg:col-span-2">
-                            <label className="block text-sm font-medium text-white/90 mb-2">
-                                <Package className="w-4 h-4 inline mr-1 text-purple-300" />
-                                Artículo
-                            </label>
-
+                    <div className="grid grid-cols-1 md:grid-cols-12 gap-6 items-end">
+                        {/* Article Selector Trigger */}
+                        <div className="md:col-span-12 lg:col-span-12 xl:col-span-5 relative">
+                            <label className="block text-[10px] font-black text-slate-500 uppercase tracking-[0.2em] mb-3 ml-1">Artículo Seleccionado</label>
                             {selectedArticle ? (
-                                <div className="p-2 bg-gradient-to-r from-purple-500/20 to-blue-500/20 border border-purple-500/30 rounded-lg flex items-center justify-between group">
-                                    <div className="flex items-center space-x-3 overflow-hidden">
-                                        <div className="w-8 h-8 rounded bg-purple-500/20 flex items-center justify-center border border-purple-500/30 shrink-0">
-                                            <Package className="w-4 h-4 text-purple-300" />
-                                        </div>
-                                        <div className="overflow-hidden">
-                                            <div className="text-sm font-bold text-white truncate">{selectedArticle.nombre_articulo}</div>
-                                            <div className="text-xs text-purple-300 font-mono">{selectedArticle.codigo_articulo}</div>
-                                        </div>
+                                <div className="flex items-center gap-4 p-4 bg-slate-950/60 border border-purple-500/30 rounded-2xl group/selected relative overflow-hidden">
+                                    <div className="absolute top-0 left-0 w-1 h-full bg-purple-500" />
+                                    <div className="w-12 h-12 bg-black/40 rounded-xl overflow-hidden border border-white/10 shrink-0">
+                                        <img src={selectedArticle.imagen_url || ''} className="w-full h-full object-cover opacity-80" />
                                     </div>
-                                    <div className="flex items-center">
+                                    <div className="flex-1 min-w-0">
+                                        <span className="font-mono text-[10px] font-black text-purple-400 uppercase tracking-widest">{selectedArticle.codigo_articulo}</span>
+                                        <p className="text-sm font-bold text-white truncate italic uppercase">{selectedArticle.nombre_articulo}</p>
+                                    </div>
+                                    <div className="flex gap-2">
                                         <button
                                             onClick={() => setShowSearchModal(true)}
-                                            className="p-1.5 text-blue-300 hover:text-white hover:bg-blue-500/20 rounded-lg transition-colors mr-1"
+                                            className="p-3 glass-button text-purple-400 hover:text-white rounded-xl transition-all"
                                             title="Cambiar artículo"
                                         >
                                             <Search className="w-4 h-4" />
                                         </button>
                                         <button
-                                            onClick={() => {
-                                                setSelectedArticle(null);
-                                                setSearchTerm('');
-                                                setSalidas([]);
-                                                setHasSearched(false);
-                                            }}
-                                            className="p-1.5 text-red-300 hover:text-white hover:bg-red-500/20 rounded-lg transition-colors"
-                                            title="Quitar artículo"
+                                            onClick={() => { setSelectedArticle(null); setSalidas([]); setHasSearched(false); }}
+                                            className="p-3 glass-button text-rose-400 hover:text-white rounded-xl transition-all"
+                                            title="Quitar"
                                         >
                                             <X className="w-4 h-4" />
                                         </button>
@@ -404,430 +346,393 @@ export default function HistorialArticulo() {
                                 </div>
                             ) : (
                                 <button
-                                    onClick={() => {
-                                        setSearchTerm('');
-                                        setShowSearchModal(true);
-                                    }}
-                                    className="w-full glass-input text-left px-4 py-3 rounded-lg text-white/60 hover:text-white hover:bg-white/10 transition-all flex items-center justify-between group border border-white/10 hover:border-purple-500/50"
+                                    onClick={() => setShowSearchModal(true)}
+                                    className="w-full bg-slate-950/60 border border-white/10 rounded-2xl px-6 py-4 text-left flex items-center justify-between group/trigger hover:border-purple-500/50 transition-all shadow-inner"
                                 >
-                                    <span className="flex items-center">
-                                        <Search className="w-4 h-4 mr-2 opacity-50 group-hover:opacity-100 transition-opacity" />
-                                        Buscar artículo...
-                                    </span>
-                                    <span className="text-xs bg-white/10 px-2 py-1 rounded text-white/40 group-hover:text-white/80 transition-colors">
-                                        Click para buscar
+                                    <div className="flex items-center gap-4">
+                                        <Search className="w-5 h-5 text-slate-600 group-hover/trigger:text-purple-500 transition-colors" />
+                                        <span className="text-slate-500 font-bold">Seleccionar artículo para analizar...</span>
+                                    </div>
+                                    <span className="text-[10px] font-black text-purple-400/60 bg-purple-500/5 px-3 py-1 rounded-full uppercase tracking-widest group-hover/trigger:bg-purple-500/10 transition-colors">
+                                        Buscar
                                     </span>
                                 </button>
                             )}
                         </div>
 
-                        {/* Dates */}
-                        <div className="lg:col-span-1">
-                            <label className="block text-sm font-medium text-white/90 mb-2">
-                                <Calendar className="w-4 h-4 inline mr-1 text-emerald-300" />
-                                Desde
-                            </label>
-                            <input
-                                type="date"
-                                value={dateFrom}
-                                onChange={(e) => setDateFrom(e.target.value)}
-                                className="glass-input w-full rounded-lg px-3 py-3 text-white focus:outline-none transition-all duration-300"
-                            />
-                        </div>
-                        <div className="lg:col-span-1">
-                            <label className="block text-sm font-medium text-white/90 mb-2">
-                                <Calendar className="w-4 h-4 inline mr-1 text-emerald-300" />
-                                Hasta
-                            </label>
-                            <input
-                                type="date"
-                                value={dateTo}
-                                onChange={(e) => setDateTo(e.target.value)}
-                                className="glass-input w-full rounded-lg px-3 py-3 text-white focus:outline-none transition-all duration-300"
-                            />
-                        </div>
-
-                        {/* Actions */}
-                        <div className="lg:col-span-1 space-y-2">
-                            <label className="block text-sm font-medium text-white/90 mb-2">Acciones</label>
-                            <button
-                                onClick={handleConsultar}
-                                disabled={loading}
-                                className="glass-button w-full px-4 py-3 text-white font-bold rounded-lg transition-all duration-300 flex items-center justify-center space-x-2 text-sm hover:bg-white/20"
-                            >
-                                {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Search className="w-4 h-4" />}
-                                <span>Consultar</span>
-                            </button>
-
-                            {hasSearched && salidas.length > 0 && (
-                                <>
-                                    <button
-                                        onClick={() => setShowModal(true)}
-                                        className="glass-button w-full px-4 py-2 text-white font-semibold rounded-lg transition-all duration-300 flex items-center justify-center space-x-2 text-sm bg-emerald-500/10 hover:bg-emerald-500/20 border-emerald-500/30"
-                                    >
-                                        <BarChart2 className="w-4 h-4" />
-                                        <span>Consumo</span>
-                                    </button>
-                                    <button
-                                        onClick={handleExport}
-                                        className="glass-button w-full px-4 py-2 text-white font-semibold rounded-lg transition-all duration-300 flex items-center justify-center space-x-2 text-sm bg-blue-500/10 hover:bg-blue-500/20 border-blue-500/30"
-                                    >
-                                        <Download className="w-4 h-4" />
-                                        <span>Exportar Excel</span>
-                                    </button>
-                                </>
-                            )}
-                        </div>
-                    </div>
-                </div>
-
-                {/* Content */}
-                {loading ? (
-                    <div className="glass rounded-xl shadow-xl border border-white/20 p-16 text-center">
-                        <Loader2 className="w-12 h-12 text-purple-400 mx-auto mb-4 animate-spin" />
-                        <p className="text-white/60">Consultando salidas...</p>
-                    </div>
-                ) : hasSearched && salidas.length === 0 ? (
-                    <div className="glass rounded-xl shadow-xl border border-white/20 p-16 text-center">
-                        <Inbox className="w-12 h-12 text-white/40 mx-auto mb-4" />
-                        <h3 className="text-lg font-semibold text-white mb-2">No se encontraron salidas</h3>
-                        <p className="text-white/60">No hay salidas registradas para el artículo y rango de fechas seleccionados.</p>
-                    </div>
-                ) : hasSearched && (
-                    <div className="animate-in fade-in slide-in-from-bottom-4 duration-500">
-                        {/* Stats Cards */}
-                        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
-                            <div className="stat-card-blue rounded-lg p-4 shadow-xl">
-                                <div className="flex items-center">
-                                    <div className="p-2 bg-blue-500/20 rounded-lg backdrop-blur-sm">
-                                        <Package className="w-5 h-5 text-blue-300" />
-                                    </div>
-                                    <div className="ml-3">
-                                        <p className="text-xs font-semibold text-blue-300">Total Salidas</p>
-                                        <p className="text-xl font-bold text-white">{stats.totalSalidas.toLocaleString()}</p>
-                                    </div>
-                                </div>
-                            </div>
-                            <div className="stat-card-emerald rounded-lg p-4 shadow-xl">
-                                <div className="flex items-center">
-                                    <div className="p-2 bg-emerald-500/20 rounded-lg backdrop-blur-sm">
-                                        <TrendingUp className="w-5 h-5 text-emerald-300" />
-                                    </div>
-                                    <div className="ml-3">
-                                        <p className="text-xs font-semibold text-emerald-300">Cantidad Total</p>
-                                        <p className="text-xl font-bold text-white">{stats.cantidadTotal.toLocaleString()}</p>
-                                    </div>
-                                </div>
-                            </div>
-                            <div className="stat-card-purple rounded-lg p-4 shadow-xl">
-                                <div className="flex items-center">
-                                    <div className="p-2 bg-purple-500/20 rounded-lg backdrop-blur-sm">
-                                        <CalendarDays className="w-5 h-5 text-purple-300" />
-                                    </div>
-                                    <div className="ml-3">
-                                        <p className="text-xs font-semibold text-purple-300">Promedio Mensual</p>
-                                        <p className="text-xl font-bold text-white">{stats.promedioMensual.toLocaleString()}</p>
-                                    </div>
-                                </div>
-                            </div>
-                            <div className="stat-card-orange rounded-lg p-4 shadow-xl">
-                                <div className="flex items-center">
-                                    <div className="p-2 bg-orange-500/20 rounded-lg backdrop-blur-sm">
-                                        <Users className="w-5 h-5 text-orange-300" />
-                                    </div>
-                                    <div className="ml-3">
-                                        <p className="text-xs font-semibold text-orange-300">Salidas Únicas</p>
-                                        <p className="text-xl font-bold text-white">{stats.salidasUnicas.toLocaleString()}</p>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-
-                        {/* Regression Info */}
-                        {chartData.regression && (
-                            <div className="regression-info rounded-xl p-6 mb-6">
-                                <h3 className="text-lg font-bold text-yellow-300 mb-4 flex items-center">
-                                    <TrendingUp className="w-5 h-5 mr-2" />
-                                    Análisis de Regresión Lineal
-                                </h3>
-                                <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-                                    <div className="bg-white/10 rounded-lg p-4 text-center border border-white/10">
-                                        <div className="text-sm text-white/70">Ecuación</div>
-                                        <div className="text-lg font-bold text-yellow-300">{chartData.regression.equation}</div>
-                                    </div>
-                                    <div className="bg-white/10 rounded-lg p-4 text-center border border-white/10">
-                                        <div className="text-sm text-white/70">Coeficiente R²</div>
-                                        <div className="text-lg font-bold text-yellow-300">{chartData.regression.r2.toFixed(3)}</div>
-                                    </div>
-                                    <div className="bg-white/10 rounded-lg p-4 text-center border border-white/10">
-                                        <div className="text-sm text-white/70">Pendiente</div>
-                                        <div className="text-lg font-bold text-yellow-300">{chartData.regression.slope.toFixed(2)}</div>
-                                    </div>
-                                    <div className="bg-white/10 rounded-lg p-4 text-center border border-white/10">
-                                        <div className="text-sm text-white/70">Predicción próximo mes</div>
-                                        <div className="text-lg font-bold text-yellow-300">{chartData.regression.prediction}</div>
-                                    </div>
-                                </div>
-                            </div>
-                        )}
-
-                        {/* Chart */}
-                        <div className="glass rounded-xl shadow-xl border border-white/20 p-6 mb-6">
-                            <h2 className="text-lg font-bold text-white flex items-center mb-4">
-                                <BarChart3 className="w-5 h-5 mr-2 text-purple-300" />
-                                Tendencia de Salidas por Mes
-                            </h2>
-                            <div className="h-[350px] w-full">
-                                <ResponsiveContainer width="100%" height="100%">
-                                    <ComposedChart data={chartData.data}>
-                                        <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.1)" />
-                                        <XAxis dataKey="label" stroke="rgba(255,255,255,0.5)" tick={{ fill: 'rgba(255,255,255,0.8)' }} />
-                                        <YAxis stroke="rgba(255,255,255,0.5)" tick={{ fill: 'rgba(255,255,255,0.8)' }} />
-                                        <Tooltip
-                                            contentStyle={{ backgroundColor: 'rgba(0,0,0,0.8)', border: '1px solid rgba(255,255,255,0.2)', color: '#fff' }}
-                                            itemStyle={{ color: '#fff' }}
-                                        />
-                                        <Legend />
-                                        <Bar dataKey="cantidad" name="Cantidad" fill="rgba(168, 85, 247, 0.6)" radius={[4, 4, 0, 0]} />
-                                        {chartData.regression && (
-                                            <Line type="monotone" dataKey="regression" name="Regresión Lineal" stroke="#fbbf24" strokeWidth={3} dot={{ r: 4, fill: '#fbbf24' }} />
-                                        )}
-                                    </ComposedChart>
-                                </ResponsiveContainer>
-                            </div>
-                        </div>
-
-                        {/* Table */}
-                        <div className="glass rounded-xl shadow-xl border border-white/20 overflow-hidden">
-                            <div className="glass-dark p-4 border-b border-white/20 flex justify-between items-center">
-                                <h2 className="text-lg font-bold text-white flex items-center">
-                                    <Table className="w-5 h-5 mr-2 text-emerald-300" />
-                                    Listado de Salidas
-                                </h2>
-                                <span className="text-sm text-white/70">{salidas.length} registros</span>
-                            </div>
-                            <div className="overflow-x-auto">
-                                <table className="w-full text-left">
-                                    <thead>
-                                        <tr className="border-b border-white/20 bg-white/5">
-                                            <th className="px-6 py-4 text-xs font-bold text-white uppercase tracking-wider">ID Salida</th>
-                                            <th className="px-6 py-4 text-xs font-bold text-white uppercase tracking-wider">Fecha</th>
-                                            <th className="px-6 py-4 text-xs font-bold text-white uppercase tracking-wider text-right">Cantidad</th>
-                                            <th className="px-6 py-4 text-xs font-bold text-white uppercase tracking-wider">Registro</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody className="divide-y divide-white/10">
-                                        {salidas.map((s, i) => (
-                                            <tr key={i} className="hover:bg-white/5 transition-colors">
-                                                <td className="px-6 py-4 text-sm font-medium text-white">{s.id_salida}</td>
-                                                <td className="px-6 py-4 text-sm text-white/80">{format(parseISO(s.fecha_salida), 'dd/MM/yyyy')}</td>
-                                                <td className="px-6 py-4 text-sm font-bold text-white text-right">{s.cantidad.toLocaleString()}</td>
-                                                <td className="px-6 py-4 text-sm text-white/80">{s.registro}</td>
-                                            </tr>
-                                        ))}
-                                    </tbody>
-                                </table>
-                            </div>
-                        </div>
-                    </div>
-                )}
-            </main>
-
-            {/* Search Modal */}
-            {showSearchModal && (
-                <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-in fade-in duration-200">
-                    <div className="bg-[#0f1419] border border-white/10 rounded-2xl w-full max-w-4xl shadow-2xl overflow-hidden flex flex-col max-h-[85vh]">
-                        <div className="p-4 bg-white/5 border-b border-white/10 flex justify-between items-center shrink-0">
-                            <h3 className="text-white font-bold text-lg flex items-center gap-2">
-                                <Search className="w-5 h-5 text-purple-400" />
-                                Buscar Artículo
-                            </h3>
-                            <button onClick={() => setShowSearchModal(false)} className="text-white/70 hover:text-white p-2 hover:bg-white/10 rounded-lg transition-colors">
-                                <X className="w-5 h-5" />
-                            </button>
-                        </div>
-
-                        <div className="p-4 border-b border-white/5 shrink-0 bg-[#0f1419]">
-                            <div className="relative">
-                                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-500" />
+                        {/* Date Range */}
+                        <div className="md:col-span-6 xl:col-span-3">
+                            <label className="block text-[10px] font-black text-slate-500 uppercase tracking-[0.2em] mb-3 ml-1">Rango Desde</label>
+                            <div className="relative group/date">
+                                <Calendar className="absolute left-5 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-600 group-focus-within/date:text-purple-500 pointer-events-none" />
                                 <input
-                                    type="text"
-                                    autoFocus
-                                    placeholder="Buscar por nombre o código..."
-                                    value={searchTerm}
-                                    onChange={(e) => setSearchTerm(e.target.value)}
-                                    className="w-full bg-slate-900/50 border border-white/10 rounded-xl pl-10 pr-4 py-3 text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-purple-500/50 transition-all"
+                                    type="date"
+                                    value={dateFrom}
+                                    onChange={(e) => setDateFrom(e.target.value)}
+                                    className="w-full bg-slate-950/60 border border-white/10 rounded-2xl pl-14 pr-4 py-4 text-white font-bold focus:outline-none focus:ring-2 focus:ring-purple-500/30 transition-all shadow-inner [color-scheme:dark]"
+                                />
+                            </div>
+                        </div>
+                        <div className="md:col-span-6 xl:col-span-3">
+                            <label className="block text-[10px] font-black text-slate-500 uppercase tracking-[0.2em] mb-3 ml-1">Rango Hasta</label>
+                            <div className="relative group/date">
+                                <Calendar className="absolute left-5 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-600 group-focus-within/date:text-purple-500 pointer-events-none" />
+                                <input
+                                    type="date"
+                                    value={dateTo}
+                                    onChange={(e) => setDateTo(e.target.value)}
+                                    className="w-full bg-slate-950/60 border border-white/10 rounded-2xl pl-14 pr-4 py-4 text-white font-bold focus:outline-none focus:ring-2 focus:ring-purple-500/30 transition-all shadow-inner [color-scheme:dark]"
                                 />
                             </div>
                         </div>
 
-                        <div className="flex-1 overflow-hidden p-0 flex flex-col bg-[#0f1419]">
-                            {searching ? (
-                                <div className="flex flex-col items-center justify-center h-64 text-slate-400">
-                                    <Loader2 className="w-8 h-8 animate-spin mb-2 text-purple-500" />
-                                    <p>Buscando artículos...</p>
-                                </div>
-                            ) : (
-                                <div className="flex-1 overflow-auto">
-                                    <table className="w-full text-left border-collapse">
-                                        <thead className="sticky top-0 z-10 bg-slate-900/90 backdrop-blur-md text-slate-200 shadow-sm">
-                                            <tr>
-                                                <th className="p-4 font-semibold w-32 text-left">Código</th>
-                                                <th className="p-4 font-semibold text-left">Descripción</th>
-                                                <th className="p-4 font-semibold w-24 text-center">Acción</th>
-                                            </tr>
-                                        </thead>
-                                        <tbody className="divide-y divide-white/5">
-                                            {articulosFound.map((art) => (
-                                                <tr key={art.codigo_articulo} className="hover:bg-white/5 transition-colors group">
-                                                    <td className="p-4 font-mono text-sm text-purple-300">
-                                                        {art.codigo_articulo}
-                                                    </td>
-                                                    <td className="p-4">
-                                                        <div className="font-medium text-white">{art.nombre_articulo}</div>
-                                                    </td>
-                                                    <td className="p-4 text-center">
-                                                        <button
-                                                            onClick={() => {
-                                                                setSelectedArticle(art);
-                                                                setShowSearchModal(false);
-                                                                setSearchTerm('');
-                                                            }}
-                                                            className="p-2 bg-purple-500/10 text-purple-400 hover:bg-purple-500 hover:text-white rounded-lg transition-colors"
-                                                        >
-                                                            <ChevronRight className="w-5 h-5" />
-                                                        </button>
-                                                    </td>
-                                                </tr>
-                                            ))}
-                                            {articulosFound.length === 0 && !searching && searchTerm.length >= 2 && (
-                                                <tr>
-                                                    <td colSpan={3} className="text-center py-12 text-slate-500">
-                                                        <p>No se encontraron resultados para "{searchTerm}"</p>
-                                                    </td>
-                                                </tr>
-                                            )}
-                                            {searchTerm.length < 2 && (
-                                                <tr>
-                                                    <td colSpan={3} className="text-center py-12 text-slate-500">
-                                                        <p>Ingrese al menos 2 caracteres para buscar</p>
-                                                    </td>
-                                                </tr>
-                                            )}
-                                        </tbody>
-                                    </table>
-                                </div>
-                            )}
-                        </div>
-
-                        <div className="p-3 bg-white/5 border-t border-white/10 text-center text-xs text-slate-500 shrink-0">
-                            Mostrando {articulosFound.length} resultados
+                        {/* Consult Action */}
+                        <div className="md:col-span-12 xl:col-span-1">
+                            <button
+                                onClick={handleConsultar}
+                                disabled={loading}
+                                className="w-full h-[58px] bg-purple-600 hover:bg-purple-500 text-white rounded-2xl shadow-xl shadow-purple-900/20 transition-all flex items-center justify-center disabled:opacity-50 active:scale-95 group/search"
+                                title="Consultar Historial"
+                            >
+                                {loading ? <Loader2 className="w-6 h-6 animate-spin" /> : <Activity className="w-6 h-6 group-hover/search:scale-110 transition-transform" />}
+                            </button>
                         </div>
                     </div>
                 </div>
-            )}
 
-            {/* Modal Consumo */}
-            {showModal && (
-                <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-in fade-in duration-200">
-                    <div className="glass rounded-2xl shadow-2xl max-w-6xl w-full max-h-[90vh] overflow-hidden border border-white/20 flex flex-col bg-[#0f1419]">
-                        <div className="glass-dark px-6 py-4 flex items-center justify-between border-b border-white/20 shrink-0">
-                            <div className="flex items-center space-x-3">
-                                <div className="p-2 bg-emerald-500/20 rounded-lg backdrop-blur-sm">
-                                    <BarChart2 className="w-6 h-6 text-emerald-300" />
-                                </div>
-                                <div>
-                                    <h3 className="text-xl font-bold text-white">Análisis de Consumo Mensual</h3>
-                                    <p className="text-white/70 text-sm">
-                                        {selectedArticle?.nombre_articulo} • {dateFrom} a {dateTo}
-                                    </p>
+                {/* Main Content Area */}
+                {!hasSearched ? (
+                    <div className="py-40 flex flex-col items-center justify-center text-center group animate-in fade-in zoom-in duration-700">
+                        <div className="relative mb-10">
+                            <div className="absolute inset-0 bg-purple-500/10 rounded-full blur-3xl scale-150 group-hover:scale-200 transition-transform duration-1000" />
+                            <div className="w-32 h-32 glass-card rounded-[3rem] flex items-center justify-center relative z-10 border-white/10 group-hover:rotate-6 transition-all duration-700">
+                                <LineChartIcon className="w-16 h-16 text-slate-800" />
+                            </div>
+                        </div>
+                        <h3 className="text-3xl font-black text-slate-700 uppercase italic tracking-tighter">Sin Análisis Ejecutado</h3>
+                        <p className="text-slate-600 mt-3 max-w-sm mx-auto font-medium text-sm leading-relaxed tracking-wide">
+                            Seleccione un artículo y el rango temporal para generar el historial de salidas y la proyección estadística de consumo.
+                        </p>
+                    </div>
+                ) : loading ? (
+                    <div className="py-40 flex flex-col items-center justify-center space-y-6">
+                        <Loader2 className="w-16 h-16 animate-spin text-purple-500" />
+                        <p className="text-[10px] font-black uppercase tracking-[0.3em] text-white/50 animate-pulse">Procesando registros...</p>
+                    </div>
+                ) : salidas.length === 0 ? (
+                    <div className="py-40 flex flex-col items-center justify-center text-center glass-card bg-slate-900/40">
+                        <Inbox className="w-16 h-16 text-slate-700 mb-6" />
+                        <h3 className="text-xl font-bold text-slate-400">No se encontraron movimientos</h3>
+                        <p className="text-slate-600 mt-2">Para el período seleccionado no existen registros de salida en este artículo.</p>
+                    </div>
+                ) : (
+                    <div className="space-y-8 animate-in fade-in duration-700">
+                        {/* Stats Grid */}
+                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+                            <div className="glass-card p-6 bg-slate-900/40 border-l-4 border-l-purple-500 relative overflow-hidden group">
+                                <div className="absolute top-0 right-0 w-20 h-20 bg-purple-500/5 rounded-full blur-2xl group-hover:bg-purple-500/10 transition-colors" />
+                                <span className="text-[10px] font-black text-slate-500 uppercase tracking-widest block mb-4">Total Salidas</span>
+                                <div className="flex items-end gap-3">
+                                    <span className="text-4xl font-black text-white italic tracking-tighter">{stats.totalSalidas.toLocaleString()}</span>
+                                    <span className="text-purple-500/50 text-xs font-black uppercase mb-1">Registros</span>
                                 </div>
                             </div>
-                            <button
-                                onClick={() => setShowModal(false)}
-                                className="glass-button p-2 rounded-lg transition-all duration-300 text-white hover:bg-white/20"
-                            >
-                                <X className="w-6 h-6" />
-                            </button>
+                            <div className="glass-card p-6 bg-slate-900/40 border-l-4 border-l-emerald-500 relative overflow-hidden group">
+                                <div className="absolute top-0 right-0 w-20 h-20 bg-emerald-500/5 rounded-full blur-2xl group-hover:bg-emerald-500/10 transition-colors" />
+                                <span className="text-[10px] font-black text-slate-500 uppercase tracking-widest block mb-4">Cantidad Total</span>
+                                <div className="flex items-end gap-3">
+                                    <span className="text-4xl font-black text-white italic tracking-tighter">{stats.cantidadTotal.toLocaleString()}</span>
+                                    <span className="text-emerald-500/50 text-xs font-black uppercase mb-1">{selectedArticle?.unidad || 'unid'}</span>
+                                </div>
+                            </div>
+                            <div className="glass-card p-6 bg-slate-900/40 border-l-4 border-l-blue-500 relative overflow-hidden group">
+                                <div className="absolute top-0 right-0 w-20 h-20 bg-blue-500/5 rounded-full blur-2xl group-hover:bg-blue-500/10 transition-colors" />
+                                <span className="text-[10px] font-black text-slate-500 uppercase tracking-widest block mb-4">Promedio Mensual</span>
+                                <div className="flex items-end gap-3">
+                                    <span className="text-4xl font-black text-white italic tracking-tighter">{stats.promedioMensual.toLocaleString()}</span>
+                                    <span className="text-blue-500/50 text-xs font-black uppercase mb-1">/ mes</span>
+                                </div>
+                            </div>
+                            <div className="glass-card p-6 bg-slate-900/40 border-l-4 border-l-amber-500 relative overflow-hidden group">
+                                <div className="absolute top-0 right-0 w-20 h-20 bg-amber-500/5 rounded-full blur-2xl group-hover:bg-amber-500/10 transition-colors" />
+                                <span className="text-[10px] font-black text-slate-500 uppercase tracking-widest block mb-4">Salidas Únicas</span>
+                                <div className="flex items-end gap-3">
+                                    <span className="text-4xl font-black text-white italic tracking-tighter">{stats.salidasUnicas.toLocaleString()}</span>
+                                    <span className="text-amber-500/50 text-xs font-black uppercase mb-1">Salidas ID</span>
+                                </div>
+                            </div>
                         </div>
 
-                        <div className="p-6 overflow-y-auto flex-1">
-                            {/* Modal Metrics */}
-                            <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
-                                <div className="bg-white/5 rounded-lg p-4 text-center border border-white/10">
-                                    <div className="text-2xl font-bold text-blue-300">{chartData.data.length}</div>
-                                    <div className="text-sm text-white/70">Meses Analizados</div>
-                                </div>
-                                <div className="bg-white/5 rounded-lg p-4 text-center border border-white/10">
-                                    <div className="text-2xl font-bold text-emerald-300">{stats.promedioMensual.toLocaleString()}</div>
-                                    <div className="text-sm text-white/70">Promedio Mensual</div>
-                                </div>
-                                <div className="bg-white/5 rounded-lg p-4 text-center border border-white/10">
-                                    <div className="text-2xl font-bold text-purple-300">
-                                        {Math.max(...chartData.data.map(d => d.cantidad), 0).toLocaleString()}
-                                    </div>
-                                    <div className="text-sm text-white/70">Máximo Mensual</div>
-                                </div>
-                                <div className="bg-white/5 rounded-lg p-4 text-center border border-white/10">
-                                    <div className="text-2xl font-bold text-orange-300">{stats.cantidadTotal.toLocaleString()}</div>
-                                    <div className="text-sm text-white/70">Total Período</div>
-                                </div>
-                            </div>
+                        {/* Analysis & Chart */}
+                        <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
+                            {/* Linear Regression Card */}
+                            {chartData.regression && (
+                                <div className="lg:col-span-4 glass-card p-8 bg-slate-900/50 border border-amber-500/20 relative overflow-hidden flex flex-col">
+                                    <div className="absolute inset-0 bg-gradient-to-br from-amber-500/[0.03] to-transparent pointer-events-none" />
+                                    <h3 className="text-xs font-black text-amber-500 uppercase tracking-[0.3em] mb-8 flex items-center gap-3">
+                                        <TrendingUp className="w-5 h-5" />
+                                        Análisis de Regresión Lineal
+                                    </h3>
 
-                            {/* Modal Chart */}
-                            <div className="glass rounded-xl p-6 mb-6 border border-white/10">
-                                <h4 className="text-lg font-semibold text-white mb-4 text-center">Consumo Mensual con Regresión Lineal</h4>
-                                <div className="h-[400px] w-full">
+                                    <div className="space-y-6 flex-1">
+                                        <div className="p-4 rounded-xl bg-black/40 border border-white/5">
+                                            <label className="text-[9px] font-black text-slate-500 uppercase tracking-widest block mb-2">Ecuación de la Recta</label>
+                                            <div className="text-xl font-black text-amber-400 font-mono tracking-tight">{chartData.regression.equation}</div>
+                                        </div>
+                                        <div className="grid grid-cols-2 gap-4">
+                                            <div className="p-4 rounded-xl bg-black/40 border border-white/5">
+                                                <label className="text-[9px] font-black text-slate-500 uppercase tracking-widest block mb-1">Coeficiente R²</label>
+                                                <div className="text-lg font-black text-white">{chartData.regression.r2.toFixed(4)}</div>
+                                            </div>
+                                            <div className="p-4 rounded-xl bg-black/40 border border-white/5">
+                                                <label className="text-[9px] font-black text-slate-500 uppercase tracking-widest block mb-1">Pendiente (m)</label>
+                                                <div className="text-lg font-black text-white">{chartData.regression.slope.toFixed(2)}</div>
+                                            </div>
+                                        </div>
+
+                                        <div className="mt-auto pt-6 border-t border-white/5">
+                                            <div className="flex items-center justify-between p-6 bg-amber-500/10 rounded-2xl border border-amber-500/20 shadow-2xl shadow-amber-950/20">
+                                                <div className="space-y-1">
+                                                    <span className="text-[10px] font-black text-amber-600 uppercase tracking-widest block">Predicción Próximo Mes</span>
+                                                    <p className="text-3xl font-black text-white italic leading-none">{chartData.regression.prediction.toLocaleString()}</p>
+                                                </div>
+                                                <div className="w-12 h-12 bg-amber-500/20 rounded-xl flex items-center justify-center">
+                                                    <TrendingUp className="w-6 h-6 text-amber-500" />
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            )}
+
+                            {/* Chart Card */}
+                            <div className={`${chartData.regression ? 'lg:col-span-8' : 'lg:col-span-12'} glass-card p-8 bg-slate-900/40 min-h-[450px] flex flex-col`}>
+                                <h3 className="text-xs font-black text-slate-500 uppercase tracking-[0.3em] mb-8 flex items-center gap-3">
+                                    <BarChart3 className="w-5 h-5 text-purple-500" />
+                                    Tendencia de Consumo Histórico
+                                </h3>
+
+                                <div className="flex-1 w-full min-h-0">
                                     <ResponsiveContainer width="100%" height="100%">
                                         <ComposedChart data={chartData.data}>
-                                            <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.1)" />
-                                            <XAxis dataKey="label" stroke="rgba(255,255,255,0.5)" tick={{ fill: 'rgba(255,255,255,0.8)' }} />
-                                            <YAxis stroke="rgba(255,255,255,0.5)" tick={{ fill: 'rgba(255,255,255,0.8)' }} />
-                                            <Tooltip
-                                                contentStyle={{ backgroundColor: 'rgba(0,0,0,0.8)', border: '1px solid rgba(255,255,255,0.2)', color: '#fff' }}
-                                                itemStyle={{ color: '#fff' }}
+                                            <defs>
+                                                <linearGradient id="colorBar" x1="0" y1="0" x2="0" y2="1">
+                                                    <stop offset="5%" stopColor="#a855f7" stopOpacity={0.6} />
+                                                    <stop offset="95%" stopColor="#a855f7" stopOpacity={0} />
+                                                </linearGradient>
+                                            </defs>
+                                            <CartesianGrid strokeDasharray="3 3" stroke="#ffffff08" vertical={false} />
+                                            <XAxis
+                                                dataKey="label"
+                                                stroke="#475569"
+                                                fontSize={10}
+                                                axisLine={false}
+                                                tickLine={false}
+                                                fontWeight="bold"
                                             />
-                                            <Legend />
-                                            <Bar dataKey="cantidad" name="Cantidad" fill="rgba(16, 185, 129, 0.7)" radius={[4, 4, 0, 0]} />
+                                            <YAxis
+                                                stroke="#475569"
+                                                fontSize={10}
+                                                axisLine={false}
+                                                tickLine={false}
+                                                fontWeight="bold"
+                                            />
+                                            <Tooltip
+                                                contentStyle={{
+                                                    backgroundColor: '#0f111a',
+                                                    border: '1px solid rgba(255,255,255,0.1)',
+                                                    borderRadius: '16px',
+                                                    padding: '12px',
+                                                    boxShadow: '0 20px 40px rgba(0,0,0,0.5)',
+                                                    backdropFilter: 'blur(20px)'
+                                                }}
+                                                itemStyle={{ fontWeight: '900', fontSize: '12px', textTransform: 'uppercase' }}
+                                                labelStyle={{ color: '#64748b', fontWeight: 'bold', fontSize: '10px', marginBottom: '8px', textTransform: 'uppercase' }}
+                                            />
+                                            <Legend
+                                                verticalAlign="top"
+                                                align="right"
+                                                iconType="circle"
+                                                wrapperStyle={{ fontSize: '10px', fontWeight: 'black', textTransform: 'uppercase', letterSpacing: '0.1em', paddingBottom: '20px' }}
+                                            />
+                                            <Bar dataKey="cantidad" name="Consumo Real" fill="url(#colorBar)" radius={[6, 6, 0, 0]} />
                                             {chartData.regression && (
-                                                <Line type="monotone" dataKey="regression" name="Regresión Lineal" stroke="#fbbf24" strokeWidth={3} dot={{ r: 4, fill: '#fbbf24' }} />
+                                                <Line
+                                                    type="monotone"
+                                                    dataKey="regression"
+                                                    name="Progreso Estadístico"
+                                                    stroke="#fbbf24"
+                                                    strokeWidth={3}
+                                                    dot={{ r: 4, fill: '#fbbf24', strokeWidth: 0 }}
+                                                    activeDot={{ r: 6, strokeWidth: 0 }}
+                                                />
                                             )}
                                         </ComposedChart>
                                     </ResponsiveContainer>
                                 </div>
                             </div>
+                        </div>
 
-                            {/* Modal Table */}
-                            <div>
-                                <h4 className="text-lg font-semibold text-white mb-4">Datos Detallados</h4>
-                                <div className="overflow-x-auto rounded-lg border border-white/10">
-                                    <table className="w-full text-left">
-                                        <thead className="bg-white/5">
-                                            <tr>
-                                                <th className="px-4 py-3 text-xs font-bold text-white uppercase">Mes</th>
-                                                <th className="px-4 py-3 text-xs font-bold text-white uppercase text-right">Cantidad</th>
-                                                <th className="px-4 py-3 text-xs font-bold text-white uppercase text-right">% del Total</th>
-                                                <th className="px-4 py-3 text-xs font-bold text-white uppercase text-center">Tendencia</th>
+                        {/* List Area */}
+                        <div className="space-y-6">
+                            <div className="flex items-center justify-between px-2">
+                                <h3 className="text-xs font-black text-slate-500 uppercase tracking-[0.3em] flex items-center gap-3">
+                                    <Table className="w-5 h-5 text-emerald-500" />
+                                    Listado Cronológico de Salidas
+                                </h3>
+                                <button
+                                    onClick={handleExport}
+                                    className="glass-button px-6 py-2.5 rounded-xl text-xs font-black uppercase tracking-widest flex items-center gap-2 hover:bg-emerald-500/10 text-emerald-400 border-emerald-500/20"
+                                >
+                                    <FileSpreadsheet className="w-4 h-4" />
+                                    Exportar Excel
+                                </button>
+                            </div>
+
+                            <div className="glass-card overflow-hidden bg-slate-900/40 border border-white/5">
+                                <div className="overflow-x-auto">
+                                    <table className="w-full text-left border-collapse">
+                                        <thead>
+                                            <tr className="bg-slate-950/80 text-white text-[10px] font-black uppercase tracking-[0.2em] border-b border-white/5">
+                                                <th className="p-6">ID Salida</th>
+                                                <th className="p-6">Fecha Efectiva</th>
+                                                <th className="p-6 text-right">Cantidad</th>
                                             </tr>
                                         </thead>
-                                        <tbody className="divide-y divide-white/10">
-                                            {chartData.data.map((d, i) => {
-                                                const prev = chartData.data[i - 1]?.cantidad || 0;
-                                                const trend = i === 0 ? '→' : d.cantidad > prev ? '↗' : d.cantidad < prev ? '↘' : '→';
-                                                const percent = stats.cantidadTotal > 0 ? (d.cantidad / stats.cantidadTotal * 100).toFixed(1) : '0.0';
-
-                                                return (
-                                                    <tr key={i} className="hover:bg-white/5">
-                                                        <td className="px-4 py-3 text-sm font-medium text-white">{d.label}</td>
-                                                        <td className="px-4 py-3 text-sm font-bold text-white text-right">{d.cantidad.toLocaleString()}</td>
-                                                        <td className="px-4 py-3 text-sm text-white/80 text-right">{percent}%</td>
-                                                        <td className="px-4 py-3 text-lg text-white text-center">{trend}</td>
-                                                    </tr>
-                                                );
-                                            })}
+                                        <tbody className="divide-y divide-white/[0.03]">
+                                            {salidas.map((s) => (
+                                                <tr key={s.id_salida} className="hover:bg-white/[0.03] transition-colors group h-16">
+                                                    <td className="p-6">
+                                                        <span className="font-mono text-sm font-black text-purple-400 group-hover:text-purple-300 transition-colors">#{s.id_salida}</span>
+                                                    </td>
+                                                    <td className="p-6 text-slate-200 font-bold text-sm">
+                                                        {format(parseISO(s.fecha_salida), 'PPPP', { locale: es })}
+                                                    </td>
+                                                    <td className="p-6 text-right">
+                                                        <div className="flex flex-col items-end">
+                                                            <span className="text-xl font-black text-white group-hover:text-emerald-400 transition-colors font-mono">{s.cantidad.toLocaleString()}</span>
+                                                            <span className="text-[9px] font-black text-slate-600 uppercase tracking-widest uppercase">{selectedArticle?.unidad}</span>
+                                                        </div>
+                                                    </td>
+                                                </tr>
+                                            ))}
                                         </tbody>
                                     </table>
                                 </div>
+                            </div>
+                        </div>
+                    </div>
+                )}
+            </div>
+
+            {/* Premium Search Modal */}
+            {showSearchModal && (
+                <div className="fixed inset-0 z-50 flex items-center justify-center p-4 md:p-10 animate-in fade-in zoom-in-95 duration-300">
+                    <div className="absolute inset-0 bg-black/80 backdrop-blur-xl" onClick={() => setShowSearchModal(false)} />
+
+                    <div className="bg-[#0f141a] border border-white/10 rounded-[2.5rem] w-full max-w-5xl shadow-[0_40px_100px_rgba(0,0,0,0.8)] overflow-hidden flex flex-col max-h-[90vh] relative z-10 border-t-white/20">
+                        {/* Header */}
+                        <div className="px-10 py-8 bg-slate-900/50 border-b border-white/5 flex justify-between items-center group">
+                            <div className="flex items-center gap-4">
+                                <div className="p-3 rounded-2xl bg-purple-500/10 text-purple-400">
+                                    <Search className="w-6 h-6" />
+                                </div>
+                                <div>
+                                    <h3 className="text-xl font-black text-white uppercase italic tracking-tighter">Buscador Especializado</h3>
+                                    <p className="text-[10px] font-black text-slate-500 uppercase tracking-[0.2em] mt-1">Localización de artículos por código o descriptivo</p>
+                                </div>
+                            </div>
+                            <button
+                                onClick={() => setShowSearchModal(false)}
+                                className="w-12 h-12 glass-button text-slate-500 hover:text-white rounded-2xl flex items-center justify-center transition-all"
+                            >
+                                <X className="w-6 h-6" />
+                            </button>
+                        </div>
+
+                        {/* Search Input Area */}
+                        <div className="px-10 py-8 bg-slate-950/40 relative">
+                            <div className="relative group/search-input">
+                                <Search className="absolute left-6 top-1/2 -translate-y-1/2 w-6 h-6 text-slate-600 group-focus-within/search-input:text-purple-500 transition-colors" />
+                                <input
+                                    type="text"
+                                    autoFocus
+                                    placeholder="Escriba código o nombre del material..."
+                                    value={searchTerm}
+                                    onChange={(e) => setSearchTerm(e.target.value)}
+                                    className="w-full bg-slate-900/80 border border-white/10 rounded-[1.5rem] pl-16 pr-6 py-5 text-xl text-white font-bold placeholder-slate-700 focus:outline-none focus:ring-4 focus:ring-purple-500/20 focus:border-purple-500/40 transition-all shadow-inner"
+                                />
+                                {searching && <Loader2 className="absolute right-6 top-1/2 -translate-y-1/2 w-6 h-6 text-purple-500 animate-spin" />}
+                            </div>
+                        </div>
+
+                        {/* Results Area */}
+                        <div className="flex-1 overflow-hidden flex flex-col bg-[#0f141a]">
+                            <div className="flex-1 overflow-auto px-6 pb-10">
+                                <table className="w-full text-left border-collapse">
+                                    <thead className="sticky top-0 z-10 bg-[#0f141a]/95 backdrop-blur-lg">
+                                        <tr className="border-b border-white/5">
+                                            <th className="px-6 py-4 text-[10px] font-black text-slate-500 uppercase tracking-widest text-center">Referencia</th>
+                                            <th className="px-6 py-4 text-[10px] font-black text-slate-500 uppercase tracking-widest">Código</th>
+                                            <th className="px-6 py-4 text-[10px] font-black text-slate-500 uppercase tracking-widest">Descripción del Artículo</th>
+                                            <th className="px-6 py-4 text-[10px] font-black text-slate-500 uppercase tracking-widest text-center">Acción</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody className="divide-y divide-white/[0.03]">
+                                        {articulosFound.map((art) => (
+                                            <tr key={art.codigo_articulo} className="hover:bg-white/[0.02] transition-all group/row-search h-20">
+                                                <td className="px-6 text-center">
+                                                    <div className="w-12 h-12 bg-black/40 rounded-xl overflow-hidden border border-white/10 mx-auto transform group-hover/row-search:scale-110 transition-transform">
+                                                        <img src={art.imagen_url || ''} className="w-full h-full object-cover" />
+                                                    </div>
+                                                </td>
+                                                <td className="px-6">
+                                                    <span className="font-mono text-sm font-black text-purple-400 bg-purple-500/5 px-3 py-1 rounded-lg border border-purple-500/10">
+                                                        {art.codigo_articulo}
+                                                    </span>
+                                                </td>
+                                                <td className="px-6">
+                                                    <div className="font-black text-slate-200 group-hover/row-search:text-white transition-colors uppercase leading-tight">
+                                                        {art.nombre_articulo}
+                                                    </div>
+                                                    <span className="text-[9px] font-black text-slate-600 uppercase tracking-widest mt-1 block">{art.unidad}</span>
+                                                </td>
+                                                <td className="px-6 text-center">
+                                                    <button
+                                                        onClick={() => {
+                                                            setSelectedArticle(art);
+                                                            setShowSearchModal(false);
+                                                            setSearchTerm('');
+                                                            setHasSearched(false);
+                                                        }}
+                                                        className="px-6 py-3 bg-purple-600 hover:bg-purple-500 text-white rounded-xl text-[10px] font-black uppercase tracking-widest flex items-center gap-2 mx-auto active:scale-95 transition-all shadow-lg shadow-purple-900/40"
+                                                    >
+                                                        Seleccionar
+                                                        <ChevronRight className="w-4 h-4" />
+                                                    </button>
+                                                </td>
+                                            </tr>
+                                        ))}
+                                        {articulosFound.length === 0 && !searching && searchTerm.length >= 2 && (
+                                            <tr>
+                                                <td colSpan={4} className="text-center py-20">
+                                                    <AlertCircle className="w-10 h-10 text-slate-700 mx-auto mb-4" />
+                                                    <p className="text-slate-500 font-bold uppercase tracking-widest text-xs">Sin coincidencias para la búsqueda</p>
+                                                </td>
+                                            </tr>
+                                        )}
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+
+                        {/* Footer */}
+                        <div className="px-10 py-5 bg-slate-950/60 border-t border-white/5 flex justify-between items-center shrink-0">
+                            <span className="text-[9px] font-black text-slate-600 uppercase tracking-[0.2em]">Criterio de búsqueda sensible a mayúsculas</span>
+                            <div className="flex items-center gap-3">
+                                <span className="text-[9px] font-black text-purple-400 uppercase tracking-widest">{articulosFound.length} Artículos Encontrados</span>
+                                <div className="w-1 h-1 rounded-full bg-slate-700" />
+                                <span className="text-[9px] font-black text-slate-500 uppercase tracking-widest">{searchTerm.length} Caracteres</span>
                             </div>
                         </div>
                     </div>

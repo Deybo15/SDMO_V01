@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef, useMemo } from 'react';
 import { supabase } from '../lib/supabase';
 import {
     Calculator,
@@ -16,12 +16,14 @@ import {
     Filter,
     ArrowUpDown,
     FileText,
-    AlertOctagon
+    AlertOctagon,
+    ChevronDown
 } from 'lucide-react';
 import * as XLSX from 'xlsx';
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Cell } from 'recharts';
+import { PageHeader } from '../components/ui/PageHeader';
 
 interface ProyeccionItem {
     codigo_articulo: string;
@@ -49,155 +51,36 @@ export default function ProyeccionCompras() {
     const [factorSeguridad, setFactorSeguridad] = useState(1.1);
     const [mesesHistorico, setMesesHistorico] = useState(12);
 
-    // Advanced UI State
+    // Filter/Sort State
     const [currentPage, setCurrentPage] = useState(1);
     const itemsPerPage = 25;
     const [searchTerm, setSearchTerm] = useState('');
     const [selectedGasto, setSelectedGasto] = useState<string>('TODOS');
     const [sortConfig, setSortConfig] = useState<{ key: keyof ProyeccionItem; direction: 'asc' | 'desc' } | null>(null);
+    const [isDropdownOpen, setIsDropdownOpen] = useState(false);
+    const dropdownRef = useRef<HTMLDivElement>(null);
 
-    // Derived Data Logic
-    const uniqueGastos = Array.from(new Set(data.map(i => i.nombre_partida || 'SIN ASIGNAR'))).sort();
-
-    const processedData = data.filter(item => {
-        const matchSearch =
-            (item.nombre_articulo?.toLowerCase() || '').includes(searchTerm.toLowerCase()) ||
-            (item.codigo_articulo?.toLowerCase() || '').includes(searchTerm.toLowerCase());
-
-        const matchGasto = selectedGasto === 'TODOS' || item.nombre_partida === selectedGasto;
-
-        return matchSearch && matchGasto;
-    }).sort((a, b) => {
-        if (!sortConfig) return 0;
-
-        const valA = a[sortConfig.key];
-        const valB = b[sortConfig.key];
-
-        if (valA < valB) return sortConfig.direction === 'asc' ? -1 : 1;
-        if (valA > valB) return sortConfig.direction === 'asc' ? 1 : -1;
-        return 0;
-    });
-
-    // Pagination based on PROCESSED data
-    const totalPages = Math.ceil(processedData.length / itemsPerPage);
-    const paginatedData = processedData.slice(
-        (currentPage - 1) * itemsPerPage,
-        currentPage * itemsPerPage
-    );
-
-    const handleSort = (key: keyof ProyeccionItem) => {
-        let direction: 'asc' | 'desc' = 'desc'; // Default to desc for relevance
-        if (sortConfig && sortConfig.key === key && sortConfig.direction === 'desc') {
-            direction = 'asc';
-        }
-        setSortConfig({ key, direction });
-    };
-
-    const handleExportPDF = () => {
-        const doc = new jsPDF('l', 'mm', 'a4');
-        const itemsToBuy = processedData.filter(i => i.cantidad_sugerida > 0);
-
-        if (itemsToBuy.length === 0) {
-            alert('No hay artículos sugeridos para compra en la selección actual.');
-            return;
-        }
-
-        // Sort by Gasto then Article
-        itemsToBuy.sort((a, b) => {
-            const gastoA = a.codigo_gasto || 'ZZZ';
-            const gastoB = b.codigo_gasto || 'ZZZ';
-            if (gastoA !== gastoB) return gastoA.localeCompare(gastoB);
-            return a.nombre_articulo.localeCompare(b.nombre_articulo);
-        });
-
-        doc.setFontSize(20);
-        doc.text('Requisición de Compra Sugerida (SDMO)', 14, 22);
-
-        doc.setFontSize(10);
-        doc.text(`Fecha: ${new Date().toLocaleDateString('es-CR')}`, 14, 30);
-        doc.text(`Criterios: Histórico ${mesesHistorico}m | Lead ${mesesLeadTime}m | Cobertura ${mesesCiclo}m`, 14, 36);
-        doc.text(`Total Ítems: ${itemsToBuy.length} | Costo Est. Total: CRC ${itemsToBuy.reduce((a, b) => a + b.costo_estimado, 0).toLocaleString('es-CR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`, 14, 42);
-
-        const tableBody: any[] = [];
-        let currentGasto = '';
-
-        itemsToBuy.forEach(item => {
-            const gastoCode = item.codigo_gasto || 'SIN ASIGNAR';
-            const gastoName = item.nombre_partida || '';
-
-            // Group Header
-            if (gastoCode !== currentGasto) {
-                tableBody.push([{
-                    content: `${gastoCode} - ${gastoName}`,
-                    colSpan: 6,
-                    styles: {
-                        fillColor: [241, 245, 249],
-                        textColor: [71, 85, 105],
-                        fontStyle: 'bold',
-                        halign: 'left'
-                    }
-                }]);
-                currentGasto = gastoCode;
-            }
-
-            // Item Row
-            tableBody.push([
-                item.codigo_articulo,
-                item.nombre_articulo.substring(0, 60),
-                item.unidad,
-                Math.ceil(item.cantidad_sugerida),
-                `CRC ${item.ultimo_precio.toLocaleString('es-CR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`,
-                `CRC ${item.costo_estimado.toLocaleString('es-CR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
-            ]);
-        });
-
-        autoTable(doc, {
-            head: [['Código', 'Artículo', 'Unidad', 'Cant.', 'Precio Unit.', 'Total Estimado']],
-            body: tableBody,
-            startY: 50,
-            styles: { fontSize: 8 },
-            headStyles: { fillColor: [16, 185, 129] },
-            columnStyles: {
-                0: { cellWidth: 25 },
-                1: { cellWidth: 'auto' },
-                2: { cellWidth: 15 },
-                3: { cellWidth: 15, halign: 'center' },
-                4: { cellWidth: 30, halign: 'right' },
-                5: { cellWidth: 35, halign: 'right' }
-            }
-        });
-
-        doc.save(`Requisicion_SDMO_${new Date().toISOString().split('T')[0]}.pdf`);
-    };
-
-    // Stats
-    const totalEstimado = data.reduce((acc, item) => acc + (item.costo_estimado || 0), 0);
-    const articulosAComprar = data.filter(i => i.cantidad_sugerida > 0).length;
-
-    // Grouping for Chart
-    const gastosData = data.reduce((acc, item) => {
-        const codigo = item.codigo_gasto || 'SIN ASIGNAR';
-        const nombre = item.nombre_partida || 'Desconocido';
-
-        if (!acc[codigo]) {
-            acc[codigo] = { code: codigo, name: nombre, value: 0 };
-        }
-        acc[codigo].value += item.costo_estimado;
-        return acc;
-    }, {} as Record<string, { code: string, name: string, value: number }>);
-
-    const chartData = Object.values(gastosData).sort((a, b) => b.value - a.value);
-
-    // Color palette for chart
-    const COLORS = ['#10B981', '#3B82F6', '#6366F1', '#8B5CF6', '#EC4899', '#F59E0B', '#EF4444'];
-
+    // Initial Fetch (triggered by parameters)
     useEffect(() => {
-        fetchProyeccion();
+        const timer = setTimeout(() => {
+            fetchProyeccion();
+        }, 500);
+        return () => clearTimeout(timer);
     }, [mesesLeadTime, mesesCiclo, factorSeguridad, mesesHistorico]);
+
+    // Click outside for dropdown
+    useEffect(() => {
+        const handleClickOutside = (event: MouseEvent) => {
+            if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
+                setIsDropdownOpen(false);
+            }
+        };
+        document.addEventListener('mousedown', handleClickOutside);
+        return () => document.removeEventListener('mousedown', handleClickOutside);
+    }, []);
 
     const fetchProyeccion = async () => {
         setLoading(true);
-        setCurrentPage(1); // Reset page on new fetch
         try {
             let allData: ProyeccionItem[] = [];
             let from = 0;
@@ -210,24 +93,17 @@ export default function ProyeccionCompras() {
                     meses_espera: mesesLeadTime,
                     meses_ciclo: mesesCiclo,
                     factor_seguridad: factorSeguridad
-                })
-                    .range(from, from + batchSize - 1);
+                }).range(from, from + batchSize - 1);
 
                 if (error) throw error;
-
                 if (batch && batch.length > 0) {
                     allData = [...allData, ...batch];
-
-                    if (batch.length < batchSize) {
-                        fetching = false;
-                    } else {
-                        from += batchSize;
-                    }
+                    if (batch.length < batchSize) fetching = false;
+                    else from += batchSize;
                 } else {
                     fetching = false;
                 }
             }
-
             setData(allData);
         } catch (error) {
             console.error('Error fetching projection:', error);
@@ -236,436 +112,366 @@ export default function ProyeccionCompras() {
         }
     };
 
+    // Derived Logic
+    const uniqueGastos = useMemo(() => Array.from(new Set(data.filter(i => i.nombre_partida).map(i => i.nombre_partida))).sort(), [data]);
+
+    const processedData = useMemo(() => {
+        return data.filter(item => {
+            const matchSearch =
+                (item.nombre_articulo?.toLowerCase() || '').includes(searchTerm.toLowerCase()) ||
+                (item.codigo_articulo?.toLowerCase() || '').includes(searchTerm.toLowerCase());
+            const matchGasto = selectedGasto === 'TODOS' || item.nombre_partida === selectedGasto;
+            return matchSearch && matchGasto;
+        }).sort((a, b) => {
+            if (!sortConfig) return 0;
+            const valA = a[sortConfig.key];
+            const valB = b[sortConfig.key];
+            if (valA < valB) return sortConfig.direction === 'asc' ? -1 : 1;
+            if (valA > valB) return sortConfig.direction === 'asc' ? 1 : -1;
+            return 0;
+        });
+    }, [data, searchTerm, selectedGasto, sortConfig]);
+
+    const totalPages = Math.ceil(processedData.length / itemsPerPage);
+    const paginatedData = useMemo(() => processedData.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage), [processedData, currentPage]);
+
+    const chartData = useMemo(() => {
+        const gastosMap = data.reduce((acc, item) => {
+            const codigo = item.codigo_gasto || 'SIN ASIGNAR';
+            const nombre = item.nombre_partida || 'Desconocido';
+            if (!acc[codigo]) acc[codigo] = { code: codigo, name: nombre, value: 0 };
+            acc[codigo].value += item.costo_estimado;
+            return acc;
+        }, {} as Record<string, { code: string, name: string, value: number }>);
+        return Object.values(gastosMap).sort((a, b) => b.value - a.value).slice(0, 15);
+    }, [data]);
+
+    const stats = useMemo(() => ({
+        totalPresupuesto: data.reduce((acc, i) => acc + (i.costo_estimado || 0), 0),
+        itemsAComprar: data.filter(i => i.cantidad_sugerida > 0).length,
+        totalItems: data.length,
+        totalCategorias: uniqueGastos.length
+    }), [data, uniqueGastos]);
+
+    const COLORS = ['#10B981', '#3B82F6', '#6366F1', '#8B5CF6', '#EC4899', '#F59E0B', '#EF4444'];
+
+    const handleSort = (key: keyof ProyeccionItem) => {
+        setSortConfig(current => ({
+            key,
+            direction: current?.key === key && current.direction === 'desc' ? 'asc' : 'desc'
+        }));
+    };
+
+    const handleExportPDF = () => {
+        const doc = new jsPDF('l', 'mm', 'a4');
+        const itemsToBuy = processedData.filter(i => i.cantidad_sugerida > 0);
+        if (itemsToBuy.length === 0) {
+            alert('No hay artículos sugeridos para compra en la selección actual.');
+            return;
+        }
+        doc.setFontSize(20);
+        doc.text('Requisición de Compra Sugerida (SDMO)', 14, 22);
+        const tableBody = itemsToBuy.map(item => [
+            item.codigo_articulo,
+            item.nombre_articulo.substring(0, 60),
+            item.unidad,
+            Math.ceil(item.cantidad_sugerida),
+            `Col. ${item.ultimo_precio.toLocaleString()}`,
+            `Col. ${item.costo_estimado.toLocaleString()}`
+        ]);
+        autoTable(doc, {
+            head: [['Código', 'Artículo', 'Unidad', 'Cant.', 'Precio Unit.', 'Total Estimado']],
+            body: tableBody,
+            startY: 30,
+            styles: { fontSize: 8 },
+            headStyles: { fillColor: [16, 185, 129] }
+        });
+        doc.save(`Requisicion_SDMO_${new Date().toISOString().split('T')[0]}.pdf`);
+    };
+
     const handleExportExcel = () => {
-        // Sheet 1: Detalle Artículos
         const wsDetalle = XLSX.utils.json_to_sheet(data.map(item => ({
             'Código': item.codigo_articulo,
             'Artículo': item.nombre_articulo,
             'Unidad': item.unidad,
             'Cod. Gasto': item.codigo_gasto,
-            'Partida Presupuestaria': item.nombre_partida,
+            'Partida Budgetaria': item.nombre_partida,
             'Stock Actual': item.stock_actual,
             'Consumo Mensual': item.promedio_mensual,
-            'Consumo Espera': item.consumo_espera,
-            'Stock Residual': item.stock_residual,
-            'Demanda Futura': item.demanda_futura,
-            'SUGERENCIA': item.cantidad_sugerida,
-            'Precio Est.': item.ultimo_precio,
+            'Sugerencia': item.cantidad_sugerida,
             'Costo Total': item.costo_estimado
         })));
-
-        // Sheet 2: Resumen por Código de Gasto
-        const resumenGasto = Object.values(gastosData).map(g => ({
-            'Código Gasto': g.code,
-            'Descripción Partida': g.name,
-            'Presupuesto Requerido': g.value
-        }));
-        const wsResumen = XLSX.utils.json_to_sheet(resumenGasto);
-
         const wb = XLSX.utils.book_new();
-        XLSX.utils.book_append_sheet(wb, wsDetalle, "Detalle Artículos");
-        XLSX.utils.book_append_sheet(wb, wsResumen, "Resumen Presupuestario");
-
-        XLSX.writeFile(wb, `Proyeccion_Compras_Anual_${new Date().toISOString().split('T')[0]}.xlsx`);
+        XLSX.utils.book_append_sheet(wb, wsDetalle, "Detalle");
+        XLSX.writeFile(wb, `Proyeccion_SDMO_${new Date().toISOString().split('T')[0]}.xlsx`);
     };
 
-    // Helper for table sort icon
     const SortIcon = ({ column }: { column: keyof ProyeccionItem }) => {
         if (sortConfig?.key !== column) return <ArrowUpDown className="w-4 h-4 text-slate-600 inline ml-1 opacity-50" />;
         return <ArrowUpDown className={`w-4 h-4 text-emerald-400 inline ml-1 ${sortConfig.direction === 'asc' ? 'rotate-180' : ''}`} />;
     };
 
     return (
-        <div className="min-h-screen bg-[#0F172A] text-slate-100 p-8">
-            {/* Header */}
-            <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-8 gap-4">
-                <div>
-                    <h1 className="text-3xl font-bold flex items-center gap-3 text-white">
-                        <Calculator className="w-8 h-8 text-emerald-500" />
-                        Proyección de Compras Anual
-                    </h1>
-                    <p className="text-slate-400 mt-2 max-w-2xl">
-                        Cálculo automático basado en histórico de consumo considerando Lead Time (Tiempos de Entrega).
-                    </p>
-                </div>
-                <div className="flex gap-2">
-                    <button
-                        onClick={handleExportPDF}
-                        className="bg-purple-600 hover:bg-purple-500 text-white px-4 py-3 rounded-xl flex items-center gap-2 font-medium transition-all shadow-lg hover:shadow-purple-500/20"
-                    >
-                        <FileText className="w-5 h-5" />
-                        PDF Requisición
-                    </button>
-                    <button
-                        onClick={handleExportExcel}
-                        className="bg-emerald-600 hover:bg-emerald-500 text-white px-4 py-3 rounded-xl flex items-center gap-2 font-medium transition-all shadow-lg hover:shadow-emerald-500/20"
-                    >
-                        <Download className="w-5 h-5" />
-                        Excel Completo
-                    </button>
-                </div>
+        <div className="min-h-screen bg-[#0f111a] text-slate-100 p-4 md:p-8 relative overflow-hidden">
+            {/* Ambient Background */}
+            <div className="absolute top-0 left-0 w-full h-full overflow-hidden pointer-events-none -z-10">
+                <div className="absolute top-[-20%] left-[-10%] w-[60%] h-[60%] bg-emerald-500/5 rounded-full blur-[120px]" />
+                <div className="absolute bottom-[-20%] right-[-10%] w-[60%] h-[60%] bg-blue-500/5 rounded-full blur-[120px]" />
             </div>
 
-            {/* KPI Cards */}
-            <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
-                <div className="bg-slate-800/50 border border-slate-700 p-6 rounded-2xl flex items-center gap-4">
-                    <div className="p-3 bg-emerald-500/10 rounded-xl">
-                        <DollarSign className="w-6 h-6 text-emerald-500" />
-                    </div>
-                    <div>
-                        <p className="text-slate-400 text-sm">Presupuesto Estimado</p>
-                        <p className="text-2xl font-bold text-white">
-                            ₡{totalEstimado.toLocaleString('es-CR', { maximumFractionDigits: 0 })}
+            <div className="relative z-10 max-w-7xl mx-auto space-y-6">
+                {/* Header */}
+                <div className="flex flex-col md:flex-row justify-between items-end gap-6 pb-2 border-b border-white/5">
+                    <div className="space-y-1">
+                        <PageHeader title="Proyección de Compras Anual" icon={Calculator} themeColor="emerald" />
+                        <p className="text-slate-500 text-sm font-medium tracking-wide">
+                            Cálculo basado en histórico de consumo real considerando Lead Time.
                         </p>
                     </div>
-                </div>
-                <div className="bg-slate-800/50 border border-slate-700 p-6 rounded-2xl flex items-center gap-4">
-                    <div className="p-3 bg-blue-500/10 rounded-xl">
-                        <Package className="w-6 h-6 text-blue-500" />
-                    </div>
-                    <div>
-                        <p className="text-slate-400 text-sm">Artículos a Comprar</p>
-                        <p className="text-2xl font-bold text-white">
-                            {articulosAComprar} <span className="text-sm font-normal text-slate-500">de {data.length}</span>
-                        </p>
-                    </div>
-                </div>
-                <div className="bg-slate-800/50 border border-slate-700 p-6 rounded-2xl flex items-center gap-4">
-                    <div className="p-3 bg-purple-500/10 rounded-xl">
-                        <Calendar className="w-6 h-6 text-purple-500" />
-                    </div>
-                    <div>
-                        <p className="text-slate-400 text-sm">Lead Time</p>
-                        <p className="text-2xl font-bold text-white">
-                            {mesesLeadTime} <span className="text-sm font-normal text-slate-500">Meses</span>
-                        </p>
+                    <div className="flex gap-3">
+                        <button onClick={handleExportPDF} className="glass-button px-5 py-2.5 flex items-center gap-2 text-purple-400 hover:text-white rounded-xl">
+                            <FileText className="w-4 h-4" />
+                            <span className="font-bold text-xs">PDF REQUISICIÓN</span>
+                        </button>
+                        <button onClick={handleExportExcel} className="glass-button px-5 py-2.5 flex items-center gap-2 text-emerald-400 hover:text-white rounded-xl">
+                            <Download className="w-4 h-4" />
+                            <span className="font-bold text-xs">EXCEL COMPLETO</span>
+                        </button>
                     </div>
                 </div>
-                <div className="bg-slate-800/50 border border-slate-700 p-6 rounded-2xl flex items-center gap-4">
-                    <div className="p-3 bg-orange-500/10 rounded-xl">
-                        <BarChartIcon className="w-6 h-6 text-orange-500" />
-                    </div>
-                    <div>
-                        <p className="text-slate-400 text-sm">Rubros de Gasto</p>
-                        <p className="text-2xl font-bold text-white">
-                            {chartData.length} <span className="text-sm font-normal text-slate-500">Categorías</span>
-                        </p>
-                    </div>
-                </div>
-            </div>
 
-            {/* Analysis Section: Chart & Controls */}
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 mb-8">
-                {/* Controls */}
-                <div className="bg-slate-800/30 border border-slate-700 rounded-2xl p-6 lg:col-span-1">
-                    <h3 className="text-lg font-bold text-white mb-6 flex items-center gap-2">
-                        <Settings2 className="w-5 h-5 text-blue-400" />
-                        Configuración del Modelo
-                    </h3>
-                    <div className="space-y-8">
-                        <div>
-                            <label className="block text-sm font-medium text-slate-300 mb-2">
-                                Histórico a Considerar (Meses)
-                            </label>
-                            <input
-                                type="range"
-                                min="1"
-                                max="60"
-                                value={mesesHistorico}
-                                onChange={e => setMesesHistorico(Number(e.target.value))}
-                                className="w-full h-2 bg-slate-700 rounded-lg appearance-none cursor-pointer accent-purple-500"
-                            />
-                            <div className="flex justify-between text-xs text-slate-500 mt-2">
-                                <span>1 mes</span>
-                                <span className="text-purple-400 font-bold bg-purple-500/10 px-2 py-1 rounded">{mesesHistorico} meses</span>
-                                <span>60 meses</span>
+                {/* KPIs Row */}
+                <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+                    <StatCard title="Presupuesto Estimado" value={`₡${stats.totalPresupuesto.toLocaleString()}`} icon={DollarSign} color="emerald" loading={loading} />
+                    <StatCard title="Artículos a Comprar" value={stats.itemsAComprar} subtitle={`de ${stats.totalItems}`} icon={Package} color="blue" loading={loading} />
+                    <StatCard title="Lead Time (Promedio)" value={`${mesesLeadTime} Meses`} icon={Calendar} color="purple" />
+                    <StatCard title="Rubros Activos" value={stats.totalCategorias} icon={BarChartIcon} color="orange" loading={loading} />
+                </div>
+
+                {/* Model and Charts Section */}
+                <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
+                    {/* Controls Sidebar */}
+                    <div className="lg:col-span-4 glass-card p-6 space-y-8 flex flex-col justify-between">
+                        <div className="space-y-8">
+                            <div className="flex items-center gap-3 border-b border-white/5 pb-4">
+                                <div className="p-2 bg-emerald-500/10 rounded-lg">
+                                    <Settings2 className="w-5 h-5 text-emerald-400" />
+                                </div>
+                                <h3 className="text-sm font-black text-white uppercase tracking-widest italic">Configuración del Modelo</h3>
+                            </div>
+
+                            <HighContrastSlider label="Histórico (Meses)" min={1} max={60} value={mesesHistorico} onChange={setMesesHistorico} color="purple" />
+                            <HighContrastSlider label="Lead Time (Espera)" min={1} max={18} value={mesesLeadTime} onChange={setMesesLeadTime} color="blue" />
+                            <HighContrastSlider label="Cobertura (Ciclo)" min={1} max={24} value={mesesCiclo} onChange={setMesesCiclo} color="emerald" />
+                        </div>
+
+                        <div className="space-y-3 pt-6 border-t border-white/5">
+                            <label className="block text-[11px] font-black text-slate-400 uppercase tracking-widest italic px-1">Factor de Seguridad</label>
+                            <div className="relative group">
+                                <select
+                                    value={factorSeguridad}
+                                    onChange={e => setFactorSeguridad(Number(e.target.value))}
+                                    className="w-full bg-slate-900 border border-white/10 rounded-2xl px-5 py-4 text-white font-black text-sm outline-none appearance-none hover:border-white/20 transition-all cursor-pointer shadow-inner"
+                                >
+                                    <option value="1.0">0% (Justo a Tiempo)</option>
+                                    <option value="1.1">10% (Recomendado)</option>
+                                    <option value="1.2">20% (Conservador)</option>
+                                </select>
+                                <ChevronDown className="absolute right-5 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-500 pointer-events-none transition-transform group-hover:text-slate-300" />
                             </div>
                         </div>
-                        <div>
-                            <label className="block text-sm font-medium text-slate-300 mb-2">
-                                Tiempo de Espera (Lead Time)
-                            </label>
-                            <input
-                                type="range"
-                                min="1"
-                                max="18"
-                                value={mesesLeadTime}
-                                onChange={e => setMesesLeadTime(Number(e.target.value))}
-                                className="w-full h-2 bg-slate-700 rounded-lg appearance-none cursor-pointer accent-blue-500"
-                            />
-                            <div className="flex justify-between text-xs text-slate-500 mt-2">
-                                <span>1 mes</span>
-                                <span className="text-blue-400 font-bold bg-blue-500/10 px-2 py-1 rounded">{mesesLeadTime} meses</span>
-                                <span>18 meses</span>
+                    </div>
+
+                    {/* Bar Chart Section */}
+                    <div className="lg:col-span-8 glass-card p-6 flex flex-col h-full min-h-[500px]">
+                        <div className="flex items-center justify-between mb-8 border-b border-white/5 pb-4">
+                            <div className="flex items-center gap-3">
+                                <div className="p-2 bg-purple-500/10 rounded-lg">
+                                    <PieChart className="w-5 h-5 text-purple-400" />
+                                </div>
+                                <h3 className="text-sm font-black text-white uppercase tracking-widest italic">Distribución Presupuestaria</h3>
                             </div>
+                            <span className="text-[10px] font-black text-slate-500 uppercase tracking-tighter">Top 15 Partidas por Costo</span>
                         </div>
-                        <div>
-                            <label className="block text-sm font-medium text-slate-300 mb-2">
-                                Ciclo Operativo (Cobertura)
-                            </label>
-                            <input
-                                type="range"
-                                min="1"
-                                max="24"
-                                value={mesesCiclo}
-                                onChange={e => setMesesCiclo(Number(e.target.value))}
-                                className="w-full h-2 bg-slate-700 rounded-lg appearance-none cursor-pointer accent-emerald-500"
-                            />
-                            <div className="flex justify-between text-xs text-slate-500 mt-2">
-                                <span>1 mes</span>
-                                <span className="text-emerald-400 font-bold bg-emerald-500/10 px-2 py-1 rounded">{mesesCiclo} meses</span>
-                                <span>24 meses</span>
-                            </div>
-                        </div>
-                        <div>
-                            <label className="block text-sm font-medium text-slate-300 mb-2">
-                                Factor de Seguridad
-                            </label>
-                            <select
-                                value={factorSeguridad}
-                                onChange={e => setFactorSeguridad(Number(e.target.value))}
-                                className="w-full bg-slate-900 border border-slate-600 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-blue-500 appearance-none"
-                            >
-                                <option value="1.0">0% (Justo a tiempo)</option>
-                                <option value="1.1">10% (Recomendado)</option>
-                                <option value="1.2">20% (Conservador)</option>
-                                <option value="1.3">30% (Muy Conservador)</option>
-                            </select>
-                        </div>
-                    </div>
-                </div>
 
-                {/* Chart */}
-                <div className="bg-slate-800/30 border border-slate-700 rounded-2xl p-6 lg:col-span-2 flex flex-col">
-                    <h3 className="text-lg font-bold text-white mb-2 flex items-center gap-2">
-                        <PieChart className="w-5 h-5 text-purple-400" />
-                        Distribución Presupuestaria por Código de Gasto
-                    </h3>
-                    <div className="flex-1 min-h-[300px] w-full">
-                        <ResponsiveContainer width="100%" height="100%">
-                            <BarChart data={chartData} margin={{ top: 20, right: 30, left: 20, bottom: 60 }}>
-                                <CartesianGrid strokeDasharray="3 3" stroke="#374151" />
-                                <XAxis
-                                    dataKey="code"
-                                    stroke="#F8FAFC"
-                                    fontSize={11}
-                                    tickLine={false}
-                                    axisLine={false}
-                                    angle={-90}
-                                    textAnchor="end"
-                                    interval={0}
-                                    height={60}
-                                    dy={10}
-                                />
-                                <YAxis
-                                    stroke="#F8FAFC"
-                                    fontSize={12}
-                                    tickLine={false}
-                                    axisLine={false}
-                                    tickFormatter={(value) => `₡${(value / 1000000).toFixed(1)}M`}
-                                />
-                                <Tooltip
-                                    cursor={{ fill: '#374151', opacity: 0.4 }}
-                                    content={({ active, payload }) => {
-                                        if (active && payload && payload.length) {
-                                            const data = payload[0].payload;
-                                            return (
-                                                <div className="bg-[#1E293B] border border-[#475569] p-3 rounded shadow-lg">
-                                                    <p className="font-bold text-[#FACC15] mb-1">{data.name}</p>
-                                                    <p className="text-white text-sm">
-                                                        Monto Proyectado <span className="text-[#FACC15] font-bold">({data.code})</span>:
-                                                        <span className="font-bold ml-1">₡{data.value.toLocaleString()}</span>
-                                                    </p>
-                                                </div>
-                                            );
-                                        }
-                                        return null;
-                                    }}
-                                />
-                                <Bar dataKey="value" radius={[4, 4, 0, 0]}>
-                                    {chartData.map((_, index) => (
-                                        <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
-                                    ))}
-                                </Bar>
-                            </BarChart>
-                        </ResponsiveContainer>
-                    </div>
-                </div>
-            </div>
-
-            {/* Filters Bar */}
-            <div className="bg-slate-800/50 border border-slate-700 rounded-xl p-4 mb-6 flex flex-col md:flex-row gap-4 items-center justify-between shadow-sm">
-                <div className="flex items-center gap-4 w-full md:w-auto flex-1">
-                    <div className="relative w-full max-w-md">
-                        <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400" />
-                        <input
-                            type="text"
-                            placeholder="Buscar por código o nombre..."
-                            value={searchTerm}
-                            onChange={(e) => { setSearchTerm(e.target.value); setCurrentPage(1); }}
-                            className="w-full bg-slate-900 border border-slate-600 rounded-lg pl-10 pr-4 py-2.5 text-white focus:ring-2 focus:ring-emerald-500 focus:border-transparent transition-all"
-                        />
-                    </div>
-
-                    <div className="relative w-full max-w-sm">
-                        <Filter className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400" />
-                        <select
-                            value={selectedGasto}
-                            onChange={(e) => { setSelectedGasto(e.target.value); setCurrentPage(1); }}
-                            className="w-full bg-slate-900 border border-slate-600 rounded-lg pl-10 pr-8 py-2.5 text-white focus:ring-2 focus:ring-purple-500 appearance-none cursor-pointer truncate"
-                        >
-                            <option value="TODOS">Todos los Rubros de Gasto</option>
-                            {uniqueGastos.map(g => (
-                                <option key={g} value={g}>{g}</option>
-                            ))}
-                        </select>
-                    </div>
-                </div>
-                <div className="text-sm text-slate-400 px-4">
-                    Mostrando <span className="text-white font-bold">{processedData.length}</span> resultados filtrados
-                </div>
-            </div>
-
-            {/* Main Table */}
-            <div className="bg-slate-800/50 border border-slate-700 rounded-2xl overflow-hidden shadow-xl flex flex-col">
-                <div className="overflow-x-auto">
-                    <table className="w-full text-left border-collapse">
-                        <thead>
-                            <tr className="bg-slate-900/80 text-slate-400 text-xs uppercase tracking-wider">
-                                <th className="p-4 border-b border-slate-700 font-medium cursor-pointer hover:bg-slate-800/50 transition-colors"
-                                    onClick={() => handleSort('nombre_articulo')}>
-                                    Artículo <SortIcon column="nombre_articulo" />
-                                </th>
-                                <th className="p-4 border-b border-slate-700 font-medium text-right cursor-pointer hover:bg-slate-800/50"
-                                    onClick={() => handleSort('stock_actual')}>
-                                    Stock Hoy <SortIcon column="stock_actual" />
-                                </th>
-                                <th className="p-4 border-b border-slate-700 font-medium text-right bg-blue-900/10 cursor-pointer hover:bg-slate-800/50"
-                                    onClick={() => handleSort('promedio_mensual')}>
-                                    Consumo/Mes <SortIcon column="promedio_mensual" />
-                                </th>
-                                <th className="p-4 border-b border-slate-700 font-medium text-right bg-blue-900/10 cursor-pointer hover:bg-slate-800/50"
-                                    onClick={() => handleSort('consumo_espera')}>
-                                    <span className="flex items-center justify-end gap-1">
-                                        Consumo Espera <ArrowRight className="w-3 h-3" />
-                                    </span>
-                                </th>
-                                <th className="p-4 border-b border-slate-700 font-medium text-right cursor-pointer hover:bg-slate-800/50"
-                                    onClick={() => handleSort('stock_residual')}>
-                                    Residual Est. <SortIcon column="stock_residual" />
-                                </th>
-                                <th className="p-4 border-b border-slate-700 font-medium text-right bg-emerald-900/20 text-emerald-400 cursor-pointer hover:bg-slate-800/50"
-                                    onClick={() => handleSort('cantidad_sugerida')}>
-                                    Sugerencia Compra <SortIcon column="cantidad_sugerida" />
-                                </th>
-                                <th className="p-4 border-b border-slate-700 font-medium text-right cursor-pointer hover:bg-slate-800/50"
-                                    onClick={() => handleSort('costo_estimado')}>
-                                    Costo Est. <SortIcon column="costo_estimado" />
-                                </th>
-                            </tr>
-                        </thead>
-                        <tbody className="divide-y divide-slate-700/50">
-                            {loading ? (
-                                <tr>
-                                    <td colSpan={7} className="p-8 text-center text-slate-500">
-                                        <div className="flex justify-center mb-2">
-                                            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-emerald-500"></div>
-                                        </div>
-                                        Calculando proyecciones (Descargando datos completos)...
-                                    </td>
-                                </tr>
-                            ) : paginatedData.length === 0 ? (
-                                <tr>
-                                    <td colSpan={7} className="p-8 text-center text-slate-500">
-                                        No hay datos de consumo histórico para proyectar.
-                                    </td>
-                                </tr>
-                            ) : (
-                                paginatedData.map((item) => {
-                                    // Alert Logic: Stockout before lead time?
-                                    // If stock < consumption_during_wait, it is critical.
-                                    const isCritical = item.stock_actual < item.consumo_espera;
-
-                                    return (
-                                        <tr key={item.codigo_articulo} className={`hover:bg-slate-800/50 transition-colors ${isCritical ? 'bg-red-900/10' : ''}`}>
-                                            <td className="p-4">
-                                                <div className="flex items-start gap-3">
-                                                    {isCritical && (
-                                                        <div className="mt-1" title="ALERTA: Stock insuficiente para cubrir el tiempo de espera">
-                                                            <AlertOctagon className="w-5 h-5 text-red-500 animate-pulse" />
-                                                        </div>
-                                                    )}
-                                                    <div>
-                                                        <div className={`font-medium ${isCritical ? 'text-red-200' : 'text-white'}`}>
-                                                            {item.nombre_articulo}
-                                                        </div>
-                                                        <div className="text-xs text-slate-500">#{item.codigo_articulo} • {item.unidad}</div>
-                                                        {item.nombre_partida && (
-                                                            <div className="text-[10px] text-slate-600 mt-1 uppercase tracking-wider">{item.nombre_partida.substring(0, 40)}...</div>
-                                                        )}
-                                                    </div>
-                                                </div>
-                                            </td>
-                                            <td className="p-4 text-right font-mono text-slate-300">
-                                                {item.stock_actual}
-                                            </td>
-                                            <td className="p-4 text-right font-mono text-blue-300 bg-blue-500/5">
-                                                {item.promedio_mensual}
-                                            </td>
-                                            <td className="p-4 text-right font-mono text-blue-300 bg-blue-500/5">
-                                                {item.consumo_espera}
-                                            </td>
-                                            <td className={`p-4 text-right font-mono font-bold ${item.stock_residual < 0 ? 'text-red-400' : 'text-slate-400'}`}>
-                                                {item.stock_residual}
-                                                {/* Removed generic icon, using context icon in first column */}
-                                            </td>
-                                            <td className="p-4 text-right bg-emerald-500/5">
-                                                <span className={`inline-block px-3 py-1 rounded-full font-bold text-sm ${item.cantidad_sugerida > 0
-                                                    ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30'
-                                                    : 'text-slate-600'
-                                                    }`}>
-                                                    {Math.ceil(item.cantidad_sugerida)}
-                                                </span>
-                                            </td>
-                                            <td className="p-4 text-right font-mono text-slate-300">
-                                                ₡{item.costo_estimado.toLocaleString('es-CR', { minimumFractionDigits: 2 })}
-                                            </td>
-                                        </tr>
-                                    );
-                                })
+                        <div className="flex-1 w-full relative">
+                            {loading && (
+                                <div className="absolute inset-0 flex items-center justify-center bg-slate-900/40 backdrop-blur-sm rounded-2xl z-20">
+                                    <div className="w-10 h-10 border-4 border-emerald-500/20 border-t-emerald-500 rounded-full animate-spin" />
+                                </div>
                             )}
-                        </tbody>
-                    </table>
-                </div>
-
-                {/* Pagination Controls */}
-                {!loading && processedData.length > 0 && (
-                    <div className="p-4 border-t border-slate-700 flex items-center justify-between bg-slate-900/50">
-                        <div className="text-sm text-slate-400">
-                            Mostrando <span className="font-bold text-white">{(currentPage - 1) * itemsPerPage + 1}</span> - <span className="font-bold text-white">{Math.min(currentPage * itemsPerPage, processedData.length)}</span> de <span className="font-bold text-white">{processedData.length}</span> resultados
-                        </div>
-                        <div className="flex items-center gap-2">
-                            <button
-                                onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
-                                disabled={currentPage === 1}
-                                className="p-2 bg-slate-800 hover:bg-slate-700 text-white rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed border border-slate-700"
-                            >
-                                <ChevronLeft className="w-5 h-5" />
-                            </button>
-                            <span className="text-sm font-medium text-slate-300 px-2 min-w-[3rem] text-center">
-                                {currentPage} / {totalPages}
-                            </span>
-                            <button
-                                onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
-                                disabled={currentPage === totalPages}
-                                className="p-2 bg-slate-800 hover:bg-slate-700 text-white rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed border border-slate-700"
-                            >
-                                <ChevronRight className="w-5 h-5" />
-                            </button>
+                            <ResponsiveContainer width="100%" height="100%">
+                                <BarChart data={chartData} margin={{ top: 10, right: 10, left: 0, bottom: 60 }}>
+                                    <CartesianGrid strokeDasharray="3 3" stroke="#ffffff05" vertical={false} />
+                                    <XAxis dataKey="code" stroke="#94a3b830" fontSize={10} tickLine={false} axisLine={false} angle={-45} textAnchor="end" interval={0} height={80} dy={10} tick={{ fill: '#64748b', fontWeight: 900 }} />
+                                    <YAxis stroke="#94a3b830" fontSize={10} tickLine={false} axisLine={false} tickFormatter={(val) => `₡${(val / 1000000).toFixed(1)}M`} tick={{ fill: '#64748b', fontWeight: 900 }} />
+                                    <Tooltip content={<ChartTooltip />} cursor={{ fill: '#ffffff05' }} />
+                                    <Bar dataKey="value" radius={[6, 6, 0, 0]} barSize={32}>
+                                        {chartData.map((_, index) => <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} fillOpacity={0.9} />)}
+                                    </Bar>
+                                </BarChart>
+                            </ResponsiveContainer>
                         </div>
                     </div>
-                )}
+                </div>
+
+                {/* Filters Row */}
+                <div className="glass-card p-5 flex flex-col md:flex-row gap-4 items-center justify-between">
+                    <div className="flex items-center gap-4 w-full md:w-[70%] lg:w-[75%]">
+                        <div className="relative flex-1 group">
+                            <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-600 group-focus-within:text-emerald-400 transition-colors" />
+                            <input
+                                placeholder="Buscar por artículo o código específico..."
+                                value={searchTerm}
+                                onChange={e => { setSearchTerm(e.target.value); setCurrentPage(1); }}
+                                className="w-full bg-slate-950/50 border border-white/10 rounded-2xl pl-12 pr-4 py-3.5 text-sm text-slate-200 focus:ring-1 focus:ring-emerald-500/50 outline-none transition-all placeholder:text-slate-700 font-medium"
+                            />
+                        </div>
+                        <div className="relative w-full max-w-[340px]" ref={dropdownRef}>
+                            <button
+                                onClick={() => setIsDropdownOpen(!isDropdownOpen)}
+                                className="w-full bg-slate-950/50 border border-emerald-500/20 rounded-2xl px-6 py-3.5 text-xs font-black text-slate-300 flex items-center justify-between hover:bg-slate-900 transition-all uppercase tracking-widest italic"
+                            >
+                                <span className="truncate flex items-center gap-2">
+                                    <Filter className="w-4 h-4 text-emerald-400" />
+                                    {selectedGasto === 'TODOS' ? 'Filtrar por Rubro de Gasto' : selectedGasto}
+                                </span>
+                                <ChevronRight className={`w-4 h-4 transition-transform duration-300 ${isDropdownOpen ? 'rotate-[-90deg]' : 'rotate-90'}`} />
+                            </button>
+                            {isDropdownOpen && (
+                                <div className="absolute bottom-[calc(100%+8px)] left-0 w-full bg-[#020617] border border-white/10 rounded-2xl shadow-[0_20px_50px_rgba(0,0,0,0.8)] z-[100] animate-in fade-in slide-in-from-bottom-2">
+                                    <div className="max-h-[300px] overflow-y-auto custom-scrollbar p-2 space-y-1">
+                                        <button onClick={() => { setSelectedGasto('TODOS'); setIsDropdownOpen(false); }} className={`w-full text-left px-5 py-3 rounded-xl text-[10px] font-black uppercase transition-all ${selectedGasto === 'TODOS' ? 'bg-emerald-500/10 text-emerald-400 ring-1 ring-emerald-500/20' : 'text-slate-500 hover:bg-white/5 hover:text-white'}`}>TODAS LAS PARTIDAS</button>
+                                        {uniqueGastos.map(g => (
+                                            <button key={g} onClick={() => { setSelectedGasto(g); setIsDropdownOpen(false); }} className={`w-full text-left px-5 py-3 rounded-xl text-[10px] font-black uppercase transition-all ${selectedGasto === g ? 'bg-emerald-500/10 text-emerald-400 ring-1 ring-emerald-500/20' : 'text-slate-500 hover:bg-white/5 hover:text-white'}`}>{g}</button>
+                                        ))}
+                                    </div>
+                                </div>
+                            )}
+                        </div>
+                    </div>
+                    <div className="flex items-center gap-2 text-slate-500 text-[10px] font-black uppercase tracking-widest whitespace-nowrap bg-white/5 px-4 py-3.5 rounded-2xl border border-white/5">
+                        Mostrando <span className="text-emerald-400 italic text-sm font-black mx-1">{processedData.length}</span> resultados filtrados
+                    </div>
+                </div>
+
+                {/* Table Section */}
+                <div className="glass-card overflow-hidden flex flex-col min-h-[600px]">
+                    <div className="overflow-x-auto">
+                        <table className="w-full text-left border-collapse">
+                            <thead>
+                                <tr className="bg-white/5 text-slate-500 text-[10px] font-black tracking-widest uppercase italic border-b border-white/5">
+                                    <th className="p-6 cursor-pointer hover:bg-white/10 transition-colors w-[45%]" onClick={() => handleSort('nombre_articulo')}>ARTÍCULO <SortIcon column="nombre_articulo" /></th>
+                                    <th className="p-6 text-right cursor-pointer hover:bg-white/10 transition-colors" onClick={() => handleSort('stock_actual')}>STOCK <SortIcon column="stock_actual" /></th>
+                                    <th className="p-6 text-right cursor-pointer hover:bg-white/10 transition-colors" onClick={() => handleSort('promedio_mensual')}>CONS/MES <SortIcon column="promedio_mensual" /></th>
+                                    <th className="p-6 text-right text-emerald-400 cursor-pointer hover:bg-emerald-500/10 transition-colors" onClick={() => handleSort('cantidad_sugerida')}>SUGERENCIA <SortIcon column="cantidad_sugerida" /></th>
+                                    <th className="p-6 text-right cursor-pointer hover:bg-white/10 transition-colors" onClick={() => handleSort('costo_estimado')}>COSTO EST. <SortIcon column="costo_estimado" /></th>
+                                </tr>
+                            </thead>
+                            <tbody className={`text-sm text-slate-300 divide-y divide-white/[0.03] transition-opacity duration-500 ${loading ? 'opacity-30 pointer-events-none' : 'opacity-100'}`}>
+                                {paginatedData.map(item => (
+                                    <tr key={item.codigo_articulo} className="hover:bg-white/[0.02] transition-colors group">
+                                        <td className="p-6">
+                                            <div>
+                                                <p className="text-[13px] font-black text-white uppercase italic tracking-tight leading-tight group-hover:text-emerald-400 transition-colors">{item.nombre_articulo}</p>
+                                                <div className="flex items-center gap-2 mt-2 text-slate-400 text-[11px] font-bold">
+                                                    <span className="font-mono bg-white/5 px-2 py-0.5 rounded-md">#{item.codigo_articulo}</span>
+                                                    <span className="w-1.5 h-1.5 rounded-full bg-emerald-500/40" />
+                                                    <span className="uppercase tracking-widest text-[10px]">{item.unidad}</span>
+                                                </div>
+                                            </div>
+                                        </td>
+                                        <td className="p-6 text-right font-mono text-[11px] font-black text-slate-500">{item.stock_actual}</td>
+                                        <td className="p-6 text-right font-mono text-[11px] font-black text-blue-400">{item.promedio_mensual}</td>
+                                        <td className="p-6 text-right">
+                                            <span className={`px-4 py-2 rounded-xl text-[12px] font-black italic shadow-2xl transition-all ${item.cantidad_sugerida > 0 ? 'bg-emerald-500 text-[#020617] ring-2 ring-emerald-500/50 shadow-emerald-500/20' : 'bg-white/5 text-slate-500 border border-white/5 opacity-40'}`}>
+                                                {Math.ceil(item.cantidad_sugerida)}
+                                            </span>
+                                        </td>
+                                        <td className="p-6 text-right font-mono text-[11px] font-black text-slate-400 italic">₡{item.costo_estimado.toLocaleString()}</td>
+                                    </tr>
+                                ))}
+                            </tbody>
+                        </table>
+                        {!loading && paginatedData.length === 0 && (
+                            <div className="p-32 flex flex-col items-center justify-center gap-4">
+                                <AlertOctagon className="w-12 h-12 text-slate-800" />
+                                <p className="text-xs font-black uppercase text-slate-700 tracking-widest">Sin datos encontrados</p>
+                            </div>
+                        )}
+                    </div>
+
+                    {/* Pagination */}
+                    <div className="mt-auto p-6 border-t border-white/5 bg-black/20 flex items-center justify-between">
+                        <div className="text-[10px] font-black text-slate-500 uppercase tracking-widest italic">
+                            Página <span className="text-blue-400 mx-1">{currentPage}</span> de {totalPages || 1}
+                        </div>
+                        <div className="flex gap-2">
+                            <button disabled={currentPage <= 1 || loading} onClick={() => setCurrentPage(p => p - 1)} className="glass-button p-2.5 rounded-xl"><ChevronLeft className="w-5 h-5 text-slate-400" /></button>
+                            <button disabled={currentPage >= totalPages || loading} onClick={() => setCurrentPage(p => p + 1)} className="glass-button p-2.5 rounded-xl"><ChevronRight className="w-5 h-5 text-slate-400" /></button>
+                        </div>
+                    </div>
+                </div>
             </div>
         </div>
     );
+}
+
+// Components
+function StatCard({ title, value, subtitle, icon: Icon, color, loading }: any) {
+    const colorMap: any = {
+        emerald: 'text-emerald-500 bg-emerald-500/10 ring-emerald-500/20',
+        blue: 'text-blue-500 bg-blue-500/10 ring-blue-500/20',
+        purple: 'text-purple-500 bg-purple-500/10 ring-purple-500/20',
+        orange: 'text-orange-500 bg-orange-500/10 ring-orange-500/20'
+    };
+    return (
+        <div className="glass-card p-6 flex flex-col justify-between h-28 hover:translate-y-[-2px]">
+            <div className="flex items-center justify-between">
+                <p className="text-slate-500 text-[10px] font-black uppercase tracking-widest">{title}</p>
+                <div className={`p-2 rounded-lg ring-1 ${colorMap[color]}`}><Icon className="w-4 h-4" /></div>
+            </div>
+            {loading ? <div className="h-6 w-3/4 bg-white/5 animate-pulse rounded mt-2" /> : (
+                <div className="flex items-baseline gap-2">
+                    <p className="text-xl font-black text-white italic tracking-tight">{value}</p>
+                    {subtitle && <span className="text-[10px] font-bold text-slate-600 mb-0.5">{subtitle}</span>}
+                </div>
+            )}
+        </div>
+    );
+}
+
+function HighContrastSlider({ label, value, min, max, onChange, color }: any) {
+    const accentMap: any = {
+        emerald: 'accent-emerald-500 text-emerald-400 bg-emerald-500/10',
+        blue: 'accent-blue-500 text-blue-400 bg-blue-500/10',
+        purple: 'accent-purple-500 text-purple-400 bg-purple-500/10'
+    };
+    return (
+        <div className="space-y-4">
+            <div className="flex justify-between items-center">
+                <label className="text-[11px] font-black text-slate-400 uppercase tracking-widest italic">{label}</label>
+                <span className={`px-4 py-1.5 rounded-full text-[13px] font-black italic shadow-lg ring-1 ring-white/10 ${accentMap[color]}`}>{value} meses</span>
+            </div>
+            <input
+                type="range" min={min} max={max} value={value}
+                onChange={e => onChange(Number(e.target.value))}
+                className={`w-full h-1.5 bg-black rounded-full appearance-none cursor-pointer ${accentMap[color].split(' ')[0]}`}
+            />
+        </div>
+    );
+}
+
+function ChartTooltip({ active, payload }: any) {
+    if (active && payload?.[0]) {
+        const d = payload[0].payload;
+        return (
+            <div className="bg-[#020617] border border-white/20 p-5 rounded-2xl shadow-2xl backdrop-blur-xl">
+                <p className="text-[10px] font-black text-blue-400 uppercase italic mb-2">{d.name}</p>
+                <p className="text-white text-lg font-black italic leading-none">₡{d.value.toLocaleString()}</p>
+                <p className="text-[9px] text-slate-600 font-bold mt-2 uppercase tracking-tighter">Código Partida: {d.code}</p>
+            </div>
+        );
+    }
+    return null;
 }

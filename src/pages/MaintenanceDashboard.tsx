@@ -19,7 +19,9 @@ import {
     Layers,
     PlayCircle,
     CheckCircle,
-    X
+    X,
+    AlertTriangle,
+    Clock
 } from 'lucide-react';
 import {
     ResponsiveContainer,
@@ -34,7 +36,9 @@ import {
     Legend,
     Cell,
     PieChart,
-    Pie
+    Pie,
+    AreaChart,
+    Area
 } from 'recharts';
 import {
     format,
@@ -50,6 +54,7 @@ import * as XLSX from 'xlsx';
 import { DashboardSkeleton } from '../components/Skeleton';
 import VirtualizedTable from '../components/VirtualizedTable';
 import { PageHeader } from '../components/ui/PageHeader';
+import { Card } from '../components/ui/Card';
 import { cn } from '../lib/utils';
 
 interface DashboardMetrics {
@@ -57,11 +62,12 @@ interface DashboardMetrics {
     totalEjecutadas: number;
     porcentajeEjecucion: number;
     instalacionesIntervenidas: number;
-    topInstalaciones: { name: string; count: number }[];
-    solicitudesPorMes: { month: string; total: number; executed: number; percentage: number }[];
+    topInstalaciones: { name: string; total: number; executed: number; pending: number; percentage: number }[];
+    solicitudesPorMes: { month: string; total: number; executed: number; eficiencia: number }[];
     solicitudesPorArea: { area: string; total: number; executed: number; percentage: number }[];
     performanceSupervisores: { supervisor: string; total: number; executed: number; pending: number; percentage: number }[];
     stalledRequests: number;
+    solicitudesEstancadas: any[];
 }
 
 interface ComparisonMetrics {
@@ -186,9 +192,10 @@ export default function MaintenanceDashboard() {
                 }),
                 supabase
                     .from('vw_dashboard_analyzed')
-                    .select('numero_solicitud', { count: 'exact', head: true })
+                    .select('*')
                     .lte('fecha_solicitud', subDays(new Date(), 10).toISOString())
                     .not('status_normalized', 'in', '(EJECUTADA,FINALIZADA,COMPLETADA,CERRADA,CANCELADA)')
+                    .limit(6)
             ]);
 
             if (curRes.error) throw curRes.error;
@@ -221,6 +228,7 @@ export default function MaintenanceDashboard() {
                         month: format(d, 'MMM. yy', { locale: es }),
                         total: m.total,
                         executed: m.executed,
+                        pending: m.total - m.executed,
                         eficiencia: m.total > 0 ? (m.executed / m.total) * 100 : 0
                     };
                 });
@@ -245,7 +253,11 @@ export default function MaintenanceDashboard() {
                     solicitudesPorArea,
                     solicitudesPorMes,
                     performanceSupervisores,
-                    stalledRequests: stalledRes?.count || 0
+                    stalledRequests: stalledRes?.data?.length || 0,
+                    solicitudesEstancadas: stalledRes?.data?.map((s: any) => ({
+                        ...s,
+                        dias_espera: differenceInDays(new Date(), parseISO(s.fecha_solicitud))
+                    })) || []
                 });
 
                 const calcChange = (c: number, p: number) => p === 0 ? (c > 0 ? 100 : 0) : ((c - p) / p) * 100;
@@ -374,69 +386,16 @@ export default function MaintenanceDashboard() {
     if (!metrics) return null;
 
     return (
-        <div className="min-h-screen bg-[#0F172A] text-slate-100 font-sans relative">
+        <div className="min-h-screen bg-[#0f111a] text-slate-100 font-sans relative">
+            <PageHeader
+                title="Panel de Control (STI)"
+                icon={Activity}
+                themeColor="amber"
+            />
 
-            <svg style={{ height: 0, width: 0, position: 'absolute' }}>
-                <defs>
-                    <linearGradient id="blueGradient" x1="0" y1="0" x2="0" y2="1">
-                        <stop offset="5%" stopColor="#3b82f6" stopOpacity={1} />
-                        <stop offset="95%" stopColor="#2563eb" stopOpacity={0.4} />
-                    </linearGradient>
-                    <linearGradient id="purpleGradient" x1="0" y1="0" x2="0" y2="1">
-                        <stop offset="5%" stopColor="#8B5CF6" stopOpacity={1} />
-                        <stop offset="95%" stopColor="#7c3aed" stopOpacity={0.4} />
-                    </linearGradient>
-                    <linearGradient id="emeraldGradient" x1="0" y1="0" x2="0" y2="1">
-                        <stop offset="5%" stopColor="#10b981" stopOpacity={1} />
-                        <stop offset="95%" stopColor="#059669" stopOpacity={0.4} />
-                    </linearGradient>
-                    <linearGradient id="orangeGradient" x1="0" y1="0" x2="0" y2="1">
-                        <stop offset="5%" stopColor="#f97316" stopOpacity={1} />
-                        <stop offset="95%" stopColor="#ea580c" stopOpacity={0.4} />
-                    </linearGradient>
-                </defs>
-            </svg>
-
-            {/* Header Content */}
-            <div className="max-w-7xl mx-auto px-1 pt-6 flex flex-col gap-8 relative z-10">
-                <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 px-4">
-                    <div className="flex items-center gap-4">
-                        <div className="w-14 h-14 rounded-2xl bg-amber-500/10 border border-amber-500/20 flex items-center justify-center text-amber-500 shadow-[0_0_20px_rgba(245,158,11,0.1)]">
-                            <Activity className="w-8 h-8" />
-                        </div>
-                        <div>
-                            <h1 className="text-3xl font-black text-white italic tracking-tighter leading-none">Panel de Control de Mantenimiento (STI)</h1>
-                            <p className="text-sm font-medium text-slate-400 mt-2">Comparativa de Desempeño y Cobertura</p>
-                            <div className="flex flex-wrap gap-2 mt-4">
-                                {selectedArea && (
-                                    <button onClick={() => setSelectedArea(null)} className="flex items-center gap-2 bg-blue-500/20 border border-blue-500/30 text-blue-400 px-3 py-1.5 rounded-full text-xs font-semibold hover:bg-blue-500/30 transition-colors shadow-lg shadow-blue-500/10">
-                                        Área: {selectedArea} <XCircle className="w-4 h-4" />
-                                    </button>
-                                )}
-                                {selectedSupervisor && (
-                                    <button onClick={() => setSelectedSupervisor(null)} className="flex items-center gap-2 bg-emerald-500/20 border border-emerald-500/30 text-emerald-400 px-3 py-1.5 rounded-full text-xs font-semibold hover:bg-emerald-500/30 transition-colors shadow-lg shadow-emerald-500/10">
-                                        Supervisor: {selectedSupervisor.split('(')[0]} <XCircle className="w-4 h-4" />
-                                    </button>
-                                )}
-                                {selectedMonth && (
-                                    <button onClick={() => setSelectedMonth(null)} className="flex items-center gap-2 bg-purple-500/20 border border-purple-500/30 text-purple-400 px-3 py-1.5 rounded-full text-xs font-semibold hover:bg-purple-500/30 transition-colors shadow-lg shadow-purple-500/10">
-                                        Mes: {selectedMonth} <XCircle className="w-4 h-4" />
-                                    </button>
-                                )}
-                                {selectedInstallation && (
-                                    <button onClick={() => setSelectedInstallation(null)} className="flex items-center gap-2 bg-orange-500/20 border border-orange-500/30 text-orange-400 px-3 py-1.5 rounded-full text-xs font-semibold hover:bg-orange-500/30 transition-colors shadow-lg shadow-orange-500/10">
-                                        Instalación: {selectedInstallation.split('(')[0]} <XCircle className="w-4 h-4" />
-                                    </button>
-                                )}
-                                {showCriticalOnly && (
-                                    <button onClick={() => setShowCriticalOnly(false)} className="flex items-center gap-2 bg-red-500/20 border border-red-500/30 text-red-400 px-3 py-1.5 rounded-full text-xs font-bold animate-pulse shadow-lg shadow-red-500/20">
-                                        FILTRO: ALERTAS CRÍTICAS <XCircle className="w-4 h-4" />
-                                    </button>
-                                )}
-                            </div>
-                        </div>
-                    </div>
-
+            <div className="max-w-7xl mx-auto px-4 pt-6 flex flex-col gap-8 relative z-10">
+                {/* Filters Row */}
+                <div className="flex flex-col md:flex-row items-center justify-between gap-6">
                     <div className="flex flex-col md:flex-row items-center gap-4">
                         <div className="bg-white/5 backdrop-blur-xl border border-white/10 rounded-2xl p-2 flex gap-4 shadow-inner">
                             <div className='flex items-center gap-3 px-3'>
@@ -459,10 +418,38 @@ export default function MaintenanceDashboard() {
                             <Download className="w-4 h-4" /> EXPORTAR
                         </button>
                     </div>
+
+                    <div className="flex flex-wrap gap-2 justify-end">
+                        {selectedArea && (
+                            <button onClick={() => setSelectedArea(null)} className="flex items-center gap-2 bg-blue-500/20 border border-blue-500/30 text-blue-400 px-3 py-1.5 rounded-full text-xs font-semibold hover:bg-blue-500/30 transition-colors shadow-lg shadow-blue-500/10">
+                                Área: {selectedArea} <XCircle className="w-4 h-4" />
+                            </button>
+                        )}
+                        {selectedSupervisor && (
+                            <button onClick={() => setSelectedSupervisor(null)} className="flex items-center gap-2 bg-emerald-500/20 border border-emerald-500/30 text-emerald-400 px-3 py-1.5 rounded-full text-xs font-semibold hover:bg-emerald-500/30 transition-colors shadow-lg shadow-emerald-500/10">
+                                Supervisor: {selectedSupervisor.split('(')[0]} <XCircle className="w-4 h-4" />
+                            </button>
+                        )}
+                        {selectedMonth && (
+                            <button onClick={() => setSelectedMonth(null)} className="flex items-center gap-2 bg-purple-500/20 border border-purple-500/30 text-purple-400 px-3 py-1.5 rounded-full text-xs font-semibold hover:bg-purple-500/30 transition-colors shadow-lg shadow-purple-500/10">
+                                Mes: {selectedMonth} <XCircle className="w-4 h-4" />
+                            </button>
+                        )}
+                        {selectedInstallation && (
+                            <button onClick={() => setSelectedInstallation(null)} className="flex items-center gap-2 bg-orange-500/20 border border-orange-500/30 text-orange-400 px-3 py-1.5 rounded-full text-xs font-semibold hover:bg-orange-500/30 transition-colors shadow-lg shadow-orange-500/10">
+                                Instalación: {selectedInstallation.split('(')[0]} <XCircle className="w-4 h-4" />
+                            </button>
+                        )}
+                        {showCriticalOnly && (
+                            <button onClick={() => setShowCriticalOnly(false)} className="flex items-center gap-2 bg-red-500/20 border border-red-500/30 text-red-400 px-3 py-1.5 rounded-full text-xs font-bold animate-pulse shadow-lg shadow-red-500/20">
+                                FILTRO: ALERTAS CRÍTICAS <XCircle className="w-4 h-4" />
+                            </button>
+                        )}
+                    </div>
                 </div>
 
                 {/* Metrics Grid */}
-                <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4 px-4">
+                <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4">
                     {[
                         { label: 'Solicitudes Totales', value: metrics.totalSolicitudes, icon: Layers, color: 'text-blue-400', bg: 'bg-blue-500/10', trend: comparison?.totalSolicitudesChange, badge: 'VOLUMEN' },
                         { label: 'Ejecutadas', value: metrics.totalEjecutadas, icon: CheckCircle, color: 'text-emerald-400', bg: 'bg-emerald-500/10', trend: comparison?.totalEjecutadasChange, badge: 'ÉXITO' },
@@ -474,13 +461,13 @@ export default function MaintenanceDashboard() {
                             key={i}
                             onClick={() => m.label === 'Alertas Críticas' && setShowCriticalOnly(!showCriticalOnly)}
                             className={cn(
-                                "bg-slate-800/50 border border-white/5 rounded-2xl p-6 flex flex-col group transition-all duration-300 relative overflow-hidden",
-                                m.label === 'Alertas Críticas' ? "cursor-pointer hover:bg-red-500/5 hover:border-red-500/50" : "hover:bg-slate-800/80",
+                                "bg-white/5 backdrop-blur-md border border-white/10 rounded-2xl p-6 flex flex-col group transition-all duration-300 relative overflow-hidden",
+                                m.label === 'Alertas Críticas' ? "cursor-pointer hover:bg-red-500/5 hover:border-red-500/50" : "hover:bg-white/10",
                                 m.pulse && "border-red-500/30 animate-pulse shadow-[0_0_15px_rgba(239,68,68,0.1)]",
                                 showCriticalOnly && m.label === 'Alertas Críticas' && "border-red-500 ring-2 ring-red-500/20 bg-red-500/10"
                             )}>
                             <div className="flex justify-between items-start mb-6">
-                                <div className={`w-12 h-12 rounded-2xl ${m.bg} flex items-center justify-center ${m.color} group-hover:scale-110 transition-transform`}>
+                                <div className={cn("w-12 h-12 rounded-2xl flex items-center justify-center group-hover:scale-110 transition-transform", m.bg, m.color)}>
                                     <m.icon className="w-6 h-6" />
                                 </div>
                                 <span className={cn(
@@ -498,14 +485,13 @@ export default function MaintenanceDashboard() {
                 </div>
             </div>
 
-            <main className="relative z-10 max-w-7xl mx-auto p-4 md:p-6 space-y-8">
+            <main className="relative z-10 max-w-7xl mx-auto p-4 md:p-6 space-y-8 pb-20">
                 {/* Charts Section */}
                 <div className={cn("grid grid-cols-1 lg:grid-cols-2 gap-8 transition-opacity duration-300", loading ? 'opacity-50' : 'opacity-100')}>
 
                     {/* Performance por Área */}
-                    <section className="lg:col-span-2 relative group">
-                        <div className="absolute -inset-1 bg-gradient-to-r from-blue-500/10 to-indigo-500/10 rounded-[2.5rem] blur opacity-25"></div>
-                        <div className="relative bg-[#1E293B]/40 backdrop-blur-3xl border border-white/10 rounded-[2.5rem] p-8 shadow-2xl">
+                    <section className="lg:col-span-2">
+                        <Card className="p-8">
                             <h3 className="text-xl font-black text-white flex items-center gap-3 tracking-tighter italic mb-10 uppercase">
                                 <div className="w-10 h-10 rounded-xl bg-blue-500/10 flex items-center justify-center text-blue-400">
                                     <Wrench className="w-5 h-5" />
@@ -515,6 +501,12 @@ export default function MaintenanceDashboard() {
                             <div className="h-[400px] w-full">
                                 <ResponsiveContainer width="100%" height="100%">
                                     <ComposedChart data={metrics.solicitudesPorArea} onClick={(data) => data?.activeLabel && setSelectedArea(data.activeLabel)}>
+                                        <defs>
+                                            <linearGradient id="blueGradient" x1="0" y1="0" x2="0" y2="1">
+                                                <stop offset="5%" stopColor="#3b82f6" stopOpacity={0.8} />
+                                                <stop offset="95%" stopColor="#3b82f6" stopOpacity={0.2} />
+                                            </linearGradient>
+                                        </defs>
                                         <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.05)" vertical={false} />
                                         <XAxis dataKey="area" stroke="#475569" fontSize={10} tickLine={false} axisLine={false} interval={0} angle={-45} textAnchor="end" height={80} tick={{ fill: '#94a3b8', fontWeight: 900 }} />
                                         <YAxis yAxisId="left" stroke="#475569" fontSize={11} tickLine={false} axisLine={false} tick={{ fill: '#94a3b8', fontWeight: 900 }} />
@@ -524,185 +516,285 @@ export default function MaintenanceDashboard() {
                                         <Bar yAxisId="left" dataKey="total" name="Totales" fill="url(#blueGradient)" radius={[6, 6, 0, 0]} barSize={40}>
                                             {metrics.solicitudesPorArea.map((entry, index) => <Cell key={`cell-${index}`} fill={selectedArea === entry.area ? '#f59e0b' : 'url(#blueGradient)'} />)}
                                         </Bar>
-                                        <Line yAxisId="right" type="linear" dataKey="percentage" name="% Eficiencia" stroke="#f59e0b" strokeWidth={3} dot={{ fill: '#0F172A', stroke: '#f59e0b', strokeWidth: 2, r: 4 }} />
+                                        <Line yAxisId="right" type="linear" dataKey="percentage" name="% Eficiencia" stroke="#f59e0b" strokeWidth={3} dot={{ fill: '#0f111a', stroke: '#f59e0b', strokeWidth: 2, r: 4 }} />
                                     </ComposedChart>
                                 </ResponsiveContainer>
                             </div>
-                        </div>
+                        </Card>
                     </section>
 
-                    {/* Hot-spots y Histórico - Ahora lado a lado */}
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:col-span-2 gap-8">
-                        <section className="bg-slate-800/50 border border-white/5 rounded-2xl p-8 shadow-xl">
-                            <h3 className="text-lg font-black text-white flex items-center gap-3 tracking-tighter italic mb-8 uppercase">
-                                <MapPin className="text-orange-400 w-5 h-5" />
-                                Ejecutado por Instalación
+                    {/* Cobertura por Instalación */}
+                    <section>
+                        <Card className="p-8 h-full">
+                            <h3 className="text-xl font-black text-white flex items-center gap-3 tracking-tighter italic mb-8 uppercase">
+                                <div className="w-10 h-10 rounded-xl bg-orange-500/10 flex items-center justify-center text-orange-400">
+                                    <Building2 className="w-5 h-5" />
+                                </div>
+                                Instalaciones con Mayor Demanda
                             </h3>
-                            <div className="h-[300px] w-full">
+                            <div className="h-[550px] w-full">
                                 <ResponsiveContainer width="100%" height="100%">
-                                    <BarChart layout="vertical" data={metrics.topInstalaciones} margin={{ left: 20 }} onClick={(data) => data?.activeLabel && setSelectedInstallation(data.activeLabel)}>
+                                    <BarChart layout="vertical" data={metrics.topInstalaciones} onClick={(data) => data?.activeLabel && setSelectedInstallation(data.activeLabel)}>
+                                        <defs>
+                                            <linearGradient id="orangeGradient" x1="0" y1="0" x2="1" y2="0">
+                                                <stop offset="5%" stopColor="#f59e0b" stopOpacity={0.8} />
+                                                <stop offset="95%" stopColor="#f59e0b" stopOpacity={0.2} />
+                                            </linearGradient>
+                                            <linearGradient id="greenGradientInst" x1="0" y1="0" x2="1" y2="0">
+                                                <stop offset="5%" stopColor="#10b981" stopOpacity={0.8} />
+                                                <stop offset="95%" stopColor="#10b981" stopOpacity={0.3} />
+                                            </linearGradient>
+                                            <linearGradient id="redGradientInst" x1="0" y1="0" x2="1" y2="0">
+                                                <stop offset="5%" stopColor="#ef4444" stopOpacity={0.8} />
+                                                <stop offset="95%" stopColor="#ef4444" stopOpacity={0.3} />
+                                            </linearGradient>
+                                        </defs>
+                                        <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.05)" horizontal={false} />
                                         <XAxis type="number" hide />
-                                        <YAxis type="category" dataKey="name" stroke="#475569" fontSize={9} tickLine={false} axisLine={false} width={150} tick={{ fill: '#94a3b8', fontWeight: 900 }} />
-                                        <Tooltip content={<CustomTooltip />} cursor={{ fill: 'rgba(255,255,255,0.03)' }} />
-                                        <Bar dataKey="executed" name="Completado" stackId="a" fill="url(#emeraldGradient)" barSize={16} />
-                                        <Bar dataKey="pending" name="Pendiente" stackId="a" fill="url(#orangeGradient)" radius={[0, 6, 6, 0]} barSize={16} />
+                                        <YAxis dataKey="name" type="category" stroke="#94a3b8" fontSize={9} width={200} tickLine={false} axisLine={false} tick={{ fontWeight: 900 }} />
+                                        <Tooltip content={<CustomTooltip unit="sol." />} cursor={{ fill: 'rgba(255,255,255,0.03)' }} />
+                                        <Legend wrapperStyle={{ paddingTop: '10px' }} formatter={(value) => <span className="text-gray-500 text-[10px] font-black uppercase tracking-widest">{value}</span>} />
+                                        <Bar dataKey="executed" name="Ejecutadas" stackId="a" fill="url(#greenGradientInst)" radius={[0, 0, 0, 0]} barSize={20} />
+                                        <Bar dataKey="pending" name="Pendientes" stackId="a" fill="url(#redGradientInst)" radius={[0, 6, 6, 0]} barSize={20} />
                                     </BarChart>
                                 </ResponsiveContainer>
                             </div>
-                        </section>
+                        </Card>
+                    </section>
 
-                        <section className="bg-slate-800/50 border border-white/5 rounded-2xl p-8 shadow-xl">
-                            <h3 className="text-lg font-black text-white flex items-center gap-3 tracking-tighter italic mb-8 uppercase">
-                                <Calendar className="text-emerald-400 w-5 h-5" />
-                                Histórico Mensual
-                            </h3>
-                            <div className="h-[300px] w-full">
-                                <ResponsiveContainer width="100%" height="100%">
-                                    <ComposedChart data={metrics.solicitudesPorMes} onClick={(data) => data?.activeLabel && setSelectedMonth(data.activeLabel)}>
-                                        <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.05)" vertical={false} />
-                                        <XAxis dataKey="month" stroke="#475569" fontSize={9} tickLine={false} axisLine={false} tick={{ fill: '#94a3b8', fontWeight: 900 }} />
-                                        <YAxis yAxisId="left" hide />
-                                        <YAxis yAxisId="right" orientation="right" hide />
-                                        <Tooltip content={<CustomTooltip />} />
-                                        <Bar yAxisId="left" dataKey="total" name="Solicitudes" fill="url(#blueGradient)" radius={[4, 4, 0, 0]} barSize={12} />
-                                        <Line yAxisId="right" type="linear" dataKey="eficiencia" name="% Eficiencia" stroke="#10b981" strokeWidth={3} dot={false} />
-                                    </ComposedChart>
-                                </ResponsiveContainer>
-                            </div>
-                        </section>
-
-                        {/* Performance Supervisores */}
-                        <section className="lg:col-span-2 bg-slate-800/50 border border-white/5 rounded-2xl p-8 shadow-xl">
-                            <h3 className="text-xl font-black text-white flex items-center gap-3 tracking-tighter italic mb-10 uppercase">
-                                <div className="w-10 h-10 rounded-xl bg-purple-500/10 flex items-center justify-center text-purple-400">
+                    {/* Desempeño por Supervisión */}
+                    <section>
+                        <Card className="p-8 h-full">
+                            <h3 className="text-xl font-black text-white flex items-center gap-3 tracking-tighter italic mb-8 uppercase">
+                                <div className="w-10 h-10 rounded-xl bg-indigo-500/10 flex items-center justify-center text-indigo-400">
                                     <Activity className="w-5 h-5" />
                                 </div>
                                 Desempeño por Supervisión
                             </h3>
-                            <div className="h-[400px] w-full">
+                            <div className="h-[550px] w-full">
                                 <ResponsiveContainer width="100%" height="100%">
-                                    <ComposedChart data={metrics.performanceSupervisores} layout="vertical" margin={{ left: 100, right: 20 }} onClick={(data) => data?.activeLabel && setSelectedSupervisor(data.activeLabel)}>
+                                    <BarChart layout="vertical" data={metrics.performanceSupervisores} onClick={(data) => data?.activeLabel && setSelectedSupervisor(data.activeLabel)}>
+                                        <defs>
+                                            <linearGradient id="greenGradient" x1="0" y1="0" x2="1" y2="0">
+                                                <stop offset="5%" stopColor="#10b981" stopOpacity={0.8} />
+                                                <stop offset="95%" stopColor="#10b981" stopOpacity={0.3} />
+                                            </linearGradient>
+                                            <linearGradient id="redGradient" x1="0" y1="0" x2="1" y2="0">
+                                                <stop offset="5%" stopColor="#ef4444" stopOpacity={0.8} />
+                                                <stop offset="95%" stopColor="#ef4444" stopOpacity={0.3} />
+                                            </linearGradient>
+                                        </defs>
+                                        <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.05)" horizontal={false} />
                                         <XAxis type="number" hide />
-                                        <YAxis type="category" dataKey="supervisor" stroke="#475569" fontSize={10} tickLine={false} axisLine={false} width={180} tick={{ fill: '#94a3b8', fontWeight: 900 }} />
-                                        <Tooltip content={<CustomTooltip />} cursor={{ fill: 'rgba(255,255,255,0.03)' }} />
-                                        <Bar dataKey="executed" name="Completado" stackId="a" fill="url(#emeraldGradient)" barSize={20} />
-                                        <Bar dataKey="pending" name="Pendiente" stackId="a" fill="url(#orangeGradient)" radius={[0, 6, 6, 0]} barSize={20} />
+                                        <YAxis dataKey="supervisor" type="category" stroke="#94a3b8" fontSize={9} width={200} tickLine={false} axisLine={false} tick={{ fontWeight: 900 }} />
+                                        <Tooltip content={<CustomTooltip unit="sol." />} cursor={{ fill: 'rgba(255,255,255,0.03)' }} />
+                                        <Legend wrapperStyle={{ paddingTop: '10px' }} formatter={(value) => <span className="text-gray-500 text-[10px] font-black uppercase tracking-widest">{value}</span>} />
+                                        <Bar dataKey="executed" name="Ejecutadas" stackId="a" fill="url(#greenGradient)" radius={[0, 0, 0, 0]} barSize={20} />
+                                        <Bar dataKey="pending" name="Pendientes" stackId="a" fill="url(#redGradient)" radius={[0, 6, 6, 0]} barSize={20} />
+                                    </BarChart>
+                                </ResponsiveContainer>
+                            </div>
+                        </Card>
+                    </section>
+
+                    {/* Evolución Cronológica */}
+                    <section>
+                        <Card className="p-8 h-full">
+                            <h3 className="text-xl font-black text-white flex items-center gap-3 tracking-tighter italic mb-8 uppercase">
+                                <div className="w-10 h-10 rounded-xl bg-purple-500/10 flex items-center justify-center text-purple-400">
+                                    <Calendar className="w-5 h-5" />
+                                </div>
+                                Evolución Cronológica
+                            </h3>
+                            <div className="h-[350px] w-full">
+                                <ResponsiveContainer width="100%" height="100%">
+                                    <ComposedChart data={metrics.solicitudesPorMes} onClick={(data) => data?.activeLabel && setSelectedMonth(data.activeLabel)}>
+                                        <defs>
+                                            <linearGradient id="colorTotal" x1="0" y1="0" x2="0" y2="1">
+                                                <stop offset="5%" stopColor="#8b5cf6" stopOpacity={0.3} />
+                                                <stop offset="95%" stopColor="#8b5cf6" stopOpacity={0} />
+                                            </linearGradient>
+                                            <linearGradient id="greenGradientEvol" x1="0" y1="0" x2="0" y2="1">
+                                                <stop offset="5%" stopColor="#10b981" stopOpacity={0.9} />
+                                                <stop offset="95%" stopColor="#065f46" stopOpacity={0.6} />
+                                            </linearGradient>
+                                            <linearGradient id="redGradientEvol" x1="0" y1="0" x2="0" y2="1">
+                                                <stop offset="5%" stopColor="#ef4444" stopOpacity={0.9} />
+                                                <stop offset="95%" stopColor="#991b1b" stopOpacity={0.6} />
+                                            </linearGradient>
+                                        </defs>
+                                        <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.05)" vertical={false} />
+                                        <XAxis dataKey="month" stroke="#94a3b8" fontSize={10} tickLine={false} axisLine={false} tick={{ fontWeight: 900 }} />
+                                        <YAxis stroke="#94a3b8" fontSize={10} tickLine={false} axisLine={false} tick={{ fontWeight: 900 }} />
+                                        <Tooltip content={<CustomTooltip unit="sol." />} />
+                                        <Legend wrapperStyle={{ paddingTop: '10px' }} formatter={(value) => <span className="text-gray-500 text-[10px] font-black uppercase tracking-widest">{value}</span>} />
+                                        <Bar dataKey="executed" name="Ejecutadas" stackId="a" fill="url(#greenGradientEvol)" barSize={40} />
+                                        <Bar dataKey="pending" name="Pendientes" stackId="a" fill="url(#redGradientEvol)" barSize={40} />
+                                        <Area type="monotone" dataKey="total" name="Total" stroke="#8b5cf6" strokeWidth={4} fillOpacity={0.2} fill="url(#colorTotal)" />
                                     </ComposedChart>
                                 </ResponsiveContainer>
                             </div>
-                        </section>
+                        </Card>
+                    </section>
 
-                        {/* Table Section */}
-                        <section className="lg:col-span-2 relative">
-                            <div className="bg-slate-800/50 border border-white/5 rounded-2xl overflow-hidden shadow-xl flex flex-col">
-                                <div className="p-8 border-b border-white/5 bg-white/[0.02] flex items-center justify-between">
-                                    <h3 className="text-xl font-black text-white tracking-tighter italic uppercase flex items-center gap-3">
-                                        <Search className="text-blue-400 w-5 h-5" />
-                                        Solicitudes Activas <span className="text-blue-400/50">({totalItems})</span>
-                                    </h3>
-                                    <div className="text-[10px] font-black text-gray-500 uppercase tracking-widest pl-2">Total en este periodo</div>
-                                </div>
+                    {/* Tabla de Solicitudes Activas */}
+                    <section className="lg:col-span-2">
+                        <Card className="overflow-hidden flex flex-col">
+                            <div className="p-8 border-b border-white/5 bg-white/[0.02] flex items-center justify-between">
+                                <h3 className="text-xl font-black text-white tracking-tighter italic uppercase flex items-center gap-3">
+                                    <Search className="text-blue-400 w-5 h-5" />
+                                    Solicitudes Activas <span className="text-blue-400/50">({totalItems})</span>
+                                </h3>
+                                <div className="text-[10px] font-black text-gray-500 uppercase tracking-widest pl-2">Total en este periodo</div>
+                            </div>
 
-                                <div className="p-4 md:p-8 h-[500px]">
-                                    {tableData.length === 0 ? (
-                                        <div className="h-full flex flex-col items-center justify-center gap-4 text-slate-500">
-                                            <AlertCircle className="w-12 h-12 text-slate-700" />
-                                            <p className="font-black uppercase tracking-widest text-xs">Sin registros activos</p>
-                                        </div>
-                                    ) : (
-                                        <VirtualizedTable
-                                            data={tableData}
-                                            rowHeight={110}
-                                            columns={[
-                                                { header: 'ID', width: '6%', className: 'font-black text-blue-400 italic' },
-                                                { header: 'Fecha', width: '8%', className: 'font-bold text-slate-400 text-[11px]' },
-                                                { header: 'Ubicación', width: '28%' },
-                                                { header: 'Instalación', width: '15%' },
-                                                { header: 'Área', width: '12%' },
-                                                { header: 'Supervisor', width: '15%' },
-                                                { header: 'Prioridad', width: '10%' },
-                                                { header: 'Estado', width: '12%' },
-                                            ]}
-                                            renderCell={(item, colIdx) => {
-                                                switch (colIdx) {
-                                                    case 0: return <span className="block italic text-[10px] whitespace-normal">#{item.numero_solicitud}</span>;
-                                                    case 1: return <span className="block text-[10px] whitespace-normal">{format(parseISO(item.fecha_solicitud), 'dd/MM/yy')}</span>;
-                                                    case 2: return <span className="block font-bold text-white uppercase text-[10px] leading-tight break-words whitespace-normal" title={item.base_location}>{item.base_location}</span>;
-                                                    case 3: return <span className="block text-[9px] text-slate-400 uppercase leading-tight break-words whitespace-normal" title={item.instalacion_municipal}>{item.instalacion_municipal}</span>;
-                                                    case 4: return (
-                                                        <span className="block bg-indigo-500/10 border border-indigo-500/20 px-2 py-1 rounded text-[9px] font-black text-indigo-400 uppercase tracking-tighter text-center break-words whitespace-normal">
-                                                            {item.descripcion_area || 'GENÉRICO'}
+                            <div className="p-4 md:p-8 h-[500px]">
+                                {tableData.length === 0 ? (
+                                    <div className="h-full flex flex-col items-center justify-center gap-4 text-slate-500">
+                                        <AlertCircle className="w-12 h-12 text-slate-700" />
+                                        <p className="font-black uppercase tracking-widest text-xs">Sin registros activos</p>
+                                    </div>
+                                ) : (
+                                    <VirtualizedTable
+                                        data={tableData}
+                                        rowHeight={110}
+                                        columns={[
+                                            { header: 'ID', width: '6%', className: 'font-black text-blue-400 italic' },
+                                            { header: 'Fecha', width: '8%', className: 'font-bold text-slate-400 text-[11px]' },
+                                            { header: 'Ubicación', width: '28%' },
+                                            { header: 'Instalación', width: '15%' },
+                                            { header: 'Área', width: '12%' },
+                                            { header: 'Supervisor', width: '15%' },
+                                            { header: 'Prioridad', width: '10%' },
+                                            { header: 'Estado', width: '12%' },
+                                        ]}
+                                        renderCell={(item, colIdx) => {
+                                            switch (colIdx) {
+                                                case 0: return <span className="block italic text-[10px] whitespace-normal">#{item.numero_solicitud}</span>;
+                                                case 1: return <span className="block text-[10px] whitespace-normal">{format(parseISO(item.fecha_solicitud), 'dd/MM/yy')}</span>;
+                                                case 2: return <span className="block font-bold text-white uppercase text-[10px] leading-tight break-words whitespace-normal" title={item.base_location}>{item.base_location}</span>;
+                                                case 3: return <span className="block text-[9px] text-slate-400 uppercase leading-tight break-words whitespace-normal" title={item.instalacion_municipal}>{item.instalacion_municipal}</span>;
+                                                case 4: return (
+                                                    <span className="block bg-indigo-500/10 border border-indigo-500/20 px-2 py-1 rounded text-[9px] font-black text-indigo-400 uppercase tracking-tighter text-center break-words whitespace-normal">
+                                                        {item.descripcion_area || 'GENÉRICO'}
+                                                    </span>
+                                                );
+                                                case 5: return (
+                                                    <div className="flex items-start gap-2 w-full whitespace-normal">
+                                                        <div className="flex-shrink-0 w-6 h-6 rounded-full bg-slate-800 border border-white/10 flex items-center justify-center text-[9px] font-black text-white italic mt-0.5">
+                                                            {(item.supervisor_asignado_alias || '?')[0]}
+                                                        </div>
+                                                        <span className="font-bold text-slate-300 italic text-[10px] uppercase leading-tight break-words">
+                                                            {item.supervisor_asignado_alias || 'PENDIENTE'}
                                                         </span>
-                                                    );
-                                                    case 5: return (
-                                                        <div className="flex items-start gap-2 w-full whitespace-normal">
-                                                            <div className="flex-shrink-0 w-6 h-6 rounded-full bg-slate-800 border border-white/10 flex items-center justify-center text-[9px] font-black text-white italic mt-0.5">
-                                                                {(item.supervisor_asignado_alias || '?')[0]}
-                                                            </div>
-                                                            <span className="font-bold text-slate-300 italic text-[10px] uppercase leading-tight break-words">
-                                                                {item.supervisor_asignado_alias || 'PENDIENTE'}
-                                                            </span>
+                                                    </div>
+                                                );
+                                                case 6: {
+                                                    const days = differenceInDays(new Date(), parseISO(item.fecha_solicitud));
+                                                    const isFinished = ['EJECUTADA', 'FINALIZADA', 'COMPLETADA', 'CERRADA'].includes(item.status_normalized);
+
+                                                    if (isFinished) return <span className="block text-[9px] text-slate-500 text-center">-</span>;
+
+                                                    return (
+                                                        <div className="flex flex-col items-center gap-1">
+                                                            <div className={cn(
+                                                                "w-3 h-3 rounded-full shadow-lg",
+                                                                days > 10 ? "bg-red-500 animate-pulse" :
+                                                                    days > 5 ? "bg-orange-500" : "bg-slate-600"
+                                                            )} />
+                                                            <span className="text-[8px] font-black text-slate-400">{days}d</span>
                                                         </div>
                                                     );
-                                                    case 6: {
-                                                        const days = differenceInDays(new Date(), parseISO(item.fecha_solicitud));
-                                                        const isFinished = ['EJECUTADA', 'FINALIZADA', 'COMPLETADA', 'CERRADA'].includes(item.status_normalized);
-
-                                                        if (isFinished) return <span className="block text-[9px] text-slate-500 text-center">-</span>;
-
-                                                        return (
-                                                            <div className="flex flex-col items-center gap-1">
-                                                                <div className={cn(
-                                                                    "w-3 h-3 rounded-full shadow-lg",
-                                                                    days > 10 ? "bg-red-500 animate-pulse" :
-                                                                        days > 5 ? "bg-orange-500" : "bg-slate-600"
-                                                                )} />
-                                                                <span className="text-[8px] font-black text-slate-400">{days}d</span>
-                                                            </div>
-                                                        );
-                                                    }
-                                                    case 7: return (
-                                                        <span className={cn(
-                                                            "block text-center px-2 py-1 rounded-full text-[9px] font-black uppercase break-words whitespace-normal",
-                                                            item.status_normalized === 'ACTIVA' ? 'bg-amber-500/10 text-amber-500 border border-amber-500/20' :
-                                                                item.status_normalized === 'EJECUTADA' ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20' :
-                                                                    'bg-red-500/10 text-red-400 border border-red-500/20'
-                                                        )}>
-                                                            {item.status_normalized}
-                                                        </span>
-                                                    );
-                                                    default: return null;
                                                 }
-                                            }}
-                                        />
-                                    )}
-                                </div>
+                                                case 7: return (
+                                                    <span className={cn(
+                                                        "block text-center px-2 py-1 rounded-full text-[9px] font-black uppercase break-words whitespace-normal",
+                                                        item.status_normalized === 'ACTIVA' ? 'bg-amber-500/10 text-amber-500 border border-amber-500/20' :
+                                                            item.status_normalized === 'EJECUTADA' ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20' :
+                                                                'bg-red-500/10 text-red-400 border border-red-500/20'
+                                                    )}>
+                                                        {item.status_normalized}
+                                                    </span>
+                                                );
+                                                default: return null;
+                                            }
+                                        }}
+                                    />
+                                )}
+                            </div>
 
-                                <div className="p-6 bg-black/20 border-t border-white/5 flex items-center justify-between">
-                                    <div className="flex flex-col gap-1 w-full max-w-[200px]">
-                                        <span className="text-[9px] font-black text-gray-600 uppercase tracking-widest">Progreso de Vista</span>
-                                        <div className="h-1 bg-white/5 rounded-full overflow-hidden">
-                                            <div className="h-full bg-blue-500" style={{ width: `${(Math.min(currentPage * itemsPerPage, totalItems) / totalItems) * 100}%` }}></div>
-                                        </div>
+                            <div className="p-6 bg-black/20 border-t border-white/5 flex items-center justify-between">
+                                <div className="flex flex-col gap-1 w-full max-w-[200px]">
+                                    <span className="text-[9px] font-black text-gray-600 uppercase tracking-widest">Progreso de Vista</span>
+                                    <div className="h-1 bg-white/5 rounded-full overflow-hidden">
+                                        <div className="h-full bg-blue-500" style={{ width: `${(Math.min(currentPage * itemsPerPage, totalItems) / totalItems) * 100}%` }}></div>
                                     </div>
-                                    <div className="flex items-center gap-3">
-                                        <button onClick={() => setCurrentPage(p => Math.max(p - 1, 1))} disabled={currentPage === 1} className="p-2 bg-white/5 border border-white/10 rounded-xl disabled:opacity-20 hover:bg-white/10 transition-all"><ChevronLeft size={20} /></button>
-                                        <span className="bg-white/5 border border-white/10 px-4 py-2 rounded-xl text-[10px] font-black text-white italic">PÁGINA {currentPage}</span>
-                                        <button onClick={() => setCurrentPage(p => Math.min(p + 1, Math.ceil(totalItems / itemsPerPage)))} disabled={currentPage * itemsPerPage >= totalItems} className="p-2 bg-white/5 border border-white/10 rounded-xl disabled:opacity-20 hover:bg-white/10 transition-all"><ChevronRight size={20} /></button>
-                                    </div>
+                                </div>
+                                <div className="flex items-center gap-3">
+                                    <button onClick={() => setCurrentPage(p => Math.max(p - 1, 1))} disabled={currentPage === 1} className="p-2 bg-white/5 border border-white/10 rounded-xl disabled:opacity-20 hover:bg-white/10 transition-all"><ChevronLeft size={20} /></button>
+                                    <span className="bg-white/5 border border-white/10 px-4 py-2 rounded-xl text-[10px] font-black text-white italic">PÁGINA {currentPage}</span>
+                                    <button onClick={() => setCurrentPage(p => Math.min(p + 1, Math.ceil(totalItems / itemsPerPage)))} disabled={currentPage * itemsPerPage >= totalItems} className="p-2 bg-white/5 border border-white/10 rounded-xl disabled:opacity-20 hover:bg-white/10 transition-all"><ChevronRight size={20} /></button>
                                 </div>
                             </div>
+                        </Card>
+                    </section>
+
+                    {/* Alertas de Retraso */}
+                    {metrics.solicitudesEstancadas.length > 0 && (
+                        <section className="lg:col-span-2">
+                            <div className="flex items-center justify-between mb-6">
+                                <h3 className="text-xl font-black text-white flex items-center gap-3 tracking-tighter italic uppercase">
+                                    <div className="w-10 h-10 rounded-xl bg-red-500/10 flex items-center justify-center text-red-400 animate-pulse">
+                                        <AlertTriangle className="w-5 h-5" />
+                                    </div>
+                                    Alertas de Atención Crítica
+                                </h3>
+                                <span className="bg-red-500/10 text-red-500 text-[10px] font-black tracking-widest uppercase px-4 py-2 rounded-full border border-red-500/20">
+                                    {metrics.solicitudesEstancadas.length} Solicitudes con Retraso
+                                </span>
+                            </div>
+                            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                                {metrics.solicitudesEstancadas.map((s, idx) => (
+                                    <div key={idx} className="bg-red-500/5 backdrop-blur-3xl border border-red-500/20 rounded-2xl p-6 hover:bg-red-500/10 transition-all group relative overflow-hidden">
+                                        <div className="absolute top-0 right-0 p-4 opacity-10 group-hover:opacity-20 transition-opacity">
+                                            <Clock className="w-12 h-12 text-red-500" />
+                                        </div>
+                                        <div className="flex justify-between items-start mb-4">
+                                            <p className="text-[10px] font-black text-red-500 uppercase tracking-widest">{s.descripcion_area || 'Área N/A'}</p>
+                                            <p className="text-[10px] font-black text-white bg-red-500 px-2 py-1 rounded italic">#{s.numero_solicitud}</p>
+                                        </div>
+                                        <h4 className="text-white font-black text-sm mb-4 leading-tight group-hover:text-red-300 transition-colors line-clamp-2">{s.detalle_solicitud || 'Sin detalles'}</h4>
+                                        <div className="flex items-center gap-3 pt-4 border-t border-red-500/10">
+                                            <div className="w-8 h-8 rounded-full bg-red-500/20 flex items-center justify-center text-red-400">
+                                                <TrendingDown className="w-4 h-4" />
+                                            </div>
+                                            <div>
+                                                <p className="text-[9px] font-black text-gray-400 uppercase tracking-widest mb-0.5">Retraso Estimado</p>
+                                                <p className="text-white font-black text-xs italic">{s.dias_espera} Días en Espera</p>
+                                            </div>
+                                        </div>
+                                    </div>
+                                ))}
+                            </div>
                         </section>
-                    </div>
+                    )}
                 </div>
             </main>
 
             {loading && (
-                <div className="fixed bottom-8 right-8 bg-[#1E293B]/80 backdrop-blur-3xl border border-white/10 px-6 py-3 rounded-2xl shadow-2xl z-50 flex items-center gap-3 text-[10px] font-black uppercase text-white tracking-widest animate-in slide-in-from-bottom-4">
-                    <Loader2 className="w-5 h-5 text-amber-500 animate-spin" />
-                    Actualizando...
+                <div className="fixed bottom-8 right-8 bg-[#1e293b]/80 backdrop-blur-3xl border border-white/10 px-6 py-3 rounded-2xl shadow-2xl z-50 flex items-center gap-3 text-[10px] font-black uppercase text-white tracking-widest animate-in slide-in-from-bottom-4">
+                    <div className="bg-amber-500/20 p-1.5 rounded-lg">
+                        <Activity className="w-4 h-4 text-amber-500 animate-pulse" />
+                    </div>
+                    Actualizando Dashboard
                 </div>
             )}
+
+            {/* Background elements */}
+            <div className="fixed top-0 left-0 w-full h-full pointer-events-none z-0 overflow-hidden">
+                <div className="absolute top-[-10%] left-[-10%] w-[40%] h-[40%] bg-blue-500/5 blur-[120px] rounded-full"></div>
+                <div className="absolute bottom-[-10%] right-[-10%] w-[40%] h-[40%] bg-amber-500/5 blur-[120px] rounded-full"></div>
+            </div>
 
             <style>{`
                 .custom-scrollbar::-webkit-scrollbar { width: 4px; }
