@@ -297,9 +297,11 @@ export default function ConsultarEstadoSolicitud() {
         try {
             // Fetch all distinct values for filters
             // Note: For large datasets, this should be optimized or done via RPC
+            // We increase the limit to 10,000 to cover the current dataset (7k+ records)
             const { data } = await supabase
                 .from('vw_solicitudes_sti_estado')
-                .select('nombre_cliente, dependencia_cliente, profesional_responsable, supervisor_asignado, instalacion_municipal, descripcion_area, estado_actual');
+                .select('nombre_cliente, dependencia_cliente, profesional_responsable, supervisor_asignado, instalacion_municipal, descripcion_area, estado_actual')
+                .limit(10000);
 
             if (data) {
                 const getUnique = (key: keyof SolicitudSTI) =>
@@ -309,11 +311,29 @@ export default function ConsultarEstadoSolicitud() {
                 const estadosEsenciales = ['ACTIVA', 'CANCELADA', 'EJECUTADA'];
                 const estadosFinales = [...new Set([...estadosEsenciales, ...estadosFromDb])].sort();
 
+                // Get all active collaborators (Aliases) for Professional field
+                const { data: collabData } = await supabase
+                    .from('colaboradores_06')
+                    .select('alias')
+                    .eq('condicion_laboral', false)
+                    .order('alias', { ascending: true });
+
+                // Get specific supervisors (Aliases)
+                const { data: supervisorData } = await supabase
+                    .from('colaboradores_06')
+                    .select('alias')
+                    .eq('supervisor', true)
+                    .eq('condicion_laboral', false)
+                    .order('alias', { ascending: true });
+
+                const allCollabs = [...new Set(collabData?.map(c => c.alias).filter(Boolean) || [])].sort();
+                const allSupervisors = [...new Set(supervisorData?.map(c => c.alias).filter(Boolean) || [])].sort();
+
                 setFilterOptions({
                     nombre_cliente: getUnique('nombre_cliente'),
                     dependencia_cliente: getUnique('dependencia_cliente'),
-                    profesional_responsable: getUnique('profesional_responsable'),
-                    supervisor_asignado: getUnique('supervisor_asignado'),
+                    profesional_responsable: allCollabs,
+                    supervisor_asignado: allSupervisors,
                     instalacion_municipal: getUnique('instalacion_municipal'),
                     descripcion_area: getUnique('descripcion_area'),
                     estado_actual: estadosFinales

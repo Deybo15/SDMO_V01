@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { createPortal } from 'react-dom';
-import { Search, X, Loader2, Image as ImageIcon } from 'lucide-react';
+import { Search, X, Loader2, Image as ImageIcon, Plus } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import { Articulo } from '../types/inventory';
 import { cn } from '../lib/utils';
@@ -27,6 +27,9 @@ export default function ArticleSearchModal({
     const [searchTerm, setSearchTerm] = useState('');
     const [articles, setArticles] = useState<Articulo[]>([]);
     const [loading, setLoading] = useState(false);
+    const [limit, setLimit] = useState(50);
+    const [hasMore, setHasMore] = useState(false);
+    const [totalResults, setTotalResults] = useState(0);
 
     useEffect(() => {
         if (isOpen) {
@@ -35,7 +38,7 @@ export default function ArticleSearchModal({
                 try {
                     let query = supabase
                         .from('inventario_actual')
-                        .select('codigo_articulo, nombre_articulo, cantidad_disponible, unidad, imagen_url, precio_unitario');
+                        .select('codigo_articulo, nombre_articulo, cantidad_disponible, unidad, imagen_url, precio_unitario', { count: 'exact' });
 
                     if (showOnlyAvailable) {
                         query = query.gt('cantidad_disponible', 0);
@@ -46,11 +49,14 @@ export default function ArticleSearchModal({
                         query = query.or(`nombre_articulo.ilike.%${term}%,codigo_articulo.ilike.%${term}%`);
                     }
 
-                    query = query.limit(20);
+                    query = query.limit(limit);
 
-                    console.log('Fetching articles for term:', term || 'all');
-                    const { data, error } = await query;
+                    console.log('Fetching articles for term:', term || 'all', 'limit:', limit);
+                    const { data, error, count } = await query;
                     if (error) throw error;
+
+                    setTotalResults(count || 0);
+                    setHasMore(data ? data.length < (count || 0) : false);
 
                     let processedArticles: Articulo[] = [];
 
@@ -90,7 +96,16 @@ export default function ArticleSearchModal({
             const timer = setTimeout(fetchArticles, 300);
             return () => clearTimeout(timer);
         }
-    }, [isOpen, searchTerm, showOnlyAvailable]);
+    }, [isOpen, searchTerm, showOnlyAvailable, limit]);
+
+    const handleLoadMore = () => {
+        setLimit(prev => prev + 50);
+    };
+
+    // Reset limit when searchTerm changes or modal opens
+    useEffect(() => {
+        setLimit(50);
+    }, [searchTerm, isOpen]);
 
     if (!isOpen) return null;
 
@@ -219,13 +234,31 @@ export default function ArticleSearchModal({
                             <p className="text-gray-500 text-sm">Intente con otro término de búsqueda</p>
                         </div>
                     )}
+
+                    {/* Load More Button */}
+                    {!loading && hasMore && (
+                        <div className="pt-4 pb-8 flex justify-center">
+                            <button
+                                onClick={handleLoadMore}
+                                className="px-8 py-3 bg-[#1D1D1F] border border-[#333333] text-[#0071E3] rounded-[8px] font-black uppercase text-[10px] tracking-widest hover:bg-[#0071E3]/5 hover:border-[#0071E3]/30 transition-all active:scale-95 flex items-center gap-2"
+                            >
+                                <Plus className="w-4 h-4" />
+                                Cargar más artículos
+                            </button>
+                        </div>
+                    )}
                 </div>
 
                 {/* Footer Hint */}
-                <div className="p-6 bg-black/20 border-t border-[#333333] text-center shrink-0">
+                <div className="p-6 bg-black/20 border-t border-[#333333] flex justify-between items-center shrink-0">
                     <p className="text-[10px] font-black text-[#86868B] uppercase tracking-widest italic">
-                        Mostrando primeros 20 resultados. Refine su búsqueda para ver más.
+                        {loading ? 'Buscando...' : `Mostrando ${articles.length} de ${totalResults} resultados`}
                     </p>
+                    {!hasMore && !loading && totalResults > 0 && (
+                        <p className="text-[10px] font-black text-[#86868B] uppercase tracking-widest italic">
+                            Fin de los resultados
+                        </p>
+                    )}
                 </div>
             </div>
         </div>,
