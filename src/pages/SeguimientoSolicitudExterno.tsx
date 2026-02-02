@@ -697,12 +697,8 @@ export default function SeguimientoSolicitudExterno() {
                                         <tr key={sol.numero_solicitud} className="hover:bg-white/5 transition-all group">
                                             <td className="px-8 py-8">
                                                 <div className="flex items-center gap-4">
-                                                    <div className="w-12 h-12 rounded-[8px] bg-[#1D1D1F] border border-[#333333] flex items-center justify-center font-black text-[#0071E3] shadow-xl text-lg">
+                                                    <div className="min-w-[70px] px-3 h-12 rounded-[8px] bg-[#1D1D1F] border border-[#333333] flex items-center justify-center font-black text-[#0071E3] shadow-xl text-lg tracking-tight">
                                                         #{sol.numero_solicitud}
-                                                    </div>
-                                                    <div>
-                                                        <p className="text-[10px] font-black text-[#86868B] uppercase tracking-widest">Radicado</p>
-                                                        <p className="text-sm font-bold text-[#F5F5F7]">ID {sol.numero_solicitud}</p>
                                                     </div>
                                                 </div>
                                             </td>
