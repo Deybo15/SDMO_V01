@@ -295,30 +295,45 @@ export default function ConsultarEstadoSolicitud() {
 
     const cargarOpcionesFiltro = async () => {
         try {
-            // Fetch all distinct values for filters
-            // Note: For large datasets, this should be optimized or done via RPC
-            // We increase the limit to 10,000 to cover the current dataset (7k+ records)
-            const { data } = await supabase
-                .from('vw_solicitudes_sti_estado')
-                .select('nombre_cliente, dependencia_cliente, profesional_responsable, supervisor_asignado, instalacion_municipal, descripcion_area, estado_actual')
-                .limit(10000);
+            let allData: any[] = [];
+            let hasMore = true;
+            let offset = 0;
+            const BATCH_SIZE = 1000;
 
-            if (data) {
+            // Fetch all records in batches to get complete filter options
+            while (hasMore) {
+                const { data, error } = await supabase
+                    .from('vw_solicitudes_sti_estado')
+                    .select('nombre_cliente, dependencia_cliente, profesional_responsable, supervisor_asignado, instalacion_municipal, descripcion_area, estado_actual')
+                    .range(offset, offset + BATCH_SIZE - 1);
+
+                if (error) throw error;
+                if (data && data.length > 0) {
+                    allData = [...allData, ...data];
+                    offset += BATCH_SIZE;
+                    hasMore = data.length === BATCH_SIZE;
+                    // Safety break to prevent infinite loops if something goes wrong
+                    if (offset > 50000) break;
+                } else {
+                    hasMore = false;
+                }
+            }
+
+            if (allData.length > 0) {
                 const getUnique = (key: keyof SolicitudSTI) =>
-                    [...new Set((data as any[]).map(item => item[key]).filter(Boolean))].sort() as string[];
+                    [...new Set(allData.map(item => item[key]).filter(Boolean))].sort() as string[];
 
                 const estadosFromDb = getUnique('estado_actual');
                 const estadosEsenciales = ['ACTIVA', 'CANCELADA', 'EJECUTADA'];
                 const estadosFinales = [...new Set([...estadosEsenciales, ...estadosFromDb])].sort();
 
-                // Get all active collaborators (Aliases) for Professional field
+                // Get all active collaborators (Aliases) for Professional and Supervisor fields
                 const { data: collabData } = await supabase
                     .from('colaboradores_06')
                     .select('alias')
                     .eq('condicion_laboral', false)
                     .order('alias', { ascending: true });
 
-                // Get specific supervisors (Aliases)
                 const { data: supervisorData } = await supabase
                     .from('colaboradores_06')
                     .select('alias')
