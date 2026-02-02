@@ -31,8 +31,11 @@ import {
     FileText,
     LayoutDashboard,
     Search,
-    Filter
+    Filter,
+    ChevronRight,
+    ArrowRight
 } from 'lucide-react';
+import { PageHeader } from '../components/ui/PageHeader';
 
 // Interfaces
 interface Solicitud {
@@ -113,6 +116,8 @@ export default function SeguimientoSolicitudExterno() {
     const [imgFinalPreview, setImgFinalPreview] = useState<string | null>(null);
     const [fileActual, setFileActual] = useState<File | null>(null);
     const [fileFinal, setFileFinal] = useState<File | null>(null);
+    const [isDraggingActual, setIsDraggingActual] = useState(false);
+    const [isDraggingFinal, setIsDraggingFinal] = useState(false);
 
     const [articulos, setArticulos] = useState<ArticuloAsociado[]>([]);
 
@@ -359,29 +364,57 @@ export default function SeguimientoSolicitudExterno() {
         if (urlFinal) setImgFinalPreview(urlFinal);
     };
 
+    const processFile = (file: File, type: 'actual' | 'final') => {
+        if (!['image/jpeg', 'image/jpg', 'image/png', 'image/webp'].includes(file.type)) {
+            showNotification('Formato no válido. Use JPG, PNG o WebP', 'info');
+            return;
+        }
+        if (file.size > 5 * 1024 * 1024) {
+            showNotification('La imagen es demasiado grande (máx 5MB)', 'info');
+            return;
+        }
+
+        const reader = new FileReader();
+        reader.onload = (ev) => {
+            if (type === 'actual') {
+                setImgActualPreview(ev.target?.result as string);
+                setFileActual(file);
+            } else {
+                setImgFinalPreview(ev.target?.result as string);
+                setFileFinal(file);
+            }
+        };
+        reader.readAsDataURL(file);
+    };
+
     const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>, type: 'actual' | 'final') => {
         if (e.target.files && e.target.files[0]) {
-            const file = e.target.files[0];
-            if (!['image/jpeg', 'image/jpg', 'image/png', 'image/webp'].includes(file.type)) {
-                showNotification('Formato no válido. Use JPG, PNG o WebP', 'info');
-                return;
-            }
-            if (file.size > 5 * 1024 * 1024) {
-                showNotification('La imagen es demasiado grande (máx 5MB)', 'info');
-                return;
-            }
+            processFile(e.target.files[0], type);
+        }
+    };
 
-            const reader = new FileReader();
-            reader.onload = (ev) => {
-                if (type === 'actual') {
-                    setImgActualPreview(ev.target?.result as string);
-                    setFileActual(file);
-                } else {
-                    setImgFinalPreview(ev.target?.result as string);
-                    setFileFinal(file);
-                }
-            };
-            reader.readAsDataURL(file);
+    const handleDragOver = (e: React.DragEvent, type: 'actual' | 'final') => {
+        e.preventDefault();
+        e.stopPropagation();
+        if (type === 'actual') setIsDraggingActual(true);
+        else setIsDraggingFinal(true);
+    };
+
+    const handleDragLeave = (e: React.DragEvent, type: 'actual' | 'final') => {
+        e.preventDefault();
+        e.stopPropagation();
+        if (type === 'actual') setIsDraggingActual(false);
+        else setIsDraggingFinal(false);
+    };
+
+    const handleDrop = (e: React.DragEvent, type: 'actual' | 'final') => {
+        e.preventDefault();
+        e.stopPropagation();
+        if (type === 'actual') setIsDraggingActual(false);
+        else setIsDraggingFinal(false);
+
+        if (e.dataTransfer.files && e.dataTransfer.files[0]) {
+            processFile(e.dataTransfer.files[0], type);
         }
     };
 
@@ -537,95 +570,90 @@ export default function SeguimientoSolicitudExterno() {
     };
 
     return (
-        <div className="min-h-screen bg-slate-950 text-slate-100 font-sans relative overflow-x-hidden p-1">
-            <div className="fixed inset-0 pointer-events-none opacity-30">
-                <div className="absolute top-[-10%] left-[-10%] w-[50%] h-[50%] bg-blue-600/20 rounded-full blur-[160px]"></div>
-                <div className="absolute bottom-[-10%] right-[10%] w-[50%] h-[50%] bg-indigo-600/10 rounded-full blur-[160px]"></div>
-            </div>
-
-            <div className="max-w-[1600px] mx-auto px-4 py-8 relative z-10 space-y-8">
-                {/* Header */}
-                <header className="flex flex-col md:flex-row md:items-end justify-between gap-6">
-                    <div>
-                        <div className="flex items-center gap-3 mb-2">
-                            <div className="w-12 h-12 rounded-2xl bg-[#8e44ad] flex items-center justify-center shadow-2xl shadow-purple-500/40 transform hover:scale-105 transition-transform">
-                                <Wrench className="w-7 h-7 text-white" />
-                            </div>
-                            <span className="text-xs font-black text-purple-400 uppercase tracking-[0.4em] drop-shadow-sm">Gestión Operativa Externa</span>
-                        </div>
-                        <h1 className="text-5xl md:text-6xl font-black text-white tracking-tighter leading-none">
-                            Seguimiento <span className="text-[#8e44ad]">STE</span>
-                        </h1>
-                    </div>
-                    <div className="flex gap-4">
-                        <button onClick={() => navigate('/cliente-externo')} className="h-14 px-8 bg-white/5 border-2 border-white/10 rounded-[1.5rem] text-[11px] font-black uppercase tracking-widest hover:bg-white/10 hover:border-white/20 transition-all flex items-center gap-3 shadow-xl">
-                            <ChevronLeft className="w-5 h-5" /> Regresar
+        <div className="min-h-screen bg-[#000000] text-[#F5F5F7] pb-20 selection:bg-[#0071E3]/30">
+            <PageHeader
+                title="Seguimiento STE"
+                icon={Wrench}
+                subtitle="Gestión Operativa Externa"
+                rightElement={
+                    <>
+                        <button
+                            onClick={() => navigate('/cliente-externo')}
+                            className="h-12 px-6 bg-transparent border border-[#F5F5F7] rounded-[8px] text-[10px] font-black uppercase tracking-widest text-[#F5F5F7] hover:bg-white/5 transition-all flex items-center gap-3 active:scale-95 shadow-xl"
+                        >
+                            <ChevronLeft className="w-4 h-4 text-[#0071E3]" /> Regresar
                         </button>
-                        <button onClick={handleExportExcel} className="h-14 px-8 bg-emerald-500/10 border-2 border-emerald-500/30 text-emerald-400 rounded-[1.5rem] text-[11px] font-black uppercase tracking-widest hover:bg-emerald-500/20 hover:border-emerald-500/50 transition-all flex items-center gap-3 shadow-xl">
-                            <Download className="w-5 h-5" /> Exportar
+                        <button
+                            onClick={handleExportExcel}
+                            disabled={loading}
+                            className="h-12 px-6 bg-[#0071E3] text-white rounded-[8px] text-[10px] font-black uppercase tracking-widest hover:brightness-110 transition-all flex items-center gap-3 shadow-2xl shadow-[#0071E3]/20 disabled:opacity-50 active:scale-95"
+                        >
+                            <Download className="w-4 h-4" /> Exportar
                         </button>
-                    </div>
-                </header>
+                    </>
+                }
+            />
 
+            <div className="max-w-[1600px] mx-auto px-4 md:px-8 space-y-12 relative z-10">
                 {/* Stats Cards */}
                 <div className="grid grid-cols-2 lg:grid-cols-4 gap-6">
                     {[
-                        { label: 'Total', value: stats.total, icon: LayoutGrid, color: 'text-blue-400', bg: 'bg-blue-400/20', border: 'border-blue-500/30' },
-                        { label: 'Activas', value: stats.activas, icon: PlayCircle, color: 'text-indigo-400', bg: 'bg-indigo-400/20', border: 'border-indigo-500/30' },
-                        { label: 'Sincronizadas', value: stats.ejecutadas, icon: CheckCircle, color: 'text-emerald-400', bg: 'bg-emerald-400/20', border: 'border-emerald-500/30' },
-                        { label: 'Canceladas', value: stats.canceladas, icon: XCircle, color: 'text-rose-400', bg: 'bg-rose-400/20', border: 'border-rose-500/30' }
+                        { label: 'Total', value: stats.total, icon: LayoutGrid, color: 'text-[#0071E3]', bg: 'bg-[#0071E3]/10' },
+                        { label: 'Activas', value: stats.activas, icon: PlayCircle, color: 'text-[#0071E3]', bg: 'bg-[#0071E3]/10' },
+                        { label: 'Terminadas', value: stats.ejecutadas, icon: CheckCircle, color: 'text-emerald-400', bg: 'bg-emerald-400/10' },
+                        { label: 'Canceladas', value: stats.canceladas, icon: XCircle, color: 'text-rose-400', bg: 'bg-rose-400/10' }
                     ].map((m, i) => (
-                        <div key={i} className={cn("bg-white/[0.04] backdrop-blur-3xl border-2 rounded-[2.5rem] p-7 flex items-center gap-6 group hover:bg-white/[0.06] transition-all shadow-2xl", m.border)}>
-                            <div className={cn("w-16 h-16 rounded-3xl flex items-center justify-center transition-transform group-hover:rotate-12", m.bg, m.color)}>
+                        <div key={i} className="bg-[#121212] border border-[#333333] rounded-[8px] p-7 flex items-center gap-6 group hover:border-[#0071E3]/30 transition-all shadow-2xl">
+                            <div className={cn("w-16 h-16 rounded-[8px] flex items-center justify-center transition-transform group-hover:scale-110 border border-white/5", m.bg, m.color)}>
                                 <m.icon className="w-8 h-8" />
                             </div>
                             <div>
                                 <p className="text-4xl font-black text-white tracking-tighter leading-none">{m.value}</p>
-                                <p className="text-[11px] font-black text-white/70 uppercase tracking-widest mt-2">{m.label}</p>
+                                <p className="text-[10px] font-black text-[#86868B] uppercase tracking-widest mt-2">{m.label}</p>
                             </div>
                         </div>
                     ))}
                 </div>
 
-                <section className="bg-white/[0.03] border-2 border-white/20 rounded-[3rem] p-10 space-y-8 shadow-3xl">
+                <section className="bg-[#121212] border border-[#333333] rounded-[8px] p-8 md:p-10 space-y-8 shadow-3xl">
                     <div className="flex items-center gap-3 mb-2 px-2">
-                        <Search className="w-5 h-5 text-purple-500" />
-                        <h2 className="text-sm font-black text-white/90 uppercase tracking-[0.3em]">Criterios de Búsqueda</h2>
+                        <Search className="w-5 h-5 text-[#0071E3]" />
+                        <h2 className="text-[10px] font-black text-[#F5F5F7] uppercase tracking-[0.3em]">Criterios de Búsqueda</h2>
                     </div>
 
                     <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-end">
-                        <div className="lg:col-span-8 space-y-2">
-                            <label className="text-[11px] font-black text-white/60 uppercase tracking-widest ml-3">Búsqueda Unificada</label>
+                        <div className="lg:col-span-8 space-y-3">
+                            <label className="text-[10px] font-black text-[#86868B] uppercase tracking-widest ml-3">Búsqueda Unificada</label>
                             <div className="relative group">
-                                <Search className="absolute left-5 top-1/2 -translate-y-1/2 w-5 h-5 text-white/30 group-focus-within:text-purple-500 transition-colors" />
+                                <Search className="absolute left-5 top-1/2 -translate-y-1/2 w-5 h-5 text-[#333333] group-focus-within:text-[#0071E3] transition-colors" />
                                 <input
                                     value={searchTerm}
-                                    onChange={e => setSearchTerm(e.target.value)}
-                                    className="w-full bg-slate-900/50 border-2 border-white/10 rounded-3xl h-16 pl-14 pr-6 text-sm text-white font-bold placeholder:text-white/20 focus:border-purple-500 focus:bg-slate-900 transition-all outline-none"
-                                    placeholder="N° Solicitud o descripción..."
+                                    onChange={e => { setSearchTerm(e.target.value); }}
+                                    className="w-full bg-[#1D1D1F] border border-[#333333] rounded-[8px] h-14 pl-14 pr-6 text-sm text-[#F5F5F7] font-bold placeholder:text-[#333333] focus:border-[#0071E3]/50 transition-all outline-none"
+                                    placeholder="N° Solicitud o descripción técnica..."
                                 />
                             </div>
                         </div>
-                        <div className="lg:col-span-3 space-y-2">
-                            <label className="text-[11px] font-black text-white/60 uppercase tracking-widest ml-3">Estado</label>
+                        <div className="lg:col-span-3 space-y-3">
+                            <label className="text-[10px] font-black text-[#86868B] uppercase tracking-widest ml-3">Filtrar por Estado</label>
                             <div className="relative">
                                 <select
                                     value={filterEstado}
                                     onChange={e => setFilterEstado(e.target.value)}
-                                    className="w-full bg-slate-900/50 border-2 border-white/10 rounded-3xl h-16 px-6 text-sm text-white font-bold appearance-none cursor-pointer focus:border-purple-500 outline-none transition-all"
+                                    className="w-full bg-[#1D1D1F] border border-[#333333] rounded-[8px] h-14 px-6 text-sm text-[#F5F5F7] font-bold appearance-none cursor-pointer focus:border-[#0071E3]/50 outline-none transition-all"
                                 >
                                     <option value="">TODOS LOS ESTADOS</option>
                                     <option value="ACTIVA">ACTIVAS</option>
                                     <option value="EJECUTADA">EJECUTADAS</option>
                                     <option value="CANCELADA">CANCELADAS</option>
                                 </select>
-                                <Filter className="absolute right-6 top-1/2 -translate-y-1/2 w-4 h-4 text-white/30 pointer-events-none" />
+                                <Filter className="absolute right-6 top-1/2 -translate-y-1/2 w-4 h-4 text-[#86868B] pointer-events-none" />
                             </div>
                         </div>
-                        <div className="lg:col-span-1 flex gap-4 h-16">
+                        <div className="lg:col-span-1 flex gap-4 h-14">
                             <button
                                 onClick={() => { setSearchTerm(''); setFilterEstado(''); }}
-                                className="w-full bg-white/5 border-2 border-white/10 rounded-3xl flex items-center justify-center hover:bg-white/10 hover:border-white/30 transition-all text-white/40 hover:text-white group"
+                                className="w-full bg-transparent border border-[#333333] rounded-[8px] flex items-center justify-center hover:bg-white/5 transition-all text-[#86868B] hover:text-[#F5F5F7] group"
                             >
                                 <Eraser className="w-6 h-6 group-hover:rotate-12 transition-transform" />
                             </button>
@@ -633,25 +661,25 @@ export default function SeguimientoSolicitudExterno() {
                     </div>
                 </section>
 
-                <section className="bg-white/[0.04] backdrop-blur-3xl border-2 border-white/10 rounded-[3.5rem] overflow-hidden shadow-3xl">
+                <section className="bg-[#121212] border border-[#333333] shadow-3xl rounded-[8px] overflow-hidden">
                     <div className="overflow-x-auto">
-                        <table className="w-full border-collapse">
+                        <table className="w-full text-left border-collapse">
                             <thead>
-                                <tr className="border-b-2 border-white/10">
-                                    <th className="px-8 py-8 text-left text-[11px] font-black text-white/50 uppercase tracking-widest bg-white/[0.02]">Solicitud</th>
-                                    <th className="px-8 py-8 text-left text-[11px] font-black text-white/50 uppercase tracking-widest bg-white/[0.02]">Descripción</th>
-                                    <th className="px-8 py-8 text-left text-[11px] font-black text-white/50 uppercase tracking-widest bg-white/[0.02]">Estado</th>
-                                    <th className="px-8 py-8 text-left text-[11px] font-black text-white/50 uppercase tracking-widest bg-white/[0.02]">Última Actividad</th>
-                                    <th className="px-8 py-8 text-center text-[11px] font-black text-white/50 uppercase tracking-widest bg-white/[0.02]">Acciones</th>
+                                <tr className="bg-[#1D1D1F] border-b border-[#333333] text-[10px] font-black text-[#F5F5F7] uppercase tracking-[0.2em]">
+                                    <th className="px-8 py-8">Solicitud</th>
+                                    <th className="px-8 py-8">Descripción</th>
+                                    <th className="px-8 py-8">Estado</th>
+                                    <th className="px-8 py-8">Última Actividad</th>
+                                    <th className="px-8 py-8 text-right">Acciones</th>
                                 </tr>
                             </thead>
-                            <tbody className="divide-y-2 divide-white/5">
+                            <tbody className="divide-y divide-[#333333]">
                                 {loading ? (
                                     <tr>
                                         <td colSpan={5} className="px-8 py-20 text-center">
                                             <div className="flex flex-col items-center gap-4">
-                                                <div className="w-12 h-12 border-4 border-purple-500/30 border-t-purple-500 rounded-full animate-spin"></div>
-                                                <span className="text-sm font-black text-white/40 uppercase tracking-widest">Sincronizando datos...</span>
+                                                <div className="w-12 h-12 border-4 border-[#0071E3]/30 border-t-[#0071E3] rounded-full animate-spin"></div>
+                                                <span className="text-[10px] font-black text-[#86868B] uppercase tracking-widest">Sincronizando datos...</span>
                                             </div>
                                         </td>
                                     </tr>
@@ -659,68 +687,63 @@ export default function SeguimientoSolicitudExterno() {
                                     <tr>
                                         <td colSpan={5} className="px-8 py-20 text-center">
                                             <div className="flex flex-col items-center gap-4 opacity-30">
-                                                <Search className="w-12 h-12" />
-                                                <span className="text-sm font-black uppercase tracking-widest">No se encontraron solicitudes</span>
+                                                <Search className="w-12 h-12 text-[#333333]" />
+                                                <span className="text-[10px] font-black uppercase tracking-widest text-[#86868B]">No se encontraron solicitudes</span>
                                             </div>
                                         </td>
                                     </tr>
                                 ) : (
                                     filteredSolicitudes.map((sol) => (
-                                        <tr key={sol.numero_solicitud} className="group hover:bg-white/[0.05] transition-all cursor-default relative">
+                                        <tr key={sol.numero_solicitud} className="hover:bg-white/5 transition-all group">
                                             <td className="px-8 py-8">
                                                 <div className="flex items-center gap-4">
-                                                    <div className="w-12 h-12 rounded-2xl bg-white/10 flex items-center justify-center font-black text-white shadow-xl">
-                                                        {sol.numero_solicitud}
+                                                    <div className="w-12 h-12 rounded-[8px] bg-[#1D1D1F] border border-[#333333] flex items-center justify-center font-black text-[#0071E3] shadow-xl text-lg">
+                                                        #{sol.numero_solicitud}
                                                     </div>
                                                     <div>
-                                                        <p className="text-xs font-black text-white/40 uppercase tracking-widest">Radicado</p>
-                                                        <p className="text-sm font-bold text-white"># {sol.numero_solicitud}</p>
+                                                        <p className="text-[10px] font-black text-[#86868B] uppercase tracking-widest">Radicado</p>
+                                                        <p className="text-sm font-bold text-[#F5F5F7]">ID {sol.numero_solicitud}</p>
                                                     </div>
                                                 </div>
                                             </td>
                                             <td className="px-8 py-8">
-                                                <p className="text-sm font-bold text-white/90 line-clamp-2 max-w-md leading-relaxed">
-                                                    {sol.descripcion_solicitud}
+                                                <p className="text-sm font-bold text-[#F5F5F7] line-clamp-2 max-w-md leading-relaxed italic">
+                                                    "{sol.descripcion_solicitud}"
                                                 </p>
                                                 <div className="flex items-center gap-2 mt-2">
-                                                    <Calendar className="w-3 h-3 text-white/30" />
-                                                    <span className="text-[10px] font-bold text-white/30 uppercase tracking-tighter">
+                                                    <Calendar className="w-3 h-3 text-[#0071E3]" />
+                                                    <span className="text-[9px] font-black text-[#86868B] uppercase tracking-widest">
                                                         {new Date(sol.fecha_solicitud).toLocaleDateString('es-ES', { day: '2-digit', month: 'long', year: 'numeric' })}
                                                     </span>
                                                 </div>
                                             </td>
                                             <td className="px-8 py-8">
-                                                <div className={cn(
-                                                    "inline-flex items-center gap-2 px-5 py-2.5 rounded-2xl border-2 text-[10px] font-black uppercase tracking-widest shadow-xl",
-                                                    sol.estado_actual === 'ACTIVA' ? "bg-indigo-500/10 border-indigo-500/30 text-indigo-400" :
-                                                        sol.estado_actual === 'EJECUTADA' ? "bg-emerald-500/10 border-emerald-500/30 text-emerald-400" :
+                                                <span className={cn(
+                                                    "px-4 py-1.5 rounded-[8px] font-black text-[10px] uppercase tracking-wider border",
+                                                    sol.estado_actual === 'ACTIVA' ? "bg-[#0071E3]/10 border-[#0071E3]/50 text-[#0071E3]" :
+                                                        sol.estado_actual === 'EJECUTADA' ? "bg-emerald-500/10 border-emerald-500/50 text-emerald-400" :
                                                             "bg-rose-500/10 border-rose-500/30 text-rose-400"
                                                 )}>
-                                                    <div className={cn("w-2 h-2 rounded-full animate-pulse shadow-[0_0_12px_rgba(255,255,255,0.5)]",
-                                                        sol.estado_actual === 'ACTIVA' ? "bg-indigo-400" :
-                                                            sol.estado_actual === 'EJECUTADA' ? "bg-emerald-400" :
-                                                                "bg-rose-400"
-                                                    )}></div>
-                                                    {sol.estado_actual}
-                                                </div>
+                                                    {sol.estado_actual === 'EJECUTADA' ? 'FINALIZADA' : sol.estado_actual}
+                                                </span>
                                             </td>
                                             <td className="px-8 py-8">
                                                 <div className="flex flex-col gap-1">
                                                     <div className="flex items-center gap-2">
-                                                        <Clock className="w-4 h-4 text-purple-500" />
-                                                        <span className="text-sm font-bold text-white">Actualizado</span>
+                                                        <Clock className="w-4 h-4 text-[#0071E3]" />
+                                                        <span className="text-sm font-bold text-[#F5F5F7]">Actualizado</span>
                                                     </div>
-                                                    <span className="text-[10px] font-black text-white/30 uppercase tracking-widest ml-6">
+                                                    <span className="text-[10px] font-black text-[#86868B] uppercase tracking-widest ml-6">
                                                         {new Date(sol.fecha_solicitud).toLocaleDateString()}
                                                     </span>
                                                 </div>
                                             </td>
-                                            <td className="px-8 py-8 text-center">
+                                            <td className="px-8 py-8 text-right">
                                                 <button
                                                     onClick={() => abrirModalSeguimiento(sol.numero_solicitud)}
-                                                    className="w-14 h-14 bg-white/5 border-2 border-white/10 rounded-[1.25rem] flex items-center justify-center hover:bg-[#8e44ad] hover:border-[#8e44ad] hover:text-white transition-all shadow-xl group/btn mx-auto"
+                                                    className="w-12 h-12 bg-transparent border border-[#333333] rounded-[8px] flex items-center justify-center hover:bg-[#0071E3] hover:border-[#0071E3] transition-all text-[#86868B] hover:text-white shadow-xl active:scale-95"
                                                 >
-                                                    <Eye className="w-6 h-6 transform group-hover/btn:scale-110 transition-transform" />
+                                                    <Eye className="w-6 h-6" />
                                                 </button>
                                             </td>
                                         </tr>
@@ -734,123 +757,140 @@ export default function SeguimientoSolicitudExterno() {
 
             {/* Modal Seguimiento */}
             {showModalSeguimiento && selectedSolicitud && (
-                <div className="fixed inset-0 z-[100] bg-slate-950 flex flex-col animate-in fade-in zoom-in duration-300">
-                    <div className="fixed inset-0 pointer-events-none opacity-20">
-                        <div className="absolute top-[-10%] right-[-10%] w-[40%] h-[40%] bg-[#8e44ad]/20 rounded-full blur-[120px]"></div>
-                        <div className="absolute bottom-[-10%] left-[-10%] w-[40%] h-[40%] bg-blue-600/10 rounded-full blur-[120px]"></div>
-                    </div>
-
+                <div className="fixed inset-0 z-[100] bg-[#000000] flex flex-col animate-in fade-in zoom-in duration-300">
                     {/* Modal Header */}
-                    <header className="h-24 min-h-[6rem] border-b-2 border-white/5 bg-white/[0.02] backdrop-blur-3xl px-12 flex items-center justify-between relative z-10 shrink-0">
+                    <header className="h-20 min-h-[5rem] border-b border-[#333333] bg-[#1D1D1F] px-8 md:px-12 flex items-center justify-between relative z-10 shrink-0">
                         <div className="flex items-center gap-6">
-                            <div className="w-14 h-14 rounded-2xl bg-[#8e44ad] flex items-center justify-center shadow-2xl shadow-purple-500/20">
-                                <History className="w-8 h-8 text-white" />
+                            <div className="w-12 h-12 rounded-[8px] bg-[#0071E3]/10 border border-[#0071E3]/30 flex items-center justify-center shadow-2xl">
+                                <History className="w-6 h-6 text-[#0071E3]" />
                             </div>
                             <div>
-                                <p className="text-[10px] font-black text-purple-400 uppercase tracking-[0.4em]">Seguimiento Técnico</p>
-                                <h2 className="text-3xl font-black text-white tracking-tighter">
-                                    Solicitud <span className="text-[#8e44ad]"># {selectedSolicitud.numero_solicitud}</span>
+                                <p className="text-[10px] font-black text-[#0071E3] uppercase tracking-[0.4em]">Seguimiento Técnico</p>
+                                <h2 className="text-2xl font-black text-[#F5F5F7] tracking-tighter">
+                                    Solicitud <span className="text-[#0071E3]"># {selectedSolicitud.numero_solicitud}</span>
                                 </h2>
                             </div>
                         </div>
                         <button
                             onClick={() => setShowModalSeguimiento(false)}
-                            className="w-14 h-14 bg-white/5 border-2 border-white/10 rounded-2xl flex items-center justify-center hover:bg-rose-500/20 hover:border-rose-500/30 hover:text-rose-400 transition-all group"
+                            className="w-12 h-12 bg-transparent border border-[#333333] rounded-[8px] flex items-center justify-center hover:bg-rose-500/10 hover:border-rose-500/30 hover:text-rose-400 transition-all group"
                         >
-                            <X className="w-7 h-7 transform group-hover:rotate-90 transition-transform" />
+                            <X className="w-6 h-6 transform group-hover:rotate-90 transition-transform" />
                         </button>
                     </header>
 
                     {/* Modal Content */}
-                    <div className="flex-1 overflow-y-auto px-12 py-12 relative z-10 custom-scrollbar">
+                    <div className="flex-1 overflow-y-auto px-8 md:px-12 py-12 relative z-10 custom-scrollbar">
                         <div className="max-w-7xl mx-auto space-y-12 pb-12">
 
                             {/* Summary Card */}
                             <div className="grid grid-cols-1 lg:grid-cols-12 gap-10">
                                 <div className="lg:col-span-8 space-y-8">
-                                    <div className="bg-white/[0.04] border-2 border-white/10 rounded-[3rem] p-10 relative overflow-hidden group">
-                                        <div className="absolute top-0 right-0 p-8 opacity-10 group-hover:scale-110 transition-transform duration-700">
-                                            <FileText className="w-32 h-32 text-white" />
-                                        </div>
+                                    <div className="bg-[#121212] border border-[#333333] rounded-[8px] p-8 md:p-10 relative overflow-hidden group">
                                         <div className="relative z-10">
-                                            <h3 className="text-sm font-black text-purple-400 uppercase tracking-widest mb-6">Detalle de la Orden</h3>
-                                            <p className="text-2xl font-black text-white leading-tight mb-8">
-                                                {selectedSolicitud.descripcion_solicitud}
+                                            <h3 className="text-[10px] font-black text-[#0071E3] uppercase tracking-widest mb-6 border-b border-[#333333] pb-2 inline-block">Detalle de la Orden</h3>
+                                            <p className="text-xl font-bold text-[#F5F5F7] leading-tight mb-8 italic">
+                                                "{selectedSolicitud.descripcion_solicitud}"
                                             </p>
-                                            <div className="flex flex-wrap gap-8">
+                                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-8">
                                                 <div>
-                                                    <p className="text-[10px] font-black text-white/30 uppercase tracking-widest mb-1">Estado Operativo</p>
-                                                    <div className="relative group">
+                                                    <p className="text-[9px] font-black text-[#86868B] uppercase tracking-widest mb-2">Estado Operativo</p>
+                                                    <div className="relative">
                                                         <select
                                                             className={cn(
-                                                                "appearance-none bg-white/[0.05] border-2 rounded-2xl px-12 py-3 text-[10px] font-black uppercase tracking-[0.2em] transition-all focus:ring-4 focus:ring-purple-500/20 outline-none cursor-pointer pr-14 h-14",
-                                                                seguimientoData.estado_actual === 'ACTIVA' ? "border-indigo-500/30 text-indigo-400 bg-indigo-500/5 shadow-[0_0_20px_rgba(99,102,241,0.1)]" :
-                                                                    seguimientoData.estado_actual === 'EJECUTADA' ? "border-emerald-500/30 text-emerald-400 bg-emerald-500/5 shadow-[0_0_20px_rgba(16,185,129,0.1)]" :
-                                                                        "border-rose-500/30 text-rose-400 bg-rose-500/5 shadow-[0_0_20px_rgba(244,63,94,0.1)]"
+                                                                "appearance-none bg-[#1D1D1F] border border-[#333333] rounded-[8px] px-6 py-3 text-[10px] font-black uppercase tracking-[0.2em] transition-all focus:border-[#0071E3]/50 outline-none cursor-pointer pr-14 h-12 w-full",
+                                                                seguimientoData.estado_actual === 'ACTIVA' ? "text-[#0071E3]" :
+                                                                    seguimientoData.estado_actual === 'EJECUTADA' ? "text-emerald-400" :
+                                                                        "text-rose-400"
                                                             )}
                                                             value={seguimientoData.estado_actual || ''}
                                                             onChange={(e) => setSeguimientoData({ ...seguimientoData, estado_actual: e.target.value })}
                                                         >
-                                                            <option value="" disabled className="bg-[#1a1d29]">SELECCIONAR ESTADO</option>
-                                                            <option value="ACTIVA" className="bg-[#1a1d29]">ACTIVA</option>
-                                                            <option value="EJECUTADA" className="bg-[#1a1d29]">EJECUTADA</option>
-                                                            <option value="CANCELADA" className="bg-[#1a1d29]">CANCELADA</option>
+                                                            <option value="" disabled className="bg-[#121212]">SELECCIONAR ESTADO</option>
+                                                            <option value="ACTIVA" className="bg-[#121212]">ACTIVA</option>
+                                                            <option value="EJECUTADA" className="bg-[#121212]">EJECUTADA</option>
+                                                            <option value="CANCELADA" className="bg-[#121212]">CANCELADA</option>
                                                         </select>
                                                         <div className="absolute right-5 top-1/2 -translate-y-1/2 pointer-events-none">
-                                                            <div className={cn("w-2 h-2 rounded-full animate-pulse shadow-[0_0_10px_currentColor]",
-                                                                seguimientoData.estado_actual === 'ACTIVA' ? "bg-indigo-400" :
-                                                                    seguimientoData.estado_actual === 'EJECUTADA' ? "bg-emerald-400" :
-                                                                        "bg-rose-400"
-                                                            )}></div>
+                                                            <Filter className="w-3 h-3 text-[#333333]" />
                                                         </div>
                                                     </div>
                                                 </div>
                                                 <div>
-                                                    <p className="text-[10px] font-black text-white/30 uppercase tracking-widest mb-1">Fecha Apertura</p>
-                                                    <p className="text-lg font-bold text-white">
-                                                        {new Date(selectedSolicitud.fecha_solicitud).toLocaleDateString('es-ES', { day: '2-digit', month: 'long', year: 'numeric' })}
-                                                    </p>
+                                                    <p className="text-[9px] font-black text-[#86868B] uppercase tracking-widest mb-2">Fecha Apertura</p>
+                                                    <div className="h-12 flex items-center px-4 bg-[#1D1D1F] border border-[#333333] rounded-[8px]">
+                                                        <Calendar className="w-4 h-4 text-[#0071E3] mr-3" />
+                                                        <p className="text-sm font-bold text-[#F5F5F7]">
+                                                            {new Date(selectedSolicitud.fecha_solicitud).toLocaleDateString('es-ES', { day: '2-digit', month: 'long', year: 'numeric' })}
+                                                        </p>
+                                                    </div>
                                                 </div>
                                             </div>
                                         </div>
                                     </div>
 
                                     {/* Imágenes del Servicio */}
-                                    <div className="bg-white/[0.04] border-2 border-white/10 rounded-[3rem] p-10 space-y-8">
-                                        <h3 className="text-sm font-black text-purple-400 uppercase tracking-widest flex items-center gap-3">
+                                    <div className="bg-[#121212] border border-[#333333] rounded-[8px] p-8 md:p-10 space-y-8">
+                                        <h3 className="text-[10px] font-black text-[#0071E3] uppercase tracking-widest flex items-center gap-3 border-b border-[#333333] pb-2 inline-flex">
                                             <ImageIcon className="w-5 h-5" /> Registro Visual del Servicio
                                         </h3>
                                         <div className="grid grid-cols-1 md:grid-cols-2 gap-10">
                                             {[
-                                                { label: 'Condición Inicial (Antes)', key: 'actual' as const, preview: imgActualPreview, inputId: 'file-actual' },
-                                                { label: 'Resultado Final (Después)', key: 'final' as const, preview: imgFinalPreview, inputId: 'file-final' }
+                                                { label: 'Condición Inicial (Antes)', key: 'actual' as const, preview: imgActualPreview, inputId: 'file-actual', isDragging: isDraggingActual },
+                                                { label: 'Resultado Final (Después)', key: 'final' as const, preview: imgFinalPreview, inputId: 'file-final', isDragging: isDraggingFinal }
                                             ].map((img, idx) => (
                                                 <div key={idx} className="space-y-4">
                                                     <div className="flex justify-between items-center px-2">
-                                                        <span className="text-[11px] font-black text-white/50 uppercase tracking-widest">{img.label}</span>
-                                                        <label htmlFor={img.inputId} className="cursor-pointer text-[#8e44ad] hover:text-[#9b59b6] transition-colors">
+                                                        <span className="text-[10px] font-black text-[#86868B] uppercase tracking-widest">{img.label}</span>
+                                                        <label htmlFor={img.inputId} className="cursor-pointer text-[#0071E3] hover:brightness-110 transition-colors">
                                                             <PlusCircle className="w-5 h-5" />
                                                             <input type="file" className="hidden" id={img.inputId} accept="image/*" onChange={(e) => handleImageChange(e, img.key)} />
                                                         </label>
                                                     </div>
                                                     {img.preview ? (
-                                                        <div className="relative aspect-video rounded-3xl overflow-hidden border-2 border-white/10 group bg-black/40 shadow-2xl">
+                                                        <div
+                                                            className="relative aspect-video rounded-[8px] overflow-hidden border border-[#333333] group bg-[#1D1D1F] shadow-2xl"
+                                                            onDragOver={(e) => handleDragOver(e, img.key)}
+                                                            onDragLeave={(e) => handleDragLeave(e, img.key)}
+                                                            onDrop={(e) => handleDrop(e, img.key)}
+                                                        >
                                                             <img src={img.preview} alt={img.label} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700" />
                                                             <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-4 backdrop-blur-sm">
-                                                                <button onClick={() => setShowModalImagen({ url: img.preview!, title: img.label })} className="w-12 h-12 bg-white/20 hover:bg-white/40 rounded-full flex items-center justify-center transition-all">
+                                                                <button onClick={() => setShowModalImagen({ url: img.preview!, title: img.label })} className="w-12 h-12 bg-white/20 hover:bg-white/40 rounded-[8px] flex items-center justify-center transition-all">
                                                                     <Eye className="w-6 h-6 text-white" />
                                                                 </button>
-                                                                <button onClick={() => eliminarImagen(img.key)} className="w-12 h-12 bg-rose-500/20 hover:bg-rose-500/40 rounded-full flex items-center justify-center transition-all">
+                                                                <button onClick={() => eliminarImagen(img.key)} className="w-12 h-12 bg-rose-500/20 hover:bg-rose-500/40 rounded-[8px] flex items-center justify-center transition-all">
                                                                     <Trash2 className="w-6 h-6 text-rose-400" />
                                                                 </button>
                                                             </div>
+                                                            {img.isDragging && (
+                                                                <div className="absolute inset-0 bg-[#0071E3]/20 backdrop-blur-sm flex items-center justify-center border-2 border-dashed border-[#0071E3] z-20">
+                                                                    <Upload className="w-12 h-12 text-[#0071E3] animate-bounce" />
+                                                                </div>
+                                                            )}
                                                         </div>
                                                     ) : (
-                                                        <label htmlFor={img.inputId} className="aspect-video rounded-3xl border-2 border-dashed border-white/10 flex flex-col items-center justify-center gap-4 bg-white/[0.02] hover:bg-white/[0.04] hover:border-[#8e44ad]/30 transition-all cursor-pointer group">
-                                                            <div className="w-16 h-16 rounded-2xl bg-white/5 flex items-center justify-center group-hover:scale-110 transition-transform">
-                                                                <Upload className="w-8 h-8 text-white/20 group-hover:text-[#8e44ad]/50" />
+                                                        <label
+                                                            htmlFor={img.inputId}
+                                                            className={cn(
+                                                                "aspect-video rounded-[8px] border border-dashed flex flex-col items-center justify-center gap-6 bg-[#1D1D1F]/50 hover:bg-[#1D1D1F] transition-all cursor-pointer group px-6 text-center",
+                                                                img.isDragging ? "border-[#0071E3] bg-[#0071E3]/5" : "border-[#333333] hover:border-[#0071E3]/30"
+                                                            )}
+                                                            onDragOver={(e) => handleDragOver(e, img.key)}
+                                                            onDragLeave={(e) => handleDragLeave(e, img.key)}
+                                                            onDrop={(e) => handleDrop(e, img.key)}
+                                                        >
+                                                            <div className="w-20 h-20 rounded-full bg-[#1D1D1F] border border-[#333333] flex items-center justify-center group-hover:scale-110 group-hover:border-[#0071E3]/50 transition-all shadow-2xl relative overflow-hidden">
+                                                                <div className="absolute inset-0 bg-gradient-to-b from-[#0071E3]/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
+                                                                <Upload className={cn(
+                                                                    "w-8 h-8 transition-colors",
+                                                                    img.isDragging ? "text-[#0071E3]" : "text-[#333333] group-hover:text-[#0071E3]"
+                                                                )} />
                                                             </div>
-                                                            <span className="text-[10px] font-black text-white/20 uppercase tracking-[0.2em]">Subir Imagen</span>
+                                                            <div className="space-y-2">
+                                                                <p className="text-[10px] font-black text-[#F5F5F7] uppercase tracking-[0.2em]">Arrastra o selecciona una imagen</p>
+                                                                <p className="text-[9px] font-bold text-[#86868B] uppercase tracking-widest">Soporta PNG, JPG, WEBP (MAX 5MB)</p>
+                                                            </div>
                                                         </label>
                                                     )}
                                                 </div>
@@ -859,41 +899,41 @@ export default function SeguimientoSolicitudExterno() {
                                     </div>
 
                                     {/* Stock de Materiales Aplicados */}
-                                    <div className="bg-white/[0.04] border-2 border-white/10 rounded-[3rem] p-10 space-y-8">
+                                    <div className="bg-[#121212] border border-[#333333] rounded-[8px] p-8 md:p-10 space-y-8">
                                         <div className="flex justify-between items-center">
-                                            <h3 className="text-sm font-black text-purple-400 uppercase tracking-widest flex items-center gap-3">
-                                                <Package className="w-5 h-5" /> Stock de Materiales Aplicados
+                                            <h3 className="text-[10px] font-black text-[#0071E3] uppercase tracking-widest flex items-center gap-3 border-b border-[#333333] pb-2 inline-flex">
+                                                <Package className="w-5 h-5" /> Insumos Técnicos Aplicados
                                             </h3>
                                         </div>
-                                        <div className="overflow-hidden rounded-[2rem] border-2 border-white/5 bg-black/20 shadow-inner">
+                                        <div className="overflow-hidden rounded-[8px] border border-[#333333] bg-[#1D1D1F]/50 shadow-inner">
                                             <table className="w-full">
                                                 <thead>
-                                                    <tr className="bg-white/[0.02] border-b-2 border-white/5">
-                                                        <th className="px-6 py-5 text-left text-[10px] font-black text-white/30 uppercase tracking-widest">N° Salida</th>
-                                                        <th className="px-6 py-5 text-left text-[10px] font-black text-white/30 uppercase tracking-widest">Fecha</th>
-                                                        <th className="px-6 py-5 text-left text-[10px] font-black text-white/30 uppercase tracking-widest">Insumo Técnico</th>
-                                                        <th className="px-6 py-5 text-center text-[10px] font-black text-white/30 uppercase tracking-widest">Cantidad</th>
+                                                    <tr className="bg-[#1D1D1F] border-b border-[#333333]">
+                                                        <th className="px-6 py-5 text-left text-[9px] font-black text-[#86868B] uppercase tracking-widest">N° Salida</th>
+                                                        <th className="px-6 py-5 text-left text-[9px] font-black text-[#86868B] uppercase tracking-widest">Fecha</th>
+                                                        <th className="px-6 py-5 text-left text-[9px] font-black text-[#86868B] uppercase tracking-widest">Insumo</th>
+                                                        <th className="px-6 py-5 text-center text-[9px] font-black text-[#86868B] uppercase tracking-widest">Cant.</th>
                                                     </tr>
                                                 </thead>
-                                                <tbody className="divide-y divide-white/5">
+                                                <tbody className="divide-y divide-[#333333]">
                                                     {articulos.length > 0 ? (
                                                         articulos.map((art, idx) => (
-                                                            <tr key={idx} className="hover:bg-white/[0.02] transition-colors">
+                                                            <tr key={idx} className="hover:bg-white/5 transition-colors">
                                                                 <td className="px-6 py-5">
-                                                                    <span className="text-xs font-black text-white/40">#</span>
-                                                                    <span className="text-sm font-bold text-white ml-1">{art.id_salida}</span>
+                                                                    <span className="text-xs font-black text-[#0071E3]">#</span>
+                                                                    <span className="text-sm font-bold text-[#F5F5F7] ml-1">{art.id_salida}</span>
                                                                 </td>
-                                                                <td className="px-6 py-5 text-sm font-medium text-white/60">
+                                                                <td className="px-6 py-5 text-sm font-medium text-[#86868B]">
                                                                     {new Date(art.fecha_salida).toLocaleDateString()}
                                                                 </td>
                                                                 <td className="px-6 py-5">
                                                                     <div className="flex flex-col">
-                                                                        <span className="text-sm font-bold text-white">{art.nombre_articulo}</span>
-                                                                        <span className="text-[10px] font-black text-white/20 uppercase tracking-tight">{art.codigo_articulo}</span>
+                                                                        <span className="text-sm font-bold text-[#F5F5F7]">{art.nombre_articulo}</span>
+                                                                        <span className="text-[9px] font-black text-[#86868B] uppercase tracking-tight">{art.codigo_articulo}</span>
                                                                     </div>
                                                                 </td>
                                                                 <td className="px-6 py-5 text-center">
-                                                                    <span className="inline-block px-4 py-1.5 bg-purple-500/10 border border-purple-500/30 rounded-lg text-sm font-black text-purple-400 shadow-xl">
+                                                                    <span className="inline-block px-4 py-1.5 bg-[#0071E3]/10 border border-[#0071E3]/20 rounded-[8px] text-[10px] font-black text-[#0071E3] shadow-xl">
                                                                         {art.cantidad}
                                                                     </span>
                                                                 </td>
@@ -901,7 +941,7 @@ export default function SeguimientoSolicitudExterno() {
                                                         ))
                                                     ) : (
                                                         <tr>
-                                                            <td colSpan={4} className="px-6 py-12 text-center text-[11px] font-black text-white/10 uppercase tracking-[0.3em]">
+                                                            <td colSpan={4} className="px-6 py-12 text-center text-[10px] font-black text-[#86868B] uppercase tracking-[0.3em] opacity-40 italic">
                                                                 No hay materiales vinculados a esta solicitud
                                                             </td>
                                                         </tr>
@@ -914,22 +954,22 @@ export default function SeguimientoSolicitudExterno() {
 
                                 {/* Sidebar Info */}
                                 <div className="lg:col-span-4 space-y-6">
-                                    <div className="bg-white/[0.04] border-2 border-white/10 rounded-[2.5rem] p-8 space-y-6">
-                                        <h3 className="text-[11px] font-black text-white/40 uppercase tracking-widest flex items-center gap-3">
-                                            <Clock className="w-4 h-4 text-purple-500" /> Cronograma STE
+                                    <div className="bg-[#121212] border border-[#333333] rounded-[8px] p-8 space-y-6">
+                                        <h3 className="text-[10px] font-black text-[#0071E3] uppercase tracking-widest flex items-center gap-3 border-b border-[#333333] pb-2">
+                                            <Clock className="w-4 h-4" /> Cronograma STE
                                         </h3>
                                         {[
-                                            { label: 'Ingreso', key: 'fecha_ingreso', color: 'border-blue-500/30' },
-                                            { label: 'Inicio', key: 'fecha_inicio', color: 'border-indigo-500/30' },
-                                            { label: 'Asignación', key: 'fecha_asignacion', color: 'border-purple-500/30' },
-                                            { label: 'Valoración', key: 'fecha_valoracion', color: 'border-amber-500/30' },
-                                            { label: 'Finalización', key: 'fecha_finalizacion', color: 'border-emerald-500/30' }
+                                            { label: 'Ingreso', key: 'fecha_ingreso' },
+                                            { label: 'Inicio', key: 'fecha_inicio' },
+                                            { label: 'Asignación', key: 'fecha_asignacion' },
+                                            { label: 'Valoración', key: 'fecha_valoracion' },
+                                            { label: 'Finalización', key: 'fecha_finalizacion' }
                                         ].map((t, idx) => (
-                                            <div key={idx} className={cn("bg-white/[0.02] border-l-4 rounded-xl p-4 flex flex-col gap-2 group/date hover:bg-white/5 transition-colors", t.color)}>
-                                                <span className="text-[9px] font-black text-white/30 uppercase tracking-[0.2em]">{t.label}</span>
+                                            <div key={idx} className="bg-[#1D1D1F] border border-[#333333] rounded-[8px] p-4 flex flex-col gap-2 group/date hover:border-[#0071E3]/30 transition-colors">
+                                                <span className="text-[9px] font-black text-[#86868B] uppercase tracking-[0.2em]">{t.label}</span>
                                                 <input
                                                     type="date"
-                                                    className="bg-transparent border-none text-sm font-bold text-white outline-none focus:ring-0 [color-scheme:dark] w-full cursor-pointer p-0 h-auto"
+                                                    className="bg-transparent border-none text-sm font-bold text-[#F5F5F7] outline-none focus:ring-0 [color-scheme:dark] w-full cursor-pointer p-0 h-auto"
                                                     value={seguimientoData[t.key as keyof typeof seguimientoData] || ''}
                                                     onChange={(e) => setSeguimientoData({ ...seguimientoData, [t.key]: e.target.value })}
                                                 />
@@ -940,7 +980,7 @@ export default function SeguimientoSolicitudExterno() {
                                     <button
                                         onClick={guardarSeguimiento}
                                         disabled={loading}
-                                        className="w-full h-20 bg-[#8e44ad] hover:bg-[#9b59b6] disabled:opacity-50 text-white rounded-[1.5rem] flex items-center justify-center gap-4 shadow-2xl shadow-purple-900/40 group transition-all"
+                                        className="w-full h-16 bg-[#0071E3] hover:brightness-110 disabled:opacity-50 text-white rounded-[8px] flex items-center justify-center gap-4 shadow-2xl shadow-[#0071E3]/20 group transition-all active:scale-95"
                                     >
                                         <Save className="w-6 h-6 group-hover:scale-110 transition-transform" />
                                         <span className="text-sm font-black uppercase tracking-[0.2em]">Guardar Cambios</span>
@@ -949,9 +989,9 @@ export default function SeguimientoSolicitudExterno() {
                             </div>
 
                             {/* Bitácora de Registro Técnico */}
-                            <div className="bg-white/[0.04] border-2 border-white/10 rounded-[3rem] p-10 space-y-8">
+                            <div className="bg-[#121212] border border-[#333333] rounded-[8px] p-8 md:p-10 space-y-8">
                                 <div className="flex justify-between items-center">
-                                    <h3 className="text-sm font-black text-purple-400 uppercase tracking-widest flex items-center gap-3">
+                                    <h3 className="text-[10px] font-black text-[#0071E3] uppercase tracking-widest flex items-center gap-3 border-b border-[#333333] pb-2 inline-flex">
                                         <History className="w-5 h-5" /> Bitácora de Registro Técnico
                                     </h3>
                                     <button
@@ -959,35 +999,35 @@ export default function SeguimientoSolicitudExterno() {
                                             setNuevoRegistro({ fecha: new Date().toISOString().split('T')[0], texto: '', tipo: 'General' });
                                             setShowModalRegistro(true);
                                         }}
-                                        className="h-12 px-6 bg-white/5 border-2 border-white/10 rounded-2xl flex items-center gap-3 text-[10px] font-black uppercase tracking-widest hover:bg-white/10 hover:border-white/20 transition-all text-white shadow-xl"
+                                        className="h-10 px-6 bg-transparent border border-[#F5F5F7] rounded-[8px] flex items-center gap-3 text-[10px] font-black uppercase tracking-widest hover:bg-white/5 transition-all text-[#F5F5F7] shadow-xl active:scale-95"
                                     >
-                                        <PlusCircle className="w-4 h-4 text-emerald-400" /> Nuevo Registro
+                                        <PlusCircle className="w-4 h-4 text-[#0071E3]" /> Nuevo Registro
                                     </button>
                                 </div>
                                 <div className="space-y-6">
                                     {registros.length > 0 ? (
                                         registros.map((reg, idx) => (
-                                            <div key={idx} className="bg-white/[0.02] border-2 border-white/5 rounded-[2rem] p-8 hover:bg-white/[0.04] transition-all relative overflow-hidden group shadow-2xl">
-                                                <div className="absolute top-0 left-0 w-1.5 h-full bg-[#8e44ad] opacity-30 group-hover:opacity-100 transition-opacity"></div>
+                                            <div key={idx} className="bg-[#1D1D1F] border border-[#333333] rounded-[8px] p-8 hover:border-[#0071E3]/30 transition-all relative overflow-hidden group shadow-2xl">
+                                                <div className="absolute top-0 left-0 w-1 h-full bg-[#0071E3] opacity-30 group-hover:opacity-100 transition-opacity"></div>
                                                 <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 mb-4">
                                                     <div className="flex items-center gap-4">
-                                                        <div className="w-10 h-10 rounded-xl bg-purple-500/20 flex items-center justify-center">
-                                                            <Calendar className="w-5 h-5 text-purple-400" />
+                                                        <div className="w-10 h-10 rounded-[8px] bg-[#0071E3]/10 border border-[#0071E3]/20 flex items-center justify-center">
+                                                            <Calendar className="w-5 h-5 text-[#0071E3]" />
                                                         </div>
-                                                        <span className="text-sm font-black text-white tracking-widest">
+                                                        <span className="text-[10px] font-black text-[#F5F5F7] tracking-[0.2em] uppercase">
                                                             {new Date(reg.fecha_registro).toLocaleDateString('es-ES', { day: '2-digit', month: 'long', year: 'numeric' })}
                                                         </span>
                                                     </div>
                                                 </div>
-                                                <p className="text-sm font-bold text-white/70 leading-relaxed whitespace-pre-wrap ml-14">
-                                                    {reg.registro_seguimiento}
+                                                <p className="text-sm font-bold text-[#86868B] leading-relaxed whitespace-pre-wrap ml-14 italic">
+                                                    "{reg.registro_seguimiento}"
                                                 </p>
                                             </div>
                                         ))
                                     ) : (
-                                        <div className="h-40 rounded-[2rem] border-2 border-dashed border-white/10 flex flex-col items-center justify-center gap-2 opacity-30">
-                                            <History className="w-8 h-8" />
-                                            <span className="text-[10px] font-black uppercase tracking-widest">Sin registros históricos</span>
+                                        <div className="h-40 rounded-[8px] border border-dashed border-[#333333] flex flex-col items-center justify-center gap-3 opacity-40">
+                                            <History className="w-8 h-8 text-[#333333]" />
+                                            <span className="text-[10px] font-black uppercase tracking-widest text-[#86868B]">Sin registros históricos</span>
                                         </div>
                                     )}
                                 </div>
@@ -999,40 +1039,40 @@ export default function SeguimientoSolicitudExterno() {
 
             {/* Modal Agregar Registro */}
             {showModalRegistro && (
-                <div className="fixed inset-0 z-[110] flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm">
-                    <div className="bg-[#1a1d29] border border-white/10 rounded-2xl shadow-2xl w-full max-w-lg">
-                        <div className="p-5 border-b border-white/10 flex justify-between items-center">
-                            <h3 className="text-lg font-bold text-white flex items-center gap-2">
-                                <PlusCircle size={20} className="text-green-400" /> Agregar Registro
+                <div className="fixed inset-0 z-[110] flex items-center justify-center p-4 bg-black/80 backdrop-blur-md animate-in fade-in duration-300 shadow-3xl">
+                    <div className="bg-[#121212] border border-[#333333] rounded-[8px] shadow-4xl w-full max-w-lg overflow-hidden">
+                        <div className="p-6 border-b border-[#333333] bg-[#1D1D1F] flex justify-between items-center">
+                            <h3 className="text-sm font-black text-[#F5F5F7] uppercase tracking-widest flex items-center gap-3">
+                                <PlusCircle size={20} className="text-[#0071E3]" /> Agregar Registro
                             </h3>
-                            <button onClick={() => setShowModalRegistro(false)} className="text-gray-400 hover:text-white"><X size={20} /></button>
+                            <button onClick={() => setShowModalRegistro(false)} className="text-[#86868B] hover:text-[#F5F5F7] transition-colors"><X size={20} /></button>
                         </div>
-                        <div className="p-6 space-y-4">
-                            <div className="space-y-2">
-                                <label className="text-sm font-medium text-gray-300">Fecha *</label>
+                        <div className="p-8 space-y-6">
+                            <div className="space-y-3">
+                                <label className="text-[10px] font-black text-[#86868B] uppercase tracking-widest ml-1">Fecha de Registro *</label>
                                 <input
                                     type="date"
-                                    className="w-full bg-[#1e2230] border border-white/10 rounded-lg p-2.5 text-white focus:border-[#8e44ad] outline-none [color-scheme:dark]"
+                                    className="w-full bg-[#1D1D1F] border border-[#333333] rounded-[8px] p-4 text-[#F5F5F7] font-bold focus:border-[#0071E3]/50 outline-none [color-scheme:dark] h-12"
                                     value={nuevoRegistro.fecha}
                                     onChange={(e) => setNuevoRegistro({ ...nuevoRegistro, fecha: e.target.value })}
                                 />
                             </div>
-                            <div className="space-y-2">
-                                <label className="text-sm font-medium text-gray-300">Detalle del Registro *</label>
+                            <div className="space-y-3">
+                                <label className="text-[10px] font-black text-[#86868B] uppercase tracking-widest ml-1">Detalle Técnico *</label>
                                 <textarea
-                                    className="w-full bg-[#1e2230] border border-white/10 rounded-lg p-3 text-white focus:border-[#8e44ad] outline-none h-32 resize-none"
-                                    placeholder="Escriba los detalles..."
+                                    className="w-full bg-[#1D1D1F] border border-[#333333] rounded-[8px] p-4 text-[#F5F5F7] font-bold focus:border-[#0071E3]/50 outline-none h-40 resize-none italic text-sm"
+                                    placeholder="Describa el avance técnico o novedad..."
                                     value={nuevoRegistro.texto}
                                     onChange={(e) => setNuevoRegistro({ ...nuevoRegistro, texto: e.target.value })}
                                 />
                             </div>
                         </div>
-                        <div className="p-5 border-t border-white/10 flex justify-end gap-3">
-                            <button onClick={() => setShowModalRegistro(false)} className="px-4 py-2 rounded-lg border border-white/10 text-gray-300 hover:bg-white/5">
+                        <div className="p-6 bg-[#1D1D1F] border-t border-[#333333] flex justify-end gap-4">
+                            <button onClick={() => setShowModalRegistro(false)} className="px-6 h-12 rounded-[8px] border border-[#F5F5F7] text-[#F5F5F7] text-[10px] font-black uppercase tracking-widest hover:bg-white/5 transition-all">
                                 Cancelar
                             </button>
-                            <button onClick={guardarRegistro} className="px-4 py-2 rounded-lg bg-green-500/20 text-green-400 border border-green-500/30 hover:bg-green-500/30">
-                                Guardar
+                            <button onClick={guardarRegistro} className="px-8 h-12 rounded-[8px] bg-[#0071E3] text-white text-[10px] font-black uppercase tracking-widest shadow-2xl shadow-[#0071E3]/20 hover:brightness-110 active:scale-95 transition-all">
+                                Guardar Registro
                             </button>
                         </div>
                     </div>
@@ -1041,14 +1081,16 @@ export default function SeguimientoSolicitudExterno() {
 
             {/* Modal Imagen Full */}
             {showModalImagen && (
-                <div className="fixed inset-0 z-[120] flex items-center justify-center bg-black/90 backdrop-blur-md p-4" onClick={() => setShowModalImagen(null)}>
-                    <div className="relative max-w-4xl max-h-[90vh]" onClick={e => e.stopPropagation()}>
-                        <button onClick={() => setShowModalImagen(null)} className="absolute -top-4 -right-4 w-8 h-8 bg-[#8e44ad] text-white rounded-full flex items-center justify-center font-bold hover:scale-110 transition-transform shadow-lg">
-                            <X size={16} />
+                <div className="fixed inset-0 z-[120] flex items-center justify-center bg-black/95 backdrop-blur-xl p-6 animate-in fade-in duration-300" onClick={() => setShowModalImagen(null)}>
+                    <div className="relative max-w-5xl w-full" onClick={e => e.stopPropagation()}>
+                        <button onClick={() => setShowModalImagen(null)} className="absolute -top-6 -right-6 w-12 h-12 bg-[#0071E3] text-white rounded-[8px] flex items-center justify-center font-bold hover:scale-110 transition-transform shadow-2xl z-20">
+                            <X size={24} />
                         </button>
-                        <img src={showModalImagen.url} alt={showModalImagen.title} className="max-w-full max-h-[85vh] rounded-lg border border-white/20 shadow-2xl" />
-                        <div className="absolute bottom-4 left-1/2 -translate-x-1/2 bg-black/60 px-4 py-2 rounded-full text-white text-sm backdrop-blur-sm border border-white/10">
-                            {showModalImagen.title}
+                        <div className="rounded-[8px] overflow-hidden border border-white/10 shadow-4xl bg-black">
+                            <img src={showModalImagen.url} alt={showModalImagen.title} className="w-full h-auto max-h-[85vh] object-contain" />
+                            <div className="bg-[#1D1D1F] p-4 text-center border-t border-[#333333]">
+                                <span className="text-[10px] font-black text-[#F5F5F7] uppercase tracking-widest">{showModalImagen.title}</span>
+                            </div>
                         </div>
                     </div>
                 </div>

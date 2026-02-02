@@ -1,32 +1,52 @@
 // @ts-ignore
-import * as RW from 'react-window';
+import * as RW_All from 'react-window';
 // @ts-ignore
-import * as AS from 'react-virtualized-auto-sizer';
+import * as AS_All from 'react-virtualized-auto-sizer';
 
-// Advanced resolution for CJS/ESM interop in Vite
-const resolveComponent = (module: any, name: string) => {
-    if (!module) return null;
+// Robust check for React Component (function, class, or React-specific object)
+const isValidComponent = (c: any) => {
+    if (!c) return false;
+    // Check if it's a function (functional component or class component)
+    if (typeof c === 'function') return true;
+    // Check if it's a React-specific object (memo, forwardRef, etc.)
+    return (typeof c === 'object' && !!c.$$typeof);
+};
 
-    const targets = [
-        module[name],
-        module.default?.[name],
-        module.default?.default?.[name],
-        module.default,
-        module.default?.default,
-        module
-    ];
+// Precise resolution for CJS/ESM hybrid environments
+const resolveComponent = (mod: any, name: string) => {
+    if (!mod) return null;
 
-    for (const t of targets) {
-        if (typeof t === 'function') return t;
-        // AutoSizer can be a class or a functional component
-        if (t && (t.prototype?.render || t.$$typeof)) return t;
+    // 1. Direct named export
+    if (isValidComponent(mod[name])) return mod[name];
+
+    // 2. Default export handling
+    const def = mod.default;
+    if (def) {
+        if (isValidComponent(def[name])) return def[name];
+        if (isValidComponent(def)) return def;
+        // Double default check
+        if (def.default && isValidComponent(def.default)) return def.default;
     }
+
+    // 3. Namespace check: only return mod if it's actually a component
+    if (isValidComponent(mod)) return mod;
 
     return null;
 };
 
-const List = resolveComponent(RW, 'FixedSizeList');
-const AutoSizer = resolveComponent(AS, 'AutoSizer');
+const List: any = resolveComponent(RW_All, 'FixedSizeList');
+const AutoSizerComponent: any = resolveComponent(AS_All, 'AutoSizer');
+
+// Failsafe check
+const checkComponents = () => !!(List && AutoSizerComponent);
+
+// Logging initialization state (silent in production, useful for debug)
+if (typeof window !== 'undefined' && !checkComponents()) {
+    console.warn('VirtualizedTable: Core components failed to load. Falling back to standard Table.', {
+        hasList: !!List,
+        hasAutoSizer: !!AutoSizerComponent
+    });
+}
 
 import { cn } from '../lib/utils';
 import { ReactNode, CSSProperties } from 'react';
@@ -58,20 +78,19 @@ export default function VirtualizedTable<T>({
     className
 }: VirtualizedTableProps<T>) {
     // Failsafe: If virtualization fails to load, render a standard table as fallback
-    if (!List || !AutoSizer) {
-        console.warn('VirtualizedTable: Falling back to standard table.');
+    if (!checkComponents()) {
         return (
-            <div className={cn("w-full h-full flex flex-col overflow-hidden rounded-xl border border-slate-200 dark:border-white/10 bg-white dark:bg-slate-900/30", className)}>
+            <div className={cn("w-full h-full flex flex-col overflow-hidden rounded-[8px] border border-[#333333] bg-[#000000]", className)}>
                 <div className="overflow-x-auto">
                     <table className="w-full text-left border-collapse">
-                        <thead className="sticky top-0 z-10 bg-slate-50 dark:bg-slate-800 border-b border-slate-200 dark:border-white/10">
+                        <thead className="sticky top-0 z-10 bg-[#121212] border-b border-[#333333]">
                             <tr>
                                 {columns.map((col, idx) => (
                                     <th
                                         key={idx}
                                         style={{ width: col.width, minWidth: col.width }}
                                         className={cn(
-                                            "px-6 py-4 text-[10px] font-black text-slate-500 dark:text-slate-400 uppercase tracking-[0.2em]",
+                                            "px-6 py-4 text-[10px] font-black text-[#86868B] uppercase tracking-[0.2em]",
                                             col.className
                                         )}
                                     >
@@ -80,13 +99,13 @@ export default function VirtualizedTable<T>({
                                 ))}
                             </tr>
                         </thead>
-                        <tbody className="divide-y divide-slate-100 dark:divide-white/5">
+                        <tbody className="divide-y divide-[#333333]/30">
                             {data.map((item, rowIndex) => (
-                                <tr key={rowIndex} className="hover:bg-slate-50 dark:hover:bg-white/5 transition-colors">
+                                <tr key={rowIndex} className="hover:bg-white/5 transition-colors">
                                     {columns.map((col, colIdx) => (
                                         <td
                                             key={colIdx}
-                                            className={cn("px-6 py-4", col.className)}
+                                            className={cn("px-6 py-4 text-[#F5F5F7]", col.className)}
                                         >
                                             {renderCell(item, colIdx, rowIndex)}
                                         </td>
@@ -97,22 +116,22 @@ export default function VirtualizedTable<T>({
                     </table>
                 </div>
                 {data.length === 0 && (
-                    <div className="p-12 text-center text-slate-500 italic">No hay datos para mostrar</div>
+                    <div className="p-12 text-center text-[#86868B] italic text-[10px] uppercase tracking-widest font-black">No hay datos para mostrar</div>
                 )}
             </div>
         );
     }
 
     return (
-        <div className={cn("w-full h-full flex flex-col overflow-hidden", className)}>
+        <div className={cn("w-full h-full flex flex-col overflow-hidden bg-[#000000]", className)}>
             {/* Header */}
-            <div className="flex bg-slate-50 dark:bg-slate-700/50 border-b border-slate-200 dark:border-slate-700 z-10 shadow-sm">
+            <div className="flex bg-[#121212] border-b border-[#333333] z-10 shadow-sm">
                 {columns.map((col, idx) => (
                     <div
                         key={idx}
                         style={{ width: col.width, minWidth: 0 }}
                         className={cn(
-                            "px-3 py-4 text-[10px] font-black text-slate-500 dark:text-slate-400 uppercase tracking-[0.2em]",
+                            "px-3 py-4 text-[10px] font-black text-[#86868B] uppercase tracking-[0.2em]",
                             col.className
                         )}
                     >
@@ -121,16 +140,15 @@ export default function VirtualizedTable<T>({
                 ))}
             </div>
 
-            {/* Body */}
             <div className="flex-1 min-h-[400px]">
-                <AutoSizer>
+                <AutoSizerComponent>
                     {({ height, width }: { height: number; width: number }) => (
                         <List
                             height={height}
                             itemCount={data.length}
                             itemSize={rowHeight}
                             width={width}
-                            className="scrollbar-thin scrollbar-thumb-slate-300 dark:scrollbar-thumb-slate-700"
+                            className="scrollbar-thin scrollbar-thumb-[#333333] hover:scrollbar-thumb-[#424245]"
                         >
                             {({ index, style }: ListChildProps) => {
                                 const item = data[index];
@@ -138,15 +156,15 @@ export default function VirtualizedTable<T>({
                                     <div
                                         style={style}
                                         className={cn(
-                                            "flex items-start hover:bg-slate-50 dark:hover:bg-slate-700/50 transition-colors border-b border-slate-100 dark:border-slate-800 overflow-hidden",
-                                            index % 2 === 0 ? "bg-white dark:bg-slate-900/10" : "bg-white dark:bg-transparent"
+                                            "flex items-start hover:bg-white/5 transition-colors border-b border-[#333333]/30 overflow-hidden",
+                                            index % 2 === 0 ? "bg-[#121212]/10" : "bg-transparent"
                                         )}
                                     >
                                         {columns.map((col, colIdx) => (
                                             <div
                                                 key={colIdx}
                                                 style={{ width: col.width, minWidth: 0 }}
-                                                className={cn("px-3 py-4 flex flex-col justify-start", col.className)}
+                                                className={cn("px-3 py-4 flex flex-col justify-start text-[#F5F5F7] text-sm font-bold", col.className)}
                                             >
                                                 {renderCell(item, colIdx, index)}
                                             </div>
@@ -156,7 +174,7 @@ export default function VirtualizedTable<T>({
                             }}
                         </List>
                     )}
-                </AutoSizer>
+                </AutoSizerComponent>
             </div>
         </div>
     );

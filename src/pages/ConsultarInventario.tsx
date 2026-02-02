@@ -10,7 +10,10 @@ import {
     LayoutGrid,
     ChevronLeft,
     ChevronRight,
-    Filter
+    Filter,
+    Activity,
+    Maximize2,
+    Image as ImageIcon
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import SmartImage from '../components/SmartImage';
@@ -19,8 +22,6 @@ import * as XLSX from 'xlsx';
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
 import { cn } from '../lib/utils';
-
-// Shared Components
 import { PageHeader } from '../components/ui/PageHeader';
 
 // Define types for our data
@@ -46,6 +47,7 @@ export default function ConsultarInventario() {
     const [search, setSearch] = useState('');
     const [page, setPage] = useState(1);
     const [totalItems, setTotalItems] = useState(0);
+    const [error, setError] = useState<string | null>(null);
     const [selectedImage, setSelectedImage] = useState<{ src: string, alt: string, stock?: number, unidad?: string } | null>(null);
     const [isMobile, setIsMobile] = useState(window.innerWidth < 768);
 
@@ -62,6 +64,7 @@ export default function ConsultarInventario() {
 
     const fetchData = useCallback(async () => {
         setLoading(true);
+        setError(null);
         try {
             let query = supabase.from(VIEW).select('*', { count: 'exact' });
 
@@ -103,8 +106,9 @@ export default function ConsultarInventario() {
             setData(dataConMarcas);
             setTotalItems(count || 0);
 
-        } catch (error) {
+        } catch (error: any) {
             console.error('Error fetching data:', error);
+            setError(error.message || 'Error de conexión con el servidor. Por favor, verifica tu conexión a internet.');
         } finally {
             setLoading(false);
         }
@@ -192,7 +196,7 @@ export default function ConsultarInventario() {
                     new Intl.NumberFormat('es-CR', { style: 'currency', currency: 'CRC' }).format(item.precio_unitario)
                 ]),
                 theme: 'striped',
-                headStyles: { fillColor: [59, 130, 246] }
+                headStyles: { fillColor: [0, 113, 227] }
             });
 
             doc.save("Inventario_Completo_SDMO.pdf");
@@ -206,256 +210,252 @@ export default function ConsultarInventario() {
     const totalPages = Math.ceil(totalItems / itemsPerPage);
 
     return (
-        <div className="min-h-screen bg-[#0f111a] p-4 md:p-8">
-            <PageHeader
-                title="Consulta de Inventario"
-                icon={LayoutGrid}
-                themeColor={themeColor}
-            />
+        <div className="min-h-screen bg-[#000000] text-[#F5F5F7] font-sans selection:bg-[#0071E3]/30">
+            <div className="animate-fade-in-up">
+                <PageHeader
+                    title="Consulta de Inventario"
+                    icon={LayoutGrid}
+                    themeColor={themeColor}
+                />
 
-            <div className="max-w-7xl mx-auto space-y-6">
+                <div className="max-w-7xl mx-auto px-8 pt-8 space-y-8">
+                    {/* Search and Action Bar */}
+                    <div className="bg-[#121212] border border-[#333333] rounded-[8px] p-6 flex flex-col lg:flex-row gap-4 justify-between items-center group">
+                        <div className="relative w-full lg:w-[500px] group">
+                            <Search className="absolute left-5 top-1/2 -translate-y-1/2 w-4 h-4 text-[#86868B] group-focus-within:text-[#0071E3] transition-colors" />
+                            <input
+                                type="text"
+                                placeholder="Buscar por código o artículo..."
+                                value={search}
+                                onChange={(e) => {
+                                    setSearch(e.target.value);
+                                    setPage(1);
+                                }}
+                                className="w-full pl-14 pr-6 py-4 bg-[#1D1D1F] border border-[#333333] rounded-[8px] text-[#F5F5F7] placeholder-[#86868B] focus:border-[#0071E3]/50 transition-all font-medium outline-none shadow-inner"
+                            />
+                        </div>
 
-                {/* Search and Action Bar */}
-                <div className="bg-[#1e2235] border border-white/10 rounded-2xl shadow-xl p-4 md:p-6 flex flex-col lg:flex-row gap-4 justify-between items-center relative overflow-hidden group">
-                    <div className="absolute top-0 right-0 w-32 h-32 bg-blue-500/5 blur-3xl -mr-16 -mt-16 group-hover:bg-blue-500/10 transition-colors" />
-
-                    <div className="relative w-full lg:w-96 group">
-                        <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-600 group-focus-within:text-blue-500 transition-colors" />
-                        <input
-                            type="text"
-                            placeholder="Buscar por código o artículo..."
-                            value={search}
-                            onChange={(e) => {
-                                setSearch(e.target.value);
-                                setPage(1);
-                            }}
-                            className="w-full pl-12 pr-4 py-3.5 bg-black/30 border border-white/10 rounded-xl text-white placeholder-gray-600 focus:outline-none focus:border-blue-500/50 transition-all font-bold shadow-inner"
-                        />
+                        <div className="flex gap-4 w-full lg:w-auto">
+                            <button
+                                onClick={handleExportExcel}
+                                disabled={loading}
+                                className="flex-1 lg:flex-none flex items-center justify-center gap-3 px-8 py-4 bg-[#0071E3] text-[#FFFFFF] rounded-[8px] hover:brightness-110 transition-all disabled:opacity-20 font-bold uppercase text-[10px] tracking-widest shadow-lg active:scale-95"
+                            >
+                                <Download className="w-5 h-5" />
+                                EXCEL
+                            </button>
+                            <button
+                                onClick={handleExportPDF}
+                                disabled={loading}
+                                className="flex-1 lg:flex-none flex items-center justify-center gap-3 px-8 py-4 bg-transparent border border-[#F5F5F7] text-[#F5F5F7] rounded-[8px] hover:bg-[#F5F5F7]/10 transition-all disabled:opacity-20 font-bold uppercase text-[10px] tracking-widest active:scale-95"
+                            >
+                                <FileText className="w-5 h-5" />
+                                PDF
+                            </button>
+                        </div>
                     </div>
 
-                    <div className="flex gap-3 w-full lg:w-auto">
-                        <button
-                            onClick={handleExportExcel}
-                            disabled={loading}
-                            className="flex-1 lg:flex-none flex items-center justify-center gap-2 px-6 py-3.5 bg-emerald-500/10 text-emerald-400 border border-emerald-500/30 rounded-xl hover:bg-emerald-500 hover:text-white transition-all disabled:opacity-50 font-black uppercase tracking-tighter shadow-lg shadow-emerald-500/5"
-                        >
-                            <Download className="w-5 h-5" />
-                            Excel
-                        </button>
-                        <button
-                            onClick={handleExportPDF}
-                            disabled={loading}
-                            className="flex-1 lg:flex-none flex items-center justify-center gap-2 px-6 py-3.5 bg-rose-500/10 text-rose-400 border border-rose-500/30 rounded-xl hover:bg-rose-500 hover:text-white transition-all disabled:opacity-50 font-black uppercase tracking-tighter shadow-lg shadow-rose-500/5"
-                        >
-                            <FileText className="w-5 h-5" />
-                            PDF
-                        </button>
-                    </div>
-                </div>
+                    {/* Main Content Area */}
+                    <div className="bg-[#121212] border border-[#333333] rounded-[8px] flex flex-col h-[70vh] relative overflow-hidden">
+                        <div className="absolute top-0 left-0 w-full h-[1px] bg-gradient-to-r from-transparent via-[#0071E3]/20 to-transparent z-20" />
 
-                {/* Main Content Area */}
-                <div className="bg-[#1e2235] border border-white/10 rounded-[2.5rem] shadow-2xl overflow-hidden flex flex-col h-[70vh] relative">
-                    <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-transparent via-blue-500/50 to-transparent opacity-50" />
-
-                    {loading && data.length === 0 ? (
-                        <div className="flex-1 flex flex-col items-center justify-center gap-6">
-                            <div className="relative">
-                                <Loader2 className="w-16 h-16 animate-spin text-blue-500" />
-                                <div className="absolute inset-0 blur-2xl bg-blue-500/30 animate-pulse" />
+                        {loading && data.length === 0 ? (
+                            <div className="flex-1 flex flex-col items-center justify-center gap-8">
+                                <Activity className="w-12 h-12 text-[#0071E3] animate-spin" />
+                                <p className="font-bold text-[#86868B] uppercase tracking-[0.3em] text-[10px] animate-pulse">
+                                    Sincronizando Inventario...
+                                </p>
                             </div>
-                            <p className="font-black text-gray-500 uppercase tracking-[0.3em] text-sm animate-pulse italic">
-                                Sincronizando Base de Datos...
-                            </p>
-                        </div>
-                    ) : data.length === 0 ? (
-                        <div className="flex-1 flex flex-col items-center justify-center gap-4 text-center p-8 grayscale opacity-30">
-                            <Filter className="w-20 h-20 text-gray-600" />
-                            <h3 className="text-2xl font-black text-gray-400 uppercase tracking-widest">Sin Coincidencias</h3>
-                            <p className="text-gray-500 max-w-xs font-bold">No se encontraron artículos con el término "{search}"</p>
-                        </div>
-                    ) : (
-                        <VirtualizedTable
-                            data={data}
-                            rowHeight={isMobile ? 140 : 100}
-                            columns={isMobile ? [
-                                { header: 'Inventario Móvil', width: '100%' }
-                            ] : [
-                                { header: 'Imagen', width: '7%' },
-                                { header: 'Código', width: '12%', className: 'font-mono text-xs tracking-tighter text-blue-400/80' },
-                                { header: 'Artículo', width: '36%', className: 'font-bold text-white' },
-                                { header: 'Marca', width: '10%' },
-                                { header: 'Unidad', width: '7%' },
-                                { header: 'Precio Unitario', width: '13%', className: 'text-right font-mono text-gray-400' },
-                                { header: 'Stock Disponible', width: '15%', className: 'text-right font-black shadow-rose-500/5' },
-                            ]}
-                            renderCell={(item, colIdx) => {
-                                if (isMobile) {
+                        ) : error ? (
+                            <div className="flex-1 flex flex-col items-center justify-center gap-6 p-8">
+                                <AlertCircle className="w-16 h-16 text-red-500" />
+                                <div className="text-center space-y-2">
+                                    <h3 className="text-xl font-bold text-[#F5F5F7] uppercase tracking-widest">Error de Carga</h3>
+                                    <p className="text-[#86868B] text-xs font-medium max-w-md">{error}</p>
+                                    <button
+                                        onClick={() => fetchData()}
+                                        className="mt-4 px-6 py-2 bg-[#1D1D1F] border border-[#333333] text-[#0071E3] rounded-[8px] hover:bg-[#0071E3] hover:text-[#000000] transition-all text-[10px] font-bold uppercase tracking-widest"
+                                    >
+                                        Reintentar
+                                    </button>
+                                </div>
+                            </div>
+                        ) : data.length === 0 ? (
+                            <div className="flex-1 flex flex-col items-center justify-center gap-6 p-8 opacity-50">
+                                <Filter className="w-16 h-16 text-[#333333]" />
+                                <div className="text-center space-y-2">
+                                    <h3 className="text-xl font-bold text-[#F5F5F7] uppercase tracking-widest">Sin Coincidencias</h3>
+                                    <p className="text-[#86868B] text-xs font-medium">No se encontraron artículos para "{search}"</p>
+                                </div>
+                            </div>
+                        ) : (
+                            <VirtualizedTable
+                                data={data}
+                                rowHeight={160}
+                                columns={[
+                                    { header: 'Listado de Artículos', width: '100%' }
+                                ]}
+                                renderCell={(item) => {
                                     return (
-                                        <div className="flex items-center gap-6 w-full p-4 h-full relative">
-                                            <div
-                                                className="w-24 h-24 rounded-2xl bg-black/40 border border-white/10 overflow-hidden shrink-0 shadow-2xl group transition-transform active:scale-95"
-                                                onClick={() => setSelectedImage({
-                                                    src: item.imagen_url || '',
-                                                    alt: item.nombre_articulo,
-                                                    stock: item.cantidad_disponible,
-                                                    unidad: item.unidad
-                                                })}
-                                            >
-                                                <SmartImage src={item.imagen_url} alt={item.nombre_articulo} className="w-full h-full object-cover group-hover:scale-110 transition-transform" />
-                                            </div>
-                                            <div className="flex-1 min-w-0 space-y-2">
-                                                <h3 className="text-white font-black text-sm leading-tight line-clamp-2 uppercase italic tracking-tight">
-                                                    {item.nombre_articulo}
-                                                </h3>
-                                                <div className="flex flex-wrap gap-2">
-                                                    <span className="bg-white/5 text-gray-500 px-2 py-0.5 rounded-lg border border-white/5 font-mono text-[9px] uppercase">
-                                                        #{item.codigo_articulo}
-                                                    </span>
-                                                    <span className="bg-blue-500/10 text-blue-400 px-2 py-0.5 rounded-lg border border-blue-500/20 text-[9px] font-black uppercase tracking-tighter">
-                                                        {item.marca || 'GENERIC'}
-                                                    </span>
+                                        <div
+                                            onClick={() => setSelectedImage({
+                                                src: item.imagen_url || '',
+                                                alt: item.nombre_articulo,
+                                                stock: item.cantidad_disponible,
+                                                unidad: item.unidad
+                                            })}
+                                            className="group bg-[#1D1D1F]/40 border border-[#333333]/50 p-6 rounded-[12px] hover:border-[#0071E3]/50 hover:bg-white/[0.02] cursor-pointer transition-all duration-300 flex items-center gap-8 shadow-xl mx-4 my-2"
+                                        >
+                                            {/* Image with hover effect */}
+                                            <div className="w-28 h-28 rounded-[12px] bg-black/40 shrink-0 overflow-hidden border border-[#333333] flex items-center justify-center relative shadow-2xl">
+                                                {item.imagen_url ? (
+                                                    <SmartImage
+                                                        src={item.imagen_url}
+                                                        alt={item.nombre_articulo}
+                                                        className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700 ease-out"
+                                                    />
+                                                ) : (
+                                                    <ImageIcon className="w-10 h-10 text-[#333333]" />
+                                                )}
+                                                <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 flex items-center justify-center transition-opacity duration-300">
+                                                    <Maximize2 className="w-6 h-6 text-white" />
                                                 </div>
-                                                <div className="flex justify-between items-end pt-1">
-                                                    <div>
-                                                        <span className="text-[10px] text-gray-600 font-black uppercase tracking-widest block">Precio</span>
-                                                        <span className="text-gray-300 font-bold text-xs">{Number(item.precio_unitario).toLocaleString('es-CR', { style: 'currency', currency: 'CRC' })}</span>
+                                            </div>
+
+                                            {/* Article Content */}
+                                            <div className="flex-1 min-w-0 py-1">
+                                                <div className="flex items-start justify-between gap-6">
+                                                    <div className="flex-1 min-w-0">
+                                                        <h3 className="text-[#F5F5F7] font-black group-hover:text-[#0071E3] transition-colors text-lg uppercase italic tracking-tighter leading-none mb-4">
+                                                            {item.nombre_articulo}
+                                                        </h3>
+
+                                                        <div className="flex flex-wrap items-center gap-4">
+                                                            <div className="flex items-center gap-2 bg-[#1D1D1F] px-4 py-1.5 rounded-[6px] border border-[#333333]">
+                                                                <span className="text-[9px] font-black text-[#86868B] uppercase tracking-widest">CÓDIGO</span>
+                                                                <span className="text-[11px] font-mono font-black text-[#0071E3] tracking-tighter">{item.codigo_articulo}</span>
+                                                            </div>
+
+                                                            {item.marca && (
+                                                                <div className="flex items-center gap-2 bg-[#0071E3]/5 px-4 py-1.5 rounded-[6px] border border-[#0071E3]/20">
+                                                                    <span className="text-[9px] font-black text-[#86868B] uppercase tracking-widest">MARCA</span>
+                                                                    <span className="text-[10px] font-black uppercase text-[#F5F5F7] italic">{item.marca}</span>
+                                                                </div>
+                                                            )}
+
+                                                            <div className="flex items-center gap-2 bg-[#1D1D1F] px-4 py-1.5 rounded-[6px] border border-[#333333]">
+                                                                <span className="text-[9px] font-black text-[#86868B] uppercase tracking-widest">COSTO</span>
+                                                                <span className="text-[11px] font-mono font-bold text-[#86868B]">{Number(item.precio_unitario).toLocaleString('es-CR', { style: 'currency', currency: 'CRC' })}</span>
+                                                            </div>
+                                                        </div>
                                                     </div>
-                                                    <div className="text-right">
-                                                        <span className="text-[10px] text-gray-600 font-black uppercase tracking-widest block">Stock</span>
-                                                        <span className={cn(
-                                                            "text-xl font-black italic tracking-tighter",
-                                                            item.cantidad_disponible === 0 ? 'text-rose-500' : 'text-emerald-400'
+
+                                                    {/* Stock Badge */}
+                                                    <div className="text-right shrink-0">
+                                                        <div className={cn(
+                                                            "px-6 py-3 rounded-[12px] border flex flex-col items-center transition-all duration-500",
+                                                            item.cantidad_disponible > 0
+                                                                ? "bg-[#0071E3]/10 border-[#0071E3]/30 shadow-[0_0_20px_rgba(0,113,227,0.1)]"
+                                                                : "bg-red-500/5 border-red-500/20 grayscale"
                                                         )}>
-                                                            {Number(item.cantidad_disponible).toLocaleString('es-CR')}
-                                                        </span>
+                                                            <span className={cn(
+                                                                "text-4xl font-black italic tracking-tighter leading-none",
+                                                                item.cantidad_disponible > 0 ? "text-[#0071E3]" : "text-red-500/50"
+                                                            )}>
+                                                                {item.cantidad_disponible}
+                                                            </span>
+                                                            <span className="text-[9px] text-[#86868B] font-black uppercase tracking-[0.2em] mt-2">
+                                                                {item.unidad || 'UND'}
+                                                            </span>
+                                                        </div>
                                                     </div>
                                                 </div>
                                             </div>
                                         </div>
                                     );
-                                }
-
-                                switch (colIdx) {
-                                    case 0:
-                                        return (
-                                            <div
-                                                className="w-14 h-14 rounded-xl overflow-hidden border border-white/10 bg-black/40 cursor-pointer transition-all hover:scale-110 active:scale-95 shadow-lg group"
-                                                onClick={() => setSelectedImage({
-                                                    src: item.imagen_url || '',
-                                                    alt: item.nombre_articulo,
-                                                    stock: item.cantidad_disponible,
-                                                    unidad: item.unidad
-                                                })}
-                                            >
-                                                <SmartImage src={item.imagen_url} alt={item.nombre_articulo} className="w-full h-full object-cover group-hover:brightness-110" />
-                                            </div>
-                                        );
-                                    case 1: return <span className="font-mono font-bold uppercase tracking-tighter opacity-80">{item.codigo_articulo}</span>;
-                                    case 2: return <span className="font-black text-sm text-gray-200 tracking-tight leading-snug line-clamp-2 uppercase">{item.nombre_articulo}</span>;
-                                    case 3: return (
-                                        <span className="inline-flex px-3 py-1 rounded-lg text-[10px] font-black bg-white/5 text-gray-400 border border-white/5 uppercase tracking-widest">
-                                            {item.marca || 'GENERIC'}
-                                        </span>
-                                    );
-                                    case 4: return <span className="font-bold text-xs text-gray-500 uppercase">{item.unidad}</span>;
-                                    case 5: return <span className="font-mono text-sm text-gray-400">{Number(item.precio_unitario).toLocaleString('es-CR', { style: 'currency', currency: 'CRC' })}</span>;
-                                    case 6: return (
-                                        <div className="flex flex-col items-end">
-                                            <span className={cn(
-                                                "text-xl font-black italic tracking-tighter",
-                                                item.cantidad_disponible <= 0 ? 'text-rose-500' : 'text-emerald-400'
-                                            )}>
-                                                {Number(item.cantidad_disponible).toLocaleString('es-CR')}
-                                            </span>
-                                            <span className="text-[9px] font-black text-gray-600 uppercase tracking-[0.2em] -mt-1">{item.unidad}</span>
-                                        </div>
-                                    );
-                                    default: return null;
-                                }
-                            }}
-                        />
-                    )}
-                </div>
-
-                {/* Enhanced Pagination Controls */}
-                <div className="bg-[#1e2235] border border-white/10 rounded-3xl p-4 flex flex-col md:flex-row items-center justify-between gap-6 shadow-xl relative overflow-hidden">
-                    <button
-                        onClick={() => setPage((p: number) => Math.max(1, p - 1))}
-                        disabled={page === 1 || loading}
-                        className="w-full md:w-auto flex items-center justify-center gap-3 px-8 py-3.5 text-xs font-black text-gray-400 bg-white/5 rounded-2xl hover:bg-white/10 border border-white/10 transition-all disabled:opacity-20 uppercase tracking-widest active:scale-95 group shadow-lg"
-                    >
-                        <ChevronLeft className="w-5 h-5 group-hover:-translate-x-1 transition-transform" />
-                        Anterior
-                    </button>
-
-                    <div className="flex items-center gap-8">
-                        <div className="text-center">
-                            <span className="text-[10px] font-black text-gray-600 uppercase tracking-[0.2em] block mb-1">Página Actual</span>
-                            <div className="flex items-center gap-3">
-                                <span className="text-2xl font-black text-blue-500 italic px-4 py-1 bg-blue-500/10 rounded-xl border border-blue-500/20">{page}</span>
-                                <span className="text-gray-600 font-black text-lg">/</span>
-                                <span className="text-xl font-bold text-gray-500">{totalPages || 1}</span>
-                            </div>
-                        </div>
-                        <div className="h-10 w-[1px] bg-white/10 hidden md:block" />
-                        <div className="text-center hidden sm:block">
-                            <span className="text-[10px] font-black text-gray-600 uppercase tracking-[0.2em] block mb-1">Total Registros</span>
-                            <span className="text-lg font-black text-gray-400 tracking-tighter tabular-nums">{totalItems.toLocaleString()}</span>
-                        </div>
+                                }}
+                            />
+                        )}
                     </div>
 
-                    <button
-                        onClick={() => setPage((p: number) => Math.min(totalPages, p + 1))}
-                        disabled={page === totalPages || loading}
-                        className="w-full md:w-auto flex items-center justify-center gap-3 px-8 py-3.5 text-xs font-black text-gray-400 bg-white/5 rounded-2xl hover:bg-white/10 border border-white/10 transition-all disabled:opacity-20 uppercase tracking-widest active:scale-95 group shadow-lg"
-                    >
-                        Siguiente
-                        <ChevronRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
-                    </button>
+                    {/* Pagination Controls */}
+                    <div className="bg-[#121212] border border-[#333333] rounded-[8px] p-6 flex flex-col md:flex-row items-center justify-between gap-8 mb-32">
+                        <button
+                            onClick={() => setPage((p: number) => Math.max(1, p - 1))}
+                            disabled={page === 1 || loading}
+                            className="w-full md:w-auto flex items-center justify-center gap-3 px-10 py-4 text-[11px] font-black text-[#F5F5F7] bg-[#1D1D1F] rounded-[8px] hover:border-[#0071E3] hover:bg-[#1D1D1F] hover:brightness-125 hover:-translate-y-0.5 hover:shadow-[0_0_20px_rgba(0,113,227,0.15)] border border-[#333333] transition-all duration-300 disabled:opacity-10 disabled:pointer-events-none uppercase tracking-[0.15em] active:scale-95 group"
+                        >
+                            <ChevronLeft className="w-5 h-5 group-hover:-translate-x-1.5 transition-transform text-[#0071E3]" />
+                            ANTERIOR
+                        </button>
+
+                        <div className="flex items-center gap-12">
+                            <div className="text-center">
+                                <span className="text-[9px] font-bold text-[#86868B] uppercase tracking-widest block mb-2">PÁGINA</span>
+                                <div className="flex items-center gap-4">
+                                    <span className="text-2xl font-bold text-[#0071E3] italic px-5 py-1 bg-[#0071E3]/10 rounded-[4px] border border-[#0071E3]/20 leading-none">{page}</span>
+                                    <span className="text-[#333333] font-bold text-xl">/</span>
+                                    <span className="text-xl font-bold text-[#86868B]">{totalPages || 1}</span>
+                                </div>
+                            </div>
+                            <div className="h-10 w-[1px] bg-[#333333] hidden md:block" />
+                            <div className="text-center hidden sm:block">
+                                <span className="text-[9px] font-bold text-[#86868B] uppercase tracking-widest block mb-2">TOTAL ARTÍCULOS</span>
+                                <span className="text-xl font-bold text-[#F5F5F7] tracking-tighter">{totalItems.toLocaleString()}</span>
+                            </div>
+                        </div>
+
+                        <button
+                            onClick={() => setPage((p: number) => Math.min(totalPages, p + 1))}
+                            disabled={page === totalPages || loading}
+                            className="w-full md:w-auto flex items-center justify-center gap-3 px-10 py-4 text-[11px] font-black text-[#F5F5F7] bg-[#1D1D1F] rounded-[8px] hover:border-[#0071E3] hover:bg-[#1D1D1F] hover:brightness-125 hover:-translate-y-0.5 hover:shadow-[0_0_20px_rgba(0,113,227,0.15)] border border-[#333333] transition-all duration-300 disabled:opacity-10 disabled:pointer-events-none uppercase tracking-[0.15em] active:scale-95 group"
+                        >
+                            SIGUIENTE
+                            <ChevronRight className="w-5 h-5 group-hover:translate-x-1.5 transition-transform text-[#0071E3]" />
+                        </button>
+                    </div>
                 </div>
             </div>
 
-            {/* Premium Image Modal */}
+            {/* Image Modal */}
             {selectedImage && (
                 <div
-                    className="fixed inset-0 z-[200] flex items-center justify-center bg-[#070b14]/95 backdrop-blur-3xl p-4 animate-in fade-in duration-500"
+                    className="fixed inset-0 z-[200] flex items-center justify-center bg-black/95 backdrop-blur-xl p-6 animate-in fade-in duration-300"
                     onClick={() => setSelectedImage(null)}
                 >
                     <div
-                        className="relative max-w-5xl w-full max-h-[90vh] bg-[#1e2235]/50 rounded-[3rem] overflow-hidden border border-white/10 shadow-[0_0_100px_rgba(0,0,0,0.8)] animate-in zoom-in-95 duration-500 flex flex-col"
+                        className="relative max-w-4xl w-full bg-[#121212] rounded-[8px] overflow-hidden border border-[#333333] shadow-2xl flex flex-col"
                         onClick={e => e.stopPropagation()}
                     >
                         <button
                             onClick={() => setSelectedImage(null)}
-                            className="absolute top-8 right-8 z-10 w-14 h-14 flex items-center justify-center rounded-2xl bg-white/5 hover:bg-white/10 text-gray-400 hover:text-white transition-all border border-white/10"
+                            className="absolute top-6 right-6 z-10 w-12 h-12 flex items-center justify-center rounded-full bg-[#1D1D1F] hover:bg-[#333333] text-[#F5F5F7] transition-all border border-[#333333]"
                         >
-                            <X className="w-8 h-8" />
+                            <X className="w-6 h-6" />
                         </button>
 
-                        <div className="flex-1 p-12 md:p-20 flex items-center justify-center min-h-[400px]">
+                        <div className="p-12 flex items-center justify-center min-h-[400px] bg-[#000000]/50">
                             <img
                                 src={selectedImage.src}
                                 alt={selectedImage.alt}
-                                className="max-w-full max-h-[60vh] object-contain rounded-3xl shadow-2xl transition-transform duration-700 hover:scale-105"
+                                className="max-w-full max-h-[50vh] object-contain rounded-[8px] shadow-2xl"
                             />
                         </div>
 
-                        <div className="bg-gradient-to-t from-black/95 via-black/80 to-transparent p-12 md:p-16 pt-32 shrink-0">
+                        <div className="p-10 border-t border-[#333333]">
                             <div className="flex flex-col md:flex-row md:items-end justify-between gap-6">
-                                <div>
-                                    <span className="text-blue-500 font-black text-[10px] uppercase tracking-[0.4em] block mb-3">Detalle de Producto</span>
-                                    <h3 className="text-2xl md:text-4xl font-black text-white tracking-tight uppercase italic leading-none">{selectedImage.alt}</h3>
+                                <div className="space-y-2">
+                                    <span className="text-[#0071E3] font-bold text-[10px] uppercase tracking-widest block">Detalle del Artículo</span>
+                                    <h3 className="text-2xl font-bold text-[#F5F5F7] tracking-tight uppercase">{selectedImage.alt}</h3>
                                 </div>
-                                <div className="flex gap-4">
-                                    <div className="bg-white/5 border border-white/10 px-6 py-3 rounded-2xl backdrop-blur-md">
-                                        <span className="text-[10px] font-black text-gray-500 uppercase block mb-1">Stock Disponible</span>
-                                        <span className={cn(
-                                            "text-xl font-black tracking-tighter italic",
-                                            (selectedImage.stock || 0) <= 0 ? 'text-rose-500' : 'text-emerald-400'
-                                        )}>
-                                            {selectedImage.stock?.toLocaleString()} {selectedImage.unidad}
-                                        </span>
-                                    </div>
+                                <div className="bg-[#1D1D1F] border border-[#333333] px-8 py-4 rounded-[8px] text-center">
+                                    <span className="text-[10px] font-bold text-[#86868B] uppercase block mb-1">Stock Disponible</span>
+                                    <span className={cn(
+                                        "text-2xl font-bold italic",
+                                        (selectedImage.stock || 0) <= 0 ? 'text-[#86868B]' : 'text-[#0071E3]'
+                                    )}>
+                                        {selectedImage.stock?.toLocaleString()} <span className="text-xs uppercase ml-1 not-italic text-[#86868B]">{selectedImage.unidad}</span>
+                                    </span>
                                 </div>
                             </div>
                         </div>

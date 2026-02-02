@@ -7,8 +7,11 @@ import {
     Building2,
     CheckCircle,
     Search,
-    X
+    X,
+    ArrowLeft,
+    ClipboardList
 } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 
 
 // Custom Architecture
@@ -28,6 +31,7 @@ interface Dependencia {
 }
 
 export default function Prestamo() {
+    const navigate = useNavigate();
     // 1. Hook Integration
     const {
         loading,
@@ -132,82 +136,103 @@ export default function Prestamo() {
     const colorTheme = 'purple';
 
     return (
-        <div className="min-h-screen bg-[#0f111a] p-4 md:p-8">
+        <div className="min-h-screen bg-[#000000]">
             <PageHeader
                 title="Préstamo"
                 icon={Clock}
                 themeColor={colorTheme}
+                rightElement={
+                    <button
+                        onClick={() => navigate('/otras-solicitudes')}
+                        className="btn-ghost px-6 py-3 border border-[#F5F5F7]/20 rounded-[8px] hover:bg-[#F5F5F7]/5 transition-all flex items-center gap-2 group"
+                    >
+                        <ArrowLeft className="w-5 h-5 text-[#86868B] group-hover:text-[#F5F5F7] transition-colors" />
+                        <span className="text-[11px] font-bold text-[#86868B] group-hover:text-[#F5F5F7] uppercase tracking-widest">Regresar</span>
+                    </button>
+                }
             />
 
-            <div className="max-w-7xl mx-auto space-y-6 pb-20">
-                <Card className="overflow-hidden border-white/10 shadow-2xl">
-                    <form onSubmit={handleSubmit} className="p-4 md:p-8">
+            <div className="max-w-7xl mx-auto p-8 pb-32">
+                <Card className="overflow-hidden border-[#333333] shadow-4xl mb-12">
+                    <form onSubmit={handleSubmit} className="p-8 md:p-10">
                         {/* Headers Section */}
-                        <div className="bg-white/5 border border-white/10 rounded-xl p-4 md:p-6 mb-8">
-                            <h3 className="text-lg font-semibold mb-6 flex items-center gap-2 border-b border-white/10 pb-3 text-purple-400">
-                                <User className="w-5 h-5" />
+                        <div className="space-y-2 mb-10">
+                            <h3 className="text-2xl font-bold text-[#F5F5F7] tracking-tight uppercase flex items-center gap-3 italic">
+                                <User className="w-6 h-6 text-[#0071E3]" />
                                 Información de Responsables
                             </h3>
+                            <p className="text-xs text-[#86868B] font-medium uppercase tracking-widest ml-9">Defina los parámetros del préstamo y responsables</p>
+                        </div>
+
+                        <div className="bg-[#1D1D1F]/30 border border-[#333333] rounded-[8px] p-6 md:p-8 mb-10">
 
                             {/* Dependencia Selector */}
-                            <div className="mb-6">
-                                <label className="block text-sm font-medium text-gray-300 mb-2">Dependencia Municipal <span className="text-red-400">*</span></label>
+                            <div className="mb-8">
+                                <label className="block text-[10px] font-black text-[#86868B] uppercase tracking-widest mb-3">Dependencia Municipal <span className="text-red-400">*</span></label>
                                 <div
                                     onClick={() => setShowDependenciaModal(true)}
-                                    className="w-full bg-white/5 border border-white/10 rounded-xl py-4 pl-5 pr-12 text-white cursor-pointer hover:bg-white/10 transition-colors flex items-center justify-between active:scale-[0.99] shadow-inner"
+                                    className="w-full bg-[#1D1D1F] border border-[#333333] rounded-[8px] py-5 pl-6 pr-12 text-[#F5F5F7] cursor-pointer hover:bg-[#1D1D1F]/80 transition-all flex items-center justify-between active:scale-[0.99] shadow-inner"
                                 >
-                                    <span className={dependencia ? 'text-white' : 'text-gray-500 italic font-medium'}>
+                                    <span className={dependencia ? 'text-[#F5F5F7] font-black text-sm tracking-tight' : 'text-[#86868B] italic font-black text-sm'}>
                                         {dependencia ? dependencias.find(dep => dep.id_dependencia.toString() === dependencia)?.dependencia_municipal || dependencia : '-- Seleccione una dependencia --'}
                                     </span>
-                                    <Building2 className="w-5 h-5 text-purple-400 ml-2" />
+                                    <Building2 className="w-5 h-5 text-[#0071E3] ml-2" />
                                 </div>
                             </div>
 
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mb-8">
                                 <div>
-                                    <label className="block text-sm font-medium text-gray-300 mb-2">Responsable que autoriza <span className="text-red-400">*</span></label>
+                                    <label className="block text-[10px] font-black text-[#86868B] uppercase tracking-widest mb-3">Responsable que autoriza <span className="text-red-400">*</span></label>
                                     <div className="relative group">
                                         <div
-                                            className="w-full bg-black/40 border border-white/5 rounded-xl py-4 px-5 text-white cursor-not-allowed flex items-center justify-between opacity-75 shadow-inner"
+                                            className="w-full bg-[#1D1D1F] border border-[#333333] rounded-[8px] py-5 px-6 text-[#F5F5F7] cursor-not-allowed flex items-center justify-between opacity-80 shadow-inner"
                                             title="El responsable se asigna automáticamente según su usuario"
                                         >
-                                            <span className={autoriza ? 'text-purple-400 font-bold' : 'text-gray-500 italic'}>
+                                            <span className={autoriza ? 'text-[#0071E3] font-black text-sm' : 'text-[#86868B] italic'}>
                                                 {autoriza ? colaboradores.todos.find((c: any) => c.identificacion === autoriza)?.alias || colaboradores.todos.find((c: any) => c.identificacion === autoriza)?.colaborador : 'Usuario no identificado'}
                                             </span>
-                                            <User className={`w-5 h-5 text-purple-400/50 ml-2`} />
+                                            <User className={`w-5 h-5 text-[#0071E3]/50 ml-2`} />
                                         </div>
                                     </div>
                                 </div>
 
                                 <div>
-                                    <label className="block text-sm font-medium text-gray-300 mb-2">Persona que retira <span className="text-red-400">*</span></label>
+                                    <label className="block text-[10px] font-black text-[#86868B] uppercase tracking-widest mb-3">Persona que retira <span className="text-red-400">*</span></label>
                                     <div className="relative group">
                                         <div
                                             onClick={() => handleOpenColaborador('retira')}
-                                            className="w-full bg-white/5 border border-white/10 rounded-xl py-4 pl-5 pr-12 text-white cursor-pointer hover:bg-white/10 transition-colors flex items-center justify-between active:scale-[0.99] shadow-inner"
+                                            className="w-full bg-[#1D1D1F] border border-[#333333] rounded-[8px] py-5 pl-6 pr-12 text-[#F5F5F7] cursor-pointer hover:bg-[#1D1D1F]/80 transition-colors flex items-center justify-between active:scale-[0.99] shadow-inner"
                                         >
-                                            <span className={retira ? 'text-white' : 'text-gray-500 italic font-medium'}>
+                                            <span className={retira ? 'text-[#F5F5F7] font-black text-sm' : 'text-[#86868B] italic font-black text-sm'}>
                                                 {retira ? colaboradores.todos.find((c: any) => c.identificacion === retira)?.alias || colaboradores.todos.find((c: any) => c.identificacion === retira)?.colaborador : '-- Seleccione --'}
                                             </span>
-                                            <User className={`w-5 h-5 text-purple-400 ml-2`} />
+                                            <User className={`w-5 h-5 text-[#0071E3] ml-2`} />
                                         </div>
                                     </div>
                                 </div>
                             </div>
 
                             <div>
-                                <label className="block text-sm font-medium text-gray-300 mb-2">Comentarios</label>
+                                <label className="block text-[10px] font-black text-[#86868B] uppercase tracking-widest mb-3">Comentarios</label>
                                 <textarea
                                     value={comentarios}
                                     onChange={(e) => setComentarios(e.target.value)}
-                                    className="w-full bg-white/5 border border-white/10 rounded-xl p-4 text-white focus:border-purple-500 outline-none min-h-[120px] transition-all focus:ring-1 focus:ring-purple-500/50 shadow-inner"
+                                    className="w-full bg-[#1D1D1F] border border-[#333333] rounded-[8px] p-6 text-[#F5F5F7] focus:border-[#0071E3] outline-none min-h-[140px] transition-all shadow-inner placeholder-[#424245] text-sm font-bold"
                                     placeholder="Notas adicionales sobre este préstamo..."
                                 />
                             </div>
                         </div>
 
                         {/* Items Section */}
-                        <div className="bg-white/5 border border-white/10 rounded-xl p-4 md:p-6 mb-8">
+                        <div className="space-y-2 mb-10">
+                            <h3 className="text-2xl font-bold text-[#F5F5F7] tracking-tight uppercase flex items-center gap-3 italic">
+                                <ClipboardList className="w-6 h-6 text-[#0071E3]" />
+                                Detalle de Artículos
+                            </h3>
+                            <p className="text-xs text-[#86868B] font-medium uppercase tracking-widest ml-9">Seleccione los materiales a entregar en préstamo</p>
+                        </div>
+
+                        <div className="bg-[#1D1D1F]/30 border border-[#333333] rounded-[8px] p-6 md:p-8 mb-10">
                             <TransactionTable
                                 items={items}
                                 onUpdateRow={updateRow}
@@ -215,7 +240,6 @@ export default function Prestamo() {
                                 onOpenSearch={handleOpenSearch}
                                 onAddRow={addEmptyRow}
                                 onWarning={(msg: string) => showAlert(msg, 'warning')}
-
                                 themeColor={colorTheme}
                             />
                         </div>
@@ -224,10 +248,10 @@ export default function Prestamo() {
                         <button
                             type="submit"
                             disabled={loading || !isFormValid}
-                            className={`w-full md:w-auto px-8 py-4 bg-gradient-to-r from-${colorTheme}-600 to-${colorTheme}-400 text-white font-black rounded-xl hover:brightness-110 transition-all flex items-center justify-center gap-3 disabled:opacity-50 disabled:grayscale disabled:cursor-not-allowed shadow-xl shadow-${colorTheme}-500/20 active:scale-95`}
+                            className={`w-full md:w-auto h-16 px-12 bg-[#0071E3] text-white font-black rounded-[8px] hover:brightness-110 transition-all flex items-center justify-center gap-4 disabled:opacity-50 disabled:grayscale disabled:cursor-not-allowed shadow-2xl shadow-[#0071E3]/20 active:scale-95 text-sm uppercase tracking-widest`}
                         >
                             {loading ? <Loader2 className="w-6 h-6 animate-spin" /> : <Save className="w-6 h-6" />}
-                            <span className="text-lg">Procesar Solicitud</span>
+                            Procesar Solicitud
                         </button>
                     </form>
                 </Card>
@@ -253,33 +277,33 @@ export default function Prestamo() {
 
             {/* Dependencia Modal */}
             {showDependenciaModal && (
-                <div className="fixed inset-0 z-[70] flex items-center justify-center p-4 bg-black/90 backdrop-blur-md">
-                    <div className="bg-[#1e2235] w-full max-w-lg rounded-2xl border border-white/10 flex flex-col max-h-[80vh] overflow-hidden animate-in fade-in zoom-in-95 duration-200">
-                        <div className="p-6 border-b border-white/10 flex justify-between items-center bg-white/5">
-                            <h3 className="text-xl font-bold text-white flex items-center gap-2">
-                                <Building2 className="w-5 h-5 text-purple-400" />
+                <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/80 backdrop-blur-[20px] animate-in fade-in duration-300">
+                    <div className="bg-[#121212] w-full max-w-lg rounded-[8px] border border-[#333333] shadow-4xl flex flex-col max-h-[85vh] overflow-hidden">
+                        <div className="p-6 border-b border-[#333333] flex justify-between items-center bg-black/20">
+                            <h3 className="text-[15px] font-black text-[#F5F5F7] uppercase tracking-widest flex items-center gap-3">
+                                <Building2 className="w-5 h-5 text-[#0071E3]" />
                                 Seleccionar Dependencia
                             </h3>
                             <button
                                 onClick={() => setShowDependenciaModal(false)}
-                                className="p-2 hover:bg-white/10 rounded-lg text-gray-400 hover:text-white transition-colors"
+                                className="p-2 hover:bg-white/5 rounded-[8px] text-[#86868B] hover:text-[#F5F5F7] transition-all"
                             >
                                 <X className="w-6 h-6" />
                             </button>
                         </div>
-                        <div className="p-6 border-b border-white/5 bg-[#1a1d29]">
-                            <div className="relative">
-                                <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 w-5 h-5" />
+                        <div className="p-6 border-b border-[#333333]">
+                            <div className="relative group">
+                                <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-[#86868B] group-focus-within:text-[#0071E3] transition-colors" />
                                 <input
                                     value={depSearchTerm}
                                     onChange={e => setDepSearchTerm(e.target.value)}
-                                    className="w-full bg-[#0f111a] border border-white/10 rounded-xl py-4 pl-12 pr-4 text-white placeholder-gray-500 focus:border-purple-500 focus:ring-1 focus:ring-purple-500 outline-none transition-all"
+                                    className="w-full bg-[#1D1D1F] border border-[#333333] rounded-[8px] py-4 pl-12 pr-6 text-[#F5F5F7] placeholder-[#424245] focus:border-[#0071E3] outline-none transition-all font-bold text-sm"
                                     placeholder="Buscar por nombre..."
                                     autoFocus
                                 />
                             </div>
                         </div>
-                        <div className="flex-1 overflow-y-auto p-4 space-y-2 bg-[#0f111a]/50 scrollbar-thin scrollbar-thumb-white/10 scrollbar-track-transparent">
+                        <div className="flex-1 overflow-y-auto p-4 space-y-1 bg-black/5">
                             {filteredDependencias.map(d => (
                                 <div
                                     key={d.id_dependencia}
@@ -287,16 +311,16 @@ export default function Prestamo() {
                                         setDependencia(d.id_dependencia.toString());
                                         setShowDependenciaModal(false);
                                     }}
-                                    className={`p-4 rounded-xl border transition-all cursor-pointer flex justify-between items-center group ${dependencia === d.id_dependencia.toString()
-                                        ? 'bg-purple-500/10 border-purple-500/50 text-white'
-                                        : 'bg-white/5 border-white/5 hover:border-purple-500/30 text-gray-300 hover:bg-white/10'
+                                    className={`p-4 rounded-[8px] border transition-all cursor-pointer flex justify-between items-center group ${dependencia === d.id_dependencia.toString()
+                                        ? 'bg-[#0071E3]/10 border-[#0071E3]/50 text-[#F5F5F7]'
+                                        : 'bg-transparent border-transparent hover:bg-[#1D1D1F] hover:border-[#333333] text-[#86868B] hover:text-[#F5F5F7]'
                                         }`}
                                 >
-                                    <span className="font-medium">{d.dependencia_municipal}</span>
+                                    <span className="text-sm font-black uppercase tracking-tight">{d.dependencia_municipal}</span>
                                     {dependencia === d.id_dependencia.toString() ? (
-                                        <CheckCircle className="w-5 h-5 text-purple-400" />
+                                        <CheckCircle className="w-5 h-5 text-[#0071E3]" />
                                     ) : (
-                                        <div className="w-5 h-5 rounded-full border-2 border-white/10 group-hover:border-purple-500/30 transition-colors" />
+                                        <div className="w-5 h-5 rounded-full border-2 border-[#333333] group-hover:border-[#0071E3]/30 transition-colors" />
                                     )}
                                 </div>
                             ))}

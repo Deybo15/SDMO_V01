@@ -17,39 +17,21 @@ export const TransactionTable = ({
     onRemoveRow,
     onOpenSearch,
     onAddRow,
-    onWarning,
-    themeColor = 'blue'
+    onWarning
 }: TransactionTableProps) => {
-
-    const getThemeColorClass = (color: string) => {
-        // Simple mapping for focus borders
-        const map: Record<string, string> = {
-            teal: 'focus:border-teal-500',
-            blue: 'focus:border-blue-500',
-            orange: 'focus:border-orange-500',
-            purple: 'focus:border-purple-500',
-            pink: 'focus:border-pink-500',
-            gray: 'focus:border-gray-500',
-            amber: 'focus:border-amber-500',
-            indigo: 'focus:border-indigo-500'
-        };
-        return map[color] || 'focus:border-blue-500';
-    };
-
-    const focusClass = getThemeColorClass(themeColor);
 
     return (
         <div className="w-full">
-            <div className="flex justify-between items-center mb-6">
-                <span className="text-xs font-bold text-gray-500 uppercase tracking-widest hidden sm:block">
+            <div className="flex justify-between items-center mb-8 pb-4">
+                <span className="text-[10px] font-black text-[#86868B] uppercase tracking-[0.2em] hidden sm:block">
                     {items.length} {items.length === 1 ? 'Artículo seleccionado' : 'Artículos seleccionados'}
                 </span>
                 <button
                     type="button"
                     onClick={onAddRow}
-                    className={`w-full sm:w-auto px-5 py-3 bg-${themeColor}-500/10 hover:bg-${themeColor}-500/20 text-${themeColor}-400 border border-${themeColor}-500/30 font-bold rounded-xl transition-all flex items-center justify-center gap-2 group shadow-lg shadow-${themeColor}-500/5`}
+                    className="w-full sm:w-auto h-12 px-8 bg-[#0071E3] hover:brightness-110 text-white font-black rounded-[8px] transition-all flex items-center justify-center gap-2.5 shadow-xl shadow-[#0071E3]/20 text-[10px] uppercase tracking-widest active:scale-95"
                 >
-                    <PlusCircle className="w-5 h-5 group-hover:rotate-90 transition-transform" />
+                    <PlusCircle className="w-5 h-5" />
                     Agregar Artículo
                 </button>
             </div>
@@ -58,85 +40,79 @@ export const TransactionTable = ({
             <div className="hidden md:block overflow-x-auto">
                 <table className="w-full text-left border-collapse">
                     <thead>
-                        <tr className="border-b border-white/10 text-gray-400 text-[10px] font-black uppercase tracking-widest">
-                            <th className="pb-4 pl-4 w-[45%]">Artículo</th>
-                            <th className="pb-4 w-[15%]">Marca</th>
-                            <th className="pb-4 w-[15%]">Cantidad</th>
-                            <th className="pb-4 w-[15%]">Unidad</th>
-                            <th className="pb-4 w-[10%] text-center">Acción</th>
+                        <tr className="border-b border-[#333333] text-[#86868B] text-[9px] font-black uppercase tracking-[0.2em]">
+                            <th className="pb-5 pl-4 w-[45%]">Descripción del Artículo</th>
+                            <th className="pb-5 w-[15%]">Marca</th>
+                            <th className="pb-5 w-[15%]">Cantidad</th>
+                            <th className="pb-5 w-[15%]">Unidad</th>
+                            <th className="pb-5 w-[10%] text-center">Acción</th>
                         </tr>
                     </thead>
-                    <tbody className="divide-y divide-white/5">
+                    <tbody className="divide-y divide-[#333333]/30">
                         {items.map((item, index) => (
-                            <tr key={index} className="group hover:bg-white/[0.02] transition-colors">
-                                <td className="py-4 pl-4">
+                            <tr key={index} className="group hover:bg-white/[0.01] transition-colors">
+                                <td className="py-5 pl-4">
                                     <div
                                         onClick={() => onOpenSearch(index)}
-                                        className="w-full bg-white/5 border border-white/10 rounded-xl py-3 pl-4 pr-10 text-white text-sm cursor-pointer hover:bg-white/10 hover:border-white/20 transition-all min-h-[50px] flex items-center relative group/field shadow-inner"
+                                        className="w-full bg-[#1D1D1F] border border-[#333333] rounded-[8px] py-4 pl-6 pr-12 text-[#F5F5F7] text-[13px] cursor-pointer hover:border-[#0071E3]/50 transition-all min-h-[56px] flex items-center relative shadow-sm"
                                     >
-                                        <span className={`line-clamp-2 break-words leading-tight font-medium ${!item.articulo ? 'text-gray-500 italic' : ''}`}>
+                                        <span className={`line-clamp-2 uppercase font-black tracking-tight ${!item.articulo ? 'text-[#86868B] italic' : ''}`}>
                                             {item.articulo || "Buscar artículo..."}
                                         </span>
-                                        <Search className={`absolute right-4 top-1/2 -translate-y-1/2 w-4 h-4 text-${themeColor}-400/50 group-hover/field:text-${themeColor}-400 transition-colors`} />
+                                        <Search className="absolute right-5 top-1/2 -translate-y-1/2 w-4 h-4 text-[#0071E3] group-hover:scale-110 transition-transform" />
                                     </div>
                                 </td>
-                                <td className="py-4">
-                                    <span className="px-3 py-1 bg-white/5 border border-white/10 rounded-lg text-gray-400 text-xs font-bold uppercase tracking-tighter">
+                                <td className="py-5">
+                                    <span className="px-3 py-1 bg-black/40 border border-[#333333] rounded-[4px] text-[#86868B] text-[10px] font-black uppercase tracking-tight">
                                         {item.marca || 'NA'}
                                     </span>
                                 </td>
-                                <td className="py-4">
-                                    <div className="relative max-w-[120px]">
+                                <td className="py-5">
+                                    <div className="relative max-w-[140px]">
                                         <input
                                             type="text"
                                             inputMode="decimal"
                                             value={item.cantidad === 0 ? '' : item.cantidad}
                                             onChange={(e) => {
                                                 const val = e.target.value.replace(',', '.');
-                                                // Permitir solo números y un punto decimal
                                                 if (val !== '' && !/^\d*\.?\d*$/.test(val)) return;
-
                                                 if (val === '') {
                                                     onUpdateRow(index, 'cantidad', 0);
                                                     return;
                                                 }
-
                                                 let numVal = parseFloat(val);
                                                 let finalVal: string | number = val;
-
                                                 if (item.cantidad_disponible !== undefined && numVal > item.cantidad_disponible) {
                                                     finalVal = item.cantidad_disponible;
                                                     if (onWarning) onWarning(`Stock insuficiente (${item.cantidad_disponible})`);
                                                 }
-
                                                 onUpdateRow(index, 'cantidad', finalVal);
                                             }}
                                             onBlur={(e) => {
-                                                // Al salir, si es un decimal como .225, formatear a 0.225
                                                 const val = e.target.value;
                                                 if (val.startsWith('.')) {
                                                     onUpdateRow(index, 'cantidad', '0' + val);
                                                 }
                                             }}
                                             onFocus={(e) => e.target.select()}
-                                            className={`w-full bg-white/5 border border-white/10 rounded-xl py-3 px-4 text-white text-base font-black ${focusClass} focus:outline-none focus:ring-4 focus:ring-${themeColor}-500/10 placeholder-gray-600 shadow-inner transition-all`}
+                                            className="w-full h-14 bg-black/40 border border-[#333333] rounded-[8px] px-6 text-[#F5F5F7] text-lg font-black focus:border-[#0071E3]/50 focus:outline-none transition-all placeholder-[#424245] shadow-inner font-mono"
                                             placeholder="0"
                                         />
                                         {item.cantidad_disponible !== undefined && item.codigo_articulo && (
-                                            <div className="text-[10px] text-gray-500 mt-1 font-bold uppercase">
-                                                Stock: {item.cantidad_disponible}
+                                            <div className="text-[8px] text-[#86868B] mt-2 font-black uppercase tracking-widest pl-1">
+                                                Stock: <span className="text-[#0071E3]">{item.cantidad_disponible}</span>
                                             </div>
                                         )}
                                     </div>
                                 </td>
-                                <td className="py-4">
-                                    <span className="text-gray-500 font-bold text-xs uppercase">{item.unidad || '-'}</span>
+                                <td className="py-5">
+                                    <span className="text-[#86868B] font-black text-[10px] uppercase tracking-widest">{item.unidad || '-'}</span>
                                 </td>
-                                <td className="py-4 text-center">
+                                <td className="py-5 text-center">
                                     <button
                                         type="button"
                                         onClick={() => onRemoveRow(index)}
-                                        className="p-3 text-gray-500 hover:text-red-400 hover:bg-red-400/10 rounded-xl transition-all active:scale-90"
+                                        className="h-10 w-10 text-[#86868B] hover:text-rose-500 hover:bg-rose-500/10 rounded-[8px] transition-all active:scale-90 flex items-center justify-center mx-auto"
                                     >
                                         <Trash2 className="w-5 h-5" />
                                     </button>
@@ -148,36 +124,36 @@ export const TransactionTable = ({
             </div>
 
             {/* Mobile Card View */}
-            <div className="md:hidden space-y-4">
+            <div className="md:hidden space-y-6">
                 {items.map((item, index) => (
-                    <div key={index} className="bg-white/5 border border-white/10 rounded-2xl p-5 shadow-xl relative overflow-hidden group animate-in slide-in-from-right-4 duration-300" style={{ animationDelay: `${index * 50}ms` }}>
-                        <div className={`absolute top-0 left-0 w-1.5 h-full bg-${themeColor}-500/50`} />
+                    <div key={index} className="bg-[#1D1D1F] border border-[#333333] rounded-[8px] p-6 shadow-xl relative overflow-hidden group">
+                        <div className="absolute top-0 left-0 w-1 h-full bg-[#0071E3]" />
 
-                        <div className="flex justify-between items-start gap-4 mb-5">
+                        <div className="flex justify-between items-start gap-4 mb-6">
                             <div className="flex-1 min-w-0">
-                                <label className="text-[10px] font-black text-gray-500 uppercase tracking-widest mb-2 block">Artículo</label>
+                                <label className="text-[9px] font-black text-[#86868B] uppercase tracking-widest mb-3 block">Artículo Seleccionado</label>
                                 <div
                                     onClick={() => onOpenSearch(index)}
-                                    className="bg-black/40 border border-white/10 rounded-xl p-4 text-white text-sm min-h-[60px] flex items-center justify-between active:bg-white/5 transition-colors"
+                                    className="bg-black/40 border border-[#333333] rounded-[8px] p-4 text-[#F5F5F7] min-h-[64px] flex items-center justify-between active:bg-white/5 transition-colors cursor-pointer"
                                 >
-                                    <span className={`line-clamp-2 font-bold leading-tight ${!item.articulo ? 'text-gray-600 italic' : ''}`}>
-                                        {item.articulo || "Seleccionar artículo..."}
+                                    <span className={`line-clamp-2 font-black text-xs uppercase tracking-tight ${!item.articulo ? 'text-[#86868B] italic' : ''}`}>
+                                        {item.articulo || "Seleccionar..."}
                                     </span>
-                                    <Search className={`w-5 h-5 text-${themeColor}-400 shrink-0 ml-3`} />
+                                    <Search className="w-5 h-5 text-[#0071E3] shrink-0 ml-3" />
                                 </div>
                             </div>
                             <button
                                 type="button"
                                 onClick={() => onRemoveRow(index)}
-                                className="p-4 bg-red-500/10 text-red-400 rounded-xl active:scale-90 transition-all mt-6 shadow-lg shadow-red-500/5"
+                                className="h-14 w-14 bg-rose-500/10 text-rose-500 rounded-[8px] active:scale-90 transition-all mt-6 shadow-lg shadow-rose-500/5 flex items-center justify-center border border-rose-500/20"
                             >
-                                <Trash2 className="w-5 h-5" />
+                                <Trash2 className="w-6 h-6" />
                             </button>
                         </div>
 
-                        <div className="grid grid-cols-2 gap-5">
+                        <div className="grid grid-cols-2 gap-6">
                             <div>
-                                <label className="text-[10px] font-black text-gray-500 uppercase tracking-widest mb-2 block">Cantidad</label>
+                                <label className="text-[9px] font-black text-[#86868B] uppercase tracking-widest mb-3 block">Cantidad</label>
                                 <div className="relative">
                                     <input
                                         type="text"
@@ -186,7 +162,6 @@ export const TransactionTable = ({
                                         onChange={(e) => {
                                             const val = e.target.value.replace(',', '.');
                                             if (val !== '' && !/^\d*\.?\d*$/.test(val)) return;
-
                                             if (val === '') {
                                                 onUpdateRow(index, 'cantidad', 0);
                                                 return;
@@ -205,29 +180,29 @@ export const TransactionTable = ({
                                                 onUpdateRow(index, 'cantidad', '0' + val);
                                             }
                                         }}
-                                        className={`w-full bg-black/40 border border-white/10 rounded-xl p-4 text-white text-xl font-black focus:border-${themeColor}-500 outline-none transition-all shadow-inner`}
+                                        className="w-full h-14 bg-black/40 border border-[#333333] rounded-[8px] px-4 text-[#F5F5F7] text-xl font-black focus:border-[#0071E3] outline-none transition-all shadow-inner font-mono"
                                         placeholder="0"
                                     />
                                     {item.codigo_articulo && (
-                                        <div className="flex items-center gap-1.5 mt-2">
-                                            <div className={`w-1.5 h-1.5 rounded-full bg-${themeColor}-500`} />
-                                            <span className="text-[10px] text-gray-500 font-bold uppercase tracking-tight">
-                                                DISP: {item.cantidad_disponible} {item.unidad}
+                                        <div className="flex items-center gap-2 mt-2">
+                                            <div className="w-1.5 h-1.5 rounded-full bg-[#0071E3]" />
+                                            <span className="text-[9px] text-[#86868B] font-black uppercase tracking-tight">
+                                                DISP: <span className="text-[#F5F5F7]">{item.cantidad_disponible}</span> {item.unidad}
                                             </span>
                                         </div>
                                     )}
                                 </div>
                             </div>
-                            <div className="flex flex-col justify-end pb-1">
-                                <label className="text-[10px] font-black text-gray-500 uppercase tracking-widest mb-2 block">Detalles</label>
+                            <div className="flex flex-col justify-end">
+                                <label className="text-[9px] font-black text-[#86868B] uppercase tracking-widest mb-3 block">Especificaciones</label>
                                 <div className="space-y-2">
-                                    <div className="flex items-center justify-between bg-black/20 border border-white/5 rounded-lg px-3 py-2">
-                                        <span className="text-[9px] font-black text-gray-600 uppercase">Marca</span>
-                                        <span className={`text-xs font-bold text-${themeColor}-400/80 truncate ml-2`}>{item.marca || 'N/A'}</span>
+                                    <div className="flex items-center justify-between bg-black/20 border border-[#333333] rounded-[4px] px-3 py-2">
+                                        <span className="text-[8px] font-black text-[#86868B] uppercase">Marca</span>
+                                        <span className="text-[10px] font-black text-[#0071E3] truncate ml-2 uppercase">{item.marca || 'N/A'}</span>
                                     </div>
-                                    <div className="flex items-center justify-between bg-black/20 border border-white/5 rounded-lg px-3 py-2">
-                                        <span className="text-[9px] font-black text-gray-600 uppercase">Uni.</span>
-                                        <span className="text-xs font-bold text-gray-400 truncate ml-2">{item.unidad || 'UND'}</span>
+                                    <div className="flex items-center justify-between bg-black/20 border border-[#333333] rounded-[4px] px-3 py-2">
+                                        <span className="text-[8px] font-black text-[#86868B] uppercase">Uni.</span>
+                                        <span className="text-[10px] font-black text-[#F5F5F7] truncate ml-2 uppercase">{item.unidad || 'UND'}</span>
                                     </div>
                                 </div>
                             </div>
@@ -238,12 +213,12 @@ export const TransactionTable = ({
 
 
             {items.length === 0 && (
-                <div className="py-20 text-center bg-white/[0.02] border-2 border-dashed border-white/10 rounded-3xl">
-                    <PlusCircle className="w-12 h-12 text-gray-700 mx-auto mb-4 opacity-50" />
-                    <p className="text-gray-500 font-bold uppercase tracking-widest text-sm">No hay artículos cargados</p>
+                <div className="py-24 text-center bg-[#1D1D1F] border border-[#333333] rounded-[8px]">
+                    <PlusCircle className="w-12 h-12 text-[#333333] mx-auto mb-6 opacity-50" />
+                    <p className="text-[#86868B] font-black uppercase tracking-[0.2em] text-[10px] mb-6">No hay artículos cargados</p>
                     <button
                         onClick={onAddRow}
-                        className="mt-4 text-teal-400 font-black text-xs uppercase hover:underline"
+                        className="text-[#0071E3] font-black text-[11px] uppercase tracking-widest hover:underline active:scale-95 transition-all"
                     >
                         Haz clic aquí para agregar el primero
                     </button>

@@ -1,13 +1,16 @@
 import { useRef, useState, useEffect } from 'react';
 import { supabase } from '../../lib/supabase';
-import { Save, X, Upload, Package, DollarSign, FileText, QrCode, Hash, Tag, Image as ImageIcon, ChevronLeft, Camera, Trash2, Loader2 } from 'lucide-react';
+import { Save, X, Upload, Package, DollarSign, FileText, QrCode, Hash, Tag, Image as ImageIcon, Camera, Trash2, Loader2, Plus } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
+import { PageHeader } from '../../components/ui/PageHeader';
+import { cn } from '../../lib/utils';
 
 export default function IngresoActivos() {
     const navigate = useNavigate();
     const [loading, setLoading] = useState(false);
     const [uploadingImage, setUploadingImage] = useState(false);
     const [showCameraModal, setShowCameraModal] = useState(false);
+    const [isDragging, setIsDragging] = useState(false);
 
     const fileInputRef = useRef<HTMLInputElement>(null);
     const videoRef = useRef<HTMLVideoElement>(null);
@@ -107,6 +110,30 @@ export default function IngresoActivos() {
         }
     };
 
+    // Drag and drop handlers
+    const handleDragOver = (e: React.DragEvent) => {
+        e.preventDefault();
+        e.stopPropagation();
+        setIsDragging(true);
+    };
+
+    const handleDragLeave = (e: React.DragEvent) => {
+        e.preventDefault();
+        e.stopPropagation();
+        setIsDragging(false);
+    };
+
+    const handleDrop = async (e: React.DragEvent) => {
+        e.preventDefault();
+        e.stopPropagation();
+        setIsDragging(false);
+
+        const file = e.dataTransfer.files?.[0];
+        if (file && file.type.startsWith('image/')) {
+            uploadFile(file);
+        }
+    };
+
     // Handler for file input
     const handleImageUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
         const file = event.target.files?.[0];
@@ -175,49 +202,32 @@ export default function IngresoActivos() {
     };
 
     return (
-        <div className="max-w-6xl mx-auto p-3 md:p-8 animate-in fade-in slide-in-from-bottom-4 duration-700">
-            {/* Header */}
-            <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4 mb-6 md:mb-8">
-                <div className="flex items-center gap-3 md:gap-4">
-                    <div className="w-12 h-12 md:w-14 md:h-14 rounded-2xl bg-gradient-to-br from-blue-600 to-indigo-600 flex items-center justify-center shadow-lg shadow-blue-500/30 ring-1 ring-white/20 shrink-0">
-                        <Package className="w-6 h-6 md:w-7 md:h-7 text-white" />
-                    </div>
-                    <div>
-                        <h1 className="text-xl md:text-3xl font-bold text-white tracking-tight">Ingreso de Activos</h1>
-                        <p className="text-slate-400 text-sm md:text-base font-medium">Registrar nuevo activo</p>
-                    </div>
-                </div>
-                <button
-                    onClick={() => navigate('/activos')}
-                    className="group flex items-center gap-2 px-4 py-2 md:px-5 md:py-2.5 bg-slate-900/50 hover:bg-slate-800 text-slate-300 hover:text-white border border-white/10 rounded-xl transition-all duration-300 backdrop-blur-md text-sm"
-                >
-                    <ChevronLeft className="w-4 h-4 group-hover:-translate-x-1 transition-transform" />
-                    Regresar
-                </button>
-            </div>
+        <div className="min-h-screen bg-[#000000] text-[#F5F5F7]">
+            <PageHeader
+                title="Ingreso de Activos"
+                subtitle="Gabinete de Gestión Operativa"
+                icon={Plus}
+                backRoute="/activos"
+            />
 
-            {/* Main Content */}
-            <div className="relative backdrop-blur-xl bg-slate-900/60 border border-white/10 rounded-2xl md:rounded-[2rem] shadow-2xl overflow-hidden text-sm md:text-base">
-                {/* Decorative gradients */}
-                <div className="absolute top-0 right-0 w-[500px] h-[500px] bg-blue-500/10 rounded-full blur-[100px] -translate-y-1/2 translate-x-1/2 pointer-events-none" />
-                <div className="absolute bottom-0 left-0 w-[500px] h-[500px] bg-indigo-500/10 rounded-full blur-[100px] translate-y-1/2 -translate-x-1/2 pointer-events-none" />
+            <div className="max-w-7xl mx-auto px-8 pb-12 animate-fade-in-up">
 
-                <form onSubmit={handleSubmit} className="relative p-5 md:p-10 space-y-8 md:y-10">
+                <form onSubmit={handleSubmit} className="relative p-5 md:p-10 space-y-8 md:space-y-10">
                     <div className="grid grid-cols-1 lg:grid-cols-2 gap-x-16 gap-y-10">
                         {/* Column 1: Información Básica */}
                         <div className="space-y-6">
-                            <div className="flex items-center gap-3 pb-4 border-b border-white/5">
-                                <span className="p-2 rounded-lg bg-blue-500/10 text-blue-400">
+                            <div className="flex items-center gap-3 pb-4 border-b border-[#333333]">
+                                <span className="p-2 rounded-lg bg-[#0071E3]/10 text-[#0071E3]">
                                     <Package className="w-5 h-5" />
                                 </span>
-                                <h3 className="text-lg font-bold text-white tracking-wide">Información Básica</h3>
+                                <h3 className="text-lg font-black text-[#F5F5F7] uppercase tracking-widest text-[12px]">Información Básica</h3>
                             </div>
 
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
                                 <div className="space-y-2">
-                                    <label className="text-sm font-medium text-slate-300 ml-1">Número de Activo <span className="text-red-400">*</span></label>
+                                    <label className="text-[10px] font-black uppercase tracking-widest text-[#86868B] ml-1">Número de Activo <span className="text-[#0071E3]">*</span></label>
                                     <div className="relative group">
-                                        <Hash className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-500 group-focus-within:text-blue-400 transition-colors" />
+                                        <Hash className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-[#86868B] group-focus-within:text-[#0071E3] transition-colors" />
                                         <input
                                             required
                                             type="number"
@@ -225,65 +235,65 @@ export default function IngresoActivos() {
                                             value={formData.numero_activo}
                                             onChange={handleChange}
                                             placeholder="1001"
-                                            className="w-full bg-slate-950/50 border border-white/10 rounded-xl pl-12 pr-4 py-3.5 text-white placeholder-slate-600 focus:outline-none focus:border-blue-500/50 focus:bg-slate-900/80 focus:ring-1 focus:ring-blue-500/50 transition-all font-mono"
+                                            className="w-full bg-[#1D1D1F] border border-[#333333] rounded-[8px] pl-12 pr-4 py-3.5 text-[#F5F5F7] placeholder-[#86868B] focus:outline-none focus:border-[#0071E3] transition-all font-mono"
                                         />
                                     </div>
                                 </div>
                                 <div className="space-y-2">
-                                    <label className="text-sm font-medium text-slate-300 ml-1">Valor Estimado</label>
+                                    <label className="text-[10px] font-black uppercase tracking-widest text-[#86868B] ml-1">Valor Estimado</label>
                                     <div className="relative group">
-                                        <DollarSign className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-500 group-focus-within:text-green-400 transition-colors" />
+                                        <DollarSign className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-[#86868B] group-focus-within:text-[#0071E3] transition-colors" />
                                         <input
                                             name="valor_activo"
                                             value={formData.valor_activo}
                                             onChange={handleChange}
                                             placeholder="500,000"
-                                            className="w-full bg-slate-950/50 border border-white/10 rounded-xl pl-12 pr-4 py-3.5 text-white placeholder-slate-600 focus:outline-none focus:border-green-500/50 focus:bg-slate-900/80 focus:ring-1 focus:ring-green-500/50 transition-all"
+                                            className="w-full bg-[#1D1D1F] border border-[#333333] rounded-[8px] pl-12 pr-4 py-3.5 text-[#F5F5F7] placeholder-[#86868B] focus:outline-none focus:border-[#0071E3] transition-all"
                                         />
                                     </div>
                                 </div>
                             </div>
 
                             <div className="space-y-2">
-                                <label className="text-sm font-medium text-slate-300 ml-1">Nombre Corto <span className="text-red-400">*</span></label>
+                                <label className="text-[10px] font-black uppercase tracking-widest text-[#86868B] ml-1">Nombre Corto <span className="text-[#0071E3]">*</span></label>
                                 <div className="relative group">
-                                    <Tag className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-500 group-focus-within:text-blue-400 transition-colors" />
+                                    <Tag className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-[#86868B] group-focus-within:text-[#0071E3] transition-colors" />
                                     <input
                                         required
                                         name="nombre_corto_activo"
                                         value={formData.nombre_corto_activo}
                                         onChange={handleChange}
                                         placeholder="Ej: Laptop Dell Latitude"
-                                        className="w-full bg-slate-950/50 border border-white/10 rounded-xl pl-12 pr-4 py-3.5 text-white placeholder-slate-600 focus:outline-none focus:border-blue-500/50 focus:bg-slate-900/80 focus:ring-1 focus:ring-blue-500/50 transition-all"
+                                        className="w-full bg-[#1D1D1F] border border-[#333333] rounded-[8px] pl-12 pr-4 py-3.5 text-[#F5F5F7] placeholder-[#86868B] focus:outline-none focus:border-[#0071E3] transition-all"
                                     />
                                 </div>
                             </div>
 
                             <div className="space-y-2">
-                                <label className="text-sm font-medium text-slate-300 ml-1">Marca</label>
+                                <label className="text-[10px] font-black uppercase tracking-widest text-[#86868B] ml-1">Marca</label>
                                 <div className="relative group">
-                                    <Package className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-500 group-focus-within:text-blue-400 transition-colors" />
+                                    <Package className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-[#86868B] group-focus-within:text-[#0071E3] transition-colors" />
                                     <input
                                         name="marca_activo"
                                         value={formData.marca_activo}
                                         onChange={handleChange}
                                         placeholder="Ej: Dell"
-                                        className="w-full bg-slate-950/50 border border-white/10 rounded-xl pl-12 pr-4 py-3.5 text-white placeholder-slate-600 focus:outline-none focus:border-blue-500/50 focus:bg-slate-900/80 focus:ring-1 focus:ring-blue-500/50 transition-all"
+                                        className="w-full bg-[#1D1D1F] border border-[#333333] rounded-[8px] pl-12 pr-4 py-3.5 text-[#F5F5F7] placeholder-[#86868B] focus:outline-none focus:border-[#0071E3] transition-all"
                                     />
                                 </div>
                             </div>
 
                             <div className="space-y-2">
-                                <label className="text-sm font-medium text-slate-300 ml-1">Descripción Detallada</label>
+                                <label className="text-[10px] font-black uppercase tracking-widest text-[#86868B] ml-1">Descripción Detallada</label>
                                 <div className="relative group">
-                                    <FileText className="absolute left-4 top-4 w-5 h-5 text-slate-500 group-focus-within:text-blue-400 transition-colors" />
+                                    <FileText className="absolute left-4 top-4 w-5 h-5 text-[#86868B] group-focus-within:text-[#0071E3] transition-colors" />
                                     <textarea
                                         name="descripcion_activo"
                                         value={formData.descripcion_activo}
                                         onChange={handleChange}
                                         rows={4}
                                         placeholder="Características técnicas, estado, accesorios incluidos..."
-                                        className="w-full bg-slate-950/50 border border-white/10 rounded-xl pl-12 pr-4 py-3.5 text-white placeholder-slate-600 focus:outline-none focus:border-blue-500/50 focus:bg-slate-900/80 focus:ring-1 focus:ring-blue-500/50 transition-all resize-none"
+                                        className="w-full bg-[#1D1D1F] border border-[#333333] rounded-[8px] pl-12 pr-4 py-3.5 text-[#F5F5F7] placeholder-[#86868B] focus:outline-none focus:border-[#0071E3] transition-all resize-none"
                                     />
                                 </div>
                             </div>
@@ -291,45 +301,45 @@ export default function IngresoActivos() {
 
                         {/* Column 2: Identificación y Control */}
                         <div className="space-y-6">
-                            <div className="flex items-center gap-3 pb-4 border-b border-white/5">
-                                <span className="p-2 rounded-lg bg-emerald-500/10 text-emerald-400">
+                            <div className="flex items-center gap-3 pb-4 border-b border-[#333333]">
+                                <span className="p-2 rounded-lg bg-[#0071E3]/10 text-[#0071E3]">
                                     <QrCode className="w-5 h-5" />
                                 </span>
-                                <h3 className="text-lg font-bold text-white tracking-wide">Identificación y Control</h3>
+                                <h3 className="text-lg font-black text-[#F5F5F7] uppercase tracking-widest text-[12px]">Identificación y Control</h3>
                             </div>
 
                             <div className="space-y-2">
-                                <label className="text-sm font-medium text-slate-300 ml-1">Código de Activo (Placa) <span className="text-red-400">*</span></label>
+                                <label className="text-[10px] font-black uppercase tracking-widest text-[#86868B] ml-1">Código de Activo (Placa) <span className="text-[#0071E3]">*</span></label>
                                 <div className="relative group">
-                                    <QrCode className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-500 group-focus-within:text-emerald-400 transition-colors" />
+                                    <QrCode className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-[#86868B] group-focus-within:text-[#0071E3] transition-colors" />
                                     <input
                                         required
                                         name="codigo_activo"
                                         value={formData.codigo_activo}
                                         onChange={handleChange}
                                         placeholder="Ej: MSJ-001-2024"
-                                        className="w-full bg-slate-950/50 border border-white/10 rounded-xl pl-12 pr-4 py-3.5 text-white placeholder-slate-600 focus:outline-none focus:border-emerald-500/50 focus:bg-slate-900/80 focus:ring-1 focus:ring-emerald-500/50 transition-all"
+                                        className="w-full bg-[#1D1D1F] border border-[#333333] rounded-[8px] pl-12 pr-4 py-3.5 text-[#F5F5F7] placeholder-[#86868B] focus:outline-none focus:border-[#0071E3] transition-all"
                                     />
                                 </div>
                             </div>
 
                             <div className="space-y-2">
-                                <label className="text-sm font-medium text-slate-300 ml-1">Número de Serie</label>
+                                <label className="text-[10px] font-black uppercase tracking-widest text-[#86868B] ml-1">Número de Serie</label>
                                 <div className="relative group">
-                                    <Hash className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-500 group-focus-within:text-emerald-400 transition-colors" />
+                                    <Hash className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-[#86868B] group-focus-within:text-[#0071E3] transition-colors" />
                                     <input
                                         name="numero_serie_activo"
                                         value={formData.numero_serie_activo}
                                         onChange={handleChange}
                                         placeholder="Ej: 8H2J9K1"
-                                        className="w-full bg-slate-950/50 border border-white/10 rounded-xl pl-12 pr-4 py-3.5 text-white placeholder-slate-600 focus:outline-none focus:border-emerald-500/50 focus:bg-slate-900/80 focus:ring-1 focus:ring-emerald-500/50 transition-all"
+                                        className="w-full bg-[#1D1D1F] border border-[#333333] rounded-[8px] pl-12 pr-4 py-3.5 text-[#F5F5F7] placeholder-[#86868B] focus:outline-none focus:border-[#0071E3] transition-all"
                                     />
                                 </div>
                             </div>
 
                             <div className="space-y-4 pt-2">
-                                <label className="text-sm font-medium text-slate-300 flex items-center gap-2 ml-1">
-                                    <ImageIcon className="w-4 h-4 text-emerald-400" />
+                                <label className="text-[10px] font-black uppercase tracking-widest text-[#86868B] flex items-center gap-2 ml-1">
+                                    <ImageIcon className="w-4 h-4 text-[#0071E3]" />
                                     Fotografía del Activo
                                 </label>
 
@@ -341,36 +351,47 @@ export default function IngresoActivos() {
                                             type="button"
                                             onClick={startCamera}
                                             disabled={uploadingImage}
-                                            className="relative overflow-hidden flex flex-col items-center justify-center gap-3 p-6 border border-white/10 bg-slate-950/30 rounded-2xl hover:bg-slate-900 hover:border-blue-500/50 transition-all group disabled:opacity-50"
+                                            className="relative overflow-hidden flex flex-col items-center justify-center gap-3 p-6 border border-[#333333] bg-[#1D1D1F] rounded-[8px] hover:border-[#0071E3] transition-all group disabled:opacity-50"
                                         >
-                                            <div className="absolute inset-0 bg-gradient-to-br from-blue-500/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
-                                            <div className="w-12 h-12 bg-slate-800 rounded-full flex items-center justify-center group-hover:scale-110 group-hover:bg-blue-500 transition-all duration-300">
-                                                <Camera className="w-6 h-6 text-slate-300 group-hover:text-white" />
+                                            <div className="w-12 h-12 bg-[#121212] rounded-full flex items-center justify-center group-hover:scale-110 group-hover:bg-[#0071E3] transition-all duration-300">
+                                                <Camera className="w-6 h-6 text-[#86868B] group-hover:text-white" />
                                             </div>
-                                            <span className="text-sm font-medium text-slate-300 group-hover:text-white relative z-10">Tomar Foto</span>
+                                            <span className="text-[10px] font-black uppercase tracking-widest text-[#86868B] group-hover:text-white">Tomar Foto</span>
                                         </button>
 
-                                        <button
-                                            type="button"
+                                        <div
+                                            onDragOver={handleDragOver}
+                                            onDragLeave={handleDragLeave}
+                                            onDrop={handleDrop}
                                             onClick={() => fileInputRef.current?.click()}
-                                            disabled={uploadingImage}
-                                            className="relative overflow-hidden flex flex-col items-center justify-center gap-3 p-6 border border-white/10 bg-slate-950/30 rounded-2xl hover:bg-slate-900 hover:border-emerald-500/50 transition-all group disabled:opacity-50"
+                                            className={cn(
+                                                "drag-drop-zone flex flex-col items-center justify-center gap-3 p-6 group",
+                                                isDragging && "active"
+                                            )}
                                         >
-                                            <div className="absolute inset-0 bg-gradient-to-br from-emerald-500/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
-                                            <div className="w-12 h-12 bg-slate-800 rounded-full flex items-center justify-center group-hover:scale-110 group-hover:bg-emerald-500 transition-all duration-300">
+                                            <div className={cn(
+                                                "w-12 h-12 bg-[#121212] rounded-full flex items-center justify-center group-hover:scale-110 transition-all duration-300",
+                                                isDragging ? "bg-[#0071E3]" : "group-hover:bg-[#0071E3]"
+                                            )}>
                                                 {uploadingImage ? (
                                                     <Loader2 className="w-6 h-6 animate-spin text-white" />
                                                 ) : (
-                                                    <Upload className="w-6 h-6 text-slate-300 group-hover:text-white" />
+                                                    <Upload className={cn(
+                                                        "w-6 h-6 text-[#86868B] group-hover:text-white",
+                                                        isDragging && "text-white"
+                                                    )} />
                                                 )}
                                             </div>
-                                            <span className="text-sm font-medium text-slate-300 group-hover:text-white relative z-10">
-                                                {uploadingImage ? 'Subiendo...' : 'Subir Imagen'}
+                                            <span className={cn(
+                                                "text-[10px] font-black uppercase tracking-widest text-[#86868B] group-hover:text-white text-center",
+                                                isDragging && "text-white"
+                                            )}>
+                                                {uploadingImage ? 'Subiendo...' : 'Subir o Arrastrar'}
                                             </span>
-                                        </button>
+                                        </div>
                                     </div>
                                 ) : (
-                                    <div className="relative group rounded-2xl overflow-hidden border border-white/20 shadow-2xl">
+                                    <div className="relative group rounded-[8px] overflow-hidden border border-[#333333] shadow-2xl">
                                         <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent opacity-60 z-10" />
                                         <img
                                             src={formData.imagen_activo}
@@ -381,7 +402,7 @@ export default function IngresoActivos() {
                                             <button
                                                 type="button"
                                                 onClick={() => window.open(formData.imagen_activo, '_blank')}
-                                                className="p-2.5 bg-white/10 hover:bg-white/20 backdrop-blur-md rounded-xl text-white border border-white/20 transition-all"
+                                                className="p-2.5 bg-white/10 hover:bg-white/20 apple-blur rounded-[8px] text-white border border-white/20 transition-all"
                                                 title="Ver imagen completa"
                                             >
                                                 <ImageIcon className="w-5 h-5" />
@@ -389,7 +410,7 @@ export default function IngresoActivos() {
                                             <button
                                                 type="button"
                                                 onClick={handleRemoveImage}
-                                                className="p-2.5 bg-red-500/80 hover:bg-red-500 backdrop-blur-md rounded-xl text-white transition-all shadow-lg shadow-red-500/20"
+                                                className="p-2.5 bg-red-500/80 hover:bg-red-500 apple-blur rounded-[8px] text-white transition-all shadow-lg shadow-red-500/20"
                                                 title="Eliminar imagen"
                                             >
                                                 <Trash2 className="w-5 h-5" />
@@ -400,23 +421,23 @@ export default function IngresoActivos() {
                             </div>
 
                             <div className="space-y-2">
-                                <label className="text-sm font-medium text-slate-300 ml-1">Notas Adicionales</label>
+                                <label className="text-[10px] font-black uppercase tracking-widest text-[#86868B] ml-1">Notas Adicionales</label>
                                 <div className="relative group">
-                                    <FileText className="absolute left-4 top-4 w-5 h-5 text-slate-500 group-focus-within:text-emerald-400 transition-colors" />
+                                    <FileText className="absolute left-4 top-4 w-5 h-5 text-[#86868B] group-focus-within:text-[#0071E3] transition-colors" />
                                     <textarea
                                         name="nota_activo"
                                         value={formData.nota_activo}
                                         onChange={handleChange}
                                         rows={2}
                                         placeholder="Observaciones importantes..."
-                                        className="w-full bg-slate-950/50 border border-white/10 rounded-xl pl-12 pr-4 py-3.5 text-white placeholder-slate-600 focus:outline-none focus:border-emerald-500/50 focus:bg-slate-900/80 focus:ring-1 focus:ring-emerald-500/50 transition-all resize-none"
+                                        className="w-full bg-[#1D1D1F] border border-[#333333] rounded-[8px] pl-12 pr-4 py-3.5 text-[#F5F5F7] placeholder-[#86868B] focus:outline-none focus:border-[#0071E3] transition-all resize-none"
                                     />
                                 </div>
                             </div>
                         </div>
                     </div>
 
-                    <div className="pt-6 mt-6 md:pt-8 md:mt-8 border-t border-white/10 flex flex-col sm:flex-row justify-end gap-3 md:gap-4">
+                    <div className="pt-6 mt-6 md:pt-8 md:mt-8 border-t border-[#333333] flex flex-col sm:flex-row justify-end gap-3 md:gap-4">
                         <button
                             type="button"
                             onClick={() => setFormData({
@@ -430,7 +451,7 @@ export default function IngresoActivos() {
                                 nota_activo: '',
                                 imagen_activo: ''
                             })}
-                            className="w-full sm:w-auto px-6 py-3.5 text-slate-300 font-medium hover:bg-white/5 rounded-xl transition-all flex items-center justify-center gap-2 border border-transparent hover:border-white/10 order-2 sm:order-1"
+                            className="w-full sm:w-auto px-6 py-3.5 text-[#86868B] hover:text-[#F5F5F7] font-black uppercase text-[10px] tracking-widest transition-all flex items-center justify-center gap-2 border border-[#333333] hover:bg-white/5 rounded-[8px] order-2 sm:order-1"
                         >
                             <X className="w-4 h-4" />
                             Limpiar
@@ -438,7 +459,7 @@ export default function IngresoActivos() {
                         <button
                             type="submit"
                             disabled={loading}
-                            className="w-full sm:w-auto px-8 py-3.5 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white font-bold rounded-xl shadow-lg shadow-blue-500/25 ring-1 ring-white/20 transition-all flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed transform hover:-translate-y-0.5 active:translate-y-0 order-1 sm:order-2"
+                            className="w-full sm:w-auto px-8 py-3.5 bg-[#0071E3] hover:bg-[#0071E3] text-white font-black uppercase text-[10px] tracking-widest rounded-[8px] shadow-lg shadow-[#0071E3]/20 transition-all flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed active:scale-95 order-1 sm:order-2"
                         >
                             {loading ? (
                                 <Loader2 className="w-5 h-5 animate-spin" />
@@ -453,17 +474,17 @@ export default function IngresoActivos() {
 
             {/* Camera Modal */}
             {showCameraModal && (
-                <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/90 backdrop-blur-sm p-4 animate-in fade-in duration-200">
-                    <div className="relative w-full max-w-lg bg-slate-900 rounded-3xl overflow-hidden shadow-2xl border border-white/10 flex flex-col max-h-[90vh]">
+                <div className="fixed inset-0 z-50 flex items-center justify-center p-4 apple-blur animate-in fade-in duration-200">
+                    <div className="relative w-full max-w-lg bg-[#121212] rounded-[8px] overflow-hidden shadow-2xl border border-[#333333] flex flex-col max-h-[90vh]">
                         {/* Camera Header */}
-                        <div className="p-4 flex justify-between items-center z-10 bg-slate-900 border-b border-white/5">
-                            <h3 className="text-white font-medium flex items-center gap-2">
-                                <Camera className="w-5 h-5 text-blue-400" />
+                        <div className="p-4 flex justify-between items-center z-10 bg-black/20 border-b border-[#333333]">
+                            <h3 className="text-[#F5F5F7] font-black uppercase text-[10px] tracking-widest flex items-center gap-2">
+                                <Camera className="w-5 h-5 text-[#0071E3]" />
                                 Cámara
                             </h3>
                             <button
                                 onClick={stopCamera}
-                                className="p-2 bg-white/5 hover:bg-white/10 text-white rounded-full transition-colors"
+                                className="p-2 hover:bg-white/10 text-[#F5F5F7] rounded-full transition-colors"
                             >
                                 <X className="w-5 h-5" />
                             </button>
@@ -480,15 +501,15 @@ export default function IngresoActivos() {
                         </div>
 
                         {/* Camera Controls */}
-                        <div className="p-6 bg-slate-900 border-t border-white/5 flex justify-center pb-8">
+                        <div className="p-6 bg-black/20 border-t border-[#333333] flex justify-center pb-8">
                             <button
                                 onClick={capturePhoto}
                                 className="group relative p-1 rounded-full cursor-pointer hover:scale-105 transition-transform"
                                 title="Tomar foto"
                             >
-                                <div className="absolute inset-0 bg-gradient-to-tr from-blue-600 to-indigo-600 rounded-full blur opacity-75 group-hover:opacity-100 transition-opacity" />
-                                <div className="relative w-16 h-16 bg-white rounded-full border-4 border-slate-900 flex items-center justify-center">
-                                    <div className="w-12 h-12 bg-slate-200 rounded-full group-hover:bg-blue-50 transition-colors" />
+                                <div className="absolute inset-0 bg-[#0071E3] rounded-full blur opacity-75 group-hover:opacity-100 transition-opacity" />
+                                <div className="relative w-16 h-16 bg-[#F5F5F7] rounded-full border-4 border-[#121212] flex items-center justify-center">
+                                    <div className="w-12 h-12 bg-[#86868B] rounded-full group-hover:bg-[#0071E3] transition-colors" />
                                 </div>
                             </button>
                         </div>

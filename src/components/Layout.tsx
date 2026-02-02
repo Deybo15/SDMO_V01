@@ -36,18 +36,18 @@ export default function Layout() {
     }, [location.pathname]);
 
     return (
-        <div className="flex h-screen bg-slate-50 dark:bg-slate-900 overflow-hidden font-sans">
+        <div className="flex h-screen bg-[#000000] text-[#F5F5F7] overflow-hidden font-sans">
             {/* Mobile Header */}
-            <div className="md:hidden fixed top-0 left-0 right-0 h-16 bg-slate-950 border-b border-slate-800/50 flex items-center justify-between px-4 z-50">
+            <div className="md:hidden fixed top-0 left-0 right-0 h-16 bg-[#121212] border-b border-[#333333] flex items-center justify-between px-6 z-50">
                 <div className="flex items-center gap-3">
-                    <div className="w-8 h-8 rounded-lg bg-blue-600 flex items-center justify-center shadow-lg shadow-blue-500/20">
-                        <span className="text-white font-bold text-lg">S</span>
+                    <div className="w-8 h-8 rounded-[4px] bg-[#0071E3] flex items-center justify-center shadow-lg shadow-[#0071E3]/20">
+                        <span className="text-white font-black text-sm italic">S</span>
                     </div>
-                    <span className="text-white font-bold text-lg tracking-tight">SDMO</span>
+                    <span className="text-white font-black text-lg tracking-tighter uppercase italic">SDMO</span>
                 </div>
                 <button
                     onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-                    className="p-2 text-slate-400 hover:text-white transition-colors"
+                    className="p-2 text-[#86868B] hover:text-white transition-colors"
                 >
                     {mobileMenuOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
                 </button>
@@ -56,43 +56,34 @@ export default function Layout() {
             {/* Mobile Sidebar Overlay */}
             {mobileMenuOpen && (
                 <div
-                    className="fixed inset-0 bg-black/50 z-[60] md:hidden backdrop-blur-sm transition-opacity"
+                    className="fixed inset-0 bg-black/80 z-[60] md:hidden backdrop-blur-[20px] transition-opacity"
                     onClick={() => setMobileMenuOpen(false)}
                 />
             )}
 
             {/* Sidebar (Desktop & Mobile Drawer) */}
             <aside className={cn(
-                "fixed inset-y-0 left-0 z-[70] glass-dark border-r border-white/5 shadow-2xl transition-[width,transform] duration-300 cubic-bezier(0.4, 0, 0.2, 1) md:translate-x-0 md:static md:flex md:flex-col group/sidebar",
+                "fixed inset-y-0 left-0 z-[70] bg-[#121212] border-r border-[#333333] transition-[width,transform] duration-300 cubic-bezier(0.4, 0, 0.2, 1) md:translate-x-0 md:static md:flex md:flex-col group/sidebar",
                 mobileMenuOpen ? "translate-x-0 w-72" : "-translate-x-full w-72 md:w-24 md:hover:w-72"
             )}>
                 {/* Header / Logo */}
-                <div className="p-6 md:p-6 md:group-hover/sidebar:p-8 transition-all duration-300 hidden md:block overflow-hidden relative">
-                    <div className="flex items-center gap-4">
-                        <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-blue-500 to-blue-700 flex items-center justify-center shadow-xl shadow-blue-500/20 shrink-0 animate-float">
-                            <span className="text-white font-black text-2xl tracking-tighter">S</span>
+                <div className="p-8 hidden md:block overflow-hidden relative">
+                    <div className="flex items-center gap-5">
+                        <div className="w-12 h-12 rounded-[4px] bg-[#0071E3] flex items-center justify-center shadow-2xl shadow-[#0071E3]/20 shrink-0">
+                            <span className="text-white font-black text-2xl italic">S</span>
                         </div>
-                        <div className="flex flex-col opacity-0 scale-95 group-hover/sidebar:opacity-100 group-hover/sidebar:scale-100 transition-[opacity,transform] duration-300 whitespace-nowrap overflow-hidden">
-                            <h1 className="text-2xl font-black text-white tracking-tighter leading-none mb-1">
+                        <div className="flex flex-col opacity-0 scale-95 group-hover/sidebar:opacity-100 group-hover/sidebar:scale-100 transition-all duration-300 whitespace-nowrap overflow-hidden">
+                            <h1 className="text-2xl font-black text-white tracking-tighter leading-none mb-1 uppercase italic">
                                 SDMO
                             </h1>
-                            <p className="text-[10px] text-blue-400 font-bold tracking-widest uppercase">Municipalidad</p>
+                            <p className="text-[10px] text-[#0071E3] font-black tracking-widest uppercase">Municipalidad</p>
                         </div>
                     </div>
                 </div>
 
-                {/* Mobile Drawer Header */}
-                <div className="p-6 border-b border-slate-800/50 md:hidden flex items-center justify-between bg-slate-900/50">
-                    <span className="text-sm font-semibold text-slate-400">Menú de Navegación</span>
-                    <button onClick={() => setMobileMenuOpen(false)}>
-                        <X className="w-5 h-5 text-slate-400" />
-                    </button>
-                </div>
-
                 {/* Navigation */}
-                <nav className="flex-1 px-3 py-4 space-y-1.5 overflow-y-auto overflow-x-hidden scrollbar-thin scrollbar-thumb-slate-800 scrollbar-track-transparent">
+                <nav className="flex-1 px-4 py-6 space-y-2 overflow-y-auto overflow-x-hidden scrollbar-none">
                     {navItems.map((item) => {
-                        // Improved active logic: find matching items and pick the most specific one
                         const matchingItems = navItems.filter(navItem =>
                             navItem.path === '/'
                                 ? location.pathname === '/'
@@ -106,25 +97,21 @@ export default function Layout() {
                                 key={item.path}
                                 to={item.path}
                                 className={cn(
-                                    "group/item flex items-center gap-4 px-4 py-3.5 text-sm font-bold rounded-2xl transition-[background-color,color,border-color,transform,opacity] duration-200 relative overflow-hidden outline-none border",
+                                    "group/item flex items-center gap-5 px-5 py-4 text-[11px] font-black uppercase tracking-widest rounded-[8px] transition-all duration-200 relative overflow-hidden outline-none border",
                                     isActive
-                                        ? "bg-blue-600/10 text-blue-400 inner-glow border-blue-500/20"
-                                        : "text-slate-500 hover:text-white hover:bg-white/5 border-transparent"
+                                        ? "bg-[#0071E3] text-white border-[#0071E3]/20 shadow-lg shadow-[#0071E3]/20"
+                                        : "text-[#86868B] hover:text-white hover:bg-white/5 border-transparent"
                                 )}
                             >
-                                {isActive && (
-                                    <div className="absolute left-0 top-1/2 -translate-y-1/2 w-1.5 h-8 bg-blue-500 rounded-r-full shadow-[4px_0_15px_rgba(59,130,246,0.5)] pointer-events-none" />
-                                )}
                                 <item.icon
                                     className={cn(
-                                        "w-6 h-6 shrink-0 transition-all duration-200",
-                                        isActive ? "text-blue-400 scale-110" : "text-slate-600 group-hover/item:text-slate-300"
+                                        "w-5 h-5 shrink-0 transition-transform duration-200",
+                                        isActive ? "text-white scale-110" : "text-[#86868B] group-hover/item:text-white"
                                     )}
                                 />
                                 <span className={cn(
-                                    "transition-[opacity,transform] duration-300 whitespace-nowrap overflow-hidden transform",
-                                    "opacity-0 scale-95 group-hover/sidebar:opacity-100 group-hover/sidebar:scale-100",
-                                    isActive ? "text-blue-400" : ""
+                                    "transition-all duration-300 whitespace-nowrap overflow-hidden transform",
+                                    "opacity-0 scale-95 group-hover/sidebar:opacity-100 group-hover/sidebar:scale-100"
                                 )}>
                                     {item.label}
                                 </span>
@@ -134,23 +121,23 @@ export default function Layout() {
                 </nav>
 
                 {/* User Profile & Logout */}
-                <div className="p-4 border-t border-white/5 bg-black/20 overflow-hidden">
-                    <div className="glass px-3 py-3 md:group-hover/sidebar:px-4 md:group-hover/sidebar:py-5 rounded-3xl border border-white/5 transition-all duration-300">
-                        <div className="flex items-center gap-3 mb-0 md:group-hover/sidebar:mb-5">
-                            <div className="w-10 h-10 rounded-2xl bg-gradient-to-br from-slate-700 to-slate-900 flex items-center justify-center border border-white/10 shrink-0 shadow-lg">
-                                <UserCircle2 className="w-6 h-6 text-slate-400" />
+                <div className="p-4 border-t border-[#333333] bg-black/20 overflow-hidden">
+                    <div className="bg-[#1D1D1F] px-4 py-5 rounded-[8px] border border-[#333333] transition-all duration-300">
+                        <div className="flex items-center gap-4 mb-0 md:group-hover/sidebar:mb-6">
+                            <div className="w-10 h-10 rounded-[4px] bg-black/40 flex items-center justify-center border border-[#333333] shrink-0">
+                                <UserCircle2 className="w-6 h-6 text-[#86868B]" />
                             </div>
-                            <div className="flex flex-col opacity-0 scale-95 group-hover/sidebar:opacity-100 group-hover/sidebar:scale-100 transition-[opacity,transform] duration-300 whitespace-nowrap overflow-hidden">
-                                <p className="text-sm font-black text-white truncate tracking-tight">Usuario</p>
-                                <p className="text-[10px] text-slate-500 truncate font-bold">dgamboa@msj.go.cr</p>
+                            <div className="flex flex-col opacity-0 scale-95 group-hover/sidebar:opacity-100 group-hover/sidebar:scale-100 transition-all duration-300 whitespace-nowrap overflow-hidden">
+                                <p className="text-[12px] font-black text-white truncate tracking-tight uppercase">Usuario</p>
+                                <p className="text-[9px] text-[#86868B] truncate font-black tracking-widest uppercase">dgamboa@msj.go.cr</p>
                             </div>
                         </div>
 
                         <button
                             onClick={handleLogout}
                             className={cn(
-                                "flex items-center justify-center gap-3 w-full mt-2 md:mt-0 px-4 py-2.5 text-[10px] font-black uppercase tracking-widest text-slate-400 hover:text-red-400 hover:bg-red-500/10 rounded-2xl border border-transparent hover:border-red-500/20 transition-all duration-200 overflow-hidden",
-                                "md:h-0 md:opacity-0 md:group-hover/sidebar:h-10 md:group-hover/sidebar:opacity-100 md:group-hover/sidebar:mt-1"
+                                "flex items-center justify-center gap-3 w-full mt-2 md:mt-0 px-4 py-3 text-[9px] font-black uppercase tracking-[0.2em] text-[#86868B] hover:text-rose-500 hover:bg-rose-500/10 rounded-[8px] border border-transparent hover:border-rose-500/20 transition-all duration-200 overflow-hidden",
+                                "md:h-0 md:opacity-0 md:group-hover/sidebar:h-12 md:group-hover/sidebar:opacity-100 md:group-hover/sidebar:mt-2"
                             )}
                         >
                             <LogOut className="w-4 h-4 shrink-0" />
@@ -161,8 +148,8 @@ export default function Layout() {
             </aside>
 
             {/* Main Content */}
-            <main className="flex-1 overflow-y-auto bg-slate-50 dark:bg-slate-900 pt-16 md:pt-0">
-                <div className="p-4 md:p-8 max-w-7xl mx-auto">
+            <main className="flex-1 overflow-y-auto bg-[#000000] pt-16 md:pt-0">
+                <div className="p-0">
                     <Outlet />
                 </div>
             </main>

@@ -67,20 +67,20 @@ export default function SearchModal({ isOpen, onClose, title, options, onSelect 
     if (!isOpen) return null;
 
     return (
-        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-[#1a1d29]/80 backdrop-blur-sm animate-in fade-in duration-200">
-            <div className="w-full max-w-lg bg-[#1e2230]/95 border border-white/10 rounded-[20px] shadow-2xl overflow-hidden animate-in zoom-in-95 duration-200">
-                <div className="p-6 border-b border-white/10 bg-gradient-to-r from-[#00d4ff]/10 to-[#00fff0]/10 flex items-center justify-between">
-                    <h3 className="text-xl font-semibold text-[#e4e6ea]">{title}</h3>
+        <div className="fixed inset-0 z-[100] flex items-center justify-center p-8 bg-black/80 backdrop-blur-[20px] animate-in fade-in duration-300">
+            <div className="w-full max-w-lg bg-[#121212] border border-[#333333] rounded-[8px] shadow-2xl overflow-hidden animate-in zoom-in-95 duration-200">
+                <div className="p-8 border-b border-[#333333] bg-black/20 flex items-center justify-between">
+                    <h3 className="text-xl font-black text-[#F5F5F7] uppercase italic tracking-tighter">{title}</h3>
                     <button
                         onClick={onClose}
-                        className="text-[#e4e6ea]/70 hover:text-[#e4e6ea] transition-colors"
+                        className="p-2 bg-transparent border border-[#F5F5F7]/30 text-[#86868B] rounded-[8px] hover:text-[#F5F5F7] hover:bg-white/5 transition-all"
                     >
                         <X className="w-6 h-6" />
                     </button>
                 </div>
 
-                <div className="p-6">
-                    <div className="relative mb-4">
+                <div className="p-8 bg-black/40">
+                    <div className="relative mb-6">
                         <input
                             ref={inputRef}
                             type="text"
@@ -91,9 +91,9 @@ export default function SearchModal({ isOpen, onClose, title, options, onSelect 
                             }}
                             onKeyDown={handleKeyDown}
                             placeholder="Escriba para buscar..."
-                            className="w-full bg-[#2d3241]/60 border border-white/10 rounded-xl px-4 py-3 text-[#e4e6ea] placeholder-[#9ca3af]/50 focus:outline-none focus:border-[#00d4ff] focus:ring-1 focus:ring-[#00d4ff]/50 transition-all"
+                            className="w-full bg-[#1D1D1F] border border-[#333333] rounded-[8px] px-4 py-3.5 text-[#F5F5F7] placeholder-[#424245] focus:outline-none focus:border-[#0071E3]/50 transition-all font-medium text-sm"
                         />
-                        <Search className="absolute right-4 top-1/2 -translate-y-1/2 w-4 h-4 text-[#9ca3af]/50" />
+                        <Search className="absolute right-4 top-1/2 -translate-y-1/2 w-4 h-4 text-[#424245]" />
                     </div>
 
                     <ul ref={listRef} className="max-h-[300px] overflow-y-auto space-y-2 pr-2 custom-scrollbar">
@@ -105,35 +105,26 @@ export default function SearchModal({ isOpen, onClose, title, options, onSelect 
                                         onSelect(item);
                                         onClose();
                                     }}
-                                    className={`p-3.5 rounded-lg border cursor-pointer transition-all duration-200 ${index === selectedIndex
-                                        ? 'bg-[#00d4ff]/20 border-[#00d4ff]/40 translate-x-1'
-                                        : 'bg-[#2d3241]/50 border-white/5 text-[#e4e6ea] hover:bg-[#00d4ff]/10 hover:border-[#00d4ff]/20'
+                                    className={`p-4 rounded-[8px] border cursor-pointer transition-all duration-200 flex items-center gap-3 uppercase font-black text-[11px] tracking-tight ${index === selectedIndex
+                                        ? 'bg-[#0071E3]/10 border-[#0071E3]/40 text-[#0071E3] translate-x-1'
+                                        : 'bg-[#1D1D1F] border-[#333333] text-[#F5F5F7] hover:border-[#0071E3]/30 hover:bg-white/5'
                                         }`}
                                 >
+                                    <div className={`w-1.5 h-1.5 rounded-full ${index === selectedIndex ? 'bg-[#0071E3]' : 'bg-[#333333]'}`} />
                                     {item.label}
                                 </li>
                             ))
                         ) : (
-                            <li className="p-4 text-center text-[#9ca3af]">No se encontraron resultados</li>
+                            <li className="p-8 text-center text-[#86868B] font-black text-[10px] uppercase tracking-widest">No se encontraron resultados</li>
                         )}
                     </ul>
                 </div>
             </div>
             <style>{`
-                .custom-scrollbar::-webkit-scrollbar {
-                    width: 6px;
-                }
-                .custom-scrollbar::-webkit-scrollbar-track {
-                    background: rgba(45, 50, 65, 0.3);
-                    border-radius: 3px;
-                }
-                .custom-scrollbar::-webkit-scrollbar-thumb {
-                    background: rgba(0, 212, 255, 0.4);
-                    border-radius: 3px;
-                }
-                .custom-scrollbar::-webkit-scrollbar-thumb:hover {
-                    background: rgba(0, 212, 255, 0.6);
-                }
+                .custom-scrollbar::-webkit-scrollbar { width: 6px; }
+                .custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
+                .custom-scrollbar::-webkit-scrollbar-thumb { background: #333333; border-radius: 3px; }
+                .custom-scrollbar::-webkit-scrollbar-thumb:hover { background: #424245; }
             `}</style>
         </div>
     );

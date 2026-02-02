@@ -17,13 +17,16 @@ import {
     ArrowUpDown,
     FileText,
     AlertOctagon,
-    ChevronDown
+    ChevronDown,
+    Activity,
+    Info
 } from 'lucide-react';
 import * as XLSX from 'xlsx';
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Cell } from 'recharts';
 import { PageHeader } from '../components/ui/PageHeader';
+import { cn } from '../lib/utils';
 
 interface ProyeccionItem {
     codigo_articulo: string;
@@ -153,8 +156,6 @@ export default function ProyeccionCompras() {
         totalCategorias: uniqueGastos.length
     }), [data, uniqueGastos]);
 
-    const COLORS = ['#10B981', '#3B82F6', '#6366F1', '#8B5CF6', '#EC4899', '#F59E0B', '#EF4444'];
-
     const handleSort = (key: keyof ProyeccionItem) => {
         setSortConfig(current => ({
             key,
@@ -184,7 +185,7 @@ export default function ProyeccionCompras() {
             body: tableBody,
             startY: 30,
             styles: { fontSize: 8 },
-            headStyles: { fillColor: [16, 185, 129] }
+            headStyles: { fillColor: [0, 113, 227] }
         });
         doc.save(`Requisicion_SDMO_${new Date().toISOString().split('T')[0]}.pdf`);
     };
@@ -207,208 +208,222 @@ export default function ProyeccionCompras() {
     };
 
     const SortIcon = ({ column }: { column: keyof ProyeccionItem }) => {
-        if (sortConfig?.key !== column) return <ArrowUpDown className="w-4 h-4 text-slate-600 inline ml-1 opacity-50" />;
-        return <ArrowUpDown className={`w-4 h-4 text-emerald-400 inline ml-1 ${sortConfig.direction === 'asc' ? 'rotate-180' : ''}`} />;
+        if (sortConfig?.key !== column) return <ArrowUpDown className="w-4 h-4 text-[#86868B] inline ml-1 opacity-50" />;
+        return <ArrowUpDown className={cn("w-4 h-4 text-[#0071E3] inline ml-1 transition-transform", sortConfig.direction === 'asc' ? 'rotate-180' : '')} />;
     };
 
     return (
-        <div className="min-h-screen bg-[#0f111a] text-slate-100 p-4 md:p-8 relative overflow-hidden">
-            {/* Ambient Background */}
-            <div className="absolute top-0 left-0 w-full h-full overflow-hidden pointer-events-none -z-10">
-                <div className="absolute top-[-20%] left-[-10%] w-[60%] h-[60%] bg-emerald-500/5 rounded-full blur-[120px]" />
-                <div className="absolute bottom-[-20%] right-[-10%] w-[60%] h-[60%] bg-blue-500/5 rounded-full blur-[120px]" />
-            </div>
+        <div className="min-h-screen bg-[#000000] text-[#F5F5F7] font-sans selection:bg-[#0071E3]/30">
+            <div className="animate-fade-in-up">
+                <PageHeader
+                    title="Proyección de Compras Anual"
+                    icon={Calculator}
+                    themeColor="blue"
+                />
 
-            <div className="relative z-10 max-w-7xl mx-auto space-y-6">
-                {/* Header */}
-                <div className="flex flex-col md:flex-row justify-between items-end gap-6 pb-2 border-b border-white/5">
-                    <div className="space-y-1">
-                        <PageHeader title="Proyección de Compras Anual" icon={Calculator} themeColor="emerald" />
-                        <p className="text-slate-500 text-sm font-medium tracking-wide">
-                            Cálculo basado en histórico de consumo real considerando Lead Time.
-                        </p>
-                    </div>
-                    <div className="flex gap-3">
-                        <button onClick={handleExportPDF} className="glass-button px-5 py-2.5 flex items-center gap-2 text-purple-400 hover:text-white rounded-xl">
-                            <FileText className="w-4 h-4" />
-                            <span className="font-bold text-xs">PDF REQUISICIÓN</span>
-                        </button>
-                        <button onClick={handleExportExcel} className="glass-button px-5 py-2.5 flex items-center gap-2 text-emerald-400 hover:text-white rounded-xl">
-                            <Download className="w-4 h-4" />
-                            <span className="font-bold text-xs">EXCEL COMPLETO</span>
-                        </button>
-                    </div>
-                </div>
-
-                {/* KPIs Row */}
-                <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-                    <StatCard title="Presupuesto Estimado" value={`₡${stats.totalPresupuesto.toLocaleString()}`} icon={DollarSign} color="emerald" loading={loading} />
-                    <StatCard title="Artículos a Comprar" value={stats.itemsAComprar} subtitle={`de ${stats.totalItems}`} icon={Package} color="blue" loading={loading} />
-                    <StatCard title="Lead Time (Promedio)" value={`${mesesLeadTime} Meses`} icon={Calendar} color="purple" />
-                    <StatCard title="Rubros Activos" value={stats.totalCategorias} icon={BarChartIcon} color="orange" loading={loading} />
-                </div>
-
-                {/* Model and Charts Section */}
-                <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
-                    {/* Controls Sidebar */}
-                    <div className="lg:col-span-4 glass-card p-6 space-y-8 flex flex-col justify-between">
-                        <div className="space-y-8">
-                            <div className="flex items-center gap-3 border-b border-white/5 pb-4">
-                                <div className="p-2 bg-emerald-500/10 rounded-lg">
-                                    <Settings2 className="w-5 h-5 text-emerald-400" />
-                                </div>
-                                <h3 className="text-sm font-black text-white uppercase tracking-widest italic">Configuración del Modelo</h3>
-                            </div>
-
-                            <HighContrastSlider label="Histórico (Meses)" min={1} max={60} value={mesesHistorico} onChange={setMesesHistorico} color="purple" />
-                            <HighContrastSlider label="Lead Time (Espera)" min={1} max={18} value={mesesLeadTime} onChange={setMesesLeadTime} color="blue" />
-                            <HighContrastSlider label="Cobertura (Ciclo)" min={1} max={24} value={mesesCiclo} onChange={setMesesCiclo} color="emerald" />
+                <div className="max-w-7xl mx-auto px-8 pt-8 space-y-10">
+                    {/* Header Controls Row */}
+                    <div className="flex flex-col md:flex-row justify-between items-end gap-6">
+                        <div className="space-y-1">
+                            <p className="text-[#86868B] text-xs font-bold uppercase tracking-widest pl-1 opacity-70">
+                                Cálculo basado en histórico de consumo real considerando Lead Time.
+                            </p>
                         </div>
-
-                        <div className="space-y-3 pt-6 border-t border-white/5">
-                            <label className="block text-[11px] font-black text-slate-400 uppercase tracking-widest italic px-1">Factor de Seguridad</label>
-                            <div className="relative group">
-                                <select
-                                    value={factorSeguridad}
-                                    onChange={e => setFactorSeguridad(Number(e.target.value))}
-                                    className="w-full bg-slate-900 border border-white/10 rounded-2xl px-5 py-4 text-white font-black text-sm outline-none appearance-none hover:border-white/20 transition-all cursor-pointer shadow-inner"
-                                >
-                                    <option value="1.0">0% (Justo a Tiempo)</option>
-                                    <option value="1.1">10% (Recomendado)</option>
-                                    <option value="1.2">20% (Conservador)</option>
-                                </select>
-                                <ChevronDown className="absolute right-5 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-500 pointer-events-none transition-transform group-hover:text-slate-300" />
-                            </div>
-                        </div>
-                    </div>
-
-                    {/* Bar Chart Section */}
-                    <div className="lg:col-span-8 glass-card p-6 flex flex-col h-full min-h-[500px]">
-                        <div className="flex items-center justify-between mb-8 border-b border-white/5 pb-4">
-                            <div className="flex items-center gap-3">
-                                <div className="p-2 bg-purple-500/10 rounded-lg">
-                                    <PieChart className="w-5 h-5 text-purple-400" />
-                                </div>
-                                <h3 className="text-sm font-black text-white uppercase tracking-widest italic">Distribución Presupuestaria</h3>
-                            </div>
-                            <span className="text-[10px] font-black text-slate-500 uppercase tracking-tighter">Top 15 Partidas por Costo</span>
-                        </div>
-
-                        <div className="flex-1 w-full relative">
-                            {loading && (
-                                <div className="absolute inset-0 flex items-center justify-center bg-slate-900/40 backdrop-blur-sm rounded-2xl z-20">
-                                    <div className="w-10 h-10 border-4 border-emerald-500/20 border-t-emerald-500 rounded-full animate-spin" />
-                                </div>
-                            )}
-                            <ResponsiveContainer width="100%" height="100%">
-                                <BarChart data={chartData} margin={{ top: 10, right: 10, left: 0, bottom: 60 }}>
-                                    <CartesianGrid strokeDasharray="3 3" stroke="#ffffff05" vertical={false} />
-                                    <XAxis dataKey="code" stroke="#94a3b830" fontSize={10} tickLine={false} axisLine={false} angle={-45} textAnchor="end" interval={0} height={80} dy={10} tick={{ fill: '#64748b', fontWeight: 900 }} />
-                                    <YAxis stroke="#94a3b830" fontSize={10} tickLine={false} axisLine={false} tickFormatter={(val) => `₡${(val / 1000000).toFixed(1)}M`} tick={{ fill: '#64748b', fontWeight: 900 }} />
-                                    <Tooltip content={<ChartTooltip />} cursor={{ fill: '#ffffff05' }} />
-                                    <Bar dataKey="value" radius={[6, 6, 0, 0]} barSize={32}>
-                                        {chartData.map((_, index) => <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} fillOpacity={0.9} />)}
-                                    </Bar>
-                                </BarChart>
-                            </ResponsiveContainer>
-                        </div>
-                    </div>
-                </div>
-
-                {/* Filters Row */}
-                <div className="glass-card p-5 flex flex-col md:flex-row gap-4 items-center justify-between">
-                    <div className="flex items-center gap-4 w-full md:w-[70%] lg:w-[75%]">
-                        <div className="relative flex-1 group">
-                            <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-600 group-focus-within:text-emerald-400 transition-colors" />
-                            <input
-                                placeholder="Buscar por artículo o código específico..."
-                                value={searchTerm}
-                                onChange={e => { setSearchTerm(e.target.value); setCurrentPage(1); }}
-                                className="w-full bg-slate-950/50 border border-white/10 rounded-2xl pl-12 pr-4 py-3.5 text-sm text-slate-200 focus:ring-1 focus:ring-emerald-500/50 outline-none transition-all placeholder:text-slate-700 font-medium"
-                            />
-                        </div>
-                        <div className="relative w-full max-w-[340px]" ref={dropdownRef}>
-                            <button
-                                onClick={() => setIsDropdownOpen(!isDropdownOpen)}
-                                className="w-full bg-slate-950/50 border border-emerald-500/20 rounded-2xl px-6 py-3.5 text-xs font-black text-slate-300 flex items-center justify-between hover:bg-slate-900 transition-all uppercase tracking-widest italic"
-                            >
-                                <span className="truncate flex items-center gap-2">
-                                    <Filter className="w-4 h-4 text-emerald-400" />
-                                    {selectedGasto === 'TODOS' ? 'Filtrar por Rubro de Gasto' : selectedGasto}
-                                </span>
-                                <ChevronRight className={`w-4 h-4 transition-transform duration-300 ${isDropdownOpen ? 'rotate-[-90deg]' : 'rotate-90'}`} />
+                        <div className="flex gap-3">
+                            <button onClick={handleExportPDF} className="flex items-center gap-2 bg-[#1D1D1F] border border-[#333333] px-6 py-2.5 rounded-[8px] text-[#F5F5F7] hover:bg-[#333333] transition-all active:scale-95 text-[10px] font-bold uppercase tracking-widest">
+                                <FileText className="w-4 h-4 text-[#8B5CF6]" />
+                                PDF REQUISICIÓN
                             </button>
-                            {isDropdownOpen && (
-                                <div className="absolute bottom-[calc(100%+8px)] left-0 w-full bg-[#020617] border border-white/10 rounded-2xl shadow-[0_20px_50px_rgba(0,0,0,0.8)] z-[100] animate-in fade-in slide-in-from-bottom-2">
-                                    <div className="max-h-[300px] overflow-y-auto custom-scrollbar p-2 space-y-1">
-                                        <button onClick={() => { setSelectedGasto('TODOS'); setIsDropdownOpen(false); }} className={`w-full text-left px-5 py-3 rounded-xl text-[10px] font-black uppercase transition-all ${selectedGasto === 'TODOS' ? 'bg-emerald-500/10 text-emerald-400 ring-1 ring-emerald-500/20' : 'text-slate-500 hover:bg-white/5 hover:text-white'}`}>TODAS LAS PARTIDAS</button>
-                                        {uniqueGastos.map(g => (
-                                            <button key={g} onClick={() => { setSelectedGasto(g); setIsDropdownOpen(false); }} className={`w-full text-left px-5 py-3 rounded-xl text-[10px] font-black uppercase transition-all ${selectedGasto === g ? 'bg-emerald-500/10 text-emerald-400 ring-1 ring-emerald-500/20' : 'text-slate-500 hover:bg-white/5 hover:text-white'}`}>{g}</button>
-                                        ))}
+                            <button onClick={handleExportExcel} className="flex items-center gap-2 bg-[#1D1D1F] border border-[#333333] px-6 py-2.5 rounded-[8px] text-[#F5F5F7] hover:bg-[#333333] transition-all active:scale-95 text-[10px] font-bold uppercase tracking-widest">
+                                <Download className="w-4 h-4 text-[#10B981]" />
+                                EXCEL COMPLETO
+                            </button>
+                        </div>
+                    </div>
+
+                    {/* KPIs Grid */}
+                    <div className="grid grid-cols-2 md:grid-cols-4 gap-5">
+                        <StatCard title="Presupuesto Estimado" value={`₡${stats.totalPresupuesto.toLocaleString()}`} icon={DollarSign} color="text-[#0071E3]" bg="bg-[#0071E3]/10" loading={loading} badge="COSTO" />
+                        <StatCard title="Artículos a Comprar" value={stats.itemsAComprar} subtitle={`de ${stats.totalItems}`} icon={Package} color="text-[#10B981]" bg="bg-[#10B981]/10" loading={loading} badge="CANTIDAD" />
+                        <StatCard title="Lead Time (Promedio)" value={`${mesesLeadTime} Meses`} icon={Calendar} color="text-[#8B5CF6]" bg="bg-[#8B5CF6]/10" badge="LOGÍSTICA" />
+                        <StatCard title="Rubros Activos" value={stats.totalCategorias} icon={BarChartIcon} color="text-[#F59E0B]" bg="bg-[#F59E0B]/10" loading={loading} badge="PARTIDAS" />
+                    </div>
+
+                    {/* Configuration and Charts */}
+                    <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
+                        {/* Config Sidebar */}
+                        <div className="lg:col-span-4 glass-card p-8 flex flex-col justify-between min-h-[500px]">
+                            <div className="space-y-10">
+                                <div className="flex items-center gap-4 border-b border-[#333333] pb-6">
+                                    <div className="w-10 h-10 rounded-[8px] bg-[#0071E3]/10 flex items-center justify-center text-[#0071E3] border border-[#0071E3]/20">
+                                        <Settings2 className="w-5 h-5" />
                                     </div>
+                                    <h3 className="text-sm font-bold text-[#F5F5F7] uppercase tracking-widest">Configuración del Modelo</h3>
+                                </div>
+
+                                <div className="space-y-10">
+                                    <HighContrastSlider label="Histórico (Meses)" min={1} max={60} value={mesesHistorico} onChange={setMesesHistorico} accent="#8B5CF6" />
+                                    <HighContrastSlider label="Lead Time (Espera)" min={1} max={18} value={mesesLeadTime} onChange={setMesesLeadTime} accent="#0071E3" />
+                                    <HighContrastSlider label="Cobertura (Ciclo)" min={1} max={24} value={mesesCiclo} onChange={setMesesCiclo} accent="#10B981" />
+                                </div>
+                            </div>
+
+                            <div className="space-y-4 pt-10 border-t border-[#333333]">
+                                <label className="block text-[10px] font-bold text-[#86868B] uppercase tracking-widest pl-1">Factor de Seguridad</label>
+                                <div className="relative group">
+                                    <select
+                                        value={factorSeguridad}
+                                        onChange={e => setFactorSeguridad(Number(e.target.value))}
+                                        className="w-full bg-[#1D1D1F] border border-[#333333] rounded-[8px] px-5 py-4 text-[#F5F5F7] font-bold text-xs outline-none appearance-none hover:border-[#0071E3]/50 transition-all cursor-pointer"
+                                    >
+                                        <option value="1.0">0% (Justo a Tiempo)</option>
+                                        <option value="1.1">10% (Recomendado)</option>
+                                        <option value="1.2">20% (Conservador)</option>
+                                    </select>
+                                    <ChevronDown className="absolute right-5 top-1/2 -translate-y-1/2 w-4 h-4 text-[#86868B] pointer-events-none group-hover:text-[#F5F5F7] transition-colors" />
+                                </div>
+                            </div>
+                        </div>
+
+                        {/* Chart Area */}
+                        <div className="lg:col-span-8 glass-card p-8 flex flex-col min-h-[500px]">
+                            <div className="flex items-center justify-between mb-10 border-b border-[#333333] pb-6">
+                                <div className="flex items-center gap-4">
+                                    <div className="w-10 h-10 rounded-[8px] bg-[#8B5CF6]/10 flex items-center justify-center text-[#8B5CF6] border border-[#8B5CF6]/20">
+                                        <PieChart className="w-5 h-5" />
+                                    </div>
+                                    <h3 className="text-sm font-bold text-[#F5F5F7] uppercase tracking-widest">Distribución Presupuestaria</h3>
+                                </div>
+                                <span className="bg-[#1D1D1F] text-[#86868B] text-[9px] font-bold tracking-widest uppercase px-3 py-1 rounded-[4px] border border-[#333333]">TOP 15 PARTIDAS</span>
+                            </div>
+
+                            <div className="flex-1 w-full relative">
+                                {loading && (
+                                    <div className="absolute inset-0 flex items-center justify-center bg-[#000000]/40 backdrop-blur-sm rounded-[8px] z-20">
+                                        <Activity className="w-8 h-8 text-[#0071E3] animate-spin" />
+                                    </div>
+                                )}
+                                <ResponsiveContainer width="100%" height="100%">
+                                    <BarChart data={chartData} margin={{ top: 10, right: 10, left: 0, bottom: 60 }}>
+                                        <CartesianGrid strokeDasharray="3 3" stroke="#333333" vertical={false} />
+                                        <XAxis dataKey="code" stroke="#333333" fontSize={10} tickLine={false} axisLine={false} angle={-45} textAnchor="end" interval={0} height={80} dy={10} tick={{ fill: '#86868B', fontWeight: 700 }} />
+                                        <YAxis stroke="#333333" fontSize={10} tickLine={false} axisLine={false} tickFormatter={(val) => `₡${(val / 1000000).toFixed(1)}M`} tick={{ fill: '#86868B', fontWeight: 700 }} />
+                                        <Tooltip content={<ChartTooltip />} cursor={{ fill: 'rgba(255,255,255,0.02)' }} />
+                                        <Bar dataKey="value" radius={[4, 4, 0, 0]} barSize={32}>
+                                            {chartData.map((_, index) => (
+                                                <Cell
+                                                    key={`cell-${index}`}
+                                                    fill={index % 2 === 0 ? "#0071E3" : "#0071E3"}
+                                                    fillOpacity={index % 2 === 0 ? 1 : 0.7}
+                                                />
+                                            ))}
+                                        </Bar>
+                                    </BarChart>
+                                </ResponsiveContainer>
+                            </div>
+                        </div>
+                    </div>
+
+                    {/* Filter Area */}
+                    <div className="glass-card p-6 flex flex-col md:flex-row gap-5 items-center justify-between">
+                        <div className="flex items-center gap-5 w-full lg:w-3/4">
+                            <div className="relative flex-1 group">
+                                <Search className="absolute left-5 top-1/2 -translate-y-1/2 w-4 h-4 text-[#86868B] group-focus-within:text-[#0071E3] transition-colors" />
+                                <input
+                                    placeholder="Buscar por artículo o código específico..."
+                                    value={searchTerm}
+                                    onChange={e => { setSearchTerm(e.target.value); setCurrentPage(1); }}
+                                    className="w-full bg-[#1D1D1F] border border-[#333333] rounded-[8px] pl-14 pr-6 py-4 text-sm text-[#F5F5F7] focus:border-[#0071E3]/50 outline-none transition-all placeholder:text-[#86868B] font-medium"
+                                />
+                            </div>
+                            <div className="relative w-full max-w-[340px]" ref={dropdownRef}>
+                                <button
+                                    onClick={() => setIsDropdownOpen(!isDropdownOpen)}
+                                    className="w-full bg-[#1D1D1F] border border-[#333333] rounded-[8px] px-6 py-4 text-[10px] font-bold text-[#F5F5F7] flex items-center justify-between hover:border-[#0071E3]/50 transition-all uppercase tracking-widest"
+                                >
+                                    <span className="truncate flex items-center gap-3">
+                                        <Filter className="w-4 h-4 text-[#0071E3]" />
+                                        {selectedGasto === 'TODOS' ? 'Rubro de Gasto' : selectedGasto}
+                                    </span>
+                                    <ChevronRight className={cn("w-4 h-4 text-[#86868B] transition-transform duration-300", isDropdownOpen ? 'rotate-[-90deg]' : 'rotate-90')} />
+                                </button>
+                                {isDropdownOpen && (
+                                    <div className="absolute bottom-[calc(100%+8px)] left-0 w-full bg-[#121212] border border-[#333333] rounded-[8px] shadow-2xl z-[100] p-2 animate-in fade-in slide-in-from-bottom-2">
+                                        <div className="max-h-[300px] overflow-y-auto space-y-1 p-1">
+                                            <button onClick={() => { setSelectedGasto('TODOS'); setIsDropdownOpen(false); }} className={cn("w-full text-left px-5 py-3 rounded-[6px] text-[9px] font-bold uppercase transition-all", selectedGasto === 'TODOS' ? 'bg-[#0071E3]/20 text-[#0071E3]' : 'text-[#86868B] hover:bg-[#1D1D1F] hover:text-[#F5F5F7]')}>TODAS LAS PARTIDAS</button>
+                                            {uniqueGastos.map(g => (
+                                                <button key={g} onClick={() => { setSelectedGasto(g); setIsDropdownOpen(false); }} className={cn("w-full text-left px-5 py-3 rounded-[6px] text-[9px] font-bold uppercase transition-all", selectedGasto === g ? 'bg-[#0071E3]/20 text-[#0071E3]' : 'text-[#86868B] hover:bg-[#1D1D1F] hover:text-[#F5F5F7]')}>{g}</button>
+                                            ))}
+                                        </div>
+                                    </div>
+                                )}
+                            </div>
+                        </div>
+                        <div className="flex items-center gap-3 text-[#86868B] text-[10px] font-bold uppercase tracking-widest bg-[#1D1D1F] px-6 py-4 rounded-[8px] border border-[#333333]">
+                            Filtros: <span className="text-[#0071E3] font-black italic">{processedData.length}</span> resultados
+                        </div>
+                    </div>
+
+                    {/* Table View */}
+                    <div className="glass-card overflow-hidden flex flex-col min-h-[600px] mb-32">
+                        <div className="overflow-x-auto">
+                            <table className="w-full text-left border-collapse">
+                                <thead>
+                                    <tr className="bg-[#1D1D1F]/50 text-[#86868B] text-[10px] font-bold tracking-widest uppercase border-b border-[#333333]">
+                                        <th className="p-6 cursor-pointer hover:bg-[#1D1D1F] transition-colors w-[45%]" onClick={() => handleSort('nombre_articulo')}>ARTÍCULO <SortIcon column="nombre_articulo" /></th>
+                                        <th className="p-6 text-right cursor-pointer hover:bg-[#1D1D1F] transition-colors" onClick={() => handleSort('stock_actual')}>STOCK <SortIcon column="stock_actual" /></th>
+                                        <th className="p-6 text-right cursor-pointer hover:bg-[#1D1D1F] transition-colors" onClick={() => handleSort('promedio_mensual')}>CONS/MES <SortIcon column="promedio_mensual" /></th>
+                                        <th className="p-6 text-right cursor-pointer hover:bg-[#1D1D1F] transition-colors" onClick={() => handleSort('cantidad_sugerida')}>SUGERENCIA <SortIcon column="cantidad_sugerida" /></th>
+                                        <th className="p-6 text-right cursor-pointer hover:bg-[#1D1D1F] transition-colors" onClick={() => handleSort('costo_estimado')}>COSTO EST. <SortIcon column="costo_estimado" /></th>
+                                    </tr>
+                                </thead>
+                                <tbody className={cn("text-sm text-[#F5F5F7] divide-y divide-[#333333]/50 transition-opacity duration-500", loading ? 'opacity-30' : 'opacity-100')}>
+                                    {paginatedData.map(item => (
+                                        <tr key={item.codigo_articulo} className="hover:bg-[#1D1D1F]/30 transition-colors group">
+                                            <td className="p-6">
+                                                <div>
+                                                    <p className="text-[14px] font-bold text-[#F5F5F7] uppercase tracking-tight group-hover:text-[#0071E3] transition-colors">{item.nombre_articulo}</p>
+                                                    <div className="flex items-center gap-3 mt-2">
+                                                        <span className="text-[10px] font-mono text-[#0071E3] bg-[#0071E3]/10 px-2 py-0.5 rounded-[4px] font-bold">#{item.codigo_articulo}</span>
+                                                        <div className="w-1.5 h-1.5 rounded-full bg-[#333333]" />
+                                                        <span className="uppercase text-[9px] font-bold text-[#86868B]">{item.unidad}</span>
+                                                    </div>
+                                                </div>
+                                            </td>
+                                            <td className="p-6 text-right font-mono text-[11px] font-bold text-[#86868B]">{item.stock_actual}</td>
+                                            <td className="p-6 text-right font-mono text-[11px] font-bold text-[#0071E3]">{item.promedio_mensual}</td>
+                                            <td className="p-6 text-right">
+                                                <span className={cn(
+                                                    "px-4 py-1.5 rounded-[4px] text-[12px] font-black italic tracking-tight transition-all",
+                                                    item.cantidad_sugerida > 0
+                                                        ? 'bg-[#10B981] text-[#000000] shadow-[0_0_15px_rgba(16,185,129,0.3)]'
+                                                        : 'text-[#86868B] bg-[#1D1D1F] border border-[#333333]'
+                                                )}>
+                                                    {Math.ceil(item.cantidad_sugerida)}
+                                                </span>
+                                            </td>
+                                            <td className="p-6 text-right font-mono text-[11px] font-bold text-[#F5F5F7]">₡{item.costo_estimado.toLocaleString()}</td>
+                                        </tr>
+                                    ))}
+                                </tbody>
+                            </table>
+                            {!loading && paginatedData.length === 0 && (
+                                <div className="p-20 flex flex-col items-center justify-center gap-4 text-[#86868B]">
+                                    <AlertOctagon className="w-10 h-10 text-[#333333]" />
+                                    <p className="text-[10px] font-bold uppercase tracking-widest">Sin registros encontrados</p>
                                 </div>
                             )}
                         </div>
-                    </div>
-                    <div className="flex items-center gap-2 text-slate-500 text-[10px] font-black uppercase tracking-widest whitespace-nowrap bg-white/5 px-4 py-3.5 rounded-2xl border border-white/5">
-                        Mostrando <span className="text-emerald-400 italic text-sm font-black mx-1">{processedData.length}</span> resultados filtrados
-                    </div>
-                </div>
 
-                {/* Table Section */}
-                <div className="glass-card overflow-hidden flex flex-col min-h-[600px]">
-                    <div className="overflow-x-auto">
-                        <table className="w-full text-left border-collapse">
-                            <thead>
-                                <tr className="bg-white/5 text-slate-500 text-[10px] font-black tracking-widest uppercase italic border-b border-white/5">
-                                    <th className="p-6 cursor-pointer hover:bg-white/10 transition-colors w-[45%]" onClick={() => handleSort('nombre_articulo')}>ARTÍCULO <SortIcon column="nombre_articulo" /></th>
-                                    <th className="p-6 text-right cursor-pointer hover:bg-white/10 transition-colors" onClick={() => handleSort('stock_actual')}>STOCK <SortIcon column="stock_actual" /></th>
-                                    <th className="p-6 text-right cursor-pointer hover:bg-white/10 transition-colors" onClick={() => handleSort('promedio_mensual')}>CONS/MES <SortIcon column="promedio_mensual" /></th>
-                                    <th className="p-6 text-right text-emerald-400 cursor-pointer hover:bg-emerald-500/10 transition-colors" onClick={() => handleSort('cantidad_sugerida')}>SUGERENCIA <SortIcon column="cantidad_sugerida" /></th>
-                                    <th className="p-6 text-right cursor-pointer hover:bg-white/10 transition-colors" onClick={() => handleSort('costo_estimado')}>COSTO EST. <SortIcon column="costo_estimado" /></th>
-                                </tr>
-                            </thead>
-                            <tbody className={`text-sm text-slate-300 divide-y divide-white/[0.03] transition-opacity duration-500 ${loading ? 'opacity-30 pointer-events-none' : 'opacity-100'}`}>
-                                {paginatedData.map(item => (
-                                    <tr key={item.codigo_articulo} className="hover:bg-white/[0.02] transition-colors group">
-                                        <td className="p-6">
-                                            <div>
-                                                <p className="text-[13px] font-black text-white uppercase italic tracking-tight leading-tight group-hover:text-emerald-400 transition-colors">{item.nombre_articulo}</p>
-                                                <div className="flex items-center gap-2 mt-2 text-slate-400 text-[11px] font-bold">
-                                                    <span className="font-mono bg-white/5 px-2 py-0.5 rounded-md">#{item.codigo_articulo}</span>
-                                                    <span className="w-1.5 h-1.5 rounded-full bg-emerald-500/40" />
-                                                    <span className="uppercase tracking-widest text-[10px]">{item.unidad}</span>
-                                                </div>
-                                            </div>
-                                        </td>
-                                        <td className="p-6 text-right font-mono text-[11px] font-black text-slate-500">{item.stock_actual}</td>
-                                        <td className="p-6 text-right font-mono text-[11px] font-black text-blue-400">{item.promedio_mensual}</td>
-                                        <td className="p-6 text-right">
-                                            <span className={`px-4 py-2 rounded-xl text-[12px] font-black italic shadow-2xl transition-all ${item.cantidad_sugerida > 0 ? 'bg-emerald-500 text-[#020617] ring-2 ring-emerald-500/50 shadow-emerald-500/20' : 'bg-white/5 text-slate-500 border border-white/5 opacity-40'}`}>
-                                                {Math.ceil(item.cantidad_sugerida)}
-                                            </span>
-                                        </td>
-                                        <td className="p-6 text-right font-mono text-[11px] font-black text-slate-400 italic">₡{item.costo_estimado.toLocaleString()}</td>
-                                    </tr>
-                                ))}
-                            </tbody>
-                        </table>
-                        {!loading && paginatedData.length === 0 && (
-                            <div className="p-32 flex flex-col items-center justify-center gap-4">
-                                <AlertOctagon className="w-12 h-12 text-slate-800" />
-                                <p className="text-xs font-black uppercase text-slate-700 tracking-widest">Sin datos encontrados</p>
+                        {/* Pagination */}
+                        <div className="mt-auto p-8 border-t border-[#333333] bg-[#1D1D1F]/30 flex items-center justify-between">
+                            <div className="text-[10px] font-bold text-[#86868B] uppercase tracking-widest">
+                                Página <span className="text-[#0071E3] mx-1">{currentPage}</span> de {totalPages || 1}
                             </div>
-                        )}
-                    </div>
-
-                    {/* Pagination */}
-                    <div className="mt-auto p-6 border-t border-white/5 bg-black/20 flex items-center justify-between">
-                        <div className="text-[10px] font-black text-slate-500 uppercase tracking-widest italic">
-                            Página <span className="text-blue-400 mx-1">{currentPage}</span> de {totalPages || 1}
-                        </div>
-                        <div className="flex gap-2">
-                            <button disabled={currentPage <= 1 || loading} onClick={() => setCurrentPage(p => p - 1)} className="glass-button p-2.5 rounded-xl"><ChevronLeft className="w-5 h-5 text-slate-400" /></button>
-                            <button disabled={currentPage >= totalPages || loading} onClick={() => setCurrentPage(p => p + 1)} className="glass-button p-2.5 rounded-xl"><ChevronRight className="w-5 h-5 text-slate-400" /></button>
+                            <div className="flex gap-3">
+                                <button disabled={currentPage <= 1 || loading} onClick={() => setCurrentPage(p => p - 1)} className="p-2 border border-[#333333] rounded-[8px] disabled:opacity-20 hover:border-[#0071E3] transition-all"><ChevronLeft className="w-5 h-5" /></button>
+                                <button disabled={currentPage >= totalPages || loading} onClick={() => setCurrentPage(p => p + 1)} className="p-2 border border-[#333333] rounded-[8px] disabled:opacity-20 hover:border-[#0071E3] transition-all"><ChevronRight className="w-5 h-5" /></button>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -417,47 +432,46 @@ export default function ProyeccionCompras() {
     );
 }
 
-// Components
-function StatCard({ title, value, subtitle, icon: Icon, color, loading }: any) {
-    const colorMap: any = {
-        emerald: 'text-emerald-500 bg-emerald-500/10 ring-emerald-500/20',
-        blue: 'text-blue-500 bg-blue-500/10 ring-blue-500/20',
-        purple: 'text-purple-500 bg-purple-500/10 ring-purple-500/20',
-        orange: 'text-orange-500 bg-orange-500/10 ring-orange-500/20'
-    };
+// Internal Components
+function StatCard({ title, value, subtitle, icon: Icon, color, loading, bg, badge }: any) {
     return (
-        <div className="glass-card p-6 flex flex-col justify-between h-28 hover:translate-y-[-2px]">
-            <div className="flex items-center justify-between">
-                <p className="text-slate-500 text-[10px] font-black uppercase tracking-widest">{title}</p>
-                <div className={`p-2 rounded-lg ring-1 ${colorMap[color]}`}><Icon className="w-4 h-4" /></div>
-            </div>
-            {loading ? <div className="h-6 w-3/4 bg-white/5 animate-pulse rounded mt-2" /> : (
-                <div className="flex items-baseline gap-2">
-                    <p className="text-xl font-black text-white italic tracking-tight">{value}</p>
-                    {subtitle && <span className="text-[10px] font-bold text-slate-600 mb-0.5">{subtitle}</span>}
+        <div className="glass-card p-6 flex flex-col group transition-all duration-300 relative overflow-hidden">
+            <div className="flex justify-between items-start mb-6">
+                <div className={cn("w-12 h-12 rounded-[12px] flex items-center justify-center group-hover:scale-105 transition-transform", bg, color)}>
+                    <Icon className="w-5 h-5" />
                 </div>
-            )}
+                <span className="bg-[#1D1D1F] text-[#86868B] text-[9px] font-bold tracking-widest uppercase px-3 py-1 rounded-[4px] border border-[#333333]">{badge}</span>
+            </div>
+            <div className="relative z-10">
+                <p className="text-[10px] font-bold text-[#86868B] uppercase tracking-widest leading-none">{title}</p>
+                {loading ? <div className="h-8 w-3/4 bg-[#1D1D1F] animate-pulse rounded-[4px] mt-4" /> : (
+                    <div className="flex items-baseline gap-2 mt-4">
+                        <p className="text-2xl font-bold text-[#F5F5F7] tracking-tighter">{value}</p>
+                        {subtitle && <span className="text-[9px] font-bold text-[#86868B] mb-0.5">{subtitle}</span>}
+                    </div>
+                )}
+            </div>
         </div>
     );
 }
 
-function HighContrastSlider({ label, value, min, max, onChange, color }: any) {
-    const accentMap: any = {
-        emerald: 'accent-emerald-500 text-emerald-400 bg-emerald-500/10',
-        blue: 'accent-blue-500 text-blue-400 bg-blue-500/10',
-        purple: 'accent-purple-500 text-purple-400 bg-purple-500/10'
-    };
+function HighContrastSlider({ label, value, min, max, onChange, accent }: any) {
     return (
-        <div className="space-y-4">
+        <div className="space-y-6">
             <div className="flex justify-between items-center">
-                <label className="text-[11px] font-black text-slate-400 uppercase tracking-widest italic">{label}</label>
-                <span className={`px-4 py-1.5 rounded-full text-[13px] font-black italic shadow-lg ring-1 ring-white/10 ${accentMap[color]}`}>{value} meses</span>
+                <label className="text-[10px] font-bold text-[#86868B] uppercase tracking-widest">{label}</label>
+                <div className="bg-[#1D1D1F] border border-[#333333] px-3 py-1 rounded-[4px] flex items-center gap-2">
+                    <span className="text-xs font-bold text-[#F5F5F7]" style={{ color: accent }}>{value}</span>
+                    <span className="text-[9px] font-bold text-[#86868B] uppercase uppercase">Meses</span>
+                </div>
             </div>
-            <input
-                type="range" min={min} max={max} value={value}
-                onChange={e => onChange(Number(e.target.value))}
-                className={`w-full h-1.5 bg-black rounded-full appearance-none cursor-pointer ${accentMap[color].split(' ')[0]}`}
-            />
+            <div className="relative h-6 flex items-center">
+                <input
+                    type="range" min={min} max={max} value={value}
+                    onChange={e => onChange(Number(e.target.value))}
+                    className="w-full h-1 bg-[#1D1D1F] rounded-full appearance-none cursor-pointer accent-[#0071E3] hover:accent-[#0071E3]/80 transition-all shadow-inner"
+                />
+            </div>
         </div>
     );
 }
@@ -466,10 +480,13 @@ function ChartTooltip({ active, payload }: any) {
     if (active && payload?.[0]) {
         const d = payload[0].payload;
         return (
-            <div className="bg-[#020617] border border-white/20 p-5 rounded-2xl shadow-2xl backdrop-blur-xl">
-                <p className="text-[10px] font-black text-blue-400 uppercase italic mb-2">{d.name}</p>
-                <p className="text-white text-lg font-black italic leading-none">₡{d.value.toLocaleString()}</p>
-                <p className="text-[9px] text-slate-600 font-bold mt-2 uppercase tracking-tighter">Código Partida: {d.code}</p>
+            <div className="bg-[#1D1D1F] border border-[#333333] px-5 py-4 rounded-[8px] shadow-2xl">
+                <div className="flex items-center gap-3 mb-3 border-b border-[#333333] pb-3">
+                    <div className="w-2.5 h-2.5 rounded-full bg-[#0071E3]" />
+                    <p className="text-[10px] font-bold text-[#86868B] uppercase tracking-widest">{d.name}</p>
+                </div>
+                <p className="text-[#F5F5F7] text-lg font-bold tracking-tighter">₡{d.value.toLocaleString()}</p>
+                <p className="text-[9px] text-[#86868B] font-bold mt-2 uppercase tracking-widest">Partida: {d.code}</p>
             </div>
         );
     }

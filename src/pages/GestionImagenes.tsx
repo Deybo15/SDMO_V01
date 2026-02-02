@@ -14,6 +14,7 @@ import {
     FileImage
 } from 'lucide-react';
 import { PageHeader } from '../components/ui/PageHeader';
+import { cn } from '../lib/utils';
 
 export default function GestionImagenes() {
     const navigate = useNavigate();
@@ -36,14 +37,12 @@ export default function GestionImagenes() {
             return;
         }
 
-        // Validate type
         const validTypes = ['image/jpeg', 'image/png', 'image/webp'];
         if (!validTypes.includes(selectedFile.type)) {
             setMessage({ type: 'error', text: 'Formato no válido. Use JPG, PNG o WebP.' });
             return;
         }
 
-        // Validate size (5MB)
         if (selectedFile.size > 5 * 1024 * 1024) {
             setMessage({ type: 'error', text: 'El tamaño máximo permitido es 5MB.' });
             return;
@@ -51,7 +50,6 @@ export default function GestionImagenes() {
 
         setFile(selectedFile);
 
-        // Preview
         const reader = new FileReader();
         reader.onloadend = () => {
             setPreview(reader.result as string);
@@ -69,21 +67,18 @@ export default function GestionImagenes() {
             const fileExt = file.name.split('.').pop();
             const fileName = `${codigo}_${Date.now()}.${fileExt}`;
 
-            // 1. Upload to Supabase Storage
             const { error: uploadError } = await supabase.storage
                 .from(BUCKET_NAME)
                 .upload(fileName, file);
 
             if (uploadError) throw new Error(`Error al subir imagen: ${uploadError.message}`);
 
-            // 2. Get Public URL
             const { data: urlData } = supabase.storage
                 .from(BUCKET_NAME)
                 .getPublicUrl(fileName);
 
             if (!urlData.publicUrl) throw new Error('No se pudo obtener la URL pública.');
 
-            // 3. Update Article Record
             const { error: updateError } = await supabase
                 .from('articulo_01')
                 .update({ imagen_url: urlData.publicUrl })
@@ -93,7 +88,6 @@ export default function GestionImagenes() {
 
             setMessage({ type: 'success', text: `Imagen asociada correctamente al artículo ${codigo}` });
 
-            // Reset form
             setCodigo('');
             setFile(null);
             setPreview(null);
@@ -110,46 +104,40 @@ export default function GestionImagenes() {
     const isFormValid = codigo.trim() !== '' && file !== null;
 
     return (
-        <div className="min-h-screen bg-[#0f111a] text-slate-100 p-4 md:p-8 relative overflow-hidden">
-            {/* Ambient Background */}
-            <div className="absolute top-0 left-0 w-full h-full overflow-hidden pointer-events-none -z-10">
-                <div className="absolute top-[-20%] left-[-10%] w-[60%] h-[60%] bg-emerald-500/10 rounded-full blur-[120px]" />
-                <div className="absolute bottom-[-20%] right-[-10%] w-[60%] h-[60%] bg-purple-500/5 rounded-full blur-[120px]" />
-            </div>
-
-            <div className="max-w-4xl mx-auto space-y-8 relative z-10">
-                {/* Header */}
-                <div className="flex flex-col md:flex-row justify-between items-end gap-6 pb-2 border-b border-white/10">
-                    <div className="space-y-1">
-                        <PageHeader title="Asociar imagen a artículo" icon={ImageIcon} themeColor="emerald" />
-                        <p className="text-slate-400 text-sm font-medium tracking-wide">
+        <div className="min-h-screen bg-[#000000] text-[#F5F5F7] font-sans selection:bg-[#0071E3]/30">
+            <div className="max-w-4xl mx-auto px-8 pt-8 space-y-8 animate-fade-in-up">
+                {/* Header Section */}
+                <div className="flex flex-col md:flex-row justify-between items-end gap-6 pb-4 border-b border-[#333333]">
+                    <div className="space-y-2">
+                        <PageHeader title="Asociar imagen a artículo" icon={ImageIcon} themeColor="blue" />
+                        <p className="text-[#86868B] text-sm font-medium">
                             Vincula rápidamente fotografías reales a los artículos del inventario.
                         </p>
                     </div>
                     <button
                         onClick={() => navigate(-1)}
-                        className="glass-button px-6 py-2.5 rounded-xl text-xs font-black uppercase tracking-widest flex items-center gap-2 text-slate-200 hover:text-white"
+                        className="flex items-center gap-2 px-6 py-3 bg-transparent border border-[#F5F5F7] text-[#F5F5F7] rounded-[8px] hover:bg-[#F5F5F7]/10 transition-all text-xs font-bold uppercase tracking-widest active:scale-95"
                     >
-                        <ArrowLeft className="w-4 h-4 text-emerald-400" />
+                        <ArrowLeft className="w-4 h-4 text-[#0071E3]" />
                         Regresar
                     </button>
                 </div>
 
                 <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
                     {/* Left: Form */}
-                    <div className="lg:col-span-7 glass-card p-8 space-y-8 bg-slate-900/60 relative group">
-                        <div className="absolute top-0 left-0 w-1.5 h-32 bg-gradient-to-b from-emerald-500 to-transparent rounded-full -ml-0.5 mt-8 group-hover:h-48 transition-all duration-700" />
+                    <div className="lg:col-span-7 bg-[#121212] border border-[#333333] rounded-[8px] p-8 space-y-8 relative group">
+                        <div className="absolute top-0 left-0 w-1.5 h-32 bg-gradient-to-b from-[#0071E3] to-transparent rounded-full -ml-0.5 mt-8 group-hover:h-48 transition-all duration-700" />
 
                         <div className="space-y-2">
-                            <h2 className="text-2xl font-black text-white italic uppercase tracking-tighter">Detalles de la Asociación</h2>
-                            <p className="text-slate-300 text-[10px] font-black uppercase tracking-widest">Ingrese los datos para actualizar la galería</p>
+                            <h2 className="text-2xl font-bold text-[#F5F5F7] uppercase tracking-tight italic">Detalles de la Asociación</h2>
+                            <p className="text-[#86868B] text-[10px] font-bold uppercase tracking-widest">Ingrese los datos para actualizar la galería</p>
                         </div>
 
                         <div className="space-y-6">
                             {/* Article Code Input */}
                             <div className="space-y-3">
-                                <label className="flex items-center gap-2 text-[10px] font-black text-slate-200 uppercase tracking-[0.2em] ml-1">
-                                    <Barcode className="w-4 h-4 text-emerald-400" />
+                                <label className="flex items-center gap-2 text-[10px] font-bold text-[#F5F5F7] uppercase tracking-[0.2em] ml-1">
+                                    <Barcode className="w-4 h-4 text-[#0071E3]" />
                                     Código del Artículo
                                 </label>
                                 <div className="relative group/input">
@@ -158,23 +146,26 @@ export default function GestionImagenes() {
                                         value={codigo}
                                         onChange={(e) => setCodigo(e.target.value)}
                                         placeholder="Ejem: ART-001..."
-                                        className="w-full bg-slate-950/80 border border-white/20 rounded-2xl px-5 py-4 text-base text-white font-bold placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-emerald-500/30 transition-all shadow-inner uppercase font-mono"
+                                        className="w-full bg-[#1D1D1F] border border-[#333333] rounded-[8px] px-5 py-4 text-base text-[#F5F5F7] placeholder-[#86868B] focus:outline-none focus:border-[#0071E3]/50 transition-all shadow-inner uppercase font-mono font-bold"
                                     />
-                                    <div className="absolute inset-x-0 bottom-0 h-[2px] bg-gradient-to-r from-transparent via-emerald-500 to-transparent scale-x-0 group-focus-within/input:scale-x-100 transition-transform duration-500" />
+                                    <div className="absolute inset-x-0 bottom-0 h-[1px] bg-[#0071E3] scale-x-0 group-focus-within/input:scale-x-100 transition-transform duration-500" />
                                 </div>
                             </div>
 
                             {/* Dropzone Container */}
                             <div className="space-y-3">
-                                <label className="flex items-center gap-2 text-[10px] font-black text-slate-200 uppercase tracking-[0.2em] ml-1">
-                                    <FileImage className="w-4 h-4 text-emerald-400" />
+                                <label className="flex items-center gap-2 text-[10px] font-bold text-[#F5F5F7] uppercase tracking-[0.2em] ml-1">
+                                    <FileImage className="w-4 h-4 text-[#0071E3]" />
                                     Imagen del Artículo
                                 </label>
                                 <div
                                     onClick={() => fileInputRef.current?.click()}
-                                    className={`relative group cursor-pointer border-2 border-dashed rounded-[2rem] p-10 transition-all duration-500 flex flex-col items-center gap-4 text-center overflow-hidden
-                                        ${file ? 'border-emerald-500 bg-emerald-500/10 shadow-[0_0_30px_rgba(16,185,129,0.1)]' : 'border-white/20 bg-slate-950/40 hover:border-emerald-400 hover:bg-slate-950/60 shadow-xl'}
-                                    `}
+                                    className={cn(
+                                        "relative group cursor-pointer border-2 border-dashed rounded-[8px] p-8 transition-all duration-500 flex flex-col items-center gap-4 text-center overflow-hidden bg-[#1D1D1F]",
+                                        file
+                                            ? "border-[#0071E3] bg-[#0071E3]/5 shadow-[0_0_30px_rgba(0,113,227,0.1)]"
+                                            : "border-[#424245] hover:border-[#0071E3] hover:bg-[#0071E3]/5 shadow-xl"
+                                    )}
                                 >
                                     <input
                                         ref={fileInputRef}
@@ -185,23 +176,24 @@ export default function GestionImagenes() {
                                     />
 
                                     <div className="relative">
-                                        <div className={`w-16 h-16 rounded-2xl flex items-center justify-center transition-all duration-500 shadow-2xl
-                                            ${file ? 'bg-emerald-500 rotate-6 scale-110' : 'bg-white/10 rotate-0 group-hover:scale-110 group-hover:rotate-12'}
-                                        `}>
-                                            <Upload className={`w-8 h-8 transition-colors ${file ? 'text-black' : 'text-slate-300 group-hover:text-emerald-400'}`} />
+                                        <div className={cn(
+                                            "w-16 h-16 rounded-[8px] flex items-center justify-center transition-all duration-500 shadow-2xl",
+                                            file ? "bg-[#0071E3] scale-110" : "bg-black/20 group-hover:scale-110 group-hover:rotate-6"
+                                        )}>
+                                            <Upload className={cn("w-8 h-8 transition-colors", file ? "text-white" : "text-[#86868B] group-hover:text-[#0071E3]")} />
                                         </div>
                                         {file && (
                                             <div className="absolute -top-1 -right-1 w-6 h-6 bg-white rounded-full flex items-center justify-center animate-in zoom-in shadow-lg">
-                                                <CheckCircle2 className="w-4 h-4 text-emerald-500" />
+                                                <CheckCircle2 className="w-4 h-4 text-[#0071E3]" />
                                             </div>
                                         )}
                                     </div>
 
                                     <div className="space-y-1">
-                                        <p className="text-base font-black text-white uppercase italic tracking-tight">
+                                        <p className="text-base font-bold text-[#F5F5F7] uppercase italic tracking-tight">
                                             {file ? '¡Imagen Seleccionada!' : 'Haz clic para seleccionar'}
                                         </p>
-                                        <p className={`text-[10px] font-black uppercase tracking-widest leading-loose ${file ? 'text-emerald-400' : 'text-slate-400'}`}>
+                                        <p className={cn("text-[10px] font-bold uppercase tracking-widest leading-loose", file ? "text-[#0071E3]" : "text-[#86868B]")}>
                                             {file ? file.name : 'JPG, PNG o WebP (Máx. 5MB)'}
                                         </p>
                                     </div>
@@ -214,26 +206,22 @@ export default function GestionImagenes() {
                             <button
                                 onClick={handleUpload}
                                 disabled={loading || !isFormValid}
-                                className={`w-full py-5 rounded-[1.5rem] flex items-center justify-center gap-3 transition-all duration-500 shadow-2xl relative overflow-hidden group/btn
-                                    ${isFormValid
-                                        ? 'bg-emerald-500 text-black hover:bg-emerald-400 hover:scale-[1.02] active:scale-[0.98] shadow-emerald-500/20'
-                                        : 'bg-white/5 text-slate-500 border border-white/10 opacity-50'
-                                    }
-                                `}
-                            >
-                                {isFormValid && (
-                                    <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent -translate-x-full group-hover/btn:animate-shimmer" />
+                                className={cn(
+                                    "w-full py-5 rounded-[8px] flex items-center justify-center gap-4 transition-all duration-500 shadow-2xl relative overflow-hidden group/btn font-bold",
+                                    isFormValid
+                                        ? "bg-[#0071E3] text-white hover:brightness-110 hover:scale-[1.01] active:scale-[0.98]"
+                                        : "bg-[#1D1D1F] text-[#86868B] border border-[#333333] opacity-30"
                                 )}
-
+                            >
                                 {loading ? (
                                     <>
                                         <Loader2 className="w-6 h-6 animate-spin" />
-                                        <span className="text-sm font-black uppercase tracking-[0.2em]">Sincronizando...</span>
+                                        <span className="text-sm uppercase tracking-[0.2em]">Sincronizando...</span>
                                     </>
                                 ) : (
                                     <>
-                                        <LinkIcon className={`w-6 h-6 transition-transform duration-500 ${isFormValid ? 'group-hover/btn:rotate-45' : ''}`} />
-                                        <span className="text-sm font-black uppercase tracking-[0.2em]">
+                                        <LinkIcon className={cn("w-6 h-6 transition-transform", isFormValid && "group-hover/btn:rotate-45")} />
+                                        <span className="text-sm uppercase tracking-[0.2em]">
                                             Subir imagen y asociar
                                         </span>
                                     </>
@@ -243,15 +231,16 @@ export default function GestionImagenes() {
 
                         {/* Status Messages */}
                         {message && (
-                            <div className={`p-5 rounded-2xl flex items-center gap-4 animate-in slide-in-from-top-2 duration-300 border shadow-2xl backdrop-blur-xl
-                                ${message.type === 'error' ? 'bg-rose-500/20 border-rose-500/40 text-rose-100' :
-                                    message.type === 'success' ? 'bg-emerald-500/20 border-emerald-500/40 text-emerald-100' :
-                                        'bg-blue-500/20 border-blue-500/40 text-blue-100'
-                                }`}>
-                                {message.type === 'error' && <AlertTriangle className="w-6 h-6 shrink-0 text-rose-400" />}
-                                {message.type === 'success' && <CheckCircle2 className="w-6 h-6 shrink-0 text-emerald-400" />}
-                                {message.type === 'info' && <Loader2 className="w-6 h-6 shrink-0 animate-spin text-blue-400" />}
-                                <p className="text-xs font-black uppercase tracking-widest leading-relaxed">{message.text}</p>
+                            <div className={cn(
+                                "p-5 rounded-[8px] flex items-center gap-4 animate-in slide-in-from-top-2 duration-300 border shadow-2xl backdrop-blur-xl",
+                                message.type === 'error' && "bg-rose-500/10 border-rose-500/20 text-rose-100",
+                                message.type === 'success' && "bg-[#0071E3]/10 border-[#0071E3]/20 text-blue-100",
+                                message.type === 'info' && "bg-[#1D1D1F] border-[#333333] text-blue-100"
+                            )}>
+                                {message.type === 'error' && <AlertTriangle className="w-6 h-6 shrink-0 text-rose-500" />}
+                                {message.type === 'success' && <CheckCircle2 className="w-6 h-6 shrink-0 text-[#0071E3]" />}
+                                {message.type === 'info' && <Loader2 className="w-6 h-6 shrink-0 animate-spin text-[#0071E3]" />}
+                                <p className="text-[10px] font-bold uppercase tracking-widest leading-relaxed">{message.text}</p>
                             </div>
                         )}
                     </div>
@@ -259,12 +248,12 @@ export default function GestionImagenes() {
                     {/* Right: Preview Preview */}
                     <div className="lg:col-span-5 h-full">
                         {preview ? (
-                            <div className="glass-card p-6 h-full flex flex-col items-center justify-center bg-black/60 border-white/10 group relative overflow-hidden min-h-[450px] shadow-[0_0_80px_rgba(0,0,0,0.5)]">
-                                <div className="absolute inset-0 bg-emerald-500/10 opacity-0 group-hover:opacity-100 transition-opacity duration-700" />
+                            <div className="bg-[#121212] border border-[#333333] rounded-[8px] p-8 h-full flex flex-col items-center justify-center relative overflow-hidden min-h-[450px] shadow-2xl">
+                                <div className="absolute inset-0 bg-[#0071E3]/5" />
                                 <img
                                     src={preview}
                                     alt="Vista Previa"
-                                    className="max-w-full max-h-[550px] object-contain rounded-2xl shadow-[0_32px_128px_rgba(0,0,0,0.8)] relative z-10 transition-all duration-700 group-hover:scale-[1.03]"
+                                    className="max-w-full max-h-[500px] object-contain rounded-[8px] shadow-2xl relative z-10 transition-transform duration-700 hover:scale-[1.02]"
                                 />
                                 <button
                                     onClick={() => {
@@ -272,26 +261,26 @@ export default function GestionImagenes() {
                                         setPreview(null);
                                         if (fileInputRef.current) fileInputRef.current.value = '';
                                     }}
-                                    className="absolute top-8 right-8 p-3 rounded-2xl bg-black/80 text-white hover:bg-rose-500 transition-all shadow-2xl border border-white/20 z-20"
+                                    className="absolute top-8 right-8 p-3 rounded-[8px] bg-black/60 text-[#F5F5F7] hover:bg-rose-500 transition-all shadow-2xl border border-[#333333] z-20"
                                 >
                                     <X className="w-6 h-6" />
                                 </button>
                                 <div className="mt-8 text-center relative z-10">
-                                    <div className="inline-block px-4 py-1 rounded-full bg-emerald-500/20 border border-emerald-500/30 mb-2">
-                                        <p className="text-[10px] font-black text-emerald-400 uppercase tracking-[0.3em]">Vista Previa Activa</p>
+                                    <div className="inline-block px-4 py-1 rounded-[4px] bg-[#0071E3]/10 border border-[#0071E3]/20 mb-2">
+                                        <p className="text-[9px] font-bold text-[#0071E3] uppercase tracking-[0.3em]">Vista Previa Activa</p>
                                     </div>
-                                    <p className="text-slate-200 text-sm font-bold mt-2 font-mono uppercase tracking-tighter truncate max-w-[250px]">{file?.name}</p>
+                                    <p className="text-[#86868B] text-xs font-mono font-bold uppercase truncate max-w-[250px]">{file?.name}</p>
                                 </div>
                             </div>
                         ) : (
-                            <div className="glass-card h-full flex flex-col items-center justify-center p-12 bg-slate-900/40 border-2 border-dashed border-white/5 min-h-[450px]">
-                                <div className="p-10 rounded-[3rem] bg-white/[0.03] border border-white/5 mb-8 shadow-inner group-hover:scale-110 transition-transform duration-700">
-                                    <ImageIcon className="w-24 h-24 text-slate-700" />
+                            <div className="bg-[#121212] border border-[#333333] border-dashed rounded-[8px] h-full flex flex-col items-center justify-center p-12 min-h-[450px] opacity-40">
+                                <div className="p-8 rounded-[8px] bg-black/20 border border-[#333333] mb-8">
+                                    <ImageIcon className="w-16 h-16 text-[#333333]" />
                                 </div>
                                 <div className="text-center space-y-3">
-                                    <p className="text-2xl font-black text-slate-600 uppercase italic tracking-tighter">Sin Imagen</p>
-                                    <p className="text-[10px] font-black text-slate-700 uppercase tracking-[0.2em] leading-loose max-w-[240px]">
-                                        Seleccione una fotografía para visualizar el resultado en alta definición.
+                                    <p className="text-xl font-bold text-[#86868B] uppercase tracking-tight italic">Sin Imagen</p>
+                                    <p className="text-[10px] font-bold text-[#86868B] uppercase tracking-[0.2em] leading-loose max-w-[240px]">
+                                        Seleccione una fotografía para visualizar el resultado.
                                     </p>
                                 </div>
                             </div>

@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { supabase } from '../lib/supabase';
 import { useNavigate } from 'react-router-dom';
 import {
@@ -87,7 +87,7 @@ export default function KardexDiario() {
     const [statusMessage, setStatusMessage] = useState<{ type: 'success' | 'error' | 'warning' | 'info', message: string } | null>(null);
 
     // Theme Color
-    const themeColor = 'orange';
+    const themeColor = 'blue';
 
     // Initialize dates (last 30 days)
     useEffect(() => {
@@ -384,73 +384,65 @@ export default function KardexDiario() {
             head: [['Fecha', 'Entradas', 'Salidas', 'Saldo Día', 'Saldo Acum.']],
             body: tableBody,
             theme: 'grid',
-            headStyles: { fillColor: [249, 115, 22] },
+            headStyles: { fillColor: [0, 113, 227] },
         });
 
         doc.save(`Kardex_${selectedArticle?.codigo_articulo}.pdf`);
     };
 
     return (
-        <div className="min-h-screen bg-[#0f111a] text-slate-100 p-4 md:p-8 relative overflow-hidden">
-            {/* Ambient Effects */}
-            <div className="absolute top-0 left-0 w-full h-full overflow-hidden pointer-events-none -z-10">
-                <div className="absolute top-[10%] left-[-5%] w-[50%] h-[50%] bg-orange-500/5 rounded-full blur-[120px]" />
-                <div className="absolute bottom-[-10%] right-[-5%] w-[50%] h-[50%] bg-blue-500/5 rounded-full blur-[120px]" />
-            </div>
-
+        <div className="min-h-screen bg-[#000000] text-[#F5F5F7] p-4 md:p-8 relative overflow-hidden">
             <div className="max-w-6xl mx-auto space-y-8 relative z-10">
                 {/* Header */}
-                <div className="flex flex-col md:flex-row justify-between items-end gap-6 pb-2 border-b border-white/5">
+                <div className="flex flex-col md:flex-row justify-between items-end gap-6 pb-2 border-b border-[#333333]">
                     <div className="space-y-1">
-                        <PageHeader title="Kárdex Diario" icon={History} themeColor="orange" />
-                        <p className="text-slate-500 text-sm font-medium tracking-wide">
+                        <PageHeader title="Kárdex Diario" icon={History} themeColor="blue" />
+                        <p className="text-[#86868B] text-sm font-medium tracking-wide">
                             Seguimiento detallado de movimientos de inventario y saldos acumulados.
                         </p>
                     </div>
                     <button
                         onClick={() => navigate('/articulos')}
-                        className="glass-button px-6 py-2.5 rounded-xl text-xs font-black uppercase tracking-widest flex items-center gap-2 text-slate-200"
+                        className="px-6 py-2.5 bg-transparent border border-[#333333] rounded-[8px] text-xs font-black uppercase tracking-widest flex items-center gap-2 text-[#F5F5F7] hover:bg-white/5 transition-all"
                     >
-                        <ArrowLeft className="w-4 h-4 text-orange-500" />
+                        <ArrowLeft className="w-4 h-4 text-[#0071E3]" />
                         Regresar
                     </button>
                 </div>
 
                 {/* Status Float Messages */}
                 {statusMessage && (
-                    <div className={`fixed top-8 right-8 z-[100] px-6 py-5 rounded-2xl shadow-[0_20px_50px_rgba(0,0,0,0.5)] backdrop-blur-xl border animate-in slide-in-from-right-4 flex items-center gap-4
-                        ${statusMessage.type === 'success' ? 'bg-emerald-500/20 border-emerald-500/40 text-emerald-100' :
-                            statusMessage.type === 'error' ? 'bg-rose-500/20 border-rose-500/40 text-rose-100' :
-                                statusMessage.type === 'warning' ? 'bg-amber-500/20 border-amber-500/40 text-amber-100' :
-                                    'bg-blue-500/20 border-blue-500/40 text-blue-100'
+                    <div className={`fixed top-8 right-8 z-[100] px-6 py-5 rounded-[8px] shadow-2xl backdrop-blur-xl border animate-in slide-in-from-right-4 flex items-center gap-4
+                        ${statusMessage.type === 'success' ? 'bg-emerald-500/10 border-emerald-500/20 text-emerald-100' :
+                            statusMessage.type === 'error' ? 'bg-rose-500/10 border-rose-500/20 text-rose-100' :
+                                statusMessage.type === 'warning' ? 'bg-amber-500/10 border-amber-500/20 text-amber-100' :
+                                    'bg-[#0071E3]/10 border-[#0071E3]/20 text-blue-100'
                         }`}>
-                        <div className="p-2 rounded-xl bg-white/10 shrink-0">
+                        <div className="p-2 rounded-[8px] bg-white/5 shrink-0">
                             {statusMessage.type === 'error' ? <AlertCircle className="w-5 h-5 text-rose-400" /> :
                                 statusMessage.type === 'success' ? <CheckCircle2 className="w-5 h-5 text-emerald-400" /> :
                                     <Info className="w-5 h-5 text-amber-400" />}
                         </div>
                         <span className="font-black uppercase tracking-widest text-[11px] leading-relaxed">{statusMessage.message}</span>
-                        <button onClick={() => setStatusMessage(null)} className="ml-auto p-1 hover:bg-white/10 rounded-lg transition-colors">
-                            <X className="w-4 h-4 text-slate-500" />
+                        <button onClick={() => setStatusMessage(null)} className="ml-auto p-1 hover:bg-white/5 rounded-[4px] transition-colors">
+                            <X className="w-4 h-4 text-[#86868B]" />
                         </button>
                     </div>
                 )}
 
                 {/* Filters Section */}
-                <div className="glass-card p-6 md:p-8 bg-slate-900/40 relative group">
-                    <div className="absolute top-0 right-0 w-32 h-32 bg-orange-500/5 rounded-full blur-3xl -mr-16 -mt-16" />
-
-                    <h2 className="text-xs font-black text-slate-400 uppercase tracking-[0.3em] mb-8 flex items-center gap-3">
-                        <span className="w-8 h-px bg-orange-500/30" />
+                <div className="bg-[#121212] p-8 border border-[#333333] rounded-[8px] relative group">
+                    <h2 className="text-xs font-black text-[#86868B] uppercase tracking-[0.3em] mb-8 flex items-center gap-3">
+                        <span className="w-8 h-px bg-[#0071E3]/30" />
                         Configuración de Consulta
                     </h2>
 
                     <div className="grid grid-cols-1 md:grid-cols-12 gap-6 items-end">
                         {/* Article Search */}
                         <div className="md:col-span-12 lg:col-span-5 relative">
-                            <label className="block text-[10px] font-black text-slate-500 uppercase tracking-[0.2em] mb-3 ml-1">Artículo a Consultar</label>
+                            <label className="block text-[10px] font-black text-[#86868B] uppercase tracking-[0.2em] mb-3 ml-1">Artículo a Consultar</label>
                             <div className="relative group/input">
-                                <Search className="absolute left-5 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-600 group-focus-within/input:text-orange-500 transition-colors" />
+                                <Search className="absolute left-5 top-1/2 -translate-y-1/2 w-5 h-5 text-[#86868B] group-focus-within/input:text-[#0071E3] transition-colors" />
                                 <input
                                     type="text"
                                     value={searchTerm}
@@ -459,35 +451,35 @@ export default function KardexDiario() {
                                         if (selectedArticle) setSelectedArticle(null);
                                     }}
                                     placeholder="Código o nombre..."
-                                    className="w-full bg-slate-950/60 border border-white/10 rounded-2xl pl-14 pr-12 py-4 text-white font-bold placeholder-slate-800 focus:outline-none focus:ring-2 focus:ring-orange-500/30 transition-all shadow-inner"
+                                    className="w-full bg-[#1D1D1F] border border-[#333333] rounded-[8px] pl-14 pr-12 py-4 text-white font-bold placeholder-[#424245] focus:outline-none focus:border-[#0071E3]/50 transition-all shadow-inner"
                                 />
-                                {searching && <Loader2 className="absolute right-5 top-1/2 -translate-y-1/2 w-5 h-5 text-orange-500 animate-spin" />}
+                                {searching && <Loader2 className="absolute right-5 top-1/2 -translate-y-1/2 w-5 h-5 text-[#0071E3] animate-spin" />}
                             </div>
 
                             {/* Suggestions Dropdown */}
                             {showSuggestions && suggestions.length > 0 && (
-                                <div className="absolute top-full left-0 right-0 mt-4 bg-slate-900/95 backdrop-blur-2xl border border-white/10 rounded-2xl shadow-[0_20px_50px_rgba(0,0,0,0.5)] overflow-hidden z-[60] animate-in fade-in slide-in-from-top-2 duration-300">
+                                <div className="absolute top-full left-0 right-0 mt-2 bg-[#121212] backdrop-blur-2xl border border-[#333333] rounded-[8px] shadow-2xl overflow-hidden z-[60] animate-in fade-in slide-in-from-top-2 duration-300">
                                     {suggestions.map((item) => (
                                         <button
                                             key={item.codigo_articulo}
                                             onClick={() => handleSelectArticle(item)}
-                                            className="w-full text-left px-5 py-4 hover:bg-orange-500/10 border-b border-white/5 last:border-0 flex items-center gap-4 transition-all group/item"
+                                            className="w-full text-left px-5 py-4 hover:bg-white/5 border-b border-[#333333] last:border-0 flex items-center gap-4 transition-all group/item"
                                         >
-                                            <div className="w-10 h-10 bg-black/40 rounded-xl overflow-hidden border border-white/10 shrink-0">
+                                            <div className="w-10 h-10 bg-black/40 rounded-[8px] overflow-hidden border border-[#333333] shrink-0">
                                                 <img src={item.imagen_url || ''} className="w-full h-full object-cover opacity-60 group-hover/item:opacity-100 transition-opacity" />
                                             </div>
                                             <div className="flex-1 min-w-0">
                                                 <div className="flex items-center gap-2">
-                                                    <span className="font-mono text-[10px] font-black text-orange-400 bg-orange-500/10 px-2 py-0.5 rounded border border-orange-500/20">
+                                                    <span className="font-mono text-[10px] font-black text-[#0071E3] bg-[#0071E3]/5 px-2 py-0.5 rounded border border-[#0071E3]/10">
                                                         {item.codigo_articulo}
                                                     </span>
-                                                    <span className="text-[10px] font-black text-slate-500 uppercase tracking-widest">{item.unidad}</span>
+                                                    <span className="text-[10px] font-black text-[#86868B] uppercase tracking-widest">{item.unidad}</span>
                                                 </div>
-                                                <p className="text-sm font-bold text-slate-200 truncate mt-1 group-hover/item:text-white transition-colors">
+                                                <p className="text-sm font-bold text-[#F5F5F7] truncate mt-1 group-hover/item:text-white transition-colors">
                                                     {item.nombre_articulo}
                                                 </p>
                                             </div>
-                                            <ArrowRight className="w-4 h-4 text-slate-700 group-hover/item:text-orange-500 group-hover/item:translate-x-1 transition-all" />
+                                            <ArrowRight className="w-4 h-4 text-[#333333] group-hover/item:text-[#0071E3] group-hover/item:translate-x-1 transition-all" />
                                         </button>
                                     ))}
                                 </div>
@@ -496,26 +488,26 @@ export default function KardexDiario() {
 
                         {/* Date Range */}
                         <div className="md:col-span-6 lg:col-span-3">
-                            <label className="block text-[10px] font-black text-slate-500 uppercase tracking-[0.2em] mb-3 ml-1">Desde</label>
+                            <label className="block text-[10px] font-black text-[#86868B] uppercase tracking-[0.2em] mb-3 ml-1">Desde</label>
                             <div className="relative group/date">
-                                <Calendar className="absolute left-5 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-600 group-focus-within/date:text-orange-500 pointer-events-none" />
+                                <Calendar className="absolute left-5 top-1/2 -translate-y-1/2 w-5 h-5 text-[#86868B] group-focus-within/date:text-[#0071E3] pointer-events-none" />
                                 <input
                                     type="date"
                                     value={fechaDesde}
                                     onChange={(e) => setFechaDesde(e.target.value)}
-                                    className="w-full bg-slate-950/60 border border-white/10 rounded-2xl pl-14 pr-4 py-4 text-white font-bold focus:outline-none focus:ring-2 focus:ring-orange-500/30 transition-all shadow-inner [color-scheme:dark]"
+                                    className="w-full bg-[#1D1D1F] border border-[#333333] rounded-[8px] pl-14 pr-4 py-4 text-white font-bold focus:outline-none focus:border-[#0071E3]/50 transition-all shadow-inner [color-scheme:dark]"
                                 />
                             </div>
                         </div>
                         <div className="md:col-span-6 lg:col-span-3">
-                            <label className="block text-[10px] font-black text-slate-500 uppercase tracking-[0.2em] mb-3 ml-1">Hasta</label>
+                            <label className="block text-[10px] font-black text-[#86868B] uppercase tracking-[0.2em] mb-3 ml-1">Hasta</label>
                             <div className="relative group/date">
-                                <Calendar className="absolute left-5 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-600 group-focus-within/date:text-orange-500 pointer-events-none" />
+                                <Calendar className="absolute left-5 top-1/2 -translate-y-1/2 w-5 h-5 text-[#86868B] group-focus-within/date:text-[#0071E3] pointer-events-none" />
                                 <input
                                     type="date"
                                     value={fechaHasta}
                                     onChange={(e) => setFechaHasta(e.target.value)}
-                                    className="w-full bg-slate-950/60 border border-white/10 rounded-2xl pl-14 pr-4 py-4 text-white font-bold focus:outline-none focus:ring-2 focus:ring-orange-500/30 transition-all shadow-inner [color-scheme:dark]"
+                                    className="w-full bg-[#1D1D1F] border border-[#333333] rounded-[8px] pl-14 pr-4 py-4 text-white font-bold focus:outline-none focus:border-[#0071E3]/50 transition-all shadow-inner [color-scheme:dark]"
                                 />
                             </div>
                         </div>
@@ -525,17 +517,10 @@ export default function KardexDiario() {
                             <button
                                 onClick={executeKardexQuery}
                                 disabled={loading}
-                                className="flex-1 lg:w-16 h-[58px] bg-orange-600 hover:bg-orange-500 text-white rounded-2xl shadow-xl shadow-orange-950/20 transition-all flex items-center justify-center disabled:opacity-50 active:scale-95 group/search"
+                                className="flex-1 lg:w-16 h-[58px] bg-[#0071E3] hover:bg-[#0077ED] text-white rounded-[8px] shadow-lg shadow-[#0071E3]/20 transition-all flex items-center justify-center disabled:opacity-50 active:scale-95 group/search"
                                 title="Consultar Kárdex"
                             >
                                 {loading ? <Loader2 className="w-6 h-6 animate-spin" /> : <Search className="w-6 h-6 group-hover/search:scale-110 transition-transform" />}
-                            </button>
-                            <button
-                                onClick={clearSearch}
-                                className="w-16 h-[58px] glass-button text-slate-400 hover:text-white rounded-2xl transition-all active:scale-95 flex items-center justify-center lg:hidden"
-                                title="Limpiar"
-                            >
-                                <Eraser className="w-6 h-6" />
                             </button>
                         </div>
                     </div>
@@ -543,37 +528,37 @@ export default function KardexDiario() {
 
                 {/* Main Content Area */}
                 {loading ? (
-                    <div className="py-40 flex flex-col items-center justify-center space-y-6 text-slate-600">
+                    <div className="py-40 flex flex-col items-center justify-center space-y-6">
                         <div className="relative">
-                            <div className="absolute inset-0 bg-orange-500/20 rounded-full blur-2xl animate-pulse" />
-                            <Loader2 className="w-16 h-16 animate-spin text-orange-500 relative z-10" />
+                            <div className="absolute inset-0 bg-[#0071E3]/20 rounded-full blur-2xl animate-pulse" />
+                            <Loader2 className="w-16 h-16 animate-spin text-[#0071E3] relative z-10" />
                         </div>
-                        <p className="font-black uppercase tracking-[0.3em] text-[10px] animate-pulse text-white/50">Recuperando Historial...</p>
+                        <p className="font-black uppercase tracking-[0.3em] text-[10px] animate-pulse text-[#86868B]">Recuperando Historial...</p>
                     </div>
                 ) : selectedArticle && kardexData.length > 0 ? (
                     <div className="space-y-8 animate-in fade-in duration-700">
                         {/* Selected Article Detail & Export */}
                         <div className="flex flex-col lg:flex-row gap-6 items-center lg:items-end justify-between px-2">
                             <div className="flex flex-col md:flex-row items-center gap-6 w-full lg:w-auto">
-                                <div className="w-24 h-24 bg-slate-900 rounded-[2rem] border border-white/10 overflow-hidden shrink-0 shadow-2xl relative p-1">
-                                    <div className="w-full h-full rounded-[1.5rem] overflow-hidden bg-[#0f111a]">
+                                <div className="w-20 h-20 bg-[#121212] rounded-[8px] border border-[#333333] overflow-hidden shrink-0 shadow-2xl relative p-1">
+                                    <div className="w-full h-full rounded-[4px] overflow-hidden bg-black">
                                         <img
                                             src={selectedArticle.imagen_url || ''}
                                             alt={selectedArticle.nombre_articulo}
-                                            className="w-full h-full object-cover opacity-80"
+                                            className="w-full h-full object-cover"
                                         />
                                     </div>
                                 </div>
                                 <div className="space-y-1 text-center md:text-left">
                                     <div className="flex items-center justify-center md:justify-start gap-2 mb-2">
-                                        <span className="px-3 py-1 rounded-full bg-orange-500/10 border border-orange-500/20 text-orange-400 font-mono text-[10px] uppercase font-black tracking-widest">
+                                        <span className="px-3 py-1 rounded-[4px] bg-[#0071E3]/5 border border-[#0071E3]/10 text-[#0071E3] font-mono text-[10px] uppercase font-black tracking-widest">
                                             {selectedArticle.codigo_articulo}
                                         </span>
-                                        <span className="px-3 py-1 rounded-full bg-white/5 border border-white/10 text-slate-500 text-[10px] uppercase font-black tracking-widest">
+                                        <span className="px-3 py-1 rounded-[4px] bg-white/5 border border-[#333333] text-[#86868B] text-[10px] uppercase font-black tracking-widest">
                                             {selectedArticle.unidad}
                                         </span>
                                     </div>
-                                    <h3 className="text-3xl font-black text-white italic uppercase tracking-tighter leading-none">
+                                    <h3 className="text-2xl font-black text-[#F5F5F7] italic uppercase tracking-tighter leading-none">
                                         {selectedArticle.nombre_articulo}
                                     </h3>
                                 </div>
@@ -582,17 +567,17 @@ export default function KardexDiario() {
                             <div className="flex gap-3 w-full md:w-auto">
                                 <button
                                     onClick={exportToExcel}
-                                    className="flex-1 md:flex-none glass-button px-6 py-3 rounded-2xl transition-all flex items-center justify-center gap-3 group/excel text-emerald-400 border-emerald-500/20 hover:bg-emerald-500/10"
+                                    className="flex-1 md:flex-none px-6 py-3 bg-[#0071E3] hover:bg-[#0077ED] text-white rounded-[8px] transition-all flex items-center justify-center gap-3 group/excel"
                                 >
                                     <FileSpreadsheet className="w-5 h-5 group-hover/excel:scale-110 transition-transform" />
-                                    <span className="text-[11px] font-black uppercase tracking-widest">Exportar Excel</span>
+                                    <span className="text-[10px] font-black uppercase tracking-widest">Exportar Excel</span>
                                 </button>
                                 <button
                                     onClick={exportToPDF}
-                                    className="flex-1 md:flex-none glass-button px-6 py-3 rounded-2xl transition-all flex items-center justify-center gap-3 group/pdf text-rose-400 border-rose-500/20 hover:bg-rose-500/10"
+                                    className="flex-1 md:flex-none px-6 py-3 bg-transparent border border-[#333333] text-[#F5F5F7] hover:bg-white/5 rounded-[8px] transition-all flex items-center justify-center gap-3 group/pdf"
                                 >
                                     <FileText className="w-5 h-5 group-hover/pdf:scale-110 transition-transform" />
-                                    <span className="text-[11px] font-black uppercase tracking-widest">Generar PDF</span>
+                                    <span className="text-[10px] font-black uppercase tracking-widest">Generar PDF</span>
                                 </button>
                             </div>
                         </div>
@@ -600,9 +585,9 @@ export default function KardexDiario() {
                         {/* Chart and Summary Grid */}
                         <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
                             {/* Chart */}
-                            <div className="lg:col-span-8 glass-card p-8 bg-slate-900/40 relative overflow-hidden flex flex-col h-[400px]">
-                                <h3 className="text-xs font-black text-slate-500 uppercase tracking-[0.3em] mb-8 flex items-center gap-3 shrink-0">
-                                    <BarChart3 className="w-5 h-5 text-orange-500" />
+                            <div className="lg:col-span-8 bg-[#121212] border border-[#333333] rounded-[8px] p-8 relative overflow-hidden flex flex-col h-[400px]">
+                                <h3 className="text-xs font-black text-[#86868B] uppercase tracking-[0.3em] mb-8 flex items-center gap-3 shrink-0">
+                                    <BarChart3 className="w-5 h-5 text-[#0071E3]" />
                                     Tendencia de Existencias
                                 </h3>
 
@@ -611,14 +596,14 @@ export default function KardexDiario() {
                                         <AreaChart data={kardexData}>
                                             <defs>
                                                 <linearGradient id="colorSaldo" x1="0" y1="0" x2="0" y2="1">
-                                                    <stop offset="5%" stopColor="#f97316" stopOpacity={0.3} />
-                                                    <stop offset="95%" stopColor="#f97316" stopOpacity={0} />
+                                                    <stop offset="5%" stopColor="#0071E3" stopOpacity={0.3} />
+                                                    <stop offset="95%" stopColor="#0071E3" stopOpacity={0} />
                                                 </linearGradient>
                                             </defs>
-                                            <CartesianGrid strokeDasharray="3 3" stroke="#ffffff08" vertical={false} />
+                                            <CartesianGrid strokeDasharray="3 3" stroke="#333333" vertical={false} />
                                             <XAxis
                                                 dataKey="fecha"
-                                                stroke="#475569"
+                                                stroke="#86868B"
                                                 fontSize={10}
                                                 tickFormatter={(val) => val.slice(5)}
                                                 axisLine={false}
@@ -626,7 +611,7 @@ export default function KardexDiario() {
                                                 fontWeight="bold"
                                             />
                                             <YAxis
-                                                stroke="#475569"
+                                                stroke="#86868B"
                                                 fontSize={10}
                                                 axisLine={false}
                                                 tickLine={false}
@@ -634,21 +619,21 @@ export default function KardexDiario() {
                                             />
                                             <Tooltip
                                                 contentStyle={{
-                                                    backgroundColor: '#0f111a',
-                                                    border: '1px solid rgba(255,255,255,0.1)',
-                                                    borderRadius: '16px',
+                                                    backgroundColor: '#121212',
+                                                    border: '1px solid #333333',
+                                                    borderRadius: '8px',
                                                     padding: '12px',
                                                     boxShadow: '0 20px 40px rgba(0,0,0,0.5)',
                                                     backdropFilter: 'blur(20px)'
                                                 }}
-                                                itemStyle={{ color: '#f97316', fontWeight: '900', fontSize: '12px', textTransform: 'uppercase' }}
-                                                labelStyle={{ color: '#64748b', fontWeight: 'bold', fontSize: '10px', marginBottom: '8px', textTransform: 'uppercase' }}
-                                                cursor={{ stroke: '#f9731633', strokeWidth: 2 }}
+                                                itemStyle={{ color: '#0071E3', fontWeight: '900', fontSize: '12px', textTransform: 'uppercase' }}
+                                                labelStyle={{ color: '#86868B', fontWeight: 'bold', fontSize: '10px', marginBottom: '8px', textTransform: 'uppercase' }}
+                                                cursor={{ stroke: '#0071E333', strokeWidth: 2 }}
                                             />
                                             <Area
                                                 type="monotone"
                                                 dataKey="saldoAcumulado"
-                                                stroke="#f97316"
+                                                stroke="#0071E3"
                                                 strokeWidth={3}
                                                 fillOpacity={1}
                                                 fill="url(#colorSaldo)"
@@ -662,49 +647,46 @@ export default function KardexDiario() {
 
                             {/* Totals Summary */}
                             <div className="lg:col-span-4 grid grid-cols-1 gap-5">
-                                <div className="glass-card p-6 bg-slate-900/40 relative overflow-hidden group">
-                                    <div className="absolute top-0 right-0 w-20 h-20 bg-emerald-500/5 rounded-full blur-2xl group-hover:bg-emerald-500/10 transition-colors" />
-                                    <span className="text-[10px] font-black text-slate-600 uppercase tracking-widest block mb-4">Total Entradas</span>
+                                <div className="bg-[#121212] border border-[#333333] p-6 rounded-[8px] relative overflow-hidden group">
+                                    <span className="text-[10px] font-black text-[#86868B] uppercase tracking-widest block mb-4">Total Entradas</span>
                                     <div className="flex items-end gap-3">
-                                        <span className="text-4xl font-black text-white italic tracking-tighter">+{totals.ent.toLocaleString('es-CR')}</span>
-                                        <span className="text-emerald-500/50 text-xs font-black uppercase mb-1">{selectedArticle.unidad}</span>
+                                        <span className="text-4xl font-black text-[#F5F5F7] italic tracking-tighter">+{totals.ent.toLocaleString('es-CR')}</span>
+                                        <span className="text-[#86868B] text-xs font-black uppercase mb-1">{selectedArticle.unidad}</span>
                                     </div>
-                                    <div className="mt-4 h-1 w-full bg-white/5 rounded-full overflow-hidden">
-                                        <div className="h-full bg-emerald-500/50 w-[70%]" />
+                                    <div className="mt-4 h-1 w-full bg-[#1D1D1F] rounded-full overflow-hidden">
+                                        <div className="h-full bg-[#0071E3] w-[70%] opacity-50" />
                                     </div>
                                 </div>
 
-                                <div className="glass-card p-6 bg-slate-900/40 relative overflow-hidden group">
-                                    <div className="absolute top-0 right-0 w-20 h-20 bg-rose-500/5 rounded-full blur-2xl group-hover:bg-rose-500/10 transition-colors" />
-                                    <span className="text-[10px] font-black text-slate-600 uppercase tracking-widest block mb-4">Total Salidas</span>
+                                <div className="bg-[#121212] border border-[#333333] p-6 rounded-[8px] relative overflow-hidden group">
+                                    <span className="text-[10px] font-black text-[#86868B] uppercase tracking-widest block mb-4">Total Salidas</span>
                                     <div className="flex items-end gap-3">
-                                        <span className="text-4xl font-black text-white italic tracking-tighter">-{totals.sal.toLocaleString('es-CR')}</span>
-                                        <span className="text-rose-500/50 text-xs font-black uppercase mb-1">{selectedArticle.unidad}</span>
+                                        <span className="text-4xl font-black text-[#F5F5F7] italic tracking-tighter">-{totals.sal.toLocaleString('es-CR')}</span>
+                                        <span className="text-[#86868B] text-xs font-black uppercase mb-1">{selectedArticle.unidad}</span>
                                     </div>
-                                    <div className="mt-4 h-1 w-full bg-white/5 rounded-full overflow-hidden">
-                                        <div className="h-full bg-rose-500/50 w-[45%]" />
+                                    <div className="mt-4 h-1 w-full bg-[#1D1D1F] rounded-full overflow-hidden">
+                                        <div className="h-full bg-[#0071E3] w-[45%] opacity-30" />
                                     </div>
                                 </div>
 
-                                <div className="glass-card p-6 bg-orange-600/10 border-orange-500/20 relative overflow-hidden group">
-                                    <div className="absolute inset-0 bg-gradient-to-br from-orange-500/5 to-transparent pointer-events-none" />
-                                    <span className="text-[10px] font-black text-orange-500/60 uppercase tracking-widest block mb-4">Saldo Final en Rango</span>
+                                <div className="bg-[#0071E3]/5 border border-[#0071E3]/20 p-6 rounded-[8px] relative overflow-hidden group">
+                                    <span className="text-[10px] font-black text-[#0071E3] uppercase tracking-widest block mb-4">Saldo Final en Rango</span>
                                     <div className="flex items-end gap-3">
-                                        <span className="text-4xl font-black text-white italic tracking-tighter">
+                                        <span className="text-4xl font-black text-[#F5F5F7] italic tracking-tighter">
                                             {kardexData[kardexData.length - 1].saldoAcumulado.toLocaleString('es-CR')}
                                         </span>
-                                        <span className="text-orange-500/50 text-xs font-black uppercase mb-1">{selectedArticle.unidad}</span>
+                                        <span className="text-[#0071E3]/50 text-xs font-black uppercase mb-1">{selectedArticle.unidad}</span>
                                     </div>
                                 </div>
                             </div>
                         </div>
 
                         {/* Table Section */}
-                        <div className="glass-card overflow-hidden bg-slate-900/40 border border-white/5">
+                        <div className="bg-[#121212] border border-[#333333] rounded-[8px] overflow-hidden">
                             <div className="overflow-x-auto">
                                 <table className="w-full text-left border-collapse">
                                     <thead>
-                                        <tr className="bg-slate-950/80 text-white text-[10px] font-black uppercase tracking-[0.2em] border-b border-white/5">
+                                        <tr className="bg-[#1D1D1F] text-[#86868B] text-[10px] font-black uppercase tracking-[0.2em] border-b border-[#333333]">
                                             <th className="p-6 w-16 text-center"></th>
                                             <th className="p-6">Fecha Movimiento</th>
                                             <th className="p-6 text-right">Ingresos</th>
@@ -714,72 +696,71 @@ export default function KardexDiario() {
                                             <th className="p-6 text-center">Referencia</th>
                                         </tr>
                                     </thead>
-                                    <tbody className="divide-y divide-white/[0.03]">
+                                    <tbody className="divide-y divide-[#333333]">
                                         {/* Opening Balance Row */}
-                                        <tr className="bg-white/[0.02] group/apertura">
+                                        <tr className="bg-white/[0.01] group/apertura">
                                             <td className="p-6"></td>
-                                            <td className="p-6 text-slate-500 font-black text-xs uppercase italic tracking-widest">Saldo Apertura (Anterior)</td>
-                                            <td className="p-6 text-right text-slate-700 font-mono">-</td>
-                                            <td className="p-6 text-right text-slate-700 font-mono">-</td>
-                                            <td className="p-6 text-right text-slate-700 font-mono">-</td>
-                                            <td className="p-6 text-right text-white font-black font-mono bg-white/[0.03] text-lg">
+                                            <td className="p-6 text-[#86868B] font-black text-xs uppercase italic tracking-widest">Saldo Apertura (Anterior)</td>
+                                            <td className="p-6 text-right text-[#424245] font-mono">-</td>
+                                            <td className="p-6 text-right text-[#424245] font-mono">-</td>
+                                            <td className="p-6 text-right text-[#424245] font-mono">-</td>
+                                            <td className="p-6 text-right text-[#F5F5F7] font-black font-mono bg-white/[0.02] text-lg">
                                                 {saldoApertura.toLocaleString('es-CR')}
                                             </td>
                                             <td className="p-6 text-center">
-                                                <span className="text-[10px] font-black text-slate-600 uppercase tracking-widest bg-white/5 px-3 py-1 rounded-full">Histórico</span>
+                                                <span className="text-[10px] font-black text-[#86868B] uppercase tracking-widest bg-white/5 px-3 py-1 rounded-[4px]">Histórico</span>
                                             </td>
                                         </tr>
 
                                         {kardexData.map((row, index) => (
-                                            <>
+                                            <React.Fragment key={row.fecha}>
                                                 <tr
-                                                    key={row.fecha}
-                                                    className={`hover:bg-white/[0.03] transition-all cursor-pointer group/row ${expandedRows.has(row.fecha) ? 'bg-white/[0.05]' : ''}`}
+                                                    className={`hover:bg-white/[0.03] transition-all cursor-pointer group/row ${expandedRows.has(row.fecha) ? 'bg-white/[0.04]' : ''}`}
                                                     onClick={() => toggleRow(row.fecha)}
                                                 >
                                                     <td className="p-6 text-center">
                                                         {row.detalles.length > 0 && (
-                                                            <div className={`w-8 h-8 rounded-lg flex items-center justify-center transition-all ${expandedRows.has(row.fecha) ? 'bg-orange-500 text-black' : 'bg-white/5 text-slate-600 group-hover/row:bg-white/10 group-hover/row:text-slate-200'}`}>
+                                                            <div className={`w-8 h-8 rounded-[4px] flex items-center justify-center transition-all ${expandedRows.has(row.fecha) ? 'bg-[#0071E3] text-white' : 'bg-white/5 text-[#86868B] group-hover/row:bg-white/10 group-hover/row:text-[#F5F5F7]'}`}>
                                                                 {expandedRows.has(row.fecha) ? <ChevronUp className="w-5 h-5" /> : <ChevronDown className="w-5 h-5" />}
                                                             </div>
                                                         )}
                                                     </td>
                                                     <td className="p-6">
                                                         <div className="flex items-center gap-3">
-                                                            <Calendar className="w-4 h-4 text-slate-700" />
-                                                            <span className="text-white font-bold font-mono text-sm">{row.fecha}</span>
+                                                            <Calendar className="w-4 h-4 text-[#86868B]" />
+                                                            <span className="text-[#F5F5F7] font-bold font-mono text-sm">{row.fecha}</span>
                                                         </div>
                                                     </td>
-                                                    <td className="p-6 text-right font-black font-mono text-emerald-400 text-base">
-                                                        {row.entradas > 0 ? `+${row.entradas.toLocaleString('es-CR')}` : <span className="text-slate-800">-</span>}
+                                                    <td className="p-6 text-right font-black font-mono text-[#0071E3] text-base">
+                                                        {row.entradas > 0 ? `+${row.entradas.toLocaleString('es-CR')}` : <span className="text-[#424245]">-</span>}
                                                     </td>
-                                                    <td className="p-6 text-right font-black font-mono text-rose-500 text-base">
-                                                        {row.salidas > 0 ? `-${row.salidas.toLocaleString('es-CR')}` : <span className="text-slate-800">-</span>}
+                                                    <td className="p-6 text-right font-black font-mono text-[#86868B] text-base">
+                                                        {row.salidas > 0 ? `-${row.salidas.toLocaleString('es-CR')}` : <span className="text-[#424245]">-</span>}
                                                     </td>
                                                     <td className="p-6 text-right font-black font-mono">
                                                         {row.saldoDia !== 0 ? (
-                                                            <span className={row.saldoDia > 0 ? 'text-emerald-500/70' : 'text-rose-500/70'}>
+                                                            <span className={row.saldoDia > 0 ? 'text-[#0071E3]/80' : 'text-[#86868B]'}>
                                                                 {row.saldoDia > 0 ? '+' : ''}{row.saldoDia.toLocaleString('es-CR')}
                                                             </span>
-                                                        ) : <span className="text-slate-800">-</span>}
+                                                        ) : <span className="text-[#424245]">-</span>}
                                                     </td>
-                                                    <td className="p-6 text-right font-black font-mono text-white text-lg bg-white/[0.02]">
+                                                    <td className="p-6 text-right font-black font-mono text-white text-lg bg-white/[0.01]">
                                                         {row.saldoAcumulado.toLocaleString('es-CR')}
                                                     </td>
                                                     <td className="p-6 text-center">
                                                         <div className="flex items-center justify-center gap-2">
                                                             {row.isLowStock && (
-                                                                <div className="px-3 py-1 rounded-full bg-rose-500/10 border border-rose-500/20 text-rose-500 text-[9px] font-black uppercase tracking-widest flex items-center gap-1 shadow-lg shadow-rose-500/10">
+                                                                <div className="px-3 py-1 rounded-[4px] bg-[#0071E3]/5 border border-[#0071E3]/10 text-[#0071E3] text-[9px] font-black uppercase tracking-widest flex items-center gap-1">
                                                                     <AlertTriangle className="w-3 h-3" /> Bajo
                                                                 </div>
                                                             )}
                                                             {row.isHighMovement && !row.isLowStock && (
-                                                                <div className="px-3 py-1 rounded-full bg-blue-500/10 border border-blue-500/20 text-blue-400 text-[9px] font-black uppercase tracking-widest flex items-center gap-1">
+                                                                <div className="px-3 py-1 rounded-[4px] bg-[#0071E3]/10 border border-[#0071E3]/20 text-[#0071E3] text-[9px] font-black uppercase tracking-widest flex items-center gap-1">
                                                                     <TrendingUp className="w-3 h-3" /> Alto
                                                                 </div>
                                                             )}
                                                             {!row.isLowStock && !row.isHighMovement && (
-                                                                <span className="w-2 h-2 rounded-full bg-slate-800" />
+                                                                <span className="w-2 h-2 rounded-full bg-[#333333]" />
                                                             )}
                                                         </div>
                                                     </td>
@@ -789,29 +770,28 @@ export default function KardexDiario() {
                                                 {expandedRows.has(row.fecha) && row.detalles.length > 0 && (
                                                     <tr className="bg-black/40 animate-in slide-in-from-top-4 duration-300">
                                                         <td colSpan={7} className="p-0">
-                                                            <div className="p-8 pl-24 border-b border-white/5 relative">
-                                                                <div className="absolute left-10 top-0 bottom-0 w-px bg-white/5" />
-                                                                <h4 className="text-[10px] font-black text-slate-600 uppercase tracking-[0.2em] mb-4 flex items-center gap-2">
-                                                                    <History className="w-4 h-4 text-orange-500/50" />
+                                                            <div className="p-8 pl-24 border-b border-[#333333] relative">
+                                                                <div className="absolute left-10 top-0 bottom-0 w-px bg-[#333333]" />
+                                                                <h4 className="text-[10px] font-black text-[#86868B] uppercase tracking-[0.2em] mb-4 flex items-center gap-2">
+                                                                    <History className="w-4 h-4 text-[#0071E3]/50" />
                                                                     Documentación de Movimientos
                                                                 </h4>
                                                                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                                                     {row.detalles.map((det) => (
-                                                                        <div key={det.id} className="flex items-center justify-between p-5 rounded-2xl bg-white/[0.03] border border-white/5 hover:border-white/10 transition-colors shadow-inner group/det">
+                                                                        <div key={det.id} className="flex items-center justify-between p-5 rounded-[8px] bg-white/[0.02] border border-[#333333] hover:border-[#0071E3]/30 transition-colors shadow-inner group/det">
                                                                             <div className="flex items-center gap-4">
                                                                                 <div className={`w-10 h-10 rounded-xl flex items-center justify-center shadow-lg ${det.tipo === 'ENTRADA' ? 'bg-emerald-500/10 text-emerald-500 shadow-emerald-500/5' : 'bg-rose-500/10 text-rose-500 shadow-rose-500/5'}`}>
                                                                                     {det.tipo === 'ENTRADA' ? <Package className="w-5 h-5" /> : <X className="w-5 h-5" />}
                                                                                 </div>
                                                                                 <div>
-                                                                                    <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest">Doc. #{det.documento_id}</p>
                                                                                     <p className="text-white font-black text-sm uppercase tracking-tight mt-1">{det.tipo}</p>
                                                                                 </div>
                                                                             </div>
                                                                             <div className="text-right">
-                                                                                <span className="text-xl font-black font-mono text-white group-hover/det:text-orange-400 transition-colors">
+                                                                                <span className="text-xl font-black font-mono text-white group-hover/det:text-[#0071E3] transition-colors">
                                                                                     {det.cantidad}
                                                                                 </span>
-                                                                                <span className="text-[10px] font-black text-slate-700 uppercase tracking-widest ml-2">{selectedArticle?.unidad}</span>
+                                                                                <span className="text-[10px] font-black text-[#86868B] uppercase tracking-widest ml-2">{selectedArticle?.unidad}</span>
                                                                             </div>
                                                                         </div>
                                                                     ))}
@@ -820,7 +800,7 @@ export default function KardexDiario() {
                                                         </td>
                                                     </tr>
                                                 )}
-                                            </>
+                                            </React.Fragment>
                                         ))}
                                     </tbody>
                                 </table>
@@ -830,13 +810,13 @@ export default function KardexDiario() {
                 ) : (
                     <div className="py-40 flex flex-col items-center justify-center text-center group animate-in fade-in zoom-in duration-700">
                         <div className="relative mb-10">
-                            <div className="absolute inset-0 bg-orange-500/10 rounded-full blur-3xl scale-150 group-hover:scale-200 transition-transform duration-1000" />
-                            <div className="w-32 h-32 glass-card rounded-[3rem] flex items-center justify-center relative z-10 border-white/10 group-hover:rotate-6 transition-all duration-700">
-                                <History className="w-16 h-16 text-slate-800" />
+                            <div className="absolute inset-0 bg-[#0071E3]/10 rounded-full blur-3xl scale-150 group-hover:scale-200 transition-transform duration-1000" />
+                            <div className="w-32 h-32 bg-[#121212] border border-[#333333] rounded-[8px] flex items-center justify-center relative z-10 group-hover:rotate-3 transition-all duration-700 shadow-2xl">
+                                <History className="w-16 h-16 text-[#333333]" />
                             </div>
                         </div>
-                        <h3 className="text-3xl font-black text-slate-700 uppercase italic tracking-tighter">Historial sin Consultar</h3>
-                        <p className="text-slate-600 mt-3 max-w-sm mx-auto font-medium text-sm leading-relaxed tracking-wide">
+                        <h3 className="text-3xl font-black text-[#F5F5F7] uppercase italic tracking-tighter">Historial sin Consultar</h3>
+                        <p className="text-[#86868B] mt-3 max-w-sm mx-auto font-medium text-sm leading-relaxed tracking-wide uppercase text-[10px]">
                             Seleccione un artículo y defina un rango de fechas para visualizar la cronología de movimientos y variaciones de inventario.
                         </p>
                     </div>

@@ -1,5 +1,6 @@
-import { ArrowLeft } from 'lucide-react';
+import { ChevronLeft } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
+import { cn } from '../../lib/utils';
 
 interface PageHeaderProps {
     title: string;
@@ -8,44 +9,52 @@ interface PageHeaderProps {
     gradientFrom?: string;
     gradientTo?: string;
     backRoute?: string;
+    subtitle?: string;
+    rightElement?: React.ReactNode;
 }
 
 export const PageHeader = ({
     title,
     icon: Icon,
     themeColor = 'blue',
-    gradientFrom = 'from-blue-900',
-    gradientTo = 'to-slate-900',
-    backRoute
+    backRoute,
+    subtitle = "Gabinete de Gestión Operativa",
+    rightElement
 }: PageHeaderProps) => {
     const navigate = useNavigate();
 
     return (
-        <div className={`relative overflow-hidden bg-[#0f111a] border-b border-white/5 pb-8 mb-8`}>
-            {/* Background Gradient Glow */}
-            <div className={`absolute -top-24 -left-24 w-64 h-64 bg-${themeColor}-500/10 rounded-full blur-[100px] pointer-events-none`} />
-
-            <div className="max-w-7xl mx-auto px-4 md:px-0 pt-8">
-                <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
-                    <div className="flex items-center gap-6">
+        <div className="relative overflow-hidden bg-[#000000] border-b border-[#333333] mb-8">
+            <div className="max-w-[1600px] mx-auto px-4 md:px-8 py-10">
+                <div className="flex flex-col md:flex-row md:items-end justify-between gap-8">
+                    <div className="flex items-start md:items-center gap-6">
                         <button
                             onClick={() => backRoute ? navigate(backRoute) : navigate(-1)}
-                            className="p-3 bg-white/5 hover:bg-white/10 rounded-2xl transition-all text-white border border-white/10 active:scale-95 group shadow-lg"
+                            className="w-14 h-14 bg-transparent border border-[#F5F5F7]/30 rounded-[8px] flex items-center justify-center text-[#F5F5F7] hover:bg-[#F5F5F7]/10 transition-all shadow-xl active:scale-95"
                         >
-                            <ArrowLeft className="w-6 h-6 group-hover:-translate-x-1 transition-transform" />
+                            <ChevronLeft className="w-6 h-6" />
                         </button>
-                        <div>
-                            <div className="flex items-center gap-3 mb-1">
-                                {Icon && <div className={`p-2 bg-${themeColor}-500/10 rounded-lg text-${themeColor}-400`}>
-                                    <Icon className="w-6 h-6" />
+
+                        <div className="space-y-2">
+                            <div className="flex items-center gap-3">
+                                {Icon && <div className="w-10 h-10 rounded-[6px] bg-[#0071E3] flex items-center justify-center shadow-2xl shadow-[#0071E3]/20">
+                                    <Icon className="w-5 h-5 text-white" />
                                 </div>}
-                                <span className="text-[10px] font-black text-gray-500 uppercase tracking-[0.3em]">Sistema de Gestión</span>
+                                <span className="text-[10px] font-black text-[#0071E3] uppercase tracking-[0.4em] drop-shadow-sm">
+                                    {subtitle}
+                                </span>
                             </div>
-                            <h1 className="text-3xl font-black text-white tracking-tight">
+                            <h1 className="text-4xl md:text-5xl font-black text-[#F5F5F7] tracking-tighter leading-none italic uppercase">
                                 {title}
                             </h1>
                         </div>
                     </div>
+
+                    {rightElement && (
+                        <div className="flex items-center gap-4">
+                            {rightElement}
+                        </div>
+                    )}
                 </div>
             </div>
         </div>

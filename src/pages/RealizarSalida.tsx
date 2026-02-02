@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo, useCallback } from 'react';
 import { supabase } from '../lib/supabase';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import {
@@ -14,7 +14,8 @@ import {
     MessageSquare,
     ChevronRight,
     Shield,
-    ClipboardList
+    ClipboardList,
+    ArrowLeft
 } from 'lucide-react';
 import { cn } from '../lib/utils';
 
@@ -73,7 +74,7 @@ export default function RealizarSalida() {
     const [showHistorialModal, setShowHistorialModal] = useState(false);
     const [currentRowIndex, setCurrentRowIndex] = useState<number>(0);
 
-    const themeColor = 'teal';
+    const themeColor = '#0071E3';
 
     // 5. Validation Logic
     const isFormValid = useMemo(() => {
@@ -87,13 +88,14 @@ export default function RealizarSalida() {
         return hasAutoriza && hasRetira && hasVaildItems;
     }, [autorizaId, retiraId, items]);
 
-    // Initialize
+    // Initialize - Run only once on mount or when numero param changes
     useEffect(() => {
         const numSol = searchParams.get('numero');
         if (numSol) setNumeroSolicitud(numSol);
 
         fetchColaboradores();
-    }, [searchParams]);
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, []);
 
     const fetchColaboradores = async () => {
         try {
@@ -164,19 +166,19 @@ export default function RealizarSalida() {
         setItems(newItems);
     };
 
-    const updateDetalle = (index: number, field: keyof DetalleSalida, value: any) => {
+    const updateDetalle = useCallback((index: number, field: string, value: any) => {
         const newItems = [...items];
         newItems[index] = { ...newItems[index], [field]: value };
         setItems(newItems);
-    };
+    }, [items]);
 
     // Modals Handlers
-    const handleOpenArticulos = (index: number) => {
+    const handleOpenArticulos = useCallback((index: number) => {
         setCurrentRowIndex(index);
         setShowArticulosModal(true);
-    };
+    }, []);
 
-    const handleSelectArticulo = (articulo: any) => {
+    const handleSelectArticulo = useCallback((articulo: any) => {
         const itemExistente = items.some((it, i) => it.codigo_articulo === articulo.codigo_articulo && i !== currentRowIndex);
 
         if (itemExistente) {
@@ -194,9 +196,11 @@ export default function RealizarSalida() {
             marca: articulo.marca || 'S/M',
             cantidad_disponible: articulo.cantidad_disponible || 0
         };
+
+        console.log('✅ SELECCIONADO:', articulo.nombre_articulo);
         setItems(newItems);
         setShowArticulosModal(false);
-    };
+    }, [items, currentRowIndex]);
 
     const handleOpenBusqueda = (tipo: 'autoriza' | 'retira') => {
         setBusquedaTipo(tipo);
@@ -376,100 +380,105 @@ export default function RealizarSalida() {
     };
 
     return (
-        <div className="min-h-screen bg-[#0f111a] p-4 md:p-8">
+        <div className="min-h-screen bg-[#000000] text-[#F5F5F7] flex flex-col pt-4">
             <PageHeader
                 title="Realizar Salida"
                 icon={Box}
-                themeColor={themeColor}
+                subtitle="Registro de salida de materiales y consumibles del inventario."
+                rightElement={
+                    <button
+                        onClick={() => navigate('/cliente-interno/realizar-salidas')}
+                        className="btn-ghost px-6 py-3 border border-[#F5F5F7]/20 rounded-[8px] hover:bg-[#F5F5F7]/5 transition-all flex items-center gap-2 group"
+                    >
+                        <ArrowLeft className="w-5 h-5 text-[#86868B] group-hover:text-[#F5F5F7] transition-colors" />
+                        <span className="text-[11px] font-bold text-[#86868B] group-hover:text-[#F5F5F7] uppercase tracking-widest">Regresar</span>
+                    </button>
+                }
             />
 
-            <div className="max-w-6xl mx-auto">
+            <div className="max-w-[1400px] mx-auto w-full px-8 pb-20">
                 {/* Feedback Toast */}
                 {feedback && (
-                    <div className={`fixed top-8 right-8 z-[100] px-6 py-4 rounded-2xl shadow-2xl backdrop-blur-xl border flex items-center gap-3 animate-in slide-in-from-top-4 duration-300 ${feedback.type === 'success' ? 'bg-emerald-500/20 border-emerald-500/50 text-emerald-400' :
-                        feedback.type === 'error' ? 'bg-rose-500/20 border-rose-500/50 text-rose-400' :
-                            feedback.type === 'warning' ? 'bg-amber-500/20 border-amber-500/50 text-amber-400' :
-                                'bg-blue-500/20 border-blue-500/50 text-blue-400'
-                        }`}>
-                        {feedback.type === 'success' && <CheckCircle className="w-5 h-5" />}
-                        {feedback.type === 'error' && <AlertTriangle className="w-5 h-5" />}
-                        {feedback.type === 'warning' && <AlertTriangle className="w-5 h-5" />}
-                        {feedback.type === 'info' && <Info className="w-5 h-5" />}
-                        <span className="font-bold">{feedback.message}</span>
+                    <div className={cn(
+                        "fixed top-8 right-8 z-[100] px-6 py-4 rounded-[8px] border flex items-center gap-3 animate-in slide-in-from-top-4 duration-300",
+                        feedback.type === 'success' ? "bg-[#121212] border-[#0071E3]/50 text-white" : "bg-[#121212] border-rose-500/50 text-rose-400"
+                    )}>
+                        {feedback.type === 'success' ? <CheckCircle className="w-5 h-5 text-[#0071E3]" /> : <AlertTriangle className="w-5 h-5 text-rose-500" />}
+                        <span className="text-[10px] font-black uppercase tracking-widest">{feedback.message}</span>
                     </div>
                 )}
 
-                <form onSubmit={handleSubmit} className="space-y-6">
+                <form onSubmit={handleSubmit} className="space-y-8">
                     {/* Section 1: Header Information */}
-                    <div className="bg-[#1e2235] border border-white/10 rounded-3xl shadow-2xl overflow-hidden p-6 md:p-8">
-                        <div className="flex items-center gap-3 mb-8 border-b border-white/10 pb-4">
-                            <Info className={`w-5 h-5 text-${themeColor}-400`} />
-                            <h3 className="text-xl font-black text-white uppercase tracking-tight">Información de la Salida</h3>
+                    <div className="bg-[#121212] border border-[#333333] rounded-[8px] shadow-2xl overflow-hidden p-8">
+                        <div className="space-y-1 mb-8">
+                            <h3 className="text-xl font-black text-white italic uppercase tracking-tight flex items-center gap-3">
+                                <Info className="w-5 h-5 text-[#0071E3]" />
+                                Información de la Salida
+                            </h3>
+                            <p className="text-[10px] font-black text-[#86868B] uppercase tracking-[0.2em] ml-8">Detalles generales del registro de salida</p>
                         </div>
 
-                        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+                        <div className="grid grid-cols-1 md:grid-cols-3 gap-8 mb-8">
                             {/* Autoriza Selector */}
                             <div className="space-y-3">
-                                <label className="text-[10px] font-black text-gray-500 uppercase tracking-widest ml-1 block">Responsable (Autoriza)</label>
+                                <label className="text-[10px] font-black text-[#86868B] uppercase tracking-widest ml-1 block">Responsable (Autoriza)</label>
                                 <div
                                     onClick={autorizaId ? undefined : () => handleOpenBusqueda('autoriza')}
                                     className={cn(
-                                        "group relative border rounded-2xl p-4 transition-all flex items-center justify-between shadow-inner",
-                                        autorizaId ? "bg-black/10 border-white/5 cursor-not-allowed" : "bg-black/30 border-white/10 cursor-pointer hover:bg-white/5 hover:border-teal-500/30"
+                                        "group relative border rounded-[8px] p-5 transition-all flex items-center justify-between",
+                                        autorizaId ? "bg-black/20 border-[#333333] cursor-not-allowed text-[#86868B]" : "bg-[#1D1D1F] border-[#333333] cursor-pointer hover:border-[#0071E3]/50"
                                     )}
                                 >
                                     <div className="flex items-center gap-4 min-w-0">
                                         <div className={cn(
-                                            "w-10 h-10 rounded-xl flex items-center justify-center shrink-0",
-                                            autorizaId ? "bg-slate-800" : `bg-${themeColor}-500/10`
+                                            "w-10 h-10 rounded-[4px] flex items-center justify-center shrink-0",
+                                            autorizaId ? "bg-black/40" : "bg-[#0071E3]/10"
                                         )}>
-                                            <UserCircle className={cn("w-5 h-5 transition-transform", autorizaId ? "text-slate-500" : `text-${themeColor}-400 group-hover:scale-110`)} />
+                                            <UserCircle className={cn("w-5 h-5", autorizaId ? "text-slate-600" : "text-[#0071E3]")} />
                                         </div>
                                         <div className="min-w-0">
-                                            <span className={cn("block truncate font-bold", autorizaId ? 'text-slate-300' : 'text-gray-600 italic')}>
+                                            <span className={cn("block truncate font-bold text-[13px] uppercase", autorizaId ? 'text-[#86868B]' : 'text-white')}>
                                                 {autorizaAlias || 'Seleccionar...'}
                                             </span>
-                                            {autorizaId && <span className="text-[9px] text-gray-500 font-mono tracking-tighter uppercase">Asignado: {autorizaId}</span>}
                                         </div>
                                     </div>
-                                    {!autorizaId && <ChevronRight className="w-5 h-5 text-gray-700 group-hover:translate-x-1 transition-transform shrink-0" />}
-                                    {autorizaId && <Shield className="w-4 h-4 text-slate-700 shrink-0" />}
+                                    {!autorizaId && <ChevronRight className="w-5 h-5 text-[#86868B]" />}
                                 </div>
                             </div>
 
                             {/* Retira Selector */}
                             <div className="space-y-3">
-                                <label className="text-[10px] font-black text-gray-500 uppercase tracking-widest ml-1 block">Persona que Retira</label>
+                                <label className="text-[10px] font-black text-[#86868B] uppercase tracking-widest ml-1 block">Persona que Retira</label>
                                 <div
                                     onClick={() => handleOpenBusqueda('retira')}
-                                    className="group relative bg-black/30 border border-white/10 rounded-2xl p-4 cursor-pointer hover:bg-white/5 hover:border-teal-500/30 transition-all flex items-center justify-between shadow-inner"
+                                    className="group relative bg-[#1D1D1F] border border-[#333333] rounded-[8px] p-5 cursor-pointer hover:border-[#0071E3]/50 transition-all flex items-center justify-between"
                                 >
                                     <div className="flex items-center gap-4 min-w-0">
-                                        <div className={`w-10 h-10 rounded-xl bg-${themeColor}-500/10 flex items-center justify-center shrink-0`}>
-                                            <UserCircle className={`w-5 h-5 text-${themeColor}-400 group-hover:scale-110 transition-transform`} />
+                                        <div className="w-10 h-10 rounded-[4px] bg-[#0071E3]/10 flex items-center justify-center shrink-0">
+                                            <UserCircle className="w-5 h-5 text-[#0071E3]" />
                                         </div>
                                         <div className="min-w-0">
-                                            <span className={`block truncate font-bold ${retiraId ? 'text-white' : 'text-gray-600 italic'}`}>
+                                            <span className={cn("block truncate font-bold text-[13px] uppercase", retiraId ? 'text-white' : 'text-[#86868B] italic')}>
                                                 {retiraName || 'Seleccionar...'}
                                             </span>
-                                            {retiraId && <span className="text-[9px] text-gray-500 font-mono tracking-tighter uppercase">{retiraId}</span>}
                                         </div>
                                     </div>
-                                    <ChevronRight className="w-5 h-5 text-gray-700 group-hover:translate-x-1 transition-transform shrink-0" />
+                                    <ChevronRight className="w-5 h-5 text-[#86868B]" />
                                 </div>
                             </div>
 
                             {/* Solicitud Input */}
                             <div className="space-y-3">
-                                <label className="text-[10px] font-black text-gray-500 uppercase tracking-widest ml-1 block">Número de Solicitud</label>
-                                <div className="relative group flex gap-2">
+                                <label className="text-[10px] font-black text-[#86868B] uppercase tracking-widest ml-1 block">Número de Solicitud</label>
+                                <div className="relative group flex gap-3">
                                     <div className="relative flex-1">
-                                        <Ticket className="absolute left-5 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-600 group-focus-within:text-teal-400 transition-colors" />
+                                        <Ticket className="absolute left-5 top-1/2 -translate-y-1/2 w-5 h-5 text-[#86868B]" />
                                         <input
                                             type="text"
                                             value={numeroSolicitud}
                                             readOnly
-                                            className="w-full bg-black/10 border border-white/5 rounded-2xl py-4 pl-14 pr-4 text-slate-400 font-bold cursor-not-allowed opacity-80 shadow-inner"
+                                            className="w-full bg-black/20 border border-[#333333] rounded-[8px] py-4 pl-14 pr-4 text-[#86868B] font-bold cursor-not-allowed opacity-80"
                                             placeholder="Sin número..."
                                         />
                                     </div>
@@ -477,23 +486,23 @@ export default function RealizarSalida() {
                                         type="button"
                                         onClick={() => setShowHistorialModal(true)}
                                         disabled={!numeroSolicitud}
-                                        className="px-4 bg-purple-500/10 border border-purple-500/20 rounded-2xl text-purple-400 hover:bg-purple-500/20 transition-all disabled:opacity-30 disabled:cursor-not-allowed group/btn"
-                                        title="Ver historial de materiales"
+                                        className="h-14 px-5 bg-transparent border border-[#333333] rounded-[8px] text-[#F5F5F7] hover:bg-white/5 disabled:opacity-30 disabled:cursor-not-allowed transition-all"
+                                        title="Historial de materiales"
                                     >
-                                        <ClipboardList className="w-6 h-6 group-hover/btn:scale-110 transition-transform" />
+                                        <ClipboardList className="w-6 h-6" />
                                     </button>
                                 </div>
                             </div>
                         </div>
 
                         <div className="space-y-3">
-                            <label className="text-[10px] font-black text-gray-500 uppercase tracking-widest ml-1 block">Observaciones adicionales</label>
+                            <label className="text-[10px] font-black text-[#86868B] uppercase tracking-widest ml-1 block">Observaciones adicionales</label>
                             <div className="relative group">
-                                <MessageSquare className="absolute left-5 top-5 w-5 h-5 text-gray-600 group-focus-within:text-teal-400 transition-colors" />
+                                <MessageSquare className="absolute left-5 top-5 w-5 h-5 text-[#86868B] group-focus-within:text-[#0071E3] transition-colors" />
                                 <textarea
                                     value={comentarios}
                                     onChange={(e) => setComentarios(e.target.value)}
-                                    className="w-full bg-black/30 border border-white/10 rounded-2xl py-5 pl-14 pr-6 text-white font-medium placeholder-gray-700 focus:outline-none focus:border-teal-500/50 transition-all shadow-inner min-h-[120px] resize-none"
+                                    className="w-full bg-[#1D1D1F] border border-[#333333] rounded-[8px] py-5 pl-14 pr-6 text-white font-medium placeholder-[#424245] focus:outline-none focus:border-[#0071E3]/50 transition-all min-h-[120px] resize-none"
                                     placeholder="Detalles sobre la entrega, destino o requerimientos especiales..."
                                 />
                             </div>
@@ -501,7 +510,14 @@ export default function RealizarSalida() {
                     </div>
 
                     {/* Section 2: Items Table */}
-                    <div className="bg-[#1e2235] border border-white/10 rounded-3xl shadow-2xl overflow-hidden p-6 md:p-8">
+                    <div className="bg-[#121212] border border-[#333333] rounded-[8px] shadow-2xl overflow-hidden p-8">
+                        <div className="space-y-1 mb-8">
+                            <h3 className="text-xl font-black text-white italic uppercase tracking-tight flex items-center gap-3">
+                                <ClipboardList className="w-5 h-5 text-[#0071E3]" />
+                                Detalle de Artículos
+                            </h3>
+                            <p className="text-[10px] font-black text-[#86868B] uppercase tracking-[0.2em] ml-8">Seleccione los materiales a entregar</p>
+                        </div>
                         <TransactionTable
                             items={items}
                             onUpdateRow={updateDetalle}
@@ -509,20 +525,20 @@ export default function RealizarSalida() {
                             onOpenSearch={handleOpenArticulos}
                             onAddRow={agregarFila}
                             onWarning={(msg) => showAlert(msg, 'warning')}
-                            themeColor={themeColor}
+                            themeColor="#0071E3"
                         />
                     </div>
 
                     {/* Form Controls */}
-                    <div className="flex justify-end pt-4">
+                    <div className="flex justify-end pt-4 pb-12">
                         <div className="flex gap-4">
                             {finalizado && (
                                 <button
                                     type="button"
                                     onClick={generarPDF}
-                                    className="px-8 py-5 bg-white/5 border border-white/10 text-teal-400 font-black text-lg rounded-2xl hover:bg-white/10 active:scale-95 transition-all flex items-center justify-center gap-3 shadow-xl uppercase tracking-tight animate-in zoom-in duration-300"
+                                    className="h-14 px-8 bg-transparent border border-[#F5F5F7]/30 text-[#F5F5F7] rounded-[8px] text-[10px] font-black uppercase tracking-widest hover:bg-white/5 active:scale-95 transition-all flex items-center gap-3"
                                 >
-                                    <Printer className="w-6 h-6" />
+                                    <Printer className="w-5 h-5" />
                                     Imprimir Comprobante
                                 </button>
                             )}
@@ -530,13 +546,13 @@ export default function RealizarSalida() {
                                 type="submit"
                                 disabled={loading || !isFormValid}
                                 className={cn(
-                                    "px-12 py-5 text-white font-black text-xl rounded-2xl transition-all flex items-center justify-center gap-3 shadow-xl uppercase tracking-tight",
+                                    "h-14 px-12 text-white font-black text-xs rounded-[8px] uppercase tracking-widest transition-all flex items-center gap-3",
                                     (loading || !isFormValid)
-                                        ? "bg-slate-700 opacity-50 cursor-not-allowed shadow-none"
-                                        : "bg-gradient-to-r from-teal-600 to-teal-400 hover:brightness-110 active:scale-95 shadow-teal-500/20"
+                                        ? "bg-[#333333] opacity-50 cursor-not-allowed"
+                                        : "bg-[#0071E3] hover:brightness-110 active:scale-95 shadow-xl shadow-[#0071E3]/20"
                                 )}
                             >
-                                {loading ? <Loader2 className="w-7 h-7 animate-spin" /> : <Save className="w-7 h-7" />}
+                                {loading ? <Loader2 className="w-6 h-6 animate-spin" /> : <Save className="w-6 h-6" />}
                                 Procesar Salida
                             </button>
                         </div>

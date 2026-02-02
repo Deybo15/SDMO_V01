@@ -4,7 +4,7 @@
 
 @layer base {
     body {
-        @apply bg-[#0f111a] text-slate-100 dark:bg-[#0f111a] dark:text-slate-100;
+        @apply bg-[#000000] text-[#F5F5F7];
     }
 }
 
@@ -73,77 +73,78 @@
     animation: slideUp 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards;
 }
 
+@layer base {
+    :root {
+        --bg-primary: #000000;
+        --bg-surface: #121212;
+        --bg-input: #1D1D1F;
+        --accent: #0071E3;
+        --text-primary: #F5F5F7;
+        --text-secondary: #86868B;
+        --border-color: #333333;
+        --border-drag: #424245;
+        --radius: 8px;
+    }
+
+    body {
+        @apply bg-[#000000] text-[#F5F5F7];
+        background-color: var(--bg-primary);
+    }
+}
+
 @layer utilities {
-    .glass {
-        @apply bg-white/10 backdrop-blur-md border border-white/20 shadow-xl;
-    }
-
-    .glass-dark {
-        @apply bg-slate-950/40 backdrop-blur-xl border border-white/5 shadow-2xl;
-    }
-
-    .inner-glow {
-        box-shadow: inset 0 1px 1px 0 rgba(255, 255, 255, 0.05);
-    }
-
     .glass-card {
-        @apply glass-dark inner-glow rounded-3xl transition-all duration-300 hover:border-white/10 hover:shadow-blue-500/5;
+        background-color: var(--bg-surface);
+        border: 1px solid var(--border-color);
+        border-radius: var(--radius);
+        @apply transition-all duration-300;
     }
 
     .glass-button {
-        @apply bg-white/5 backdrop-blur-md border border-white/10 transition-all duration-300 hover:bg-white/15 hover:border-white/20 active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed;
+        border-radius: var(--radius);
+        @apply transition-all duration-200 active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed;
+    }
+
+    .btn-primary {
+        background-color: var(--accent);
+        color: white;
+        @apply glass-button px-6 py-3 font-semibold hover:brightness-110;
+    }
+
+    .btn-ghost {
+        background-color: transparent;
+        border: 1px solid white;
+        color: white;
+        @apply glass-button px-6 py-3 font-semibold hover:bg-white/10;
     }
 
     .glass-input {
-        @apply bg-white/5 backdrop-blur-sm border border-white/10 rounded-xl px-4 py-3 text-white placeholder-white/40 focus:outline-none focus:border-purple-500/50 focus:ring-1 focus:ring-purple-500/20 transition-all;
+        background-color: var(--bg-input);
+        border: 1px solid var(--border-color);
+        border-radius: var(--radius);
+        color: var(--text-primary);
+        @apply px-4 py-3 placeholder-[#86868B] focus:outline-none focus:border-[#0071E3] transition-all;
     }
 
-    .gradient-text {
-        @apply bg-clip-text text-transparent bg-gradient-to-r from-purple-400 via-blue-400 to-indigo-400 font-bold;
+    .drag-drop-zone {
+        border: 2px dashed var(--border-drag);
+        border-radius: var(--radius);
+        background-color: var(--bg-surface);
+        @apply transition-all duration-300 cursor-pointer;
     }
 
-    .status-badge {
-        @apply inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium border;
+    .drag-drop-zone.active {
+        border-color: var(--accent);
+        background-color: rgba(0, 113, 227, 0.05);
     }
 
-    .status-badge-success {
-        @apply status-badge border-green-500/30 bg-green-500/10 text-green-400;
+    .apple-blur {
+        backdrop-filter: blur(20px);
+        background-color: rgba(0, 0, 0, 0.80);
     }
 
-    .status-badge-warning {
-        @apply status-badge border-amber-500/30 bg-amber-500/10 text-amber-400;
-    }
-
-    .status-badge-error {
-        @apply status-badge border-red-500/30 bg-red-500/10 text-red-400;
-    }
-
-    .status-badge-info {
-        @apply status-badge border-blue-500/30 bg-blue-500/10 text-blue-400;
-    }
-
-    .table-glass {
-        @apply w-full text-sm border-collapse;
-    }
-
-    .table-glass th {
-        @apply px-4 py-3 text-left font-semibold text-white/90 bg-white/5 first:rounded-tl-xl last:rounded-tr-xl border-b border-white/10;
-    }
-
-    .table-glass td {
-        @apply px-4 py-3 border-b border-white/5 text-white/80;
-    }
-
-    .table-glass tr:last-child td:first-child {
-        @apply rounded-bl-xl;
-    }
-
-    .table-glass tr:last-child td:last-child {
-        @apply rounded-br-xl;
-    }
-
-    .table-glass tr:hover td {
-        @apply bg-white/[0.02];
+    .text-secondary {
+        color: var(--text-secondary);
     }
 }
 

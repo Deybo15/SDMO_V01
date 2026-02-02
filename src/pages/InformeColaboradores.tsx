@@ -4,9 +4,10 @@ import { supabase } from '../lib/supabase';
 import {
     Users, Search, Eraser, Download, Eye,
     ChevronLeft, ChevronRight, X, FileSpreadsheet, Box,
-    ShieldCheck, ClipboardCheck, HardHat, TrendingUp
+    ShieldCheck, ClipboardCheck, HardHat, TrendingUp, Loader2
 } from 'lucide-react';
 import { PageHeader } from '../components/ui/PageHeader';
+import { cn } from '../lib/utils';
 
 // Types
 interface Colaborador {
@@ -52,8 +53,6 @@ export default function InformeColaboradores() {
     // Filters
     const [filters, setFilters] = useState({
         colaborador: initialColaborador,
-        alias: '',
-        correo: '',
         autorizado: '',
         supervisor: '',
         operador: '',
@@ -118,8 +117,6 @@ export default function InformeColaboradores() {
             let query = supabase.from('colaboradores_06').select('*', { count: 'exact' });
 
             if (activeFilters.colaborador) query = query.ilike('colaborador', `%${activeFilters.colaborador}%`);
-            if (activeFilters.alias) query = query.ilike('alias', `%${activeFilters.alias}%`);
-            if (activeFilters.correo) query = query.ilike('correo_colaborador', `%${activeFilters.correo}%`);
             if (activeFilters.autorizado) query = query.eq('autorizado', activeFilters.autorizado === 'true');
             if (activeFilters.supervisor) query = query.eq('supervisor', activeFilters.supervisor === 'true');
             if (activeFilters.operador) query = query.eq('operador_de_equipo', activeFilters.operador === 'true');
@@ -164,8 +161,6 @@ export default function InformeColaboradores() {
     const clearFilters = () => {
         setFilters({
             colaborador: '',
-            alias: '',
-            correo: '',
             autorizado: '',
             supervisor: '',
             operador: '',
@@ -186,8 +181,6 @@ export default function InformeColaboradores() {
             while (hasMore) {
                 let query = supabase.from('colaboradores_06').select('*');
                 if (activeFilters.colaborador) query = query.ilike('colaborador', `%${activeFilters.colaborador}%`);
-                if (activeFilters.alias) query = query.ilike('alias', `%${activeFilters.alias}%`);
-                if (activeFilters.correo) query = query.ilike('correo_colaborador', `%${activeFilters.correo}%`);
                 if (activeFilters.autorizado) query = query.eq('autorizado', activeFilters.autorizado === 'true');
                 if (activeFilters.supervisor) query = query.eq('supervisor', activeFilters.supervisor === 'true');
                 if (activeFilters.operador) query = query.eq('operador_de_equipo', activeFilters.operador === 'true');
@@ -449,12 +442,8 @@ export default function InformeColaboradores() {
     };
 
     return (
-        <div className="min-h-screen bg-[#0F172A] text-slate-100 font-sans relative">
-            {/* Background Halos */}
-            <div className="fixed inset-0 z-0 pointer-events-none">
-                <div className="absolute top-[85%] left-[20%] w-[80rem] h-[80rem] bg-orange-500/10 rounded-full blur-[100px] -translate-x-1/2 -translate-y-1/2 animate-pulse"></div>
-                <div className="absolute top-[15%] right-[20%] w-[80rem] h-[80rem] bg-blue-500/5 rounded-full blur-[100px] translate-x-1/2 -translate-y-1/2"></div>
-            </div>
+        <div className="min-h-screen bg-[#000000] text-[#F5F5F7] font-sans relative">
+            {/* Background Halos removed for strict compliance */}
 
             {/* Header Content */}
             <div className="max-w-7xl mx-auto px-1 pt-6 flex flex-col gap-8 relative z-10">
@@ -466,21 +455,21 @@ export default function InformeColaboradores() {
                 />
 
                 {/* Metrics Grid */}
-                <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4">
+                <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-6">
                     {[
-                        { label: 'Total Personal', value: metrics.total, icon: Users, color: 'text-amber-400', bg: 'bg-amber-500/10' },
-                        { label: 'Autorizados', value: metrics.autorizados, icon: ShieldCheck, color: 'text-emerald-400', bg: 'bg-emerald-500/10' },
-                        { label: 'Supervisores', value: metrics.supervisores, icon: ClipboardCheck, color: 'text-blue-400', bg: 'bg-blue-500/10' },
-                        { label: 'Equipos/Oper.', value: metrics.operadores, icon: HardHat, color: 'text-purple-400', bg: 'bg-purple-500/10' },
-                        { label: 'Prof. Resp.', value: metrics.profesionales, icon: ShieldCheck, color: 'text-rose-400', bg: 'bg-rose-500/10' }
+                        { label: 'Total Personal', value: metrics.total, icon: Users, color: 'text-[#F5F5F7]', bg: 'bg-[#121212]' },
+                        { label: 'Autorizados', value: metrics.autorizados, icon: ShieldCheck, color: 'text-[#0071E3]', bg: 'bg-[#121212]' },
+                        { label: 'Supervisores', value: metrics.supervisores, icon: ClipboardCheck, color: 'text-[#F5F5F7]', bg: 'bg-[#121212]' },
+                        { label: 'Equipos/Oper.', value: metrics.operadores, icon: HardHat, color: 'text-[#F5F5F7]', bg: 'bg-[#121212]' },
+                        { label: 'Prof. Resp.', value: metrics.profesionales, icon: ShieldCheck, color: 'text-[#F5F5F7]', bg: 'bg-[#121212]' }
                     ].map((m, i) => (
-                        <div key={i} className="bg-white/5 backdrop-blur-xl border border-white/10 rounded-[1.5rem] p-4 flex items-center gap-3 group hover:bg-white/[0.08] transition-all duration-300">
-                            <div className={`w-10 h-10 rounded-xl ${m.bg} flex items-center justify-center ${m.color} group-hover:scale-110 transition-transform`}>
-                                <m.icon className="w-5 h-5" />
+                        <div key={i} className={`${m.bg} border border-[#333333] rounded-[8px] p-6 flex items-center gap-4 group transition-all duration-300`}>
+                            <div className={`w-12 h-12 rounded-[8px] bg-[#000000] flex items-center justify-center ${m.color}`}>
+                                <m.icon className="w-6 h-6" />
                             </div>
                             <div>
-                                <p className="text-[10px] font-black text-gray-500 uppercase tracking-widest leading-none">{m.label}</p>
-                                <p className="text-xl font-black text-white mt-1">{m.value}</p>
+                                <p className="text-[9px] font-black text-[#86868B] uppercase tracking-widest leading-none mb-1.5">{m.label}</p>
+                                <p className="text-2xl font-black text-[#F5F5F7] italic">{m.value}</p>
                             </div>
                         </div>
                     ))}
@@ -490,32 +479,31 @@ export default function InformeColaboradores() {
             <main className="relative z-10 max-w-7xl mx-auto p-6 space-y-6">
                 {/* Filters Section */}
                 <section className="relative group/filters">
-                    <div className="absolute -inset-1 bg-gradient-to-r from-amber-500/20 to-orange-500/20 rounded-[2.5rem] blur opacity-25 group-hover/filters:opacity-40 transition duration-1000"></div>
-                    <div className="relative bg-[#1E293B]/40 backdrop-blur-3xl border border-white/10 rounded-[2.5rem] overflow-hidden shadow-2xl">
-                        <div className="p-8 border-b border-white/5 bg-white/[0.02]">
-                            <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+                    <div className="relative bg-[#121212] border border-[#333333] rounded-[8px] overflow-hidden shadow-2xl">
+                        <div className="p-8 border-b border-[#333333] bg-black/20">
+                            <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
                                 <div>
-                                    <h2 className="text-2xl font-black text-white tracking-tight">Filtros Avanzados</h2>
-                                    <p className="text-gray-400 text-sm mt-1">Refina la búsqueda por nombre, alias o perfiles específicos.</p>
+                                    <h2 className="text-2xl font-black text-white tracking-tight italic uppercase">Filtros Avanzados</h2>
+                                    <p className="text-[#86868B] text-[10px] font-black uppercase tracking-widest mt-1">Gestión y filtrado de la base de datos de personal.</p>
                                 </div>
-                                <div className="flex items-center gap-2">
+                                <div className="flex items-center gap-3">
                                     <button
                                         onClick={handleApplyFilters}
-                                        className="px-6 py-3 bg-amber-500 text-black font-bold rounded-2xl hover:scale-105 active:scale-95 transition-all shadow-[0_0_20px_rgba(245,158,11,0.3)] flex items-center gap-2"
+                                        className="h-12 px-8 bg-[#0071E3] text-white font-black rounded-[8px] hover:brightness-110 active:scale-95 transition-all shadow-xl shadow-[#0071E3]/20 flex items-center gap-2 text-[10px] uppercase tracking-widest"
                                     >
-                                        <Search className="w-5 h-5" />
-                                        APLICAR FILTROS
+                                        <Search className="w-4 h-4" />
+                                        Aplicar Filtros
                                     </button>
                                     <button
                                         onClick={() => { clearFilters(); handleApplyFilters(); }}
-                                        className="p-3 bg-white/5 hover:bg-white/10 text-gray-400 hover:text-white rounded-2xl transition-all border border-white/10"
+                                        className="h-12 w-12 bg-transparent border border-[#333333] hover:bg-white/5 text-[#86868B] hover:text-white rounded-[8px] transition-all flex items-center justify-center"
                                         title="Limpiar filtros"
                                     >
                                         <Eraser className="w-5 h-5" />
                                     </button>
                                     <button
                                         onClick={exportCSV}
-                                        className="p-3 bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-400 rounded-2xl transition-all border border-emerald-500/20"
+                                        className="h-12 w-12 bg-transparent border border-[#333333] hover:bg-white/5 text-[#86868B] hover:text-[#0071E3] rounded-[8px] transition-all flex items-center justify-center"
                                         title="Exportar CSV"
                                     >
                                         <Download className="w-5 h-5" />
@@ -526,25 +514,21 @@ export default function InformeColaboradores() {
 
                         <div className="p-8 space-y-8">
                             {/* Text Filters */}
-                            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                            <div className="grid grid-cols-1 gap-8">
                                 {[
-                                    { label: 'Nombre del Colaborador', key: 'colaborador', placeholder: 'Ej: Juan Pérez', icon: Users },
-                                    { label: 'Alias / Apodo', key: 'alias', placeholder: 'Ej: JPerez', icon: TrendingUp },
-                                    { label: 'Correo Electrónico', key: 'correo', placeholder: '@msj.go.cr', icon: TrendingUp }
+                                    { label: 'Nombre del Colaborador', key: 'colaborador', placeholder: 'Ej: Juan Pérez', icon: Users }
                                 ].map((field) => (
-                                    <div key={field.key} className="space-y-2">
-                                        <label className="text-[10px] font-black text-gray-500 uppercase tracking-[0.2em] ml-2">
+                                    <div key={field.key} className="space-y-3">
+                                        <label className="text-[10px] font-black text-[#86868B] uppercase tracking-[0.2em] ml-1 block">
                                             {field.label}
                                         </label>
                                         <div className="relative group/input">
-                                            <div className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-500 group-focus-within/input:text-amber-500 transition-colors">
-                                                <field.icon className="w-5 h-5" />
-                                            </div>
+                                            <field.icon className="absolute left-5 top-1/2 -translate-y-1/2 w-5 h-5 text-[#86868B] group-focus-within/input:text-[#0071E3] transition-colors" />
                                             <input
                                                 value={filters[field.key as keyof typeof filters]}
                                                 onChange={(e) => handleFilterChange(field.key, e.target.value)}
                                                 onKeyDown={(e) => e.key === 'Enter' && handleApplyFilters()}
-                                                className="w-full bg-black/20 border border-white/10 rounded-2xl py-4 pl-12 pr-4 text-white text-sm focus:outline-none focus:border-amber-500/50 focus:ring-4 focus:ring-amber-500/10 transition-all placeholder:text-gray-600"
+                                                className="w-full bg-[#1D1D1F] border border-[#333333] rounded-[8px] h-14 pl-14 pr-6 text-white text-sm font-bold focus:outline-none focus:border-[#0071E3]/50 transition-all placeholder-[#424245] uppercase"
                                                 placeholder={field.placeholder}
                                             />
                                         </div>
@@ -553,21 +537,21 @@ export default function InformeColaboradores() {
                             </div>
 
                             {/* Boolean Selects & Page Size */}
-                            <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
+                            <div className="grid grid-cols-2 md:grid-cols-5 gap-6">
                                 {[
-                                    { label: 'Autorizado', key: 'autorizado', icon: ShieldCheck },
-                                    { label: 'Supervisor', key: 'supervisor', icon: ClipboardCheck },
-                                    { label: 'Operador', key: 'operador', icon: HardHat },
-                                    { label: 'Prof. Resp.', key: 'profesional', icon: ShieldCheck }
+                                    { label: 'Autorizado', key: 'autorizado' },
+                                    { label: 'Supervisor', key: 'supervisor' },
+                                    { label: 'Operador', key: 'operador' },
+                                    { label: 'Prof. Resp.', key: 'profesional' }
                                 ].map((f) => (
-                                    <div key={f.key} className="space-y-2">
-                                        <label className="text-[10px] font-black text-gray-500 uppercase tracking-[0.2em] ml-2">
+                                    <div key={f.key} className="space-y-3">
+                                        <label className="text-[10px] font-black text-[#86868B] uppercase tracking-[0.2em] ml-1 block">
                                             {f.label}
                                         </label>
                                         <select
                                             value={filters[f.key as keyof typeof filters]}
                                             onChange={(e) => handleFilterChange(f.key, e.target.value)}
-                                            className="w-full bg-black/20 border border-white/10 rounded-2xl py-4 px-4 text-white text-sm focus:outline-none focus:border-amber-500/50 transition-all appearance-none cursor-pointer hover:bg-black/30"
+                                            className="w-full h-14 bg-black border border-[#333333] rounded-[8px] px-5 text-white text-[10px] font-black uppercase tracking-widest focus:outline-none focus:border-[#0071E3]/50 transition-all appearance-none cursor-pointer hover:bg-black/30 [color-scheme:dark]"
                                         >
                                             <option value="">Todos</option>
                                             <option value="true">SÍ (Activo)</option>
@@ -575,14 +559,14 @@ export default function InformeColaboradores() {
                                         </select>
                                     </div>
                                 ))}
-                                <div className="space-y-2">
-                                    <label className="text-[10px] font-black text-gray-500 uppercase tracking-[0.2em] ml-2">
+                                <div className="space-y-3">
+                                    <label className="text-[10px] font-black text-[#86868B] uppercase tracking-[0.2em] ml-1 block">
                                         Por página
                                     </label>
                                     <select
                                         value={pageSize}
                                         onChange={(e) => setPageSize(Number(e.target.value))}
-                                        className="w-full bg-black/20 border border-white/10 rounded-2xl py-4 px-4 text-white text-sm focus:outline-none focus:border-amber-500/50 transition-all appearance-none cursor-pointer"
+                                        className="w-full h-14 bg-black border border-[#333333] rounded-[8px] px-5 text-white text-[10px] font-black tracking-widest uppercase focus:outline-none focus:border-[#0071E3]/50 transition-all appearance-none cursor-pointer [color-scheme:dark]"
                                     >
                                         {[10, 25, 50, 100].map(v => (
                                             <option key={v} value={v}>{v} Resultados</option>
@@ -596,19 +580,18 @@ export default function InformeColaboradores() {
 
                 {/* Table Section */}
                 <section className="relative group/table">
-                    <div className="absolute -inset-1 bg-gradient-to-r from-blue-500/10 to-purple-500/10 rounded-[2.5rem] blur opacity-25 group-hover/table:opacity-40 transition duration-1000"></div>
-                    <div className="relative bg-[#1E293B]/40 backdrop-blur-3xl border border-white/10 rounded-[2.5rem] overflow-hidden shadow-2xl flex flex-col">
+                    <div className="relative bg-[#121212] border border-[#333333] rounded-[8px] overflow-hidden shadow-2xl flex flex-col">
                         {loading ? (
-                            <div className="p-24 flex flex-col items-center justify-center text-gray-500">
-                                <div className="w-12 h-12 border-4 border-amber-500/20 border-t-amber-500 rounded-full animate-spin mb-6"></div>
-                                <p className="font-black text-sm tracking-[0.2em] uppercase">Sincronizando Personal...</p>
+                            <div className="p-24 flex flex-col items-center justify-center text-[#86868B]">
+                                <Loader2 className="w-12 h-12 animate-spin text-[#0071E3] mb-6" />
+                                <p className="font-black text-[10px] tracking-[0.2em] uppercase">Sincronizando Personal...</p>
                             </div>
                         ) : (
                             <>
                                 <div className="overflow-x-auto custom-scrollbar">
                                     <table className="w-full text-left border-collapse table-fixed">
-                                        <thead>
-                                            <tr className="bg-white/[0.02] border-b border-white/5 text-gray-500 text-[9px] font-black uppercase tracking-wider">
+                                        <thead className="sticky top-0 z-20 bg-[#121212]/90 apple-blur">
+                                            <tr className="border-b border-white/5 text-gray-500 text-[9px] font-black uppercase tracking-wider">
                                                 {[
                                                     { label: 'Identificación', col: 'identificacion', w: 'w-[140px]' },
                                                     { label: 'Colaborador', col: 'colaborador', w: 'w-auto' },
@@ -625,7 +608,7 @@ export default function InformeColaboradores() {
                                                     >
                                                         <div className={`flex items-center gap-1 ${h.center ? 'justify-center' : ''}`}>
                                                             <span className="truncate">{h.label}</span>
-                                                            <div className={`w-1 h-1 rounded-full bg-amber-500 transition-all ${sortCol === h.col ? 'opacity-100 scale-100' : 'opacity-0 scale-0 group-hover/th:opacity-50'}`}></div>
+                                                            <div className={`w-1 h-1 rounded-full bg-[#0071E3] transition-all ${sortCol === h.col ? 'opacity-100 scale-100' : 'opacity-0 scale-0 group-hover/th:opacity-50'}`}></div>
                                                         </div>
                                                     </th>
                                                 ))}
@@ -647,11 +630,11 @@ export default function InformeColaboradores() {
                                                         className="hover:bg-white/[0.04] transition-all duration-300 group/row animate-in fade-in slide-in-from-left-4 duration-500"
                                                         style={{ animationDelay: `${idx * 30}ms` }}
                                                     >
-                                                        <td className="p-3 font-mono text-xs text-amber-500/60 font-black">{row.identificacion || '-'}</td>
+                                                        <td className="p-3 font-mono text-xs text-[#0071E3]/60 font-black">{row.identificacion || '-'}</td>
                                                         <td className="p-3">
                                                             <div className="flex flex-col min-w-0">
-                                                                <span className="font-bold text-white text-[13px] group-hover/row:text-amber-400 transition-colors duration-300 truncate" title={row.colaborador}>{row.colaborador || '-'}</span>
-                                                                <span className="text-[10px] text-gray-500 font-black uppercase tracking-tighter mt-0.5 truncate">{row.alias || ''}</span>
+                                                                <span className="font-bold text-[#F5F5F7] text-[13px] group-hover/row:text-[#0071E3] transition-colors duration-300 truncate" title={row.colaborador}>{row.colaborador || '-'}</span>
+                                                                <span className="text-[10px] text-[#86868B] font-black uppercase tracking-tighter mt-0.5 truncate">{row.alias || ''}</span>
                                                             </div>
                                                         </td>
                                                         <td className="p-3"><BadgeBool val={row.autorizado} /></td>
@@ -664,10 +647,10 @@ export default function InformeColaboradores() {
                                                         <td className="p-3 text-center">
                                                             <button
                                                                 onClick={() => openModal(row)}
-                                                                className="w-7 h-7 bg-white/5 hover:bg-amber-500 text-gray-400 hover:text-black rounded-lg transition-all duration-300 border border-white/10 hover:border-amber-500 flex items-center justify-center mx-auto"
+                                                                className="w-8 h-8 bg-transparent border border-[#333333] hover:bg-white/5 text-[#86868B] hover:text-[#F5F5F7] rounded-[8px] transition-all flex items-center justify-center mx-auto"
                                                                 title="Ver historial"
                                                             >
-                                                                <Eye className="w-3.5 h-3.5" />
+                                                                <Eye className="w-4 h-4" />
                                                             </button>
                                                         </td>
                                                     </tr>
@@ -678,10 +661,10 @@ export default function InformeColaboradores() {
                                 </div>
 
                                 {/* Pagination Container */}
-                                <div className="p-8 border-t border-white/5 bg-black/20 flex flex-col md:flex-row items-center justify-between gap-6">
+                                <div className="p-8 border-t border-[#333333] bg-[#000000]/20 flex flex-col md:flex-row items-center justify-between gap-6">
                                     <div className="flex items-center gap-4">
-                                        <div className="w-2 h-2 rounded-full bg-amber-500 animate-pulse"></div>
-                                        <span className="text-xs font-black text-gray-500 uppercase tracking-[0.2em]">
+                                        <div className="w-2 h-2 rounded-full bg-[#0071E3] animate-pulse"></div>
+                                        <span className="text-[10px] font-black text-[#86868B] uppercase tracking-[0.2em]">
                                             Mostrando {totalRows === 0 ? 0 : (page - 1) * pageSize + 1} – {Math.min(page * pageSize, totalRows)} de {totalRows}
                                         </span>
                                     </div>
@@ -689,17 +672,17 @@ export default function InformeColaboradores() {
                                         <button
                                             onClick={() => setPage(p => Math.max(1, p - 1))}
                                             disabled={page === 1}
-                                            className="px-6 py-3 bg-white/5 border border-white/10 rounded-2xl text-gray-400 hover:text-white hover:bg-white/10 disabled:opacity-20 disabled:cursor-not-allowed transition-all font-black text-xs uppercase tracking-widest flex items-center gap-2"
+                                            className="px-6 py-3 bg-transparent border border-[#F5F5F7] rounded-[8px] text-[#F5F5F7] hover:bg-[#F5F5F7]/10 disabled:opacity-20 disabled:cursor-not-allowed transition-all font-black text-[10px] uppercase tracking-widest flex items-center gap-2"
                                         >
                                             <ChevronLeft className="w-4 h-4" /> Anterior
                                         </button>
-                                        <div className="px-6 py-3 bg-white/5 rounded-2xl border border-white/10 text-amber-500 font-black text-xs">
+                                        <div className="px-6 py-3 bg-[#1D1D1F] rounded-[8px] border border-[#333333] text-[#0071E3] font-black text-xs">
                                             {page} / {Math.ceil(totalRows / pageSize) || 1}
                                         </div>
                                         <button
                                             onClick={() => setPage(p => Math.min(Math.ceil(totalRows / pageSize), p + 1))}
                                             disabled={page >= Math.ceil(totalRows / pageSize)}
-                                            className="px-6 py-3 bg-white/5 border border-white/10 rounded-2xl text-gray-400 hover:text-white hover:bg-white/10 disabled:opacity-20 disabled:cursor-not-allowed transition-all font-black text-xs uppercase tracking-widest flex items-center gap-2"
+                                            className="px-6 py-3 bg-transparent border border-[#F5F5F7] rounded-[8px] text-[#F5F5F7] hover:bg-[#F5F5F7]/10 disabled:opacity-20 disabled:cursor-not-allowed transition-all font-black text-[10px] uppercase tracking-widest flex items-center gap-2"
                                         >
                                             Siguiente <ChevronRight className="w-4 h-4" />
                                         </button>
@@ -713,30 +696,30 @@ export default function InformeColaboradores() {
 
             {/* Modal: Artículos del Colaborador */}
             {modalOpen && (
-                <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 sm:p-6 bg-black/80 backdrop-blur-md animate-in fade-in duration-300">
+                <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 sm:p-6 apple-blur animate-in fade-in duration-300">
                     <div className="absolute inset-0 z-[-1]" onClick={() => setModalOpen(false)}></div>
-                    <div className="relative bg-[#0F172A] border border-white/10 rounded-[2.5rem] w-full max-w-6xl max-h-[90vh] flex flex-col shadow-[0_0_100px_rgba(0,0,0,0.5)] overflow-hidden animate-in zoom-in-95 duration-300">
+                    <div className="relative bg-[#121212] border border-[#333333] rounded-[8px] w-full max-w-6xl max-h-[90vh] flex flex-col shadow-2xl overflow-hidden animate-in zoom-in-95 duration-300">
                         {/* Modal Header */}
-                        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between p-8 border-b border-white/5 bg-white/[0.02] gap-4">
+                        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between p-8 border-b border-[#333333] bg-black/20 gap-4">
                             <div className="flex items-center gap-5">
-                                <div className="w-14 h-14 rounded-2xl bg-amber-500/10 flex items-center justify-center text-amber-500">
+                                <div className="w-14 h-14 rounded-[8px] bg-black/40 flex items-center justify-center text-[#0071E3]">
                                     <Box className="w-8 h-8" />
                                 </div>
                                 <div>
-                                    <h3 className="text-2xl font-black text-white tracking-tight">Historial de Artículos</h3>
-                                    <p className="text-sm font-bold text-gray-400 mt-1 uppercase tracking-widest">{selectedColaborador?.nombre} • <span className="text-amber-500/70">{selectedColaborador?.id}</span></p>
+                                    <h3 className="text-2xl font-black text-[#F5F5F7] tracking-tight italic uppercase leading-none">Historial de Artículos</h3>
+                                    <p className="text-[10px] font-black text-[#86868B] mt-2 uppercase tracking-widest">{selectedColaborador?.nombre} • <span className="text-[#0071E3]">{selectedColaborador?.id}</span></p>
                                 </div>
                             </div>
                             <div className="flex items-center gap-3 w-full sm:w-auto">
                                 <button
                                     onClick={exportModalExcel}
-                                    className="flex-1 sm:flex-none inline-flex items-center justify-center gap-2 px-6 py-3 bg-emerald-500 text-black font-black rounded-xl hover:scale-105 active:scale-95 transition-all text-xs uppercase"
+                                    className="flex-1 sm:flex-none inline-flex items-center justify-center gap-2 px-6 py-3 bg-[#0071E3] text-white font-black rounded-[8px] hover:brightness-110 active:scale-95 transition-all text-[10px] uppercase tracking-widest"
                                 >
                                     <FileSpreadsheet className="w-4 h-4" /> EXCEL
                                 </button>
                                 <button
                                     onClick={() => setModalOpen(false)}
-                                    className="p-3 bg-white/5 hover:bg-white/10 text-gray-400 hover:text-white rounded-xl transition-all border border-white/10"
+                                    className="p-3 bg-transparent border border-[#F5F5F7]/30 text-[#86868B] hover:text-[#F5F5F7] rounded-[8px] transition-all hover:bg-white/5"
                                 >
                                     <X className="w-6 h-6" />
                                 </button>
@@ -744,17 +727,17 @@ export default function InformeColaboradores() {
                         </div>
 
                         {/* Modal Body */}
-                        <div className="flex-1 overflow-auto p-8 bg-[#0F172A]">
+                        <div className="flex-1 overflow-auto p-8 bg-[#121212]">
                             {modalLoading ? (
-                                <div className="flex flex-col items-center justify-center py-24 text-gray-500">
-                                    <div className="w-12 h-12 border-4 border-amber-500/20 border-t-amber-500 rounded-full animate-spin mb-6"></div>
-                                    <p className="font-black text-sm uppercase tracking-widest">Consultando Inventario...</p>
+                                <div className="flex flex-col items-center justify-center py-24 text-[#86868B]">
+                                    <Loader2 className="w-12 h-12 animate-spin text-[#0071E3] mb-6" />
+                                    <p className="font-black text-[10px] uppercase tracking-widest">Sincronizando Inventario...</p>
                                 </div>
                             ) : articulos.length === 0 && !modalFilterTipo ? (
-                                <div className="flex flex-col items-center justify-center py-24 text-gray-600 border-2 border-dashed border-white/5 rounded-[2rem] bg-white/[0.01]">
-                                    <Box className="w-16 h-16 opacity-20 mb-6" />
-                                    <p className="text-xl font-black text-gray-500">Sin Salidas Registradas</p>
-                                    <p className="text-sm font-medium mt-1">Este colaborador aún no ha retirado artículos.</p>
+                                <div className="flex flex-col items-center justify-center py-24 text-[#86868B] border border-dashed border-[#333333] rounded-[8px] bg-black/20">
+                                    <Box className="w-16 h-16 opacity-20 mb-6 text-[#86868B]" />
+                                    <p className="text-xl font-black text-[#F5F5F7] italic uppercase">Sin Salidas Registradas</p>
+                                    <p className="text-[10px] font-black uppercase tracking-widest mt-2">Este colaborador aún no ha retirado artículos.</p>
                                 </div>
                             ) : (
                                 <div className="space-y-8">
@@ -763,7 +746,7 @@ export default function InformeColaboradores() {
                                         <div className="flex flex-wrap items-center gap-3">
                                             <button
                                                 onClick={() => filterModalArticulos('')}
-                                                className={`px-4 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all ${!modalFilterTipo ? 'bg-amber-500 text-black' : 'bg-white/5 text-gray-400 hover:bg-white/10'}`}
+                                                className={`px-4 py-2 rounded-[8px] text-[10px] font-black uppercase tracking-widest transition-all ${!modalFilterTipo ? 'bg-[#0071E3] text-white' : 'bg-[#1D1D1F] border border-[#333333] text-[#86868B] hover:text-[#F5F5F7] hover:bg-white/5'}`}
                                             >
                                                 Todos
                                             </button>
@@ -771,65 +754,62 @@ export default function InformeColaboradores() {
                                                 <button
                                                     key={tipo}
                                                     onClick={() => filterModalArticulos(tipo)}
-                                                    className={`px-4 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all ${modalFilterTipo === tipo ? 'bg-amber-500 text-black' : 'bg-white/5 text-gray-400 hover:bg-white/10'}`}
+                                                    className={`px-4 py-2 rounded-[8px] text-[10px] font-black uppercase tracking-widest transition-all ${modalFilterTipo === tipo ? 'bg-[#0071E3] text-white' : 'bg-[#1D1D1F] border border-[#333333] text-[#86868B] hover:text-[#F5F5F7] hover:bg-white/5'}`}
                                                 >
                                                     {tipo}
                                                 </button>
                                             ))}
                                         </div>
 
-                                        <div className="p-4 px-6 bg-white/[0.03] border border-white/5 rounded-2xl flex items-center gap-8">
+                                        <div className="p-4 px-6 bg-[#1D1D1F] border border-[#333333] rounded-[8px] flex items-center gap-8">
                                             <div>
-                                                <p className="text-[10px] font-black text-gray-500 uppercase tracking-widest">Items Totales</p>
-                                                <p className="text-xl font-black text-white">{articulos.length}</p>
+                                                <p className="text-[9px] font-black text-[#86868B] uppercase tracking-widest leading-none mb-1">Items Totales</p>
+                                                <p className="text-xl font-black text-[#F5F5F7] italic leading-none">{articulos.length}</p>
                                             </div>
-                                            <div className="w-px h-8 bg-white/5"></div>
+                                            <div className="w-px h-8 bg-[#333333]"></div>
                                             <div>
-                                                <p className="text-[10px] font-black text-gray-500 uppercase tracking-widest">Inversión Total</p>
-                                                <p className="text-xl font-black text-emerald-400">₡{articulos.reduce((sum, item) => sum + item.subtotal, 0).toLocaleString()}</p>
+                                                <p className="text-[9px] font-black text-[#86868B] uppercase tracking-widest leading-none mb-1">Inversión Total</p>
+                                                <p className="text-xl font-black text-[#0071E3] italic leading-none">₡{articulos.reduce((sum, item) => sum + item.subtotal, 0).toLocaleString()}</p>
                                             </div>
                                         </div>
                                     </div>
 
                                     {/* Results Table */}
-                                    <div className="relative group/modal-table">
-                                        <div className="absolute -inset-1 bg-gradient-to-r from-amber-500/5 to-orange-500/5 rounded-2xl blur opacity-25"></div>
-                                        <div className="relative overflow-x-auto border border-white/10 rounded-2xl shadow-xl overflow-hidden">
-                                            <table className="w-full text-left border-collapse text-sm">
-                                                <thead>
-                                                    <tr className="bg-white/[0.02] border-b border-white/5 text-gray-500 text-[10px] font-black uppercase tracking-[0.2em]">
-                                                        <th className="p-4">Fecha</th>
-                                                        <th className="p-4">Categoría</th>
-                                                        <th className="p-4">ID</th>
-                                                        <th className="p-4">Descripción del Artículo</th>
-                                                        <th className="p-4 text-center">Cant.</th>
-                                                        <th className="p-4 text-right">Unitario</th>
-                                                        <th className="p-4 text-right">Subtotal</th>
+                                    <div className="relative overflow-x-auto border border-[#333333] rounded-[8px] shadow-xl overflow-hidden bg-black/20">
+                                        <table className="w-full text-left border-collapse text-sm">
+                                            <thead>
+                                                <tr className="bg-white/5 border-b border-[#333333] text-[#86868B] text-[9px] font-black uppercase tracking-widest">
+                                                    <th className="p-4">Fecha</th>
+                                                    <th className="p-4">Categoría</th>
+                                                    <th className="p-4">ID</th>
+                                                    <th className="p-4">Descripción del Artículo</th>
+                                                    <th className="p-4 text-center">Cant.</th>
+                                                    <th className="p-4 text-right">Unitario</th>
+                                                    <th className="p-4 text-right">Subtotal</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody className="divide-y divide-[#333333]/30">
+                                                {articulos.map((item, idx) => (
+                                                    <tr key={`${item.id_salida}-${idx}`} className="hover:bg-white/[0.04] transition-colors group/modal-row animate-in fade-in slide-in-from-top-1 duration-300">
+                                                        <td className="p-4 text-[#86868B] font-bold whitespace-nowrap text-xs">
+                                                            {new Date(item.fecha_salida).toLocaleDateString('es-ES')}
+                                                        </td>
+                                                        <td className="p-4">
+                                                            <span className="inline-flex px-2 py-1 rounded-[4px] bg-[#1D1D1F] text-[#86868B] text-[9px] font-black uppercase border border-[#333333]">
+                                                                {item.tipo_solicitud}
+                                                            </span>
+                                                        </td>
+                                                        <td className="p-4 font-mono text-xs text-[#0071E3]/50 font-black tracking-tight">{item.articulo}</td>
+                                                        <td className="p-4 font-black text-[#F5F5F7] group-hover/modal-row:text-[#0071E3] transition-colors text-xs uppercase italic">{item.nombre_articulo}</td>
+                                                        <td className="p-4 text-center font-black text-[#F5F5F7]">
+                                                            <span className="px-2 py-1 bg-[#1D1D1F] border border-[#333333] rounded-[4px] min-w-[30px] inline-block text-[10px] italic">{item.cantidad}</span>
+                                                        </td>
+                                                        <td className="p-4 text-right text-[#86868B] font-bold tracking-tighter text-xs">₡{item.precio_unitario.toLocaleString()}</td>
+                                                        <td className="p-4 text-right font-black text-[#0071E3] text-xs italic">₡{item.subtotal.toLocaleString()}</td>
                                                     </tr>
-                                                </thead>
-                                                <tbody className="divide-y divide-white/[0.03]">
-                                                    {articulos.map((item, idx) => (
-                                                        <tr key={`${item.id_salida}-${idx}`} className="hover:bg-white/[0.02] transition-colors group/modal-row animate-in fade-in slide-in-from-top-1 duration-300">
-                                                            <td className="p-4 text-gray-400 font-bold whitespace-nowrap">
-                                                                {new Date(item.fecha_salida).toLocaleDateString('es-ES')}
-                                                            </td>
-                                                            <td className="p-4">
-                                                                <span className="inline-flex px-2 py-1 rounded-lg bg-white/5 text-gray-300 text-[10px] font-black uppercase border border-white/5">
-                                                                    {item.tipo_solicitud}
-                                                                </span>
-                                                            </td>
-                                                            <td className="p-4 font-mono text-xs text-amber-500/50 font-black tracking-tight">{item.articulo}</td>
-                                                            <td className="p-4 font-black text-gray-200 group-hover/modal-row:text-white transition-colors">{item.nombre_articulo}</td>
-                                                            <td className="p-4 text-center font-black text-gray-300">
-                                                                <span className="px-2 py-1 bg-white/5 rounded-md min-w-[30px] inline-block">{item.cantidad}</span>
-                                                            </td>
-                                                            <td className="p-4 text-right text-gray-500 font-bold tracking-tighter">₡{item.precio_unitario.toLocaleString()}</td>
-                                                            <td className="p-4 text-right font-black text-emerald-400">₡{item.subtotal.toLocaleString()}</td>
-                                                        </tr>
-                                                    ))}
-                                                </tbody>
-                                            </table>
-                                        </div>
+                                                ))}
+                                            </tbody>
+                                        </table>
                                     </div>
                                 </div>
                             )}

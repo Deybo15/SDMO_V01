@@ -30,29 +30,25 @@ export default function FormSelect({
 }: FormSelectProps) {
     return (
         <div className="space-y-2">
-            <label className={`block text-[11px] font-black uppercase tracking-wider text-purple-400 opacity-80 ${required ? "after:content-['_*'] after:text-rose-500 after:font-bold" : ''}`}>
+            <label className={`block text-[11px] font-black uppercase tracking-wider text-[#86868B] ${required ? "after:content-['_*'] after:text-rose-500 after:font-bold" : ''}`}>
                 {label}
             </label>
             <div className="relative group/field">
-                {/* Visual Glow Effect */}
-                <div className="absolute -inset-1 bg-gradient-to-r from-purple-500/10 to-violet-500/10 rounded-xl blur opacity-0 group-hover/field:opacity-100 transition duration-500"></div>
-
                 <div
                     onClick={() => !disabled && !loading && !locked && onOpenSearch?.()}
                     className={cn(
-                        "relative w-full bg-[#1E293B]/40 backdrop-blur-xl border rounded-xl px-4 py-3.5 text-[#e4e6ea] transition-all flex items-center justify-between",
-                        (disabled || loading || locked) ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer group-hover/field:border-purple-500/40 group-hover/field:bg-white/5',
-                        locked ? 'border-purple-500/20 bg-purple-500/5' : 'border-white/10'
+                        "relative w-full bg-[#1D1D1F] border rounded-[8px] px-4 py-3.5 text-[#F5F5F7] transition-all flex items-center justify-between",
+                        (disabled || loading || locked) ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer hover:border-[#0071E3]/40 hover:bg-white/[0.02]',
+                        locked ? 'border-[#0071E3]/20 bg-[#0071E3]/5' : 'border-[#333333]'
                     )}
                 >
                     <div className="flex items-center gap-3 flex-1 min-w-0">
-                        {Icon && <Icon className={`w-4 h-4 ${value ? 'text-purple-400' : 'text-slate-500'}`} />}
-                        <span className={`truncate text-sm ${!value ? 'text-slate-500 font-medium' : 'text-white font-semibold'}`}>
+                        {Icon && <Icon className={`w-4 h-4 ${value ? 'text-[#0071E3]' : 'text-[#86868B]'}`} />}
+                        <span className={`truncate text-sm ${!value ? 'text-[#86868B] font-medium' : 'text-[#F5F5F7] font-semibold'}`}>
                             {loading ? 'Cargando datos...' : (value ? displayValue : placeholder)}
                         </span>
                     </div>
 
-                    {/* Action Group */}
                     <div className="flex items-center gap-2">
                         {value && !disabled && !loading && !locked && onClear && (
                             <button
@@ -60,23 +56,23 @@ export default function FormSelect({
                                     e.stopPropagation();
                                     onClear();
                                 }}
-                                className="p-1 px-2 hover:bg-white/10 rounded-lg transition-colors text-slate-500 hover:text-white flex items-center gap-1 border border-white/5 hover:border-white/10"
+                                className="p-1 px-2 bg-transparent border border-[#F5F5F7] text-[#F5F5F7] rounded-[8px] hover:bg-white/5 transition-all flex items-center gap-1"
                             >
-                                <X className="w-3.5 h-3.5" />
-                                <span className="text-[10px] font-black uppercase tracking-tighter">Limpiar</span>
+                                <X className="w-3 h-3" />
+                                <span className="text-[9px] font-black uppercase tracking-tighter">Limpiar</span>
                             </button>
                         )}
                         {locked && (
-                            <div className="flex items-center gap-1.5 px-2 py-1 bg-purple-500/10 border border-purple-500/20 rounded-lg">
-                                <Shield className="w-3 h-3 text-purple-400" />
-                                <span className="text-[9px] font-black text-purple-400 uppercase tracking-tighter">Asignado</span>
+                            <div className="flex items-center gap-1.5 px-2 py-1 bg-[#0071E3]/10 border border-[#0071E3]/20 rounded-[8px]">
+                                <Shield className="w-3 h-3 text-[#0071E3]" />
+                                <span className="text-[9px] font-black text-[#0071E3] uppercase tracking-tighter">Asignado</span>
                             </div>
                         )}
-                        <div className="w-px h-4 bg-white/10 mx-1"></div>
+                        <div className="w-px h-4 bg-[#333333] mx-1"></div>
                         <Search className={cn(
                             "w-4 h-4 transition-transform duration-300",
                             !locked && "group-hover/field:scale-110",
-                            (value || locked) ? 'text-purple-400' : 'text-slate-400'
+                            (value || locked) ? 'text-[#0071E3]' : 'text-[#86868B]'
                         )} />
                     </div>
                 </div>

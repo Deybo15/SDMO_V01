@@ -38,6 +38,7 @@ import {
 
 // Shared Components
 import { PageHeader } from '../components/ui/PageHeader';
+import { cn } from '../lib/utils';
 
 // Interfaces
 interface Salida {
@@ -318,8 +319,8 @@ export default function ConsultarSalidas() {
                 item.instalacion_municipal || '',
                 item.area_mantenimiento || '',
                 Number(item.cantidad_total || 0).toFixed(2),
-                formatearMoneda(item.costo_unitario || 0),
-                formatearMoneda(item.total_costo || 0)
+                formatearMoneda(item.costo_unitario || 0).replace('₡', 'CRC '),
+                formatearMoneda(item.total_costo || 0).replace('₡', 'CRC ')
             ]);
 
             autoTable(doc, {
@@ -327,8 +328,8 @@ export default function ConsultarSalidas() {
                 body: filas,
                 startY: 50,
                 styles: { fontSize: 7, cellPadding: 2 },
-                headStyles: { fillColor: [245, 158, 11], textColor: 0, fontStyle: 'bold' }, // Amber accent
-                alternateRowStyles: { fillColor: [250, 250, 250] },
+                headStyles: { fillColor: [0, 113, 227], textColor: 255, fontStyle: 'bold' }, // Apple Blue accent
+                alternateRowStyles: { fillColor: [18, 18, 18] },
             });
 
             doc.save(`resumen_salidas_${fechaDesde}_${fechaHasta}.pdf`);
@@ -365,69 +366,62 @@ export default function ConsultarSalidas() {
     };
 
     return (
-        <div className="min-h-screen bg-[#0f111a] text-slate-100 p-4 md:p-8 relative overflow-hidden">
-            {/* Ambient Effects */}
-            <div className="absolute top-0 left-0 w-full h-full overflow-hidden pointer-events-none -z-10">
-                <div className="absolute top-[10%] left-[-5%] w-[50%] h-[50%] bg-amber-500/5 rounded-full blur-[120px]" />
-                <div className="absolute bottom-[-10%] right-[-5%] w-[50%] h-[50%] bg-orange-500/5 rounded-full blur-[120px]" />
-            </div>
-
+        <div className="min-h-screen bg-[#000000] text-[#F5F5F7] p-4 md:p-8 relative overflow-hidden">
             <div className="max-w-7xl mx-auto space-y-8 relative z-10">
                 {/* Header */}
-                <div className="flex flex-col md:flex-row justify-between items-end gap-6 pb-2 border-b border-white/5">
+                <div className="flex flex-col md:flex-row justify-between items-end gap-6 pb-2 border-b border-[#333333]">
                     <div className="space-y-1">
-                        <PageHeader title="Historial de Salidas" icon={FileSearch} themeColor="amber" />
-                        <p className="text-slate-500 text-sm font-medium tracking-wide">
+                        <PageHeader title="Historial de Salidas" icon={FileSearch} themeColor="blue" />
+                        <p className="text-[#86868B] text-sm font-medium tracking-wide">
                             Consulta avanzada de movimientos por número de solicitud o resumen temporal.
                         </p>
                     </div>
                     <button
                         onClick={() => navigate(-1)}
-                        className="glass-button px-6 py-2.5 rounded-xl text-xs font-black uppercase tracking-widest flex items-center gap-2 text-slate-200"
+                        className="px-6 py-2.5 bg-transparent border border-[#333333] rounded-[8px] text-xs font-black uppercase tracking-widest flex items-center gap-2 text-[#F5F5F7] transition-all hover:bg-white/5"
                     >
-                        <ArrowLeft className="w-4 h-4 text-amber-500" />
+                        <ArrowLeft className="w-4 h-4 text-[#0071E3]" />
                         Regresar
                     </button>
                 </div>
 
                 {/* Status Float Messages */}
                 {statusMessage && (
-                    <div className={`fixed top-8 right-8 z-[100] px-6 py-5 rounded-2xl shadow-[0_20px_50px_rgba(0,0,0,0.5)] backdrop-blur-xl border animate-in slide-in-from-right-4 flex items-center gap-4
-                        ${statusMessage.type === 'success' ? 'bg-emerald-500/20 border-emerald-500/40 text-emerald-100' :
-                            statusMessage.type === 'error' ? 'bg-rose-500/20 border-rose-500/40 text-rose-100' :
-                                'bg-amber-500/20 border-amber-500/40 text-amber-100'
-                        }`}>
-                        <div className="p-2 rounded-xl bg-white/10 shrink-0">
+                    <div className={cn(
+                        "fixed top-8 right-8 z-[100] px-6 py-4 rounded-[8px] bg-[#121212] border border-[#333333] shadow-2xl flex items-center gap-4 animate-in slide-in-from-right-4",
+                        statusMessage.type === 'error' ? 'border-rose-500/50 text-rose-400' : 'border-[#0071E3]/50 text-white'
+                    )}>
+                        <div className="p-2 rounded-[4px] bg-white/5 shrink-0">
                             {statusMessage.type === 'error' ? <AlertCircle className="w-5 h-5 text-rose-400" /> :
-                                statusMessage.type === 'success' ? <CheckCircle2 className="w-5 h-5 text-emerald-400" /> :
-                                    <Info className="w-5 h-5 text-amber-400" />}
+                                statusMessage.type === 'success' ? <CheckCircle2 className="w-5 h-5 text-[#0071E3]" /> :
+                                    <Info className="w-5 h-5 text-[#0071E3]" />}
                         </div>
-                        <span className="font-black uppercase tracking-widest text-[11px] leading-relaxed">{statusMessage.message}</span>
-                        <button onClick={() => setStatusMessage(null)} className="ml-auto p-1 hover:bg-white/10 rounded-lg transition-colors">
-                            <X className="w-4 h-4 text-slate-500" />
+                        <span className="font-black uppercase tracking-widest text-[10px] leading-relaxed">{statusMessage.message}</span>
+                        <button onClick={() => setStatusMessage(null)} className="ml-auto p-1 hover:bg-white/5 rounded-[4px] transition-colors">
+                            <X className="w-4 h-4 text-[#86868B]" />
                         </button>
                     </div>
                 )}
 
                 {/* Filter Panel */}
-                <div className="glass-card p-8 bg-slate-900/40 relative group">
-                    <div className="absolute top-0 right-0 w-32 h-32 bg-amber-500/5 rounded-full blur-3xl -mr-16 -mt-16" />
+                <div className="bg-[#121212] p-8 border border-[#333333] rounded-[8px] relative group">
+                    <div className="absolute top-0 right-0 w-32 h-32 bg-[#0071E3]/5 rounded-full blur-3xl -mr-16 -mt-16" />
 
                     {/* Tabs Selector */}
                     <div className="flex justify-center mb-10">
-                        <div className="bg-slate-950/60 p-1.5 rounded-2xl border border-white/5 flex gap-2">
+                        <div className="bg-[#1D1D1F] p-1.5 rounded-[8px] border border-[#333333] flex gap-2">
                             <button
                                 onClick={() => { setActiveTab('solicitud'); setHasSearched(false); }}
-                                className={`px-8 py-3 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all flex items-center gap-3
-                                     ${activeTab === 'solicitud' ? 'bg-amber-500 text-black shadow-lg shadow-amber-900/40' : 'text-slate-500 hover:text-slate-300'}`}
+                                className={`px-8 py-3 rounded-[6px] text-[10px] font-black uppercase tracking-widest transition-all flex items-center gap-3
+                                     ${activeTab === 'solicitud' ? 'bg-[#0071E3] text-white shadow-lg shadow-[#0071E3]/20' : 'text-[#86868B] hover:text-[#F5F5F7]'}`}
                             >
                                 <FileText className="w-4 h-4" />
                                 Consulta por Solicitud
                             </button>
                             <button
                                 onClick={() => { setActiveTab('fecha'); setHasSearched(false); }}
-                                className={`px-8 py-3 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all flex items-center gap-3
-                                     ${activeTab === 'fecha' ? 'bg-amber-500 text-black shadow-lg shadow-amber-900/40' : 'text-slate-500 hover:text-slate-300'}`}
+                                className={`px-8 py-3 rounded-[6px] text-[10px] font-black uppercase tracking-widest transition-all flex items-center gap-3
+                                     ${activeTab === 'fecha' ? 'bg-[#0071E3] text-white shadow-lg shadow-[#0071E3]/20' : 'text-[#86868B] hover:text-[#F5F5F7]'}`}
                             >
                                 <Calendar className="w-4 h-4" />
                                 Resumen Diario
@@ -440,25 +434,25 @@ export default function ConsultarSalidas() {
                         <div className="max-w-3xl mx-auto space-y-6 animate-in fade-in zoom-in-95 duration-500">
                             <div className="text-center space-y-2 mb-8">
                                 <h3 className="text-xl font-black text-white italic uppercase tracking-tighter">Búsqueda Unitaria</h3>
-                                <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest">Ingrese el identificador único para desplegar el desglose de materiales.</p>
+                                <p className="text-[10px] font-black text-[#86868B] uppercase tracking-widest">Ingrese el identificador único para desplegar el desglose de materiales.</p>
                             </div>
 
                             <div className="flex flex-col md:flex-row gap-4">
                                 <div className="flex-1 relative group/input">
-                                    <Search className="absolute left-6 top-1/2 -translate-y-1/2 w-6 h-6 text-slate-600 group-focus-within/input:text-amber-500 transition-colors" />
+                                    <Search className="absolute left-6 top-1/2 -translate-y-1/2 w-6 h-6 text-[#333333] group-focus-within/input:text-[#0071E3] transition-colors" />
                                     <input
                                         type="text"
                                         placeholder="Número de Solicitud (Ej: 2025-000123)"
                                         value={solicitudInput}
                                         onChange={(e) => setSolicitudInput(e.target.value)}
                                         onKeyDown={(e) => e.key === 'Enter' && handleBuscarSolicitud()}
-                                        className="w-full h-16 bg-slate-950/60 border border-white/10 rounded-2xl pl-16 pr-6 text-xl text-white font-bold placeholder-slate-700 focus:outline-none focus:ring-4 focus:ring-amber-500/20 focus:border-amber-500/40 transition-all shadow-inner uppercase"
+                                        className="w-full h-16 bg-[#1D1D1F] border border-[#333333] rounded-[8px] pl-16 pr-6 text-xl text-white font-bold placeholder-[#333333] focus:outline-none focus:border-[#0071E3]/50 transition-all shadow-inner uppercase"
                                     />
                                 </div>
                                 <button
                                     onClick={handleBuscarSolicitud}
                                     disabled={loading}
-                                    className="h-16 px-10 bg-amber-600 hover:bg-amber-500 text-black font-black uppercase tracking-widest text-xs rounded-2xl shadow-xl shadow-amber-900/20 active:scale-95 transition-all flex items-center justify-center gap-3 disabled:opacity-50"
+                                    className="h-16 px-10 bg-[#0071E3] hover:bg-[#0077ED] text-white font-black uppercase tracking-widest text-xs rounded-[8px] shadow-xl shadow-[#0071E3]/20 active:scale-95 transition-all flex items-center justify-center gap-3 disabled:opacity-50"
                                 >
                                     {loading ? <Loader2 className="w-5 h-5 animate-spin" /> : <CalendarSearch className="w-5 h-5" />}
                                     Consultar
@@ -472,7 +466,7 @@ export default function ConsultarSalidas() {
                         <div className="max-w-5xl mx-auto space-y-8 animate-in fade-in zoom-in-95 duration-500">
                             <div className="text-center space-y-2 mb-6">
                                 <h3 className="text-xl font-black text-white italic uppercase tracking-tighter">Resumen Cronológico</h3>
-                                <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest">Generación masiva de consumos agrupados por artículo y ubicación.</p>
+                                <p className="text-[10px] font-black text-[#86868B] uppercase tracking-widest">Generación masiva de consumos agrupados por artículo y ubicación.</p>
                             </div>
 
                             {/* Quick Filters */}
@@ -481,7 +475,7 @@ export default function ConsultarSalidas() {
                                     <button
                                         key={f}
                                         onClick={() => applyQuickFilter(f as any)}
-                                        className="px-4 py-2 glass-button text-[9px] font-black uppercase tracking-widest text-slate-400 hover:text-amber-400 hover:border-amber-500/30 transition-all flex items-center gap-2 rounded-xl"
+                                        className="px-4 py-2 bg-transparent border border-[#333333] text-[9px] font-black uppercase tracking-widest text-[#86868B] hover:text-[#0071E3] hover:border-[#0071E3]/30 transition-all flex items-center gap-2 rounded-[8px]"
                                     >
                                         <Clock className="w-3 h-3" />
                                         {f === 'today' ? 'Hoy' : f === 'week' ? 'Esta Semana' : 'Este Mes'}
@@ -489,28 +483,28 @@ export default function ConsultarSalidas() {
                                 ))}
                             </div>
 
-                            <div className="grid grid-cols-1 md:grid-cols-12 gap-6 items-end bg-black/20 p-8 rounded-3xl border border-white/5 shadow-inner">
+                            <div className="grid grid-cols-1 md:grid-cols-12 gap-6 items-end bg-black/20 p-8 rounded-[8px] border border-[#333333] shadow-inner">
                                 <div className="md:col-span-4">
-                                    <label className="block text-[10px] font-black text-slate-500 uppercase tracking-[0.2em] mb-3 ml-1">Fecha Inicial</label>
+                                    <label className="block text-[10px] font-black text-[#86868B] uppercase tracking-[0.2em] mb-3 ml-1">Fecha Inicial</label>
                                     <div className="relative group/date">
-                                        <CalendarDays className="absolute left-5 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-600 group-focus-within/date:text-amber-500 transition-colors pointer-events-none" />
+                                        <CalendarDays className="absolute left-5 top-1/2 -translate-y-1/2 w-5 h-5 text-[#333333] group-focus-within/date:text-[#0071E3] transition-colors pointer-events-none" />
                                         <input
                                             type="date"
                                             value={fechaDesde}
                                             onChange={(e) => setFechaDesde(e.target.value)}
-                                            className="w-full h-14 bg-slate-950/60 border border-white/10 rounded-2xl pl-14 pr-4 font-bold text-white focus:outline-none focus:ring-2 focus:ring-amber-500/30 transition-all [color-scheme:dark]"
+                                            className="w-full h-14 bg-[#1D1D1F] border border-[#333333] rounded-[8px] pl-14 pr-4 font-bold text-white focus:outline-none focus:ring-2 focus:ring-[#0071E3]/30 transition-all [color-scheme:dark]"
                                         />
                                     </div>
                                 </div>
                                 <div className="md:col-span-4">
-                                    <label className="block text-[10px] font-black text-slate-500 uppercase tracking-[0.2em] mb-3 ml-1">Fecha Final</label>
+                                    <label className="block text-[10px] font-black text-[#86868B] uppercase tracking-[0.2em] mb-3 ml-1">Fecha Final</label>
                                     <div className="relative group/date">
-                                        <CalendarCheck className="absolute left-5 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-600 group-focus-within/date:text-amber-500 transition-colors pointer-events-none" />
+                                        <CalendarCheck className="absolute left-5 top-1/2 -translate-y-1/2 w-5 h-5 text-[#333333] group-focus-within/date:text-[#0071E3] transition-colors pointer-events-none" />
                                         <input
                                             type="date"
                                             value={fechaHasta}
                                             onChange={(e) => setFechaHasta(e.target.value)}
-                                            className="w-full h-14 bg-slate-950/60 border border-white/10 rounded-2xl pl-14 pr-4 font-bold text-white focus:outline-none focus:ring-2 focus:ring-amber-500/30 transition-all [color-scheme:dark]"
+                                            className="w-full h-14 bg-[#1D1D1F] border border-[#333333] rounded-[8px] pl-14 pr-4 font-bold text-white focus:outline-none focus:ring-2 focus:ring-[#0071E3]/30 transition-all [color-scheme:dark]"
                                         />
                                     </div>
                                 </div>
@@ -518,7 +512,7 @@ export default function ConsultarSalidas() {
                                     <button
                                         onClick={handleBuscarResumen}
                                         disabled={loading}
-                                        className="flex-1 h-14 bg-amber-600 hover:bg-amber-500 text-black font-black uppercase tracking-widest text-xs rounded-2xl shadow-xl shadow-amber-900/20 active:scale-95 transition-all flex items-center justify-center gap-2"
+                                        className="flex-1 h-14 bg-[#0071E3] hover:bg-[#0077ED] text-white font-black uppercase tracking-widest text-xs rounded-[8px] shadow-xl shadow-[#0071E3]/20 active:scale-95 transition-all flex items-center justify-center gap-2"
                                     >
                                         {loading ? <Loader2 className="w-5 h-5 animate-spin" /> : <Search className="w-5 h-5" />}
                                         Consultar
@@ -527,7 +521,7 @@ export default function ConsultarSalidas() {
                                         <button
                                             onClick={generarPDF}
                                             disabled={resumen.length === 0}
-                                            className="w-14 h-14 glass-button rounded-2xl flex items-center justify-center text-slate-300 hover:text-amber-400 hover:border-amber-500/30 transition-all disabled:opacity-20"
+                                            className="w-14 h-14 bg-transparent border border-[#333333] rounded-[8px] flex items-center justify-center text-[#86868B] hover:text-[#0071E3] hover:border-[#0071E3]/30 transition-all disabled:opacity-20"
                                             title="Generar PDF"
                                         >
                                             <Download className="w-5 h-5" />
@@ -535,7 +529,7 @@ export default function ConsultarSalidas() {
                                         <button
                                             onClick={generarExcel}
                                             disabled={resumen.length === 0}
-                                            className="w-14 h-14 glass-button rounded-2xl flex items-center justify-center text-slate-300 hover:text-emerald-400 hover:border-emerald-500/50 transition-all disabled:opacity-20"
+                                            className="w-14 h-14 bg-transparent border border-[#333333] rounded-[8px] flex items-center justify-center text-[#86868B] hover:text-[#0071E3] hover:border-[#0071E3]/30 transition-all disabled:opacity-20"
                                             title="Exportar Excel"
                                         >
                                             <FileSpreadsheet className="w-5 h-5" />
@@ -551,33 +545,33 @@ export default function ConsultarSalidas() {
                 {!hasSearched ? (
                     <div className="py-40 flex flex-col items-center justify-center text-center group animate-in fade-in zoom-in duration-700">
                         <div className="relative mb-10">
-                            <div className="absolute inset-0 bg-amber-500/10 rounded-full blur-3xl scale-150 group-hover:scale-200 transition-transform duration-1000" />
-                            <div className="w-32 h-32 glass-card rounded-[3rem] flex items-center justify-center relative z-10 border-white/10 group-hover:rotate-6 transition-all duration-700">
-                                <FileSearch className="w-16 h-16 text-slate-800" />
+                            <div className="absolute inset-0 bg-[#0071E3]/5 rounded-full blur-3xl scale-150 group-hover:scale-200 transition-transform duration-1000" />
+                            <div className="w-32 h-32 bg-[#121212] border border-[#333333] rounded-[8px] flex items-center justify-center relative z-10 group-hover:rotate-6 transition-all duration-700">
+                                <FileSearch className="w-16 h-16 text-[#333333]" />
                             </div>
                         </div>
-                        <h3 className="text-3xl font-black text-slate-700 uppercase italic tracking-tighter">Sin Datos Consultados</h3>
-                        <p className="text-slate-600 mt-3 max-w-sm mx-auto font-medium text-sm leading-relaxed tracking-wide">
+                        <h3 className="text-3xl font-black text-[#F5F5F7] uppercase italic tracking-tighter opacity-20">Sin Datos Consultados</h3>
+                        <p className="text-[#86868B] mt-3 max-w-sm mx-auto font-medium text-sm leading-relaxed tracking-wide">
                             Seleccione el método de búsqueda y aplique los filtros necesarios para desplegar el historial de movimientos.
                         </p>
                     </div>
                 ) : loading ? (
                     <div className="py-40 flex flex-col items-center justify-center space-y-6">
-                        <Loader2 className="w-16 h-16 animate-spin text-amber-500" />
-                        <p className="text-[10px] font-black uppercase tracking-[0.3em] text-white/50 animate-pulse">Recuperando registros del servidor...</p>
+                        <Loader2 className="w-16 h-16 animate-spin text-[#0071E3]" />
+                        <p className="text-[10px] font-black uppercase tracking-[0.3em] text-[#86868B] animate-pulse">Recuperando registros del servidor...</p>
                     </div>
                 ) : (
                     <div className="space-y-8 animate-in fade-in duration-700">
                         {/* Summary Stats Banner */}
                         {(salidas.length > 0 || resumen.length > 0) && (
-                            <div className="glass-card p-6 bg-slate-900/60 border-l-4 border-amber-500/50 flex flex-col md:flex-row items-center justify-between gap-6 overflow-hidden relative group">
-                                <div className="absolute inset-0 bg-gradient-to-r from-amber-500/[0.03] to-transparent pointer-events-none" />
+                            <div className="bg-[#121212] p-6 border border-[#333333] border-l-4 border-l-[#0071E3] rounded-[8px] flex flex-col md:flex-row items-center justify-between gap-6 overflow-hidden relative group">
+                                <div className="absolute inset-0 bg-gradient-to-r from-[#0071E3]/[0.03] to-transparent pointer-events-none" />
                                 <div className="flex items-center gap-6">
-                                    <div className="p-4 rounded-2xl bg-amber-500/10 border border-amber-500/20">
-                                        <Info className="w-6 h-6 text-amber-500" />
+                                    <div className="p-4 rounded-[8px] bg-[#1D1D1F] border border-[#333333]">
+                                        <Info className="w-6 h-6 text-[#0071E3]" />
                                     </div>
                                     <div className="space-y-1">
-                                        <h4 className="text-[10px] font-black text-amber-600 uppercase tracking-widest leading-none">Resultados de la Búsqueda</h4>
+                                        <h4 className="text-[10px] font-black text-[#86868B] uppercase tracking-widest leading-none">Resultados de la Búsqueda</h4>
                                         <p className="text-lg font-black text-white italic truncate uppercase">
                                             {activeTab === 'solicitud'
                                                 ? `${salidas.length} Salidas Localizadas • Solicitud: ${solicitudInput}`
@@ -588,8 +582,8 @@ export default function ConsultarSalidas() {
                                 </div>
                                 <div className="flex items-center gap-8 md:pr-4">
                                     <div className="text-right">
-                                        <span className="text-[9px] font-black text-slate-500 uppercase tracking-widest block mb-1">Monto Total Consultas</span>
-                                        <p className="text-3xl font-black text-amber-400 italic leading-none font-mono">
+                                        <span className="text-[9px] font-black text-[#86868B] uppercase tracking-widest block mb-1">Monto Total Consultas</span>
+                                        <p className="text-3xl font-black text-[#0071E3] italic leading-none font-mono">
                                             {activeTab === 'solicitud'
                                                 ? formatearMoneda(salidas.reduce((sum, s) => sum + calcularTotalSalida(s), 0))
                                                 : formatearMoneda(resumen.reduce((sum, r) => sum + Number(r.total_costo || 0), 0))
@@ -602,10 +596,10 @@ export default function ConsultarSalidas() {
 
                         {/* Empty results */}
                         {((activeTab === 'solicitud' && salidas.length === 0) || (activeTab === 'fecha' && resumen.length === 0)) && (
-                            <div className="py-40 flex flex-col items-center justify-center text-center glass-card bg-slate-900/40">
-                                <FileX className="w-16 h-16 text-slate-700 mb-6" />
-                                <h3 className="text-xl font-bold text-slate-400 uppercase tracking-widest">No hay registros</h3>
-                                <p className="text-slate-600 mt-2 font-medium">No se localizó información que cumpla con los criterios especificados.</p>
+                            <div className="py-40 flex flex-col items-center justify-center text-center bg-[#121212] border border-[#333333] rounded-[8px]">
+                                <FileX className="w-16 h-16 text-[#333333] mb-6" />
+                                <h3 className="text-xl font-bold text-[#86868B] uppercase tracking-widest">No hay registros</h3>
+                                <p className="text-[#333333] mt-2 font-black uppercase text-[10px]">No se localizó información que cumpla con los criterios especificados.</p>
                             </div>
                         )}
 
@@ -617,24 +611,24 @@ export default function ConsultarSalidas() {
                                     const isExpanded = expandedSalidas.includes(salida.id_salida);
 
                                     return (
-                                        <div key={salida.id_salida} className={`glass-card overflow-hidden bg-slate-900/40 border border-white/5 transition-all duration-300 ${isExpanded ? 'border-amber-500/20 shadow-2xl' : 'hover:border-white/10'}`}>
+                                        <div key={salida.id_salida} className={`bg-[#121212] border border-[#333333] rounded-[8px] overflow-hidden transition-all duration-300 ${isExpanded ? 'border-[#0071E3]/30 shadow-2xl' : 'hover:border-[#333333]/60'}`}>
                                             <div className="p-8 flex flex-col lg:flex-row items-start lg:items-center justify-between gap-8">
                                                 <div className="flex items-center gap-6">
-                                                    <div className="w-16 h-16 rounded-[1.5rem] bg-slate-950/60 border border-white/10 flex items-center justify-center text-slate-500 group-hover:text-amber-500 transition-colors">
+                                                    <div className="w-16 h-16 rounded-[4px] bg-[#1D1D1F] border border-[#333333] flex items-center justify-center text-[#333333] group-hover:text-[#0071E3] transition-colors">
                                                         <Package className="w-8 h-8" />
                                                     </div>
                                                     <div className="space-y-1">
                                                         <div className="flex items-center gap-3">
-                                                            <span className="text-[10px] font-black text-slate-500 uppercase tracking-widest leading-none">ID Salida</span>
+                                                            <span className="text-[10px] font-black text-[#86868B] uppercase tracking-widest leading-none">ID Salida</span>
                                                             {salida.finalizada ? (
-                                                                <div className="flex items-center gap-1.5 px-2 py-0.5 bg-emerald-500/10 border border-emerald-500/20 rounded-md">
-                                                                    <CheckCircle className="w-3 h-3 text-emerald-500" />
-                                                                    <span className="text-[8px] font-black text-emerald-500 uppercase tracking-widest">Finalizada</span>
+                                                                <div className="flex items-center gap-1.5 px-2 py-0.5 bg-[#0071E3]/10 border border-[#0071E3]/20 rounded-[4px]">
+                                                                    <CheckCircle className="w-3 h-3 text-[#0071E3]" />
+                                                                    <span className="text-[8px] font-black text-[#0071E3] uppercase tracking-widest">Finalizada</span>
                                                                 </div>
                                                             ) : (
-                                                                <div className="flex items-center gap-1.5 px-2 py-0.5 bg-amber-500/10 border border-amber-500/20 rounded-md">
-                                                                    <Clock className="w-3 h-3 text-amber-500" />
-                                                                    <span className="text-[8px] font-black text-amber-500 uppercase tracking-widest">Pendiente</span>
+                                                                <div className="flex items-center gap-1.5 px-2 py-0.5 bg-rose-500/10 border border-rose-500/20 rounded-[4px]">
+                                                                    <Clock className="w-3 h-3 text-rose-500" />
+                                                                    <span className="text-[8px] font-black text-rose-500 uppercase tracking-widest">Pendiente</span>
                                                                 </div>
                                                             )}
                                                         </div>
@@ -644,23 +638,23 @@ export default function ConsultarSalidas() {
 
                                                 <div className="grid grid-cols-2 md:grid-cols-4 gap-x-12 gap-y-4">
                                                     <div>
-                                                        <span className="text-[9px] font-black text-slate-500 uppercase tracking-widest block mb-1">Fecha</span>
-                                                        <p className="font-bold text-slate-200 text-sm">{formatDate(salida.fecha_salida)}</p>
+                                                        <span className="text-[9px] font-black text-[#86868B] uppercase tracking-widest block mb-1">Fecha</span>
+                                                        <p className="font-bold text-[#F5F5F7] text-sm">{formatDate(salida.fecha_salida)}</p>
                                                     </div>
                                                     <div>
-                                                        <span className="text-[9px] font-black text-slate-500 uppercase tracking-widest block mb-1">Contenido</span>
-                                                        <p className="font-bold text-slate-200 text-sm">{salida.dato_salida_13?.length || 0} Líneas</p>
+                                                        <span className="text-[9px] font-black text-[#86868B] uppercase tracking-widest block mb-1">Contenido</span>
+                                                        <p className="font-bold text-[#F5F5F7] text-sm">{salida.dato_salida_13?.length || 0} Líneas</p>
                                                     </div>
                                                     <div className="col-span-2">
-                                                        <span className="text-[9px] font-black text-slate-500 uppercase tracking-widest block mb-1">Monto de Salida</span>
+                                                        <span className="text-[9px] font-black text-[#86868B] uppercase tracking-widest block mb-1">Monto de Salida</span>
                                                         <p className="font-black text-white text-xl font-mono">{formatearMoneda(totalSalida)}</p>
                                                     </div>
                                                 </div>
 
                                                 <button
                                                     onClick={() => toggleSalidaDetails(salida.id_salida)}
-                                                    className={`px-6 py-3 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all flex items-center gap-3
-                                                         ${isExpanded ? 'bg-amber-500 text-black shadow-lg shadow-amber-900/40' : 'glass-button text-slate-300'}`}
+                                                    className={`px-6 py-3 rounded-[8px] text-[10px] font-black uppercase tracking-widest transition-all flex items-center gap-3
+                                                         ${isExpanded ? 'bg-[#0071E3] text-white shadow-lg shadow-[#0071E3]/20' : 'bg-transparent border border-[#333333] text-[#F5F5F7] hover:bg-white/5'}`}
                                                 >
                                                     {isExpanded ? 'Cerrar Desglose' : 'Ver Desglose'}
                                                     <ChevronDown className={`w-4 h-4 transition-transform duration-300 ${isExpanded ? 'rotate-180' : ''}`} />
@@ -668,38 +662,38 @@ export default function ConsultarSalidas() {
                                             </div>
 
                                             {isExpanded && (
-                                                <div className="px-8 pb-8 pt-4 bg-black/20 border-t border-white/5 animate-in slide-in-from-top-4 duration-500">
-                                                    <div className="overflow-x-auto rounded-2xl border border-white/5 bg-slate-900/40">
+                                                <div className="px-8 pb-8 pt-4 bg-black/20 border-t border-[#333333] animate-in slide-in-from-top-4 duration-500">
+                                                    <div className="overflow-x-auto rounded-[8px] border border-[#333333] bg-[#1D1D1F]">
                                                         <table className="w-full text-left border-collapse">
                                                             <thead>
-                                                                <tr className="bg-slate-950/80 text-white text-[9px] font-black uppercase tracking-[0.2em] border-b border-white/5">
+                                                                <tr className="bg-[#121212] text-white text-[9px] font-black uppercase tracking-[0.2em] border-b border-[#333333]">
                                                                     <th className="p-5">Código Art.</th>
                                                                     <th className="p-5">Descripción Detallada</th>
                                                                     <th className="p-5 text-right">Cantidad</th>
                                                                     <th className="p-5 text-right">Subtotal</th>
                                                                 </tr>
                                                             </thead>
-                                                            <tbody className="divide-y divide-white/[0.03]">
+                                                            <tbody className="divide-y divide-[#333333]">
                                                                 {salida.dato_salida_13?.map((item, idx) => (
                                                                     <tr key={idx} className="hover:bg-white/[0.02] transition-colors group h-14">
                                                                         <td className="p-5">
-                                                                            <span className="font-mono text-xs font-black text-amber-500/80 group-hover:text-amber-400 transition-colors">{item.articulo}</span>
+                                                                            <span className="font-mono text-xs font-black text-[#0071E3] group-hover:text-[#0077ED] transition-colors">{item.articulo}</span>
                                                                         </td>
                                                                         <td className="p-5">
-                                                                            <p className="text-slate-300 font-bold text-xs uppercase italic">{item.articulo_01?.nombre_articulo}</p>
+                                                                            <p className="text-[#F5F5F7] font-bold text-xs uppercase italic">{item.articulo_01?.nombre_articulo}</p>
                                                                         </td>
                                                                         <td className="p-5 text-right">
                                                                             <span className="text-sm font-black text-white font-mono">{item.cantidad.toLocaleString()}</span>
                                                                         </td>
                                                                         <td className="p-5 text-right">
-                                                                            <span className="text-sm font-black text-slate-200 font-mono">{formatearMoneda(item.subtotal)}</span>
+                                                                            <span className="text-sm font-black text-[#86868B] font-mono">{formatearMoneda(item.subtotal)}</span>
                                                                         </td>
                                                                     </tr>
                                                                 ))}
                                                             </tbody>
                                                             <tfoot>
-                                                                <tr className="bg-amber-500/5">
-                                                                    <td colSpan={3} className="p-6 text-right font-black text-slate-400 uppercase tracking-widest text-[10px]">Total Acumulado de Salida</td>
+                                                                <tr className="bg-[#0071E3]/5">
+                                                                    <td colSpan={3} className="p-6 text-right font-black text-[#86868B] uppercase tracking-widest text-[10px]">Total Acumulado de Salida</td>
                                                                     <td className="p-6 text-right">
                                                                         <span className="text-2xl font-black text-white italic font-mono">{formatearMoneda(totalSalida)}</span>
                                                                     </td>
@@ -719,24 +713,24 @@ export default function ConsultarSalidas() {
                         {activeTab === 'fecha' && resumen.length > 0 && (
                             <div className="space-y-6">
                                 <div className="flex items-center justify-between px-2">
-                                    <h3 className="text-xs font-black text-slate-500 uppercase tracking-[0.3em] flex items-center gap-3">
-                                        <Filter className="w-5 h-5 text-amber-500" />
+                                    <h3 className="text-xs font-black text-[#86868B] uppercase tracking-[0.3em] flex items-center gap-3">
+                                        <Filter className="w-5 h-5 text-[#0071E3]" />
                                         Matriz de Resumen Consolidada
                                     </h3>
                                     <div className="flex items-center gap-4">
-                                        <span className="text-[9px] font-black text-slate-600 uppercase tracking-widest">Registros: {resumen.length}</span>
-                                        <div className="w-1 h-1 rounded-full bg-slate-800" />
-                                        <span className="text-[9px] font-black text-amber-500 uppercase tracking-widest">
+                                        <span className="text-[9px] font-black text-[#86868B] uppercase tracking-widest">Registros: {resumen.length}</span>
+                                        <div className="w-1.5 h-1.5 rounded-full bg-[#333333]" />
+                                        <span className="text-[9px] font-black text-[#0071E3] uppercase tracking-widest">
                                             {sortConfig ? `Orden x ${sortConfig.key} (${sortConfig.direction})` : 'Carga Predeterminada'}
                                         </span>
                                     </div>
                                 </div>
 
-                                <div className="glass-card overflow-hidden bg-slate-900/40 border border-white/5">
+                                <div className="bg-[#121212] border border-[#333333] rounded-[8px] overflow-hidden">
                                     <div className="overflow-x-auto">
                                         <table className="w-full text-left border-collapse">
                                             <thead>
-                                                <tr className="bg-slate-950/80 text-white text-[9px] font-black uppercase tracking-[0.2em] border-b border-white/5">
+                                                <tr className="bg-[#1D1D1F] text-white text-[9px] font-black uppercase tracking-[0.2em] border-b border-[#333333]">
                                                     {[
                                                         { key: 'fecha', label: 'Fecha' },
                                                         { key: 'codigo_articulo', label: 'Código' },
@@ -751,15 +745,15 @@ export default function ConsultarSalidas() {
                                                         <th
                                                             key={col.key}
                                                             onClick={() => handleSort(col.key as keyof ResumenDiario)}
-                                                            className={`px-5 py-6 font-black select-none cursor-pointer group hover:bg-white/[0.03] transition-colors ${col.align === 'right' ? 'text-right' : 'text-left'}`}
+                                                            className={`px-3 py-6 font-black select-none cursor-pointer group hover:bg-white/[0.03] transition-colors ${col.align === 'right' ? 'text-right' : 'text-left'}`}
                                                         >
                                                             <div className={`flex items-center gap-1.5 ${col.align === 'right' ? 'justify-end' : 'justify-start'}`}>
-                                                                <span>{col.label}</span>
-                                                                <div className="text-amber-500/20 group-hover:text-amber-500 transition-colors">
+                                                                <span className="whitespace-nowrap">{col.label}</span>
+                                                                <div className="text-[#0071E3]/20 group-hover:text-[#0071E3] transition-colors shrink-0">
                                                                     {sortConfig?.key === col.key ? (
-                                                                        sortConfig.direction === 'asc' ? <ArrowUp className="w-3 h-3" /> : <ArrowDown className="w-3 h-3" />
+                                                                        sortConfig.direction === 'asc' ? <ArrowUp className="w-2.5 h-2.5" /> : <ArrowDown className="w-2.5 h-2.5" />
                                                                     ) : (
-                                                                        <ArrowUpDown className="w-3 h-3" />
+                                                                        <ArrowUpDown className="w-2.5 h-2.5" />
                                                                     )}
                                                                 </div>
                                                             </div>
@@ -767,39 +761,39 @@ export default function ConsultarSalidas() {
                                                     ))}
                                                 </tr>
                                             </thead>
-                                            <tbody className="divide-y divide-white/[0.03]">
+                                            <tbody className="divide-y divide-[#333333]">
                                                 {sortedResumen.map((item, idx) => (
                                                     <tr key={idx} className="hover:bg-white/[0.02] transition-all duration-200 group h-16">
-                                                        <td className="p-5">
-                                                            <span className="font-bold text-slate-200 text-xs block min-w-[70px]">{formatDate(item.fecha)}</span>
+                                                        <td className="px-3 py-4">
+                                                            <span className="font-bold text-[#F5F5F7] text-[10px] block whitespace-nowrap">{formatDate(item.fecha)}</span>
                                                         </td>
-                                                        <td className="p-5">
-                                                            <span className="font-mono text-[10px] font-black text-amber-500/80 group-hover:text-amber-400 transition-colors">{item.codigo_articulo}</span>
+                                                        <td className="px-3 py-4">
+                                                            <span className="font-mono text-[9px] font-black text-[#0071E3] group-hover:text-[#0077ED] transition-colors whitespace-nowrap">{item.codigo_articulo}</span>
                                                         </td>
-                                                        <td className="p-5">
-                                                            <p className="text-white font-black text-[11px] uppercase italic leading-tight max-w-[200px] truncate" title={item.nombre_articulo}>
+                                                        <td className="px-3 py-4">
+                                                            <p className="text-white font-black text-[10px] uppercase italic leading-tight max-w-[150px] truncate" title={item.nombre_articulo}>
                                                                 {item.nombre_articulo}
                                                             </p>
                                                         </td>
-                                                        <td className="p-5">
-                                                            <span className="text-[10px] font-black text-slate-400 font-mono">{item.numero_solicitud}</span>
+                                                        <td className="px-3 py-4">
+                                                            <span className="text-[10px] font-black text-[#86868B] font-mono whitespace-nowrap">{item.numero_solicitud}</span>
                                                         </td>
-                                                        <td className="p-5">
-                                                            <p className="text-slate-400 font-bold text-[10px] uppercase truncate max-w-[150px]" title={item.instalacion_municipal}>
+                                                        <td className="px-3 py-4">
+                                                            <p className="text-[#86868B] font-bold text-[9px] uppercase truncate max-w-[100px]" title={item.instalacion_municipal}>
                                                                 {item.instalacion_municipal || 'N/A'}
                                                             </p>
                                                         </td>
-                                                        <td className="p-5">
-                                                            <span className="text-[10px] font-black text-slate-500 uppercase tracking-tighter">{item.area_mantenimiento}</span>
+                                                        <td className="px-3 py-4">
+                                                            <span className="text-[9px] font-black text-[#86868B] uppercase tracking-tighter truncate max-w-[80px] block" title={item.area_mantenimiento}>{item.area_mantenimiento}</span>
                                                         </td>
-                                                        <td className="p-5 text-right">
-                                                            <span className="text-sm font-black text-white font-mono">{Number(item.cantidad_total || 0).toFixed(2)}</span>
+                                                        <td className="px-3 py-4 text-right">
+                                                            <span className="text-xs font-black text-white font-mono">{Number(item.cantidad_total || 0).toFixed(2)}</span>
                                                         </td>
-                                                        <td className="p-5 text-right">
-                                                            <span className="text-xs font-black text-slate-400 font-mono">{formatearMoneda(item.costo_unitario || 0)}</span>
+                                                        <td className="px-3 py-4 text-right">
+                                                            <span className="text-[10px] font-black text-[#86868B] font-mono whitespace-nowrap">{formatearMoneda(item.costo_unitario || 0)}</span>
                                                         </td>
-                                                        <td className="p-5 text-right">
-                                                            <span className="text-sm font-black text-amber-400 font-mono group-hover:scale-110 transition-transform block">{formatearMoneda(item.total_costo || 0)}</span>
+                                                        <td className="px-3 py-4 text-right">
+                                                            <span className="text-xs font-black text-[#0071E3] font-mono group-hover:scale-110 transition-transform block whitespace-nowrap">{formatearMoneda(item.total_costo || 0)}</span>
                                                         </td>
                                                     </tr>
                                                 ))}

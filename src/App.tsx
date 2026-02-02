@@ -10,7 +10,9 @@ import GenerarEtiqueta from './pages/GenerarEtiqueta';
 import Devoluciones from './pages/Devoluciones';
 import KardexDiario from './pages/KardexDiario';
 import ClienteInterno from './pages/ClienteInterno';
+import IngresarClienteInterno from './pages/IngresarClienteInterno';
 import ClienteExterno from './pages/ClienteExterno';
+import RegistrarArticulo from './pages/RegistrarArticulo';
 import OtrasSolicitudes from './pages/OtrasSolicitudes';
 import GestionInterna from './pages/GestionInterna';
 import Activos from './pages/Activos';
@@ -58,6 +60,7 @@ function App() {
                         <Route path="/" element={<MaintenanceDashboard />} />
                         <Route path="/articulos" element={<Articulos />} />
                         <Route path="/articulos/consultar-inventario" element={<ConsultarInventario />} />
+                        <Route path="/articulos/registrar-nuevo" element={<RegistrarArticulo />} />
                         <Route path="/articulos/escaner-qr" element={<EscanerQR />} />
                         <Route path="/articulos/consultar-salidas" element={<ConsultarSalidas />} />
                         <Route path="/articulos/kardex-diario" element={<KardexDiario />} />
@@ -78,6 +81,7 @@ function App() {
 
                             {/* Cliente Interno - Mutations */}
                             <Route path="/cliente-interno/ingresar" element={<IngresarSolicitud />} />
+                            <Route path="/cliente-interno/ingresar-cliente" element={<IngresarClienteInterno />} />
                             <Route path="/cliente-interno/realizar-salidas/formulario" element={<RealizarSalida />} />
 
                             {/* Cliente Externo - Mutations */}

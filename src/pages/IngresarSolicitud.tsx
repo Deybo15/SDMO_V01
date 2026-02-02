@@ -89,6 +89,7 @@ export default function IngresarSolicitud() {
     const [isCameraOpen, setIsCameraOpen] = useState(false);
     const [cameraStream, setCameraStream] = useState<MediaStream | null>(null);
     const [defaultProfessionalId, setDefaultProfessionalId] = useState<string>('');
+    const [isDragging, setIsDragging] = useState(false);
 
     const themeColor = 'blue';
 
@@ -175,6 +176,29 @@ export default function IngresarSolicitud() {
             const file = e.target.files[0];
             setImageFile(file);
             setImagePreview(URL.createObjectURL(file));
+        }
+    };
+
+    const handleDragOver = (e: React.DragEvent) => {
+        e.preventDefault();
+        setIsDragging(true);
+    };
+
+    const handleDragLeave = (e: React.DragEvent) => {
+        e.preventDefault();
+        setIsDragging(false);
+    };
+
+    const handleDrop = (e: React.DragEvent) => {
+        e.preventDefault();
+        setIsDragging(false);
+        const file = e.dataTransfer.files?.[0];
+        if (file && file.type.startsWith('image/')) {
+            setImageFile(file);
+            setImagePreview(URL.createObjectURL(file));
+            showNotification("Imagen cargada por arrastre", "success");
+        } else {
+            showNotification("Por favor, suelte un archivo de imagen válido", "error");
         }
     };
 
@@ -337,47 +361,42 @@ export default function IngresarSolicitud() {
             <div
                 onClick={locked ? undefined : onOpen}
                 className={cn(
-                    "group relative bg-[#1e2235]/40 border rounded-2xl p-4 transition-all flex items-center justify-between shadow-inner",
-                    locked ? "border-white/5 bg-black/20 cursor-not-allowed" : "border-white/10 cursor-pointer hover:bg-white/5 hover:border-purple-500/30"
+                    "group relative bg-[#1D1D1F] border rounded-[8px] p-5 transition-all flex items-center justify-between shadow-2xl",
+                    locked ? "border-[#333333] opacity-60 cursor-not-allowed" : "border-[#333333] cursor-pointer hover:border-[#0071E3]/50 active:scale-[0.98]"
                 )}
             >
                 <div className="flex items-center gap-4 min-w-0">
                     <div className={cn(
-                        "w-10 h-10 rounded-xl flex items-center justify-center shrink-0 border",
-                        locked ? "bg-slate-800 border-white/5" : "bg-blue-500/10 border-blue-500/10"
+                        "w-10 h-10 rounded-[6px] flex items-center justify-center shrink-0 border",
+                        locked ? "bg-[#121212] border-[#333333]" : "bg-[#0071E3]/10 border-[#0071E3]/20"
                     )}>
-                        <Icon className={cn("w-5 h-5 transition-transform", locked ? "text-slate-500" : "text-blue-400 group-hover:scale-110")} />
+                        <Icon className={cn("w-5 h-5 transition-transform", locked ? "text-slate-500" : "text-[#0071E3] group-hover:scale-110")} />
                     </div>
                     <div className="min-w-0">
                         <span className={cn(
-                            "block truncate font-bold tracking-tight",
-                            value ? 'text-white' : 'text-gray-600 italic text-sm'
+                            "block truncate font-bold tracking-tight text-sm",
+                            value ? 'text-[#F5F5F7]' : 'text-[#424245] italic'
                         )}>
                             {displayValue || 'Seleccionar...'}
                         </span>
                         {value && (
                             <span className={cn(
-                                "text-[9px] font-black uppercase tracking-tighter",
-                                locked ? "text-slate-600" : "text-blue-500/50"
+                                "text-[9px] font-black uppercase tracking-[0.1em]",
+                                locked ? "text-slate-600" : "text-[#0071E3]"
                             )}>
-                                {locked ? "Asignado automáticamente" : "Sincronizado"}
+                                {locked ? "Asignado automáticamente" : "Sincronizado con Base de Datos"}
                             </span>
                         )}
                     </div>
                 </div>
-                {!locked && <ChevronRight className="w-5 h-5 text-gray-700 group-hover:translate-x-1 transition-transform shrink-0" />}
+                {!locked && <ChevronRight className="w-5 h-5 text-[#424245] group-hover:translate-x-1 transition-transform shrink-0" />}
                 {locked && <Shield className="w-4 h-4 text-slate-700 shrink-0" />}
             </div>
         </div>
     );
 
     return (
-        <div className="min-h-screen bg-[#0f111a] p-4 md:p-8 relative">
-            {/* Ambient Background Elements */}
-            <div className="fixed inset-0 pointer-events-none overflow-hidden">
-                <div className="absolute top-[10%] left-[10%] w-[500px] h-[500px] bg-blue-500/10 rounded-full blur-[120px] animate-pulse" />
-                <div className="absolute bottom-[10%] right-[10%] w-[400px] h-[400px] bg-cyan-600/5 rounded-full blur-[100px]" />
-            </div>
+        <div className="min-h-screen bg-[#000000] p-4 md:p-8 relative text-[#F5F5F7]">
 
             <PageHeader
                 title="Nueva Solicitud"
@@ -402,24 +421,28 @@ export default function IngresarSolicitud() {
                 <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
                     {/* Main Form Section */}
                     <div className="lg:col-span-2 space-y-6">
-                        <div className="bg-[#1e2235] border border-white/10 rounded-[2.5rem] shadow-2xl p-6 md:p-8 space-y-8">
-                            <div className="flex items-center gap-3 mb-2">
-                                <Edit className="w-5 h-5 text-blue-400" />
-                                <h3 className="text-xl font-black text-white uppercase tracking-tight italic">Detalles del Requerimiento</h3>
+                        <div className="bg-[#121212] border border-[#333333] rounded-[8px] shadow-2xl p-6 md:p-8 md:p-12 space-y-10">
+                            <div className="space-y-1 flex items-center justify-between">
+                                <div className="space-y-1">
+                                    <h3 className="text-2xl font-black text-white tracking-tight uppercase italic">Detalles del Requerimiento</h3>
+                                    <p className="text-[10px] text-[#86868B] font-bold uppercase tracking-[0.2em]">Siga los lineamientos técnicos de reporte</p>
+                                </div>
+                                <div className="w-12 h-12 bg-[#0071E3]/10 rounded-[8px] flex items-center justify-center border border-[#0071E3]/20">
+                                    <Edit className="w-6 h-6 text-[#0071E3]" />
+                                </div>
                             </div>
 
                             {/* Descriptions */}
                             <div className="space-y-3">
-                                <label className="text-[10px] font-black uppercase tracking-widest ml-1 block opacity-60 after:content-['*'] after:text-rose-500 after:ml-1">
-                                    Descripción Técnica
+                                <label className="text-[10px] font-black uppercase tracking-widest ml-1 block text-[#86868B] after:content-['*'] after:text-rose-500 after:ml-1">
+                                    Descripción Técnica del Requerimiento
                                 </label>
                                 <div className="relative group/text">
-                                    <MessageSquare className="absolute left-5 top-5 w-5 h-5 text-gray-700 group-focus-within/text:text-purple-400 transition-colors" />
                                     <textarea
                                         value={formData.descripcion}
                                         onChange={(e) => setFormData(prev => ({ ...prev, descripcion: e.target.value }))}
-                                        className="w-full min-h-[160px] bg-black/30 border border-white/10 rounded-3xl py-5 pl-14 pr-6 text-white font-medium placeholder-gray-700 focus:outline-none focus:border-blue-500/50 transition-all shadow-inner resize-none leading-relaxed"
-                                        placeholder="Describa detalladamente el requerimiento o falla técnica..."
+                                        className="w-full min-h-[180px] bg-[#1D1D1F] border border-[#333333] rounded-[8px] p-6 text-white font-bold placeholder-[#333333] focus:outline-none focus:border-[#0071E3]/50 transition-all shadow-inner resize-none leading-relaxed"
+                                        placeholder="Describa detalladamente el requerimiento o falla técnica detectada..."
                                     />
                                 </div>
                             </div>
@@ -476,68 +499,85 @@ export default function IngresarSolicitud() {
                     {/* Side Actions Section */}
                     <div className="space-y-6">
                         {/* Evidence Upload Box */}
-                        <div className="bg-[#1e2235] border border-white/10 rounded-[2.5rem] shadow-2xl p-6 md:p-8 space-y-6">
+                        <div className="bg-[#121212] border border-[#333333] rounded-[8px] shadow-2xl p-6 md:p-8 space-y-6">
                             <div className="flex items-center gap-3">
-                                <Camera className="w-5 h-5 text-blue-400" />
+                                <Camera className="w-5 h-5 text-[#0071E3]" />
                                 <h3 className="text-xl font-black text-white uppercase tracking-tight italic">Evidencia</h3>
                             </div>
 
                             {imagePreview ? (
-                                <div className="relative group/preview aspect-square bg-black/40 rounded-3xl overflow-hidden border border-white/10 shadow-inner">
+                                <div className="relative group/preview aspect-square bg-[#1D1D1F] rounded-[8px] overflow-hidden border border-[#333333] shadow-inner">
                                     <img src={imagePreview} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700" alt="Evidencia" />
-                                    <div className="absolute inset-0 bg-black/60 opacity-0 group-hover/preview:opacity-100 transition-opacity flex flex-col items-center justify-center p-6 text-center">
+                                    <div className="absolute inset-0 bg-[#000000]/80 opacity-0 group-hover/preview:opacity-100 transition-opacity flex flex-col items-center justify-center p-6 text-center">
                                         <button
                                             onClick={handleRemoveImage}
-                                            className="w-14 h-14 rounded-full bg-rose-500 text-white flex items-center justify-center shadow-2xl hover:scale-110 active:scale-95 transition-all mb-4"
+                                            className="w-14 h-14 rounded-full bg-rose-600 text-white flex items-center justify-center shadow-2xl hover:scale-110 active:scale-95 transition-all mb-4"
                                         >
                                             <Trash2 className="w-6 h-6" />
                                         </button>
-                                        <p className="text-white text-xs font-black uppercase tracking-widest">Eliminar Fotografía</p>
+                                        <p className="text-white text-[10px] font-black uppercase tracking-widest">Eliminar Fotografía</p>
                                     </div>
                                 </div>
                             ) : (
                                 <div className="grid grid-cols-1 gap-4">
                                     <button
                                         onClick={startCamera}
-                                        className="h-32 rounded-3xl bg-black/30 border border-white/5 border-dashed hover:border-blue-500/40 hover:bg-blue-500/5 transition-all flex flex-col items-center justify-center gap-3 group/opt"
+                                        className="h-32 rounded-[8px] bg-[#1D1D1F] border border-[#333333] hover:border-[#0071E3]/40 hover:bg-[#0071E3]/5 transition-all flex flex-col items-center justify-center gap-3 group/opt"
                                     >
-                                        <div className="w-10 h-10 rounded-xl bg-blue-500/10 flex items-center justify-center text-blue-400 group-hover/opt:scale-110 transition-transform">
+                                        <div className="w-10 h-10 rounded-[6px] bg-[#0071E3]/10 flex items-center justify-center text-[#0071E3] group-hover/opt:scale-110 transition-transform">
                                             <Camera className="w-6 h-6" />
                                         </div>
-                                        <span className="text-[10px] font-black uppercase tracking-[0.2em] text-gray-600 group-hover/opt:text-blue-400">Tomar Foto</span>
+                                        <span className="text-[10px] font-black uppercase tracking-[0.2em] text-[#86868B] group-hover/opt:text-[#0071E3]">Tomar Foto</span>
                                     </button>
                                     <label
                                         htmlFor="file-upload"
-                                        className="h-32 rounded-3xl bg-black/30 border border-white/5 border-dashed hover:border-blue-500/40 hover:bg-blue-500/5 transition-all flex flex-col items-center justify-center gap-3 group/opt cursor-pointer"
+                                        onDragOver={handleDragOver}
+                                        onDragLeave={handleDragLeave}
+                                        onDrop={handleDrop}
+                                        className={cn(
+                                            "h-32 rounded-[8px] bg-[#1D1D1F] border transition-all flex flex-col items-center justify-center gap-3 group/opt cursor-pointer",
+                                            isDragging ? "border-[#0071E3] bg-[#0071E3]/10 scale-[1.02] shadow-2xl shadow-[#0071E3]/20" : "border-[#333333] hover:border-[#0071E3]/40 hover:bg-[#0071E3]/5"
+                                        )}
                                     >
                                         <input id="file-upload" type="file" className="hidden" onChange={handleImageSelect} accept="image/*" />
-                                        <div className="w-10 h-10 rounded-xl bg-blue-500/10 flex items-center justify-center text-blue-400 group-hover/opt:scale-110 transition-transform">
+                                        <div className={cn(
+                                            "w-10 h-10 rounded-[6px] flex items-center justify-center transition-transform group-hover/opt:scale-110",
+                                            isDragging ? "bg-[#0071E3] text-white" : "bg-[#0071E3]/10 text-[#0071E3]"
+                                        )}>
                                             <Upload className="w-6 h-6" />
                                         </div>
-                                        <span className="text-[10px] font-black uppercase tracking-[0.2em] text-gray-600 group-hover/opt:text-blue-400">Subir Archivo</span>
+                                        <span className={cn(
+                                            "text-[10px] font-black uppercase tracking-[0.2em] transition-colors",
+                                            isDragging ? "text-[#F5F5F7]" : "text-[#86868B] group-hover/opt:text-[#0071E3]"
+                                        )}>
+                                            {isDragging ? "¡Suéltalo aquí!" : "Subir Archivo"}
+                                        </span>
+                                        {!isDragging && <span className="text-[8px] font-bold text-[#424245] uppercase tracking-widest -mt-2">o arrastre imagen</span>}
                                     </label>
                                 </div>
                             )}
                         </div>
 
                         {/* Save Button Container */}
-                        <div className="bg-gradient-to-br from-blue-600 to-cyan-700 rounded-[2.5rem] p-8 shadow-2xl shadow-blue-900/40 relative overflow-hidden group">
-                            <Zap className="absolute -right-4 -top-4 w-32 h-32 text-white/5 -rotate-12 group-hover:scale-110 transition-transform duration-700" />
-
+                        <div className="bg-[#121212] border border-[#333333] rounded-[8px] p-8 shadow-2xl relative overflow-hidden group">
                             <div className="relative z-10 space-y-6">
                                 <div className="space-y-1">
                                     <h4 className="text-white font-black text-2xl uppercase tracking-tighter italic">Finalizar</h4>
-                                    <p className="text-blue-100 text-[10px] font-bold uppercase tracking-widest opacity-80">Asegúrese que los datos son correctos</p>
+                                    <p className="text-[#86868B] text-[10px] font-bold uppercase tracking-widest opacity-80">Asegúrese que los datos son correctos</p>
                                 </div>
 
                                 <button
                                     onClick={handleSave}
                                     disabled={saving || loading}
-                                    className="w-full py-5 bg-white text-blue-700 font-black text-xl rounded-2xl shadow-2xl hover:scale-[1.02] active:scale-95 transition-all flex items-center justify-center gap-3 disabled:opacity-50 uppercase tracking-tight"
+                                    className="w-full py-6 bg-[#0071E3] hover:bg-[#0077ED] text-white font-black text-xl rounded-[8px] shadow-2xl shadow-[#0071E3]/20 hover:scale-[1.02] active:scale-95 transition-all flex items-center justify-center gap-3 disabled:opacity-50 uppercase tracking-tight"
                                 >
                                     {saving ? <Loader2 className="w-7 h-7 animate-spin" /> : <Save className="w-7 h-7" />}
                                     Guardar STI
                                 </button>
+
+                                <p className="text-[9px] text-center text-[#424245] font-bold uppercase tracking-widest font-mono">
+                                    ID: {new Date().getTime().toString(16).toUpperCase()}
+                                </p>
                             </div>
                         </div>
                     </div>
@@ -546,20 +586,20 @@ export default function IngresarSolicitud() {
 
             {/* Premium Camera Modal */}
             {isCameraOpen && (
-                <div className="fixed inset-0 z-[200] bg-black/95 backdrop-blur-xl flex items-center justify-center p-4 animate-in fade-in duration-300">
-                    <div className="bg-[#1e2235] border border-white/10 rounded-[3rem] p-4 max-w-3xl w-full relative overflow-hidden shadow-[0_0_100px_rgba(168,85,247,0.2)]">
+                <div className="fixed inset-0 z-[200] bg-black/95 flex items-center justify-center p-4 animate-in fade-in duration-300">
+                    <div className="bg-[#121212] border border-[#333333] rounded-[8px] p-6 max-w-3xl w-full relative overflow-hidden shadow-3xl">
                         <div className="absolute top-8 left-8 z-10">
-                            <div className="px-4 py-2 bg-purple-500 text-white rounded-full flex items-center gap-3 shadow-2xl">
+                            <div className="px-4 py-2 bg-[#0071E3] text-white rounded-[4px] flex items-center gap-3 shadow-2xl">
                                 <span className="w-2 h-2 rounded-full bg-white animate-pulse" />
                                 <span className="text-[10px] font-black uppercase tracking-widest">Cámara Activa</span>
                             </div>
                         </div>
 
-                        <button onClick={stopCamera} className="absolute top-8 right-8 z-10 w-12 h-12 rounded-2xl bg-white/5 border border-white/10 flex items-center justify-center text-gray-400 hover:text-white transition-all backdrop-blur-md">
+                        <button onClick={stopCamera} className="absolute top-8 right-8 z-10 w-12 h-12 rounded-[8px] bg-[#1D1D1F] border border-[#333333] flex items-center justify-center text-[#86868B] hover:text-[#F5F5F7] hover:bg-white/5 transition-all">
                             <X className="w-6 h-6" />
                         </button>
 
-                        <div className="relative aspect-video bg-black rounded-[2rem] overflow-hidden mb-6 group">
+                        <div className="relative aspect-video bg-black rounded-[4px] overflow-hidden mb-8 group">
                             <video
                                 id="camera-video"
                                 autoPlay
@@ -567,23 +607,21 @@ export default function IngresarSolicitud() {
                                 ref={(video) => video && cameraStream && (video.srcObject = cameraStream)}
                                 className="w-full h-full object-cover"
                             />
-                            {/* Sci-Fi Overlay Markers */}
-                            <div className="absolute inset-0 pointer-events-none border-[30px] border-black/20">
-                                <div className="absolute top-10 left-10 w-12 h-12 border-t-4 border-l-4 border-purple-500/50 rounded-tl-2xl" />
-                                <div className="absolute top-10 right-10 w-12 h-12 border-t-4 border-r-4 border-purple-500/50 rounded-tr-2xl" />
-                                <div className="absolute bottom-10 left-10 w-12 h-12 border-b-4 border-l-4 border-purple-500/50 rounded-bl-2xl" />
-                                <div className="absolute bottom-10 right-10 w-12 h-12 border-b-4 border-r-4 border-purple-500/50 rounded-br-2xl" />
-                                <div className="absolute top-0 left-0 w-full h-0.5 bg-purple-500/20 shadow-[0_0_15px_rgba(168,85,247,0.5)] animate-scan-line-slow" />
+                            <div className="absolute inset-0 pointer-events-none border-[20px] border-black/10">
+                                <div className="absolute top-10 left-10 w-12 h-12 border-t-2 border-l-2 border-[#0071E3]/30" />
+                                <div className="absolute top-10 right-10 w-12 h-12 border-t-2 border-r-2 border-[#0071E3]/30" />
+                                <div className="absolute bottom-10 left-10 w-12 h-12 border-b-2 border-l-2 border-[#0071E3]/30" />
+                                <div className="absolute bottom-10 right-10 w-12 h-12 border-b-2 border-r-2 border-[#0071E3]/30" />
                             </div>
                         </div>
 
                         <div className="flex justify-center pb-4">
                             <button
                                 onClick={capturePhoto}
-                                className="w-24 h-24 rounded-full bg-white border-[8px] border-purple-500/20 flex items-center justify-center shadow-2xl hover:scale-110 active:scale-95 transition-all group/shot"
+                                className="w-20 h-20 rounded-full bg-white border-[6px] border-[#0071E3]/20 flex items-center justify-center shadow-2xl hover:scale-110 active:scale-95 transition-all group/shot"
                             >
-                                <div className="w-14 h-14 rounded-full bg-purple-600 flex items-center justify-center text-white group-hover/shot:scale-90 transition-transform">
-                                    <Camera className="w-8 h-8" />
+                                <div className="w-12 h-12 rounded-full bg-[#0071E3] flex items-center justify-center text-white group-hover/shot:scale-90 transition-transform">
+                                    <Camera className="w-6 h-6" />
                                 </div>
                             </button>
                         </div>

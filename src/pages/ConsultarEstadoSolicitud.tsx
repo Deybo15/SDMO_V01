@@ -13,103 +13,18 @@ import {
     ArrowUp,
     ArrowDown,
     Search,
-    X
+    X,
+    LayoutGrid,
+    ChevronLeft,
+    ChevronRight
 } from 'lucide-react';
+import { useQuery } from '@tanstack/react-query';
+import { PageHeader } from '../components/ui/PageHeader';
+import { cn } from '../lib/utils';
 
-// --- CUSTOM VIRTUAL LIST IMPLEMENTATION ---
-const VirtualList = ({
-    height,
-    width,
-    itemCount,
-    itemSize,
-    children,
-    onItemsRendered
-}: {
-    height: number;
-    width: number;
-    itemCount: number;
-    itemSize: number;
-    children: (props: { index: number; style: React.CSSProperties }) => React.ReactNode;
-    onItemsRendered?: (props: { visibleStartIndex: number; visibleStopIndex: number }) => void;
-}) => {
-    const [scrollTop, setScrollTop] = useState(0);
-    const containerRef = useRef<HTMLDivElement>(null);
+// Pagination size
+const PAGE_SIZE = 20;
 
-    const totalHeight = itemCount * itemSize;
-
-    const visibleStartIndex = Math.floor(scrollTop / itemSize);
-    const visibleStopIndex = Math.min(
-        itemCount - 1,
-        Math.floor((scrollTop + height) / itemSize)
-    );
-
-    const overscan = 3;
-    const startIndex = Math.max(0, visibleStartIndex - overscan);
-    const endIndex = Math.min(itemCount - 1, visibleStopIndex + overscan);
-
-    useEffect(() => {
-        if (onItemsRendered) {
-            onItemsRendered({ visibleStartIndex, visibleStopIndex });
-        }
-    }, [visibleStartIndex, visibleStopIndex, onItemsRendered]);
-
-    const handleScroll = (e: React.UIEvent<HTMLDivElement>) => {
-        setScrollTop(e.currentTarget.scrollTop);
-    };
-
-    const items = [];
-    for (let i = startIndex; i <= endIndex; i++) {
-        items.push(
-            children({
-                index: i,
-                style: {
-                    position: 'absolute',
-                    top: i * itemSize,
-                    left: 0,
-                    width: '100%',
-                    height: itemSize,
-                }
-            })
-        );
-    }
-
-    return (
-        <div
-            ref={containerRef}
-            style={{ height, width, overflowY: 'auto', position: 'relative' }}
-            onScroll={handleScroll}
-        >
-            <div style={{ height: totalHeight, width: '100%', position: 'relative' }}>
-                {items}
-            </div>
-        </div>
-    );
-};
-
-// --- CUSTOM AUTOSIZER HOOK ---
-const useContainerSize = () => {
-    const ref = useRef<HTMLDivElement>(null);
-    const [size, setSize] = useState({ width: 0, height: 0 });
-
-    useEffect(() => {
-        const element = ref.current;
-        if (!element) return;
-
-        const observer = new ResizeObserver((entries) => {
-            for (const entry of entries) {
-                setSize({
-                    width: entry.contentRect.width,
-                    height: entry.contentRect.height,
-                });
-            }
-        });
-
-        observer.observe(element);
-        return () => observer.disconnect();
-    }, []);
-
-    return { ref, width: size.width, height: size.height };
-};
 
 // --- CUSTOM DEBOUNCE HOOK ---
 function useDebounce<T>(value: T, delay: number): T {
@@ -155,24 +70,23 @@ const SearchableDropdown = ({
 
     return (
         <div className="relative w-full" ref={wrapperRef}>
-            <div className="relative flex items-center">
+            <div className="relative flex items-center group">
                 <input
                     type="text"
-                    className="filter-input pr-8 cursor-pointer"
+                    className="w-full bg-[#1D1D1F] border border-[#333333] rounded-[8px] h-10 px-4 pr-12 text-xs text-[#F5F5F7] font-bold placeholder:text-[#424245] focus:border-[#0071E3]/50 transition-all outline-none cursor-pointer"
                     placeholder={placeholder}
-                    value={value || searchTerm} // Show value if selected, else search term (which is usually empty when closed)
+                    value={value || searchTerm}
                     onChange={(e) => {
                         setSearchTerm(e.target.value);
-                        onChange(e.target.value); // Allow typing to directly set value as well
+                        onChange(e.target.value);
                         setIsOpen(true);
                     }}
                     onClick={() => {
                         setSearchTerm('');
                         setIsOpen(!isOpen);
                     }}
-                    readOnly={!!value && !isOpen} // Make readOnly if value is selected to force clear first? No, let's allow editing.
                 />
-                <div className="absolute right-2 flex items-center gap-1">
+                <div className="absolute right-3 flex items-center gap-2">
                     {value && (
                         <button
                             onClick={(e) => {
@@ -180,48 +94,49 @@ const SearchableDropdown = ({
                                 onChange('');
                                 setSearchTerm('');
                             }}
-                            className="text-gray-400 hover:text-white"
+                            className="text-[#86868B] hover:text-[#F5F5F7] transition-colors"
                         >
-                            <X className="w-3 h-3" />
+                            <X className="w-3.5 h-3.5" />
                         </button>
                     )}
-                    <button
-                        onClick={() => setIsOpen(!isOpen)}
-                        className="text-gray-400 hover:text-white"
-                    >
-                        <Search className="w-3 h-3" />
-                    </button>
+                    <Search className="w-3.5 h-3.5 text-[#424245] group-focus-within:text-[#0071E3] transition-colors" />
                 </div>
             </div>
 
             {isOpen && (
-                <div className="absolute z-50 min-w-full w-max max-w-sm mt-1 bg-[#2d3241] border border-gray-600 rounded-md shadow-xl max-h-60 overflow-y-auto">
-                    <input
-                        type="text"
-                        className="w-full p-2 bg-[#1a1d29] border-b border-gray-600 text-xs text-white sticky top-0 outline-none focus:border-blue-500"
-                        placeholder="Buscar..."
-                        value={searchTerm}
-                        onChange={(e) => setSearchTerm(e.target.value)}
-                        autoFocus
-                    />
-                    {filteredOptions.length > 0 ? (
-                        filteredOptions.map((opt, idx) => (
-                            <div
-                                key={idx}
-                                className="px-3 py-2 text-xs text-gray-300 hover:bg-[#373c4b] cursor-pointer whitespace-normal break-words border-b border-white/5 last:border-0"
-                                title={opt}
-                                onClick={() => {
-                                    onChange(opt);
-                                    setIsOpen(false);
-                                    setSearchTerm('');
-                                }}
-                            >
-                                {opt}
+                <div className="absolute z-50 min-w-full w-max max-w-sm mt-4 bg-black/80 backdrop-blur-[20px] border border-[#333333] rounded-[8px] shadow-4xl max-h-64 overflow-hidden flex flex-col animate-in zoom-in-95 duration-200">
+                    <div className="p-4 border-b border-[#333333] bg-black/20">
+                        <input
+                            type="text"
+                            className="w-full h-8 px-4 bg-[#121212] border border-[#333333] rounded-[8px] text-xs text-white outline-none focus:border-[#0071E3]/40 transition-all"
+                            placeholder="Buscar en la lista..."
+                            value={searchTerm}
+                            onChange={(e) => setSearchTerm(e.target.value)}
+                            autoFocus
+                        />
+                    </div>
+                    <div className="overflow-y-auto overflow-x-hidden flex-1 custom-scrollbar">
+                        {filteredOptions.length > 0 ? (
+                            filteredOptions.map((opt, idx) => (
+                                <div
+                                    key={idx}
+                                    className="px-4 py-2.5 text-[11px] font-bold text-[#86868B] hover:bg-white/5 hover:text-[#0071E3] cursor-pointer whitespace-normal break-words border-b border-white/[0.03] last:border-0 transition-colors"
+                                    title={opt}
+                                    onClick={() => {
+                                        onChange(opt);
+                                        setIsOpen(false);
+                                        setSearchTerm('');
+                                    }}
+                                >
+                                    {opt}
+                                </div>
+                            ))
+                        ) : (
+                            <div className="px-4 py-6 text-center">
+                                <p className="text-[10px] font-black uppercase tracking-widest text-[#424245]">Sin resultados</p>
                             </div>
-                        ))
-                    ) : (
-                        <div className="px-3 py-2 text-xs text-gray-500">No hay resultados</div>
-                    )}
+                        )}
+                    </div>
                 </div>
             )}
         </div>
@@ -302,9 +217,6 @@ interface SortConfig {
 export default function ConsultarEstadoSolicitud() {
     const navigate = useNavigate();
 
-    // Custom AutoSizer
-    const { ref: containerRef, width, height } = useContainerSize();
-
     // Data State
     const [filterOptions, setFilterOptions] = useState<FilterOptions>({
         nombre_cliente: [],
@@ -320,16 +232,18 @@ export default function ConsultarEstadoSolicitud() {
     const [filters, setFilters] = useState<Filters>(initialFilters);
     const debouncedFilters = useDebounce(filters, 500);
 
+    // Pagination State
+    const [page, setPage] = useState(0);
+
     // Sort State
     const [sortConfig, setSortConfig] = useState<SortConfig>({
         field: 'numero_solicitud',
-        direction: 'asc'
+        direction: 'desc'
     });
 
     // --- REACT QUERY FETCHING ---
-    const fetchSolicitudes = async ({ pageParam = 0 }) => {
-        const PAGE_SIZE = 50;
-        const from = pageParam * PAGE_SIZE;
+    const fetchSolicitudes = async () => {
+        const from = page * PAGE_SIZE;
         const to = from + PAGE_SIZE - 1;
 
         let query = supabase
@@ -357,31 +271,23 @@ export default function ConsultarEstadoSolicitud() {
 
         return {
             data: data || [],
-            count: count || 0,
-            nextPage: (data && data.length === PAGE_SIZE) ? pageParam + 1 : undefined
+            count: count || 0
         };
     };
 
     const {
         data,
-        fetchNextPage,
-        hasNextPage,
-        isFetchingNextPage,
-        isLoading
-    } = useInfiniteQuery({
-        queryKey: ['solicitudes', debouncedFilters, sortConfig],
+        isLoading,
+        isFetching
+    } = useQuery({
+        queryKey: ['solicitudes', page, debouncedFilters, sortConfig],
         queryFn: fetchSolicitudes,
-        getNextPageParam: (lastPage) => lastPage.nextPage,
-        initialPageParam: 0,
         refetchOnWindowFocus: false,
     });
 
-    // Flatten data
-    const allRows = useMemo(() => {
-        return data?.pages.flatMap(page => page.data) || [];
-    }, [data]);
-
-    const totalRecords = data?.pages[0]?.count || 0;
+    const allRows = data?.data || [];
+    const totalRecords = data?.count || 0;
+    const totalPages = Math.ceil(totalRecords / PAGE_SIZE);
 
     useEffect(() => {
         cargarOpcionesFiltro();
@@ -420,6 +326,7 @@ export default function ConsultarEstadoSolicitud() {
 
     const handleFilterChange = (key: keyof Filters, value: string) => {
         setFilters(prev => ({ ...prev, [key]: value }));
+        setPage(0); // Reset to first page on filter change
     };
 
     const limpiarFiltros = () => {
@@ -489,270 +396,184 @@ export default function ConsultarEstadoSolicitud() {
     };
 
     const getEstadoClass = (estado: string) => {
-        if (!estado) return 'estado-default';
-        const estadoLower = estado.toLowerCase();
-        if (estadoLower.includes('completado') || estadoLower.includes('finalizado') || estadoLower.includes('ejecutada')) return 'estado-completado';
-        if (estadoLower.includes('proceso') || estadoLower.includes('progreso') || estadoLower.includes('activa')) return 'estado-proceso';
-        if (estadoLower.includes('pendiente')) return 'estado-pendiente';
-        if (estadoLower.includes('cancelado') || estadoLower.includes('rechazado') || estadoLower.includes('cancelada')) return 'estado-cancelado';
-        return 'estado-default';
+        if (!estado) return 'bg-[#333333]/10 text-[#86868B] border-[#333333]';
+        const estadoUpper = estado.toUpperCase();
+        // Strict adherence: No greens, no reds. Using Blue for active/done and Gray for others.
+        if (estadoUpper === 'EJECUTADA') return 'bg-[#0071E3] text-white border-[#0071E3]';
+        if (estadoUpper === 'ACTIVA') return 'bg-[#0071E3]/10 text-[#0071E3] border-[#0071E3]/30';
+        if (estadoUpper === 'CANCELADA') return 'bg-[#333333]/50 text-[#86868B] border-[#333333]';
+        return 'bg-[#333333]/10 text-[#86868B] border-[#333333]';
     };
 
     const SortIcon = ({ field }: { field: SortField }) => {
-        if (sortConfig.field !== field) return <ArrowUpDown className="w-3 h-3 opacity-30" />;
-        return sortConfig.direction === 'asc' ? <ArrowUp className="w-3 h-3 text-blue-400" /> : <ArrowDown className="w-3 h-3 text-blue-400" />;
+        if (sortConfig.field !== field) return <ArrowUpDown className="w-3.5 h-3.5 opacity-20" />;
+        return sortConfig.direction === 'asc'
+            ? <ArrowUp className="w-3.5 h-3.5 text-[#0071E3] animate-in slide-in-from-bottom-2 duration-300" />
+            : <ArrowDown className="w-3.5 h-3.5 text-[#0071E3] animate-in slide-in-from-top-2 duration-300" />;
     };
 
-    // Infinite Scroll Trigger
-    const onItemsRendered = useCallback(({ visibleStopIndex }: { visibleStopIndex: number }) => {
-        if (visibleStopIndex >= allRows.length - 5 && hasNextPage && !isFetchingNextPage) {
-            fetchNextPage();
-        }
-    }, [allRows.length, hasNextPage, isFetchingNextPage, fetchNextPage]);
 
     return (
-        <div className="min-h-screen bg-[#1a1d29] text-[#e4e6ea] font-sans p-4 relative flex flex-col h-screen overflow-hidden">
+        <div className="min-h-screen bg-[#000000] text-[#F5F5F7] font-sans relative flex flex-col selection:bg-[#0071E3]/30 pb-24">
             <style>{`
-                .table-header-grid {
-                    display: grid;
-                    grid-template-columns: 70px 90px 1.5fr 1fr 1fr 1fr 1fr 1fr 1fr 100px;
-                    background: linear-gradient(135deg, rgba(102, 126, 234, 0.8) 0%, rgba(118, 75, 162, 0.8) 100%);
-                    color: white;
-                    font-weight: 600;
-                    text-transform: uppercase;
-                    font-size: 0.7rem;
-                    letter-spacing: 0.05em;
-                    position: sticky;
-                    top: 0;
-                    z-index: 10;
-                }
-                .table-row-grid {
-                    display: grid;
-                    grid-template-columns: 70px 90px 1.5fr 1fr 1fr 1fr 1fr 1fr 1fr 100px;
-                    align-items: start;
-                    font-size: 0.75rem;
-                    line-height: 1.2;
-                }
-                .content-card {
-                    background: rgba(30, 34, 48, 0.8);
-                    backdrop-filter: blur(20px);
-                    border: 1px solid rgba(255, 255, 255, 0.1);
-                    border-radius: 20px;
-                    box-shadow: 0 20px 40px rgba(0, 0, 0, 0.4);
-                    overflow: hidden;
-                    display: flex;
-                    flex-direction: column;
-                    height: 100%;
-                }
-                .module-header {
-                    background: linear-gradient(135deg, rgba(102, 126, 234, 0.2) 0%, rgba(118, 75, 162, 0.2) 100%);
-                    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
-                    padding: 1rem;
-                    text-align: center;
-                    flex-shrink: 0;
-                }
-                .filter-section {
-                    background: rgba(30, 34, 48, 0.95);
-                    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
-                    padding: 0.75rem;
-                    flex-shrink: 0;
-                }
-                .filter-input, .filter-select {
-                    background: rgba(45, 50, 65, 0.6);
-                    border: 1px solid rgba(255, 255, 255, 0.2);
-                    color: #e4e6ea;
-                    padding: 0.4rem;
-                    border-radius: 0.5rem;
-                    font-size: 0.75rem;
-                    width: 100%;
-                }
-                .filter-input:focus, .filter-select:focus {
-                    background: rgba(45, 50, 65, 0.8);
-                    border-color: #667eea;
-                    outline: none;
-                }
-                .estado-completado { background: rgba(40, 167, 69, 0.2); color: #28a745; border: 1px solid rgba(40, 167, 69, 0.3); }
-                .estado-proceso { background: rgba(255, 193, 7, 0.2); color: #ffc107; border: 1px solid rgba(255, 193, 7, 0.3); }
-                .estado-pendiente { background: rgba(23, 162, 184, 0.2); color: #17a2b8; border: 1px solid rgba(23, 162, 184, 0.3); }
-                .estado-cancelado { background: rgba(220, 53, 69, 0.2); color: #dc3545; border: 1px solid rgba(220, 53, 69, 0.3); }
-                .estado-default { background: rgba(108, 117, 125, 0.2); color: #6c757d; border: 1px solid rgba(108, 117, 125, 0.3); }
-                
-                /* Custom Scrollbar */
-                ::-webkit-scrollbar { width: 6px; height: 6px; }
-                ::-webkit-scrollbar-track { background: rgba(30, 34, 48, 0.5); }
-                ::-webkit-scrollbar-thumb { background: rgba(102, 126, 234, 0.5); border-radius: 3px; }
-                ::-webkit-scrollbar-thumb:hover { background: rgba(102, 126, 234, 0.8); }
+                .custom-scrollbar::-webkit-scrollbar { width: 6px; height: 6px; }
+                .custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
+                .custom-scrollbar::-webkit-scrollbar-thumb { background: #333333; border-radius: 3px; }
+                .custom-scrollbar::-webkit-scrollbar-thumb:hover { background: #424245; }
             `}</style>
 
-            <div className="content-card">
-                <div className="module-header">
-                    <div className="flex items-center justify-center gap-3 text-lg font-semibold mb-1 text-[#667eea]">
-                        <Activity className="w-5 h-5" />
-                        <span>Vista STI con Estado Actual</span>
+            <PageHeader
+                title="Estados de Solicitud"
+                icon={Activity}
+                subtitle="Consulta de Seguimiento"
+                rightElement={
+                    <div className="flex items-center gap-4">
+                        <button
+                            onClick={exportarExcel}
+                            className="h-11 px-6 bg-[#0071E3] text-white rounded-[8px] text-[10px] font-black uppercase tracking-widest hover:brightness-110 transition-all flex items-center gap-2.5 shadow-xl active:scale-95"
+                        >
+                            <FileSpreadsheet className="w-4 h-4" /> Exportar
+                        </button>
+                        <button
+                            onClick={limpiarFiltros}
+                            className="h-11 px-6 bg-transparent border border-[#F5F5F7]/30 text-[#F5F5F7] rounded-[8px] text-[10px] font-black uppercase tracking-widest hover:bg-white/5 transition-all flex items-center gap-2.5 active:scale-95"
+                        >
+                            <Eraser className="w-4 h-4" /> Limpiar
+                        </button>
                     </div>
-                </div>
+                }
+            />
 
-                <div className="filter-section">
-                    <div className="flex flex-wrap gap-2 items-center mb-3">
-                        <button onClick={() => navigate(-1)} className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-[#2d3241] hover:bg-[#373c4b] text-xs transition-colors">
-                            <ArrowLeft className="w-3 h-3" /> Regresar
-                        </button>
-                        <button onClick={exportarExcel} className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-emerald-600/80 hover:bg-emerald-600 text-white text-xs transition-colors">
-                            <FileSpreadsheet className="w-3 h-3" /> Exportar
-                        </button>
-                        <button onClick={limpiarFiltros} className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-blue-600/80 hover:bg-blue-600 text-white text-xs transition-colors">
-                            <Eraser className="w-3 h-3" /> Limpiar
-                        </button>
-                        <div className="ml-auto text-xs text-gray-400 font-mono">
-                            {totalRecords} registros
+            <div className="max-w-[1600px] mx-auto w-full px-8 space-y-8 flex-1 flex flex-col">
+                {/* Filters Section */}
+                <div className="bg-[#121212] border border-[#333333] rounded-[8px] p-6 shadow-2xl">
+                    <div className="flex items-center justify-between mb-6">
+                        <div className="flex items-center gap-3">
+                            <Search className="w-4 h-4 text-[#0071E3]" />
+                            <h3 className="text-[10px] font-black text-white/90 uppercase tracking-[0.3em]">Filtros de Búsqueda</h3>
                         </div>
+                        <span className="text-[9px] font-black text-[#86868B] uppercase tracking-widest bg-black/40 px-3 py-1 rounded-full border border-[#333333]">
+                            {totalRecords.toLocaleString()} registros
+                        </span>
                     </div>
 
-                    <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-8 gap-2">
-                        <SearchableDropdown
-                            options={filterOptions.nombre_cliente}
-                            value={filters.nombre_cliente}
-                            onChange={(val) => handleFilterChange('nombre_cliente', val)}
-                            placeholder="Cliente..."
-                        />
-                        <SearchableDropdown
-                            options={filterOptions.dependencia_cliente}
-                            value={filters.dependencia_cliente}
-                            onChange={(val) => handleFilterChange('dependencia_cliente', val)}
-                            placeholder="Dependencia..."
-                        />
-                        <SearchableDropdown
-                            options={filterOptions.profesional_responsable}
-                            value={filters.profesional_responsable}
-                            onChange={(val) => handleFilterChange('profesional_responsable', val)}
-                            placeholder="Profesional..."
-                        />
-                        <SearchableDropdown
-                            options={filterOptions.supervisor_asignado}
-                            value={filters.supervisor_asignado}
-                            onChange={(val) => handleFilterChange('supervisor_asignado', val)}
-                            placeholder="Supervisor..."
-                        />
-                        <SearchableDropdown
-                            options={filterOptions.instalacion_municipal}
-                            value={filters.instalacion_municipal}
-                            onChange={(val) => handleFilterChange('instalacion_municipal', val)}
-                            placeholder="Instalación..."
-                        />
-                        <SearchableDropdown
-                            options={filterOptions.descripcion_area}
-                            value={filters.descripcion_area}
-                            onChange={(val) => handleFilterChange('descripcion_area', val)}
-                            placeholder="Área..."
-                        />
-                        <SearchableDropdown
-                            options={filterOptions.estado_actual}
-                            value={filters.estado_actual}
-                            onChange={(val) => handleFilterChange('estado_actual', val)}
-                            placeholder="Estado..."
-                        />
-                        <div className="flex flex-col gap-1">
+                    <div className="grid grid-cols-1 md:grid-cols-4 lg:grid-cols-7 gap-4">
+                        <SearchableDropdown options={filterOptions.nombre_cliente} value={filters.nombre_cliente} onChange={(val) => handleFilterChange('nombre_cliente', val)} placeholder="Cliente..." />
+                        <SearchableDropdown options={filterOptions.dependencia_cliente} value={filters.dependencia_cliente} onChange={(val) => handleFilterChange('dependencia_cliente', val)} placeholder="Dependencia..." />
+                        <SearchableDropdown options={filterOptions.profesional_responsable} value={filters.profesional_responsable} onChange={(val) => handleFilterChange('profesional_responsable', val)} placeholder="Profesional..." />
+                        <SearchableDropdown options={filterOptions.supervisor_asignado} value={filters.supervisor_asignado} onChange={(val) => handleFilterChange('supervisor_asignado', val)} placeholder="Supervisor..." />
+                        <SearchableDropdown options={filterOptions.instalacion_municipal} value={filters.instalacion_municipal} onChange={(val) => handleFilterChange('instalacion_municipal', val)} placeholder="Instalación..." />
+                        <SearchableDropdown options={filterOptions.descripcion_area} value={filters.descripcion_area} onChange={(val) => handleFilterChange('descripcion_area', val)} placeholder="Área..." />
+                        <SearchableDropdown options={filterOptions.estado_actual} value={filters.estado_actual} onChange={(val) => handleFilterChange('estado_actual', val)} placeholder="Estado..." />
+                    </div>
+
+                    <div className="flex flex-wrap items-center gap-8 mt-8 bg-black/20 p-4 rounded-[8px] border border-[#333333]/30">
+                        <div className="flex items-center gap-4">
+                            <label className="text-[9px] font-black text-[#86868B] uppercase tracking-widest whitespace-nowrap">Desde:</label>
                             <input
                                 type="date"
-                                className="filter-input !py-0.5 h-7"
+                                className="bg-[#1D1D1F] border border-[#333333] rounded-[8px] h-8 px-4 text-[11px] text-white uppercase font-bold focus:border-[#0071E3]/50 outline-none transition-all w-48"
                                 value={filters.fecha_inicio}
                                 onChange={(e) => handleFilterChange('fecha_inicio', e.target.value)}
-                                title="Fecha Inicio"
                             />
+                        </div>
+                        <div className="flex items-center gap-4">
+                            <label className="text-[9px] font-black text-[#86868B] uppercase tracking-widest whitespace-nowrap">Hasta:</label>
                             <input
                                 type="date"
-                                className="filter-input !py-0.5 h-7"
+                                className="bg-[#1D1D1F] border border-[#333333] rounded-[8px] h-8 px-4 text-[11px] text-white uppercase font-bold focus:border-[#0071E3]/50 outline-none transition-all w-48"
                                 value={filters.fecha_fin}
                                 onChange={(e) => handleFilterChange('fecha_fin', e.target.value)}
-                                title="Fecha Fin"
                             />
                         </div>
                     </div>
                 </div>
 
-                <div className="flex-1 overflow-hidden relative" ref={containerRef}>
-                    {/* Header Row (Fixed) */}
-                    <div className="table-header-grid pr-2">
-                        <div
-                            className="p-2 cursor-pointer hover:bg-white/5 flex items-center gap-1"
-                            onClick={() => handleSort('numero_solicitud')}
-                        >
-                            # <SortIcon field="numero_solicitud" />
-                        </div>
-                        <div
-                            className="p-2 cursor-pointer hover:bg-white/5 flex items-center gap-1"
-                            onClick={() => handleSort('fecha_solicitud')}
-                        >
-                            Fecha <SortIcon field="fecha_solicitud" />
-                        </div>
-                        <div className="p-2">Descripción</div>
-                        <div
-                            className="p-2 cursor-pointer hover:bg-white/5 flex items-center gap-1"
-                            onClick={() => handleSort('nombre_cliente')}
-                        >
-                            Cliente <SortIcon field="nombre_cliente" />
-                        </div>
-                        <div className="p-2">Dependencia</div>
-                        <div className="p-2">Profesional</div>
-                        <div className="p-2">Supervisor</div>
-                        <div className="p-2">Instalación</div>
-                        <div className="p-2">Área</div>
-                        <div
-                            className="p-2 cursor-pointer hover:bg-white/5 flex items-center gap-1"
-                            onClick={() => handleSort('estado_actual')}
-                        >
-                            Estado <SortIcon field="estado_actual" />
-                        </div>
-                    </div>
-
-                    {/* Virtual List */}
-                    <div className="h-[calc(100%-35px)] w-full relative">
-                        {isLoading && allRows.length === 0 ? (
-                            <div className="absolute inset-0 flex items-center justify-center z-20 bg-[#1a1d29]/50">
-                                <Loader2 className="w-8 h-8 animate-spin text-blue-500" />
+                {/* Table Section */}
+                <div className="bg-[#121212] border border-[#333333] rounded-[8px] shadow-3xl overflow-hidden mb-16">
+                    <div className="overflow-x-auto custom-scrollbar">
+                        <div className="min-w-[1400px]">
+                            {/* Header Row */}
+                            <div className="grid grid-cols-[80px_100px_2fr_1.5fr_1fr_1.5fr_1fr] bg-[#1D1D1F] border-b border-[#333333] text-[10px] font-black text-[#86868B] uppercase tracking-[0.2em] sticky top-0 z-20">
+                                <div className="px-6 py-5 cursor-pointer hover:bg-white/5 hover:text-[#F5F5F7] transition-all flex items-center gap-2 border-r border-[#333333]/30" onClick={() => handleSort('numero_solicitud')}>
+                                    # <SortIcon field="numero_solicitud" />
+                                </div>
+                                <div className="px-6 py-5 cursor-pointer hover:bg-white/5 hover:text-[#F5F5F7] transition-all flex items-center gap-2 border-r border-[#333333]/30" onClick={() => handleSort('fecha_solicitud')}>
+                                    Fecha <SortIcon field="fecha_solicitud" />
+                                </div>
+                                <div className="px-6 py-5 border-r border-[#333333]/30">Reporte Técnico / Descripción</div>
+                                <div className="px-6 py-5 border-r border-[#333333]/30">Profesional Responsable</div>
+                                <div className="px-6 py-5 border-r border-[#333333]/30">Instalación</div>
+                                <div className="px-6 py-5 border-r border-[#333333]/30">Área Mantenimiento</div>
+                                <div className="px-6 py-5 cursor-pointer hover:bg-white/5 hover:text-[#F5F5F7] transition-all flex items-center justify-center gap-2" onClick={() => handleSort('estado_actual')}>
+                                    Estado <SortIcon field="estado_actual" />
+                                </div>
                             </div>
-                        ) : null}
 
-                        {width > 0 && height > 0 && (
-                            <VirtualList
-                                height={height - 35}
-                                width={width}
-                                itemCount={totalRecords}
-                                itemSize={70} // Increased row height for wrapping
-                                onItemsRendered={onItemsRendered}
-                            >
-                                {({ index, style }) => {
-                                    const row = allRows[index];
+                            {/* Data Rows */}
+                            <div className="relative">
+                                {(isLoading || isFetching) && (
+                                    <div className="absolute inset-0 flex items-center justify-center z-10 bg-black/40 backdrop-blur-[2px]">
+                                        <Loader2 className="w-8 h-8 animate-spin text-[#0071E3]" />
+                                    </div>
+                                )}
 
-                                    if (!row) {
-                                        return (
-                                            <div style={style} key={index} className="flex items-center justify-center text-gray-500 bg-[#2d3241]/50 border-b border-white/5">
-                                                <Loader2 className="w-4 h-4 animate-spin mr-2" /> Cargando...
-                                            </div>
-                                        );
-                                    }
-
-                                    return (
-                                        <div key={index} style={style} className={`table-row-grid ${index % 2 === 0 ? 'bg-[#2d3241]/20' : 'bg-[#2d3241]/40'} hover:bg-[#2d3241]/60 transition-colors border-b border-white/5`}>
-                                            <div className="p-2 truncate font-mono text-xs text-blue-300" title={row.numero_solicitud.toString()}>{row.numero_solicitud}</div>
-                                            <div className="p-2 truncate" title={row.fecha_solicitud}>{row.fecha_solicitud ? new Date(row.fecha_solicitud).toLocaleDateString('es-ES') : ''}</div>
-                                            <div className="p-2 line-clamp-3 overflow-hidden" title={row.descripcion_solicitud}>{row.descripcion_solicitud}</div>
-                                            <div className="p-2 line-clamp-3 overflow-hidden" title={row.nombre_cliente}>{row.nombre_cliente}</div>
-                                            <div className="p-2 line-clamp-3 overflow-hidden" title={row.dependencia_cliente}>{row.dependencia_cliente}</div>
-                                            <div className="p-2 line-clamp-3 overflow-hidden" title={row.profesional_responsable}>{row.profesional_responsable}</div>
-                                            <div className="p-2 line-clamp-3 overflow-hidden" title={row.supervisor_asignado}>{row.supervisor_asignado}</div>
-                                            <div className="p-2 line-clamp-3 overflow-hidden" title={row.instalacion_municipal}>{row.instalacion_municipal}</div>
-                                            <div className="p-2 line-clamp-3 overflow-hidden" title={row.descripcion_area}>{row.descripcion_area}</div>
-                                            <div className="p-2 flex items-center">
-                                                <span className={`px-2 py-0.5 rounded-full text-[9px] font-semibold uppercase tracking-wider ${getEstadoClass(row.estado_actual)}`}>
+                                {allRows.length > 0 ? (
+                                    allRows.map((row, index) => (
+                                        <div
+                                            key={row.numero_solicitud}
+                                            className={cn(
+                                                "grid grid-cols-[80px_100px_2fr_1.5fr_1fr_1.5fr_1fr] items-center border-b border-[#333333]/30 transition-all hover:bg-white/[0.02]",
+                                                index % 2 === 0 ? 'bg-[#121212]' : 'bg-black/20'
+                                            )}
+                                        >
+                                            <div className="px-6 py-4 font-mono text-[11px] font-black text-[#0071E3] tracking-tighter">#{row.numero_solicitud}</div>
+                                            <div className="px-6 py-4 text-[10px] font-bold text-[#86868B]">{row.fecha_solicitud ? new Date(row.fecha_solicitud).toLocaleDateString('es-ES') : ''}</div>
+                                            <div className="px-6 py-4 text-[11px] italic text-[#F5F5F7] font-medium leading-relaxed italic" title={row.descripcion_solicitud}>{row.descripcion_solicitud}</div>
+                                            <div className="px-6 py-4 text-[11px] font-black text-[#F5F5F7] uppercase tracking-tight" title={row.profesional_responsable}>{row.profesional_responsable}</div>
+                                            <div className="px-6 py-4 text-[10px] font-bold text-[#86868B] uppercase" title={row.instalacion_municipal}>{row.instalacion_municipal}</div>
+                                            <div className="px-6 py-4 text-[10px] font-bold text-[#86868B] uppercase" title={row.descripcion_area}>{row.descripcion_area}</div>
+                                            <div className="px-6 py-4 flex items-center justify-center">
+                                                <span className={cn(
+                                                    "px-4 py-1.5 rounded-[8px] text-[10px] font-black uppercase tracking-widest border transition-colors",
+                                                    getEstadoClass(row.estado_actual)
+                                                )}>
                                                     {row.estado_actual || 'N/A'}
                                                 </span>
                                             </div>
                                         </div>
-                                    );
-                                }}
-                            </VirtualList>
-                        )}
+                                    ))
+                                ) : !isLoading && (
+                                    <div className="flex flex-col items-center justify-center py-20 text-[#424245]">
+                                        <LayoutGrid className="w-12 h-12 mb-4 opacity-20" />
+                                        <p className="text-[10px] font-black uppercase tracking-[0.3em]">No se encontraron registros</p>
+                                    </div>
+                                )}
+                            </div>
+                        </div>
+                    </div>
+
+                    {/* Pagination Controls */}
+                    <div className="bg-[#1D1D1F] border-t border-[#333333] px-8 py-4 flex items-center justify-between">
+                        <div className="text-[10px] font-black text-[#86868B] uppercase tracking-widest">
+                            Página <span className="text-[#F5F5F7]">{page + 1}</span> de <span className="text-[#F5F5F7]">{totalPages || 1}</span>
+                        </div>
+                        <div className="flex items-center gap-4">
+                            <button
+                                onClick={() => setPage(p => Math.max(0, p - 1))}
+                                disabled={page === 0}
+                                className="h-10 px-6 bg-transparent border border-[#333333] text-[#F5F5F7] rounded-[8px] text-[10px] font-black uppercase tracking-widest hover:bg-white/5 transition-all flex items-center gap-2 disabled:opacity-30 disabled:cursor-not-allowed active:scale-95"
+                            >
+                                <ChevronLeft className="w-4 h-4 text-[#0071E3]" /> Anterior
+                            </button>
+                            <button
+                                onClick={() => setPage(p => p + 1)}
+                                disabled={allRows.length < PAGE_SIZE || page >= totalPages - 1}
+                                className="h-10 px-6 bg-transparent border border-[#333333] text-[#F5F5F7] rounded-[8px] text-[10px] font-black uppercase tracking-widest hover:bg-white/5 transition-all flex items-center gap-2 disabled:opacity-30 disabled:cursor-not-allowed active:scale-95"
+                            >
+                                Siguiente <ChevronRight className="w-4 h-4 text-[#0071E3]" />
+                            </button>
+                        </div>
                     </div>
                 </div>
             </div>

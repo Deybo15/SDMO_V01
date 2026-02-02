@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { supabase } from '../lib/supabase';
 import { useNavigate } from 'react-router-dom';
 import {
@@ -24,7 +24,8 @@ import {
     LineChart as LineChartIcon,
     AlertCircle,
     CheckCircle2,
-    Info
+    Info,
+    ArrowRight
 } from 'lucide-react';
 import {
     ComposedChart,
@@ -259,85 +260,79 @@ export default function HistorialArticulo() {
     }, [salidas]);
 
     return (
-        <div className="min-h-screen bg-[#0f111a] text-slate-100 p-4 md:p-8 relative overflow-hidden">
-            {/* Ambient Effects */}
-            <div className="absolute top-0 left-0 w-full h-full overflow-hidden pointer-events-none -z-10">
-                <div className="absolute top-[10%] left-[-5%] w-[50%] h-[50%] bg-purple-500/5 rounded-full blur-[120px]" />
-                <div className="absolute bottom-[-10%] right-[-5%] w-[50%] h-[50%] bg-indigo-500/5 rounded-full blur-[120px]" />
-            </div>
-
+        <div className="min-h-screen bg-[#000000] text-[#F5F5F7] p-4 md:p-8 relative overflow-hidden">
             <div className="max-w-7xl mx-auto space-y-8 relative z-10">
                 {/* Header */}
-                <div className="flex flex-col md:flex-row justify-between items-end gap-6 pb-2 border-b border-white/5">
+                <div className="flex flex-col md:flex-row justify-between items-end gap-6 pb-2 border-b border-[#333333]">
                     <div className="space-y-1">
-                        <PageHeader title="Historial de Artículo" icon={History} themeColor="purple" />
-                        <p className="text-slate-500 text-sm font-medium tracking-wide">
+                        <PageHeader title="Historial de Artículo" icon={History} themeColor="blue" />
+                        <p className="text-[#86868B] text-sm font-medium tracking-wide">
                             Análisis cronológico de consumos y proyecciones basadas en regresión lineal.
                         </p>
                     </div>
                     <button
                         onClick={() => navigate(-1)}
-                        className="glass-button px-6 py-2.5 rounded-xl text-xs font-black uppercase tracking-widest flex items-center gap-2 text-slate-200"
+                        className="px-6 py-2.5 bg-transparent border border-[#333333] rounded-[8px] text-xs font-black uppercase tracking-widest flex items-center gap-2 text-[#F5F5F7] hover:bg-white/5 transition-all"
                     >
-                        <ArrowLeft className="w-4 h-4 text-purple-500" />
+                        <ArrowLeft className="w-4 h-4 text-[#0071E3]" />
                         Regresar
                     </button>
                 </div>
 
                 {/* Status Float Messages */}
                 {statusMessage && (
-                    <div className={`fixed top-8 right-8 z-[100] px-6 py-5 rounded-2xl shadow-[0_20px_50px_rgba(0,0,0,0.5)] backdrop-blur-xl border animate-in slide-in-from-right-4 flex items-center gap-4
-                        ${statusMessage.type === 'success' ? 'bg-emerald-500/20 border-emerald-500/40 text-emerald-100' :
-                            statusMessage.type === 'error' ? 'bg-rose-500/20 border-rose-500/40 text-rose-100' :
-                                statusMessage.type === 'warning' ? 'bg-amber-500/20 border-amber-500/40 text-amber-100' :
-                                    'bg-blue-500/20 border-blue-500/40 text-blue-100'
+                    <div className={`fixed top-8 right-8 z-[100] px-6 py-5 rounded-[8px] shadow-2xl backdrop-blur-xl border animate-in slide-in-from-right-4 flex items-center gap-4
+                        ${statusMessage.type === 'success' ? 'bg-emerald-500/10 border-emerald-500/20 text-emerald-100' :
+                            statusMessage.type === 'error' ? 'bg-rose-500/10 border-rose-500/20 text-rose-100' :
+                                statusMessage.type === 'warning' ? 'bg-amber-500/10 border-amber-500/20 text-amber-100' :
+                                    'bg-[#0071E3]/10 border-[#0071E3]/20 text-blue-100'
                         }`}>
-                        <div className="p-2 rounded-xl bg-white/10 shrink-0">
+                        <div className="p-2 rounded-[8px] bg-white/5 shrink-0">
                             {statusMessage.type === 'error' ? <AlertCircle className="w-5 h-5 text-rose-400" /> :
                                 statusMessage.type === 'success' ? <CheckCircle2 className="w-5 h-5 text-emerald-400" /> :
                                     <Info className="w-5 h-5 text-amber-400" />}
                         </div>
                         <span className="font-black uppercase tracking-widest text-[11px] leading-relaxed">{statusMessage.message}</span>
-                        <button onClick={() => setStatusMessage(null)} className="ml-auto p-1 hover:bg-white/10 rounded-lg transition-colors">
-                            <X className="w-4 h-4 text-slate-500" />
+                        <button onClick={() => setStatusMessage(null)} className="ml-auto p-1 hover:bg-white/5 rounded-[4px] transition-colors">
+                            <X className="w-4 h-4 text-[#86868B]" />
                         </button>
                     </div>
                 )}
 
                 {/* Filters Section */}
-                <div className="glass-card p-6 md:p-8 bg-slate-900/40 relative group">
-                    <div className="absolute top-0 right-0 w-32 h-32 bg-purple-500/5 rounded-full blur-3xl -mr-16 -mt-16" />
-
-                    <h2 className="text-[10px] font-black text-slate-400 uppercase tracking-[0.3em] mb-8 flex items-center gap-3">
-                        <Filter className="w-4 h-4 text-purple-500" />
+                <div className="bg-[#121212] p-8 border border-[#333333] rounded-[8px] relative group">
+                    <h2 className="text-xs font-black text-[#86868B] uppercase tracking-[0.3em] mb-8 flex items-center gap-3">
+                        <span className="w-8 h-px bg-[#0071E3]/30" />
                         Filtros de Análisis
                     </h2>
 
                     <div className="grid grid-cols-1 md:grid-cols-12 gap-6 items-end">
                         {/* Article Selector Trigger */}
                         <div className="md:col-span-12 lg:col-span-12 xl:col-span-5 relative">
-                            <label className="block text-[10px] font-black text-slate-500 uppercase tracking-[0.2em] mb-3 ml-1">Artículo Seleccionado</label>
+                            <label className="block text-[10px] font-black text-[#86868B] uppercase tracking-[0.2em] mb-3 ml-1">Artículo Seleccionado</label>
                             {selectedArticle ? (
-                                <div className="flex items-center gap-4 p-4 bg-slate-950/60 border border-purple-500/30 rounded-2xl group/selected relative overflow-hidden">
-                                    <div className="absolute top-0 left-0 w-1 h-full bg-purple-500" />
-                                    <div className="w-12 h-12 bg-black/40 rounded-xl overflow-hidden border border-white/10 shrink-0">
+                                <div className="flex items-center gap-4 p-4 bg-[#1D1D1F] border border-[#333333] rounded-[8px] group/selected relative overflow-hidden">
+                                    <div className="absolute top-0 left-0 w-1 h-full bg-[#0071E3]" />
+                                    <div className="w-12 h-12 bg-black/40 rounded-[8px] overflow-hidden border border-[#333333] shrink-0">
                                         <img src={selectedArticle.imagen_url || ''} className="w-full h-full object-cover opacity-80" />
                                     </div>
                                     <div className="flex-1 min-w-0">
-                                        <span className="font-mono text-[10px] font-black text-purple-400 uppercase tracking-widest">{selectedArticle.codigo_articulo}</span>
-                                        <p className="text-sm font-bold text-white truncate italic uppercase">{selectedArticle.nombre_articulo}</p>
+                                        <span className="font-mono text-[10px] font-black text-[#0071E3] uppercase tracking-widest bg-[#0071E3]/5 px-2 py-0.5 rounded border border-[#0071E3]/10">
+                                            {selectedArticle.codigo_articulo}
+                                        </span>
+                                        <p className="text-sm font-bold text-white truncate italic uppercase mt-1">{selectedArticle.nombre_articulo}</p>
                                     </div>
                                     <div className="flex gap-2">
                                         <button
                                             onClick={() => setShowSearchModal(true)}
-                                            className="p-3 glass-button text-purple-400 hover:text-white rounded-xl transition-all"
+                                            className="p-3 bg-white/5 hover:bg-white/10 text-[#0071E3] hover:text-white rounded-[8px] transition-all border border-[#333333]"
                                             title="Cambiar artículo"
                                         >
                                             <Search className="w-4 h-4" />
                                         </button>
                                         <button
                                             onClick={() => { setSelectedArticle(null); setSalidas([]); setHasSearched(false); }}
-                                            className="p-3 glass-button text-rose-400 hover:text-white rounded-xl transition-all"
+                                            className="p-3 bg-white/5 hover:bg-white/10 text-rose-400 hover:text-white rounded-[8px] transition-all border border-[#333333]"
                                             title="Quitar"
                                         >
                                             <X className="w-4 h-4" />
@@ -347,13 +342,13 @@ export default function HistorialArticulo() {
                             ) : (
                                 <button
                                     onClick={() => setShowSearchModal(true)}
-                                    className="w-full bg-slate-950/60 border border-white/10 rounded-2xl px-6 py-4 text-left flex items-center justify-between group/trigger hover:border-purple-500/50 transition-all shadow-inner"
+                                    className="w-full bg-[#1D1D1F] border border-[#333333] rounded-[8px] px-6 py-4 text-left flex items-center justify-between group/trigger focus:border-[#0071E3]/50 transition-all shadow-inner"
                                 >
                                     <div className="flex items-center gap-4">
-                                        <Search className="w-5 h-5 text-slate-600 group-hover/trigger:text-purple-500 transition-colors" />
-                                        <span className="text-slate-500 font-bold">Seleccionar artículo para analizar...</span>
+                                        <Search className="w-5 h-5 text-[#86868B] group-hover/trigger:text-[#0071E3] transition-colors" />
+                                        <span className="text-[#86868B] font-bold">Seleccionar artículo para analizar...</span>
                                     </div>
-                                    <span className="text-[10px] font-black text-purple-400/60 bg-purple-500/5 px-3 py-1 rounded-full uppercase tracking-widest group-hover/trigger:bg-purple-500/10 transition-colors">
+                                    <span className="text-[10px] font-black text-[#0071E3] bg-[#0071E3]/5 px-3 py-1 rounded-[4px] border border-[#0071E3]/10 uppercase tracking-widest group-hover/trigger:bg-[#0071E3]/10 transition-colors">
                                         Buscar
                                     </span>
                                 </button>
@@ -362,26 +357,26 @@ export default function HistorialArticulo() {
 
                         {/* Date Range */}
                         <div className="md:col-span-6 xl:col-span-3">
-                            <label className="block text-[10px] font-black text-slate-500 uppercase tracking-[0.2em] mb-3 ml-1">Rango Desde</label>
+                            <label className="block text-[10px] font-black text-[#86868B] uppercase tracking-[0.2em] mb-3 ml-1">Rango Desde</label>
                             <div className="relative group/date">
-                                <Calendar className="absolute left-5 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-600 group-focus-within/date:text-purple-500 pointer-events-none" />
+                                <Calendar className="absolute left-5 top-1/2 -translate-y-1/2 w-5 h-5 text-[#86868B] group-focus-within/date:text-[#0071E3] pointer-events-none" />
                                 <input
                                     type="date"
                                     value={dateFrom}
                                     onChange={(e) => setDateFrom(e.target.value)}
-                                    className="w-full bg-slate-950/60 border border-white/10 rounded-2xl pl-14 pr-4 py-4 text-white font-bold focus:outline-none focus:ring-2 focus:ring-purple-500/30 transition-all shadow-inner [color-scheme:dark]"
+                                    className="w-full bg-[#1D1D1F] border border-[#333333] rounded-[8px] pl-14 pr-4 py-4 text-white font-bold focus:outline-none focus:border-[#0071E3]/50 transition-all shadow-inner [color-scheme:dark]"
                                 />
                             </div>
                         </div>
                         <div className="md:col-span-6 xl:col-span-3">
-                            <label className="block text-[10px] font-black text-slate-500 uppercase tracking-[0.2em] mb-3 ml-1">Rango Hasta</label>
+                            <label className="block text-[10px] font-black text-[#86868B] uppercase tracking-[0.2em] mb-3 ml-1">Rango Hasta</label>
                             <div className="relative group/date">
-                                <Calendar className="absolute left-5 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-600 group-focus-within/date:text-purple-500 pointer-events-none" />
+                                <Calendar className="absolute left-5 top-1/2 -translate-y-1/2 w-5 h-5 text-[#86868B] group-focus-within/date:text-[#0071E3] pointer-events-none" />
                                 <input
                                     type="date"
                                     value={dateTo}
                                     onChange={(e) => setDateTo(e.target.value)}
-                                    className="w-full bg-slate-950/60 border border-white/10 rounded-2xl pl-14 pr-4 py-4 text-white font-bold focus:outline-none focus:ring-2 focus:ring-purple-500/30 transition-all shadow-inner [color-scheme:dark]"
+                                    className="w-full bg-[#1D1D1F] border border-[#333333] rounded-[8px] pl-14 pr-4 py-4 text-white font-bold focus:outline-none focus:border-[#0071E3]/50 transition-all shadow-inner [color-scheme:dark]"
                                 />
                             </div>
                         </div>
@@ -391,7 +386,7 @@ export default function HistorialArticulo() {
                             <button
                                 onClick={handleConsultar}
                                 disabled={loading}
-                                className="w-full h-[58px] bg-purple-600 hover:bg-purple-500 text-white rounded-2xl shadow-xl shadow-purple-900/20 transition-all flex items-center justify-center disabled:opacity-50 active:scale-95 group/search"
+                                className="w-full h-[58px] bg-[#0071E3] hover:bg-[#0077ED] text-white rounded-[8px] shadow-lg shadow-[#0071E3]/20 transition-all flex items-center justify-center disabled:opacity-50 active:scale-95 group/search"
                                 title="Consultar Historial"
                             >
                                 {loading ? <Loader2 className="w-6 h-6 animate-spin" /> : <Activity className="w-6 h-6 group-hover/search:scale-110 transition-transform" />}
@@ -404,61 +399,60 @@ export default function HistorialArticulo() {
                 {!hasSearched ? (
                     <div className="py-40 flex flex-col items-center justify-center text-center group animate-in fade-in zoom-in duration-700">
                         <div className="relative mb-10">
-                            <div className="absolute inset-0 bg-purple-500/10 rounded-full blur-3xl scale-150 group-hover:scale-200 transition-transform duration-1000" />
-                            <div className="w-32 h-32 glass-card rounded-[3rem] flex items-center justify-center relative z-10 border-white/10 group-hover:rotate-6 transition-all duration-700">
-                                <LineChartIcon className="w-16 h-16 text-slate-800" />
+                            <div className="absolute inset-0 bg-[#0071E3]/10 rounded-full blur-3xl scale-150 group-hover:scale-200 transition-transform duration-1000" />
+                            <div className="w-32 h-32 bg-[#121212] border border-[#333333] rounded-[8px] flex items-center justify-center relative z-10 group-hover:rotate-3 transition-all duration-700 shadow-2xl">
+                                <LineChartIcon className="w-16 h-16 text-[#333333]" />
                             </div>
                         </div>
-                        <h3 className="text-3xl font-black text-slate-700 uppercase italic tracking-tighter">Sin Análisis Ejecutado</h3>
-                        <p className="text-slate-600 mt-3 max-w-sm mx-auto font-medium text-sm leading-relaxed tracking-wide">
+                        <h3 className="text-3xl font-black text-[#F5F5F7] uppercase italic tracking-tighter">Sin Análisis Ejecutado</h3>
+                        <p className="text-[#86868B] mt-3 max-w-sm mx-auto font-medium text-sm leading-relaxed tracking-wide uppercase text-[10px]">
                             Seleccione un artículo y el rango temporal para generar el historial de salidas y la proyección estadística de consumo.
                         </p>
                     </div>
                 ) : loading ? (
                     <div className="py-40 flex flex-col items-center justify-center space-y-6">
-                        <Loader2 className="w-16 h-16 animate-spin text-purple-500" />
-                        <p className="text-[10px] font-black uppercase tracking-[0.3em] text-white/50 animate-pulse">Procesando registros...</p>
+                        <div className="relative">
+                            <div className="absolute inset-0 bg-[#0071E3]/20 rounded-full blur-2xl animate-pulse" />
+                            <Loader2 className="w-16 h-16 animate-spin text-[#0071E3] relative z-10" />
+                        </div>
+                        <p className="text-[10px] font-black uppercase tracking-[0.3em] text-[#86868B] animate-pulse">Procesando registros...</p>
                     </div>
                 ) : salidas.length === 0 ? (
-                    <div className="py-40 flex flex-col items-center justify-center text-center glass-card bg-slate-900/40">
-                        <Inbox className="w-16 h-16 text-slate-700 mb-6" />
-                        <h3 className="text-xl font-bold text-slate-400">No se encontraron movimientos</h3>
-                        <p className="text-slate-600 mt-2">Para el período seleccionado no existen registros de salida en este artículo.</p>
+                    <div className="py-40 flex flex-col items-center justify-center text-center bg-[#121212] border border-[#333333] rounded-[8px]">
+                        <Inbox className="w-16 h-16 text-[#333333] mb-6" />
+                        <h3 className="text-xl font-bold text-[#F5F5F7]">No se encontraron movimientos</h3>
+                        <p className="text-[#86868B] mt-2">Para el período seleccionado no existen registros de salida en este artículo.</p>
                     </div>
                 ) : (
                     <div className="space-y-8 animate-in fade-in duration-700">
                         {/* Stats Grid */}
                         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-                            <div className="glass-card p-6 bg-slate-900/40 border-l-4 border-l-purple-500 relative overflow-hidden group">
-                                <div className="absolute top-0 right-0 w-20 h-20 bg-purple-500/5 rounded-full blur-2xl group-hover:bg-purple-500/10 transition-colors" />
-                                <span className="text-[10px] font-black text-slate-500 uppercase tracking-widest block mb-4">Total Salidas</span>
+                            <div className="bg-[#121212] p-6 border border-[#333333] rounded-[8px] relative overflow-hidden group">
+                                <span className="text-[10px] font-black text-[#86868B] uppercase tracking-widest block mb-4">Total Salidas</span>
                                 <div className="flex items-end gap-3">
-                                    <span className="text-4xl font-black text-white italic tracking-tighter">{stats.totalSalidas.toLocaleString()}</span>
-                                    <span className="text-purple-500/50 text-xs font-black uppercase mb-1">Registros</span>
+                                    <span className="text-4xl font-black text-[#F5F5F7] italic tracking-tighter">{stats.totalSalidas.toLocaleString()}</span>
+                                    <span className="text-[#0071E3]/50 text-xs font-black uppercase mb-1">Registros</span>
                                 </div>
                             </div>
-                            <div className="glass-card p-6 bg-slate-900/40 border-l-4 border-l-emerald-500 relative overflow-hidden group">
-                                <div className="absolute top-0 right-0 w-20 h-20 bg-emerald-500/5 rounded-full blur-2xl group-hover:bg-emerald-500/10 transition-colors" />
-                                <span className="text-[10px] font-black text-slate-500 uppercase tracking-widest block mb-4">Cantidad Total</span>
+                            <div className="bg-[#121212] p-6 border border-[#333333] rounded-[8px] relative overflow-hidden group">
+                                <span className="text-[10px] font-black text-[#86868B] uppercase tracking-widest block mb-4">Cantidad Total</span>
                                 <div className="flex items-end gap-3">
-                                    <span className="text-4xl font-black text-white italic tracking-tighter">{stats.cantidadTotal.toLocaleString()}</span>
-                                    <span className="text-emerald-500/50 text-xs font-black uppercase mb-1">{selectedArticle?.unidad || 'unid'}</span>
+                                    <span className="text-4xl font-black text-[#F5F5F7] italic tracking-tighter">{stats.cantidadTotal.toLocaleString()}</span>
+                                    <span className="text-[#0071E3]/50 text-xs font-black uppercase mb-1">{selectedArticle?.unidad || 'unid'}</span>
                                 </div>
                             </div>
-                            <div className="glass-card p-6 bg-slate-900/40 border-l-4 border-l-blue-500 relative overflow-hidden group">
-                                <div className="absolute top-0 right-0 w-20 h-20 bg-blue-500/5 rounded-full blur-2xl group-hover:bg-blue-500/10 transition-colors" />
-                                <span className="text-[10px] font-black text-slate-500 uppercase tracking-widest block mb-4">Promedio Mensual</span>
+                            <div className="bg-[#121212] p-6 border border-[#333333] rounded-[8px] relative overflow-hidden group">
+                                <span className="text-[10px] font-black text-[#86868B] uppercase tracking-widest block mb-4">Promedio Mensual</span>
                                 <div className="flex items-end gap-3">
-                                    <span className="text-4xl font-black text-white italic tracking-tighter">{stats.promedioMensual.toLocaleString()}</span>
-                                    <span className="text-blue-500/50 text-xs font-black uppercase mb-1">/ mes</span>
+                                    <span className="text-4xl font-black text-[#F5F5F7] italic tracking-tighter">{stats.promedioMensual.toLocaleString()}</span>
+                                    <span className="text-[#0071E3]/50 text-xs font-black uppercase mb-1">/ mes</span>
                                 </div>
                             </div>
-                            <div className="glass-card p-6 bg-slate-900/40 border-l-4 border-l-amber-500 relative overflow-hidden group">
-                                <div className="absolute top-0 right-0 w-20 h-20 bg-amber-500/5 rounded-full blur-2xl group-hover:bg-amber-500/10 transition-colors" />
-                                <span className="text-[10px] font-black text-slate-500 uppercase tracking-widest block mb-4">Salidas Únicas</span>
+                            <div className="bg-[#121212] p-6 border border-[#333333] rounded-[8px] relative overflow-hidden group">
+                                <span className="text-[10px] font-black text-[#86868B] uppercase tracking-widest block mb-4">Salidas Únicas</span>
                                 <div className="flex items-end gap-3">
-                                    <span className="text-4xl font-black text-white italic tracking-tighter">{stats.salidasUnicas.toLocaleString()}</span>
-                                    <span className="text-amber-500/50 text-xs font-black uppercase mb-1">Salidas ID</span>
+                                    <span className="text-4xl font-black text-[#F5F5F7] italic tracking-tighter">{stats.salidasUnicas.toLocaleString()}</span>
+                                    <span className="text-[#0071E3]/50 text-xs font-black uppercase mb-1">ID</span>
                                 </div>
                             </div>
                         </div>
@@ -467,37 +461,36 @@ export default function HistorialArticulo() {
                         <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
                             {/* Linear Regression Card */}
                             {chartData.regression && (
-                                <div className="lg:col-span-4 glass-card p-8 bg-slate-900/50 border border-amber-500/20 relative overflow-hidden flex flex-col">
-                                    <div className="absolute inset-0 bg-gradient-to-br from-amber-500/[0.03] to-transparent pointer-events-none" />
-                                    <h3 className="text-xs font-black text-amber-500 uppercase tracking-[0.3em] mb-8 flex items-center gap-3">
-                                        <TrendingUp className="w-5 h-5" />
-                                        Análisis de Regresión Lineal
+                                <div className="lg:col-span-4 bg-[#121212] p-8 border border-[#333333] rounded-[8px] relative overflow-hidden flex flex-col">
+                                    <h3 className="text-xs font-black text-[#86868B] uppercase tracking-[0.3em] mb-8 flex items-center gap-3 italic">
+                                        <TrendingUp className="w-5 h-5 text-[#0071E3]" />
+                                        Regresión Lineal
                                     </h3>
 
                                     <div className="space-y-6 flex-1">
-                                        <div className="p-4 rounded-xl bg-black/40 border border-white/5">
-                                            <label className="text-[9px] font-black text-slate-500 uppercase tracking-widest block mb-2">Ecuación de la Recta</label>
-                                            <div className="text-xl font-black text-amber-400 font-mono tracking-tight">{chartData.regression.equation}</div>
+                                        <div className="p-4 rounded-[4px] bg-black/40 border border-[#333333]">
+                                            <label className="text-[9px] font-black text-[#86868B] uppercase tracking-widest block mb-2">Ecuación de la Recta</label>
+                                            <div className="text-xl font-black text-[#0071E3] font-mono tracking-tight">{chartData.regression.equation}</div>
                                         </div>
                                         <div className="grid grid-cols-2 gap-4">
-                                            <div className="p-4 rounded-xl bg-black/40 border border-white/5">
-                                                <label className="text-[9px] font-black text-slate-500 uppercase tracking-widest block mb-1">Coeficiente R²</label>
+                                            <div className="p-4 rounded-[4px] bg-black/40 border border-[#333333]">
+                                                <label className="text-[9px] font-black text-[#86868B] uppercase tracking-widest block mb-1">Coeficiente R²</label>
                                                 <div className="text-lg font-black text-white">{chartData.regression.r2.toFixed(4)}</div>
                                             </div>
-                                            <div className="p-4 rounded-xl bg-black/40 border border-white/5">
-                                                <label className="text-[9px] font-black text-slate-500 uppercase tracking-widest block mb-1">Pendiente (m)</label>
+                                            <div className="p-4 rounded-[4px] bg-black/40 border border-[#333333]">
+                                                <label className="text-[9px] font-black text-[#86868B] uppercase tracking-widest block mb-1">Pendiente (m)</label>
                                                 <div className="text-lg font-black text-white">{chartData.regression.slope.toFixed(2)}</div>
                                             </div>
                                         </div>
 
-                                        <div className="mt-auto pt-6 border-t border-white/5">
-                                            <div className="flex items-center justify-between p-6 bg-amber-500/10 rounded-2xl border border-amber-500/20 shadow-2xl shadow-amber-950/20">
+                                        <div className="mt-auto pt-6 border-t border-[#333333]">
+                                            <div className="flex items-center justify-between p-6 bg-[#0071E3]/5 rounded-[8px] border border-[#0071E3]/20 shadow-2xl">
                                                 <div className="space-y-1">
-                                                    <span className="text-[10px] font-black text-amber-600 uppercase tracking-widest block">Predicción Próximo Mes</span>
+                                                    <span className="text-[10px] font-black text-[#0071E3] uppercase tracking-widest block">Predicción Próximo Mes</span>
                                                     <p className="text-3xl font-black text-white italic leading-none">{chartData.regression.prediction.toLocaleString()}</p>
                                                 </div>
-                                                <div className="w-12 h-12 bg-amber-500/20 rounded-xl flex items-center justify-center">
-                                                    <TrendingUp className="w-6 h-6 text-amber-500" />
+                                                <div className="w-12 h-12 bg-[#0071E3]/10 rounded-[4px] flex items-center justify-center">
+                                                    <TrendingUp className="w-6 h-6 text-[#0071E3]" />
                                                 </div>
                                             </div>
                                         </div>
@@ -506,10 +499,10 @@ export default function HistorialArticulo() {
                             )}
 
                             {/* Chart Card */}
-                            <div className={`${chartData.regression ? 'lg:col-span-8' : 'lg:col-span-12'} glass-card p-8 bg-slate-900/40 min-h-[450px] flex flex-col`}>
-                                <h3 className="text-xs font-black text-slate-500 uppercase tracking-[0.3em] mb-8 flex items-center gap-3">
-                                    <BarChart3 className="w-5 h-5 text-purple-500" />
-                                    Tendencia de Consumo Histórico
+                            <div className={`${chartData.regression ? 'lg:col-span-8' : 'lg:col-span-12'} bg-[#121212] p-8 border border-[#333333] rounded-[8px] min-h-[450px] flex flex-col`}>
+                                <h3 className="text-xs font-black text-[#86868B] uppercase tracking-[0.3em] mb-8 flex items-center gap-3 shrink-0">
+                                    <BarChart3 className="w-5 h-5 text-[#0071E3]" />
+                                    Consumo Histórico
                                 </h3>
 
                                 <div className="flex-1 w-full min-h-0">
@@ -517,21 +510,21 @@ export default function HistorialArticulo() {
                                         <ComposedChart data={chartData.data}>
                                             <defs>
                                                 <linearGradient id="colorBar" x1="0" y1="0" x2="0" y2="1">
-                                                    <stop offset="5%" stopColor="#a855f7" stopOpacity={0.6} />
-                                                    <stop offset="95%" stopColor="#a855f7" stopOpacity={0} />
+                                                    <stop offset="5%" stopColor="#0071E3" stopOpacity={0.6} />
+                                                    <stop offset="95%" stopColor="#0071E3" stopOpacity={0} />
                                                 </linearGradient>
                                             </defs>
-                                            <CartesianGrid strokeDasharray="3 3" stroke="#ffffff08" vertical={false} />
+                                            <CartesianGrid strokeDasharray="3 3" stroke="#333333" vertical={false} />
                                             <XAxis
                                                 dataKey="label"
-                                                stroke="#475569"
+                                                stroke="#86868B"
                                                 fontSize={10}
                                                 axisLine={false}
                                                 tickLine={false}
                                                 fontWeight="bold"
                                             />
                                             <YAxis
-                                                stroke="#475569"
+                                                stroke="#86868B"
                                                 fontSize={10}
                                                 axisLine={false}
                                                 tickLine={false}
@@ -539,15 +532,16 @@ export default function HistorialArticulo() {
                                             />
                                             <Tooltip
                                                 contentStyle={{
-                                                    backgroundColor: '#0f111a',
-                                                    border: '1px solid rgba(255,255,255,0.1)',
-                                                    borderRadius: '16px',
+                                                    backgroundColor: '#121212',
+                                                    border: '1px solid #333333',
+                                                    borderRadius: '8px',
                                                     padding: '12px',
                                                     boxShadow: '0 20px 40px rgba(0,0,0,0.5)',
                                                     backdropFilter: 'blur(20px)'
                                                 }}
                                                 itemStyle={{ fontWeight: '900', fontSize: '12px', textTransform: 'uppercase' }}
-                                                labelStyle={{ color: '#64748b', fontWeight: 'bold', fontSize: '10px', marginBottom: '8px', textTransform: 'uppercase' }}
+                                                labelStyle={{ color: '#86868B', fontWeight: 'bold', fontSize: '10px', marginBottom: '8px', textTransform: 'uppercase' }}
+                                                cursor={{ fill: 'white', opacity: 0.03 }}
                                             />
                                             <Legend
                                                 verticalAlign="top"
@@ -555,15 +549,15 @@ export default function HistorialArticulo() {
                                                 iconType="circle"
                                                 wrapperStyle={{ fontSize: '10px', fontWeight: 'black', textTransform: 'uppercase', letterSpacing: '0.1em', paddingBottom: '20px' }}
                                             />
-                                            <Bar dataKey="cantidad" name="Consumo Real" fill="url(#colorBar)" radius={[6, 6, 0, 0]} />
+                                            <Bar dataKey="cantidad" name="Consumo Real" fill="url(#colorBar)" radius={[4, 4, 0, 0]} />
                                             {chartData.regression && (
                                                 <Line
                                                     type="monotone"
                                                     dataKey="regression"
-                                                    name="Progreso Estadístico"
-                                                    stroke="#fbbf24"
+                                                    name="Progresión"
+                                                    stroke="#0071E3"
                                                     strokeWidth={3}
-                                                    dot={{ r: 4, fill: '#fbbf24', strokeWidth: 0 }}
+                                                    dot={{ r: 4, fill: '#0071E3', strokeWidth: 0 }}
                                                     activeDot={{ r: 6, strokeWidth: 0 }}
                                                 />
                                             )}
@@ -576,42 +570,42 @@ export default function HistorialArticulo() {
                         {/* List Area */}
                         <div className="space-y-6">
                             <div className="flex items-center justify-between px-2">
-                                <h3 className="text-xs font-black text-slate-500 uppercase tracking-[0.3em] flex items-center gap-3">
-                                    <Table className="w-5 h-5 text-emerald-500" />
-                                    Listado Cronológico de Salidas
+                                <h3 className="text-xs font-black text-[#86868B] uppercase tracking-[0.3em] flex items-center gap-3">
+                                    <Table className="w-5 h-5 text-[#0071E3]" />
+                                    Consumos Cronológicos
                                 </h3>
                                 <button
                                     onClick={handleExport}
-                                    className="glass-button px-6 py-2.5 rounded-xl text-xs font-black uppercase tracking-widest flex items-center gap-2 hover:bg-emerald-500/10 text-emerald-400 border-emerald-500/20"
+                                    className="px-6 py-2.5 bg-transparent border border-[#333333] rounded-[8px] text-xs font-black uppercase tracking-widest flex items-center gap-2 hover:bg-[#0071E3]/5 text-[#0071E3] transition-all"
                                 >
                                     <FileSpreadsheet className="w-4 h-4" />
                                     Exportar Excel
                                 </button>
                             </div>
 
-                            <div className="glass-card overflow-hidden bg-slate-900/40 border border-white/5">
+                            <div className="bg-[#121212] border border-[#333333] rounded-[8px] overflow-hidden shadow-2xl">
                                 <div className="overflow-x-auto">
                                     <table className="w-full text-left border-collapse">
                                         <thead>
-                                            <tr className="bg-slate-950/80 text-white text-[10px] font-black uppercase tracking-[0.2em] border-b border-white/5">
+                                            <tr className="bg-[#1D1D1F] text-[#86868B] text-[10px] font-black uppercase tracking-[0.2em] border-b border-[#333333]">
                                                 <th className="p-6">ID Salida</th>
                                                 <th className="p-6">Fecha Efectiva</th>
                                                 <th className="p-6 text-right">Cantidad</th>
                                             </tr>
                                         </thead>
-                                        <tbody className="divide-y divide-white/[0.03]">
+                                        <tbody className="divide-y divide-[#333333]">
                                             {salidas.map((s) => (
-                                                <tr key={s.id_salida} className="hover:bg-white/[0.03] transition-colors group h-16">
+                                                <tr key={s.id_salida} className="hover:bg-white/[0.02] transition-colors group h-16">
                                                     <td className="p-6">
-                                                        <span className="font-mono text-sm font-black text-purple-400 group-hover:text-purple-300 transition-colors">#{s.id_salida}</span>
+                                                        <span className="font-mono text-sm font-black text-[#0071E3]/70 group-hover:text-[#0071E3] transition-colors">#{s.id_salida}</span>
                                                     </td>
-                                                    <td className="p-6 text-slate-200 font-bold text-sm">
+                                                    <td className="p-6 text-[#F5F5F7] font-medium text-sm">
                                                         {format(parseISO(s.fecha_salida), 'PPPP', { locale: es })}
                                                     </td>
                                                     <td className="p-6 text-right">
                                                         <div className="flex flex-col items-end">
-                                                            <span className="text-xl font-black text-white group-hover:text-emerald-400 transition-colors font-mono">{s.cantidad.toLocaleString()}</span>
-                                                            <span className="text-[9px] font-black text-slate-600 uppercase tracking-widest uppercase">{selectedArticle?.unidad}</span>
+                                                            <span className="text-xl font-black text-white group-hover:text-[#0071E3] transition-colors font-mono">{s.cantidad.toLocaleString()}</span>
+                                                            <span className="text-[9px] font-black text-[#86868B] uppercase tracking-widest">{selectedArticle?.unidad}</span>
                                                         </div>
                                                     </td>
                                                 </tr>
@@ -630,72 +624,72 @@ export default function HistorialArticulo() {
                 <div className="fixed inset-0 z-50 flex items-center justify-center p-4 md:p-10 animate-in fade-in zoom-in-95 duration-300">
                     <div className="absolute inset-0 bg-black/80 backdrop-blur-xl" onClick={() => setShowSearchModal(false)} />
 
-                    <div className="bg-[#0f141a] border border-white/10 rounded-[2.5rem] w-full max-w-5xl shadow-[0_40px_100px_rgba(0,0,0,0.8)] overflow-hidden flex flex-col max-h-[90vh] relative z-10 border-t-white/20">
+                    <div className="bg-[#121212] border border-[#333333] rounded-[8px] w-full max-w-5xl shadow-2xl overflow-hidden flex flex-col max-h-[90vh] relative z-10">
                         {/* Header */}
-                        <div className="px-10 py-8 bg-slate-900/50 border-b border-white/5 flex justify-between items-center group">
+                        <div className="px-10 py-8 border-b border-[#333333] flex justify-between items-center bg-[#1D1D1F]">
                             <div className="flex items-center gap-4">
-                                <div className="p-3 rounded-2xl bg-purple-500/10 text-purple-400">
+                                <div className="p-3 rounded-[4px] bg-[#0071E3]/10 text-[#0071E3] border border-[#0071E3]/20">
                                     <Search className="w-6 h-6" />
                                 </div>
                                 <div>
                                     <h3 className="text-xl font-black text-white uppercase italic tracking-tighter">Buscador Especializado</h3>
-                                    <p className="text-[10px] font-black text-slate-500 uppercase tracking-[0.2em] mt-1">Localización de artículos por código o descriptivo</p>
+                                    <p className="text-[10px] font-black text-[#86868B] uppercase tracking-[0.2em] mt-1">Localización de artículos por código o descripción</p>
                                 </div>
                             </div>
                             <button
                                 onClick={() => setShowSearchModal(false)}
-                                className="w-12 h-12 glass-button text-slate-500 hover:text-white rounded-2xl flex items-center justify-center transition-all"
+                                className="w-12 h-12 bg-transparent border border-[#333333] text-[#86868B] hover:text-white rounded-[8px] flex items-center justify-center transition-all hover:bg-white/5"
                             >
                                 <X className="w-6 h-6" />
                             </button>
                         </div>
 
                         {/* Search Input Area */}
-                        <div className="px-10 py-8 bg-slate-950/40 relative">
+                        <div className="px-10 py-8 bg-[#121212] relative">
                             <div className="relative group/search-input">
-                                <Search className="absolute left-6 top-1/2 -translate-y-1/2 w-6 h-6 text-slate-600 group-focus-within/search-input:text-purple-500 transition-colors" />
+                                <Search className="absolute left-6 top-1/2 -translate-y-1/2 w-6 h-6 text-[#86868B] group-focus-within/search-input:text-[#0071E3] transition-colors" />
                                 <input
                                     type="text"
                                     autoFocus
                                     placeholder="Escriba código o nombre del material..."
                                     value={searchTerm}
                                     onChange={(e) => setSearchTerm(e.target.value)}
-                                    className="w-full bg-slate-900/80 border border-white/10 rounded-[1.5rem] pl-16 pr-6 py-5 text-xl text-white font-bold placeholder-slate-700 focus:outline-none focus:ring-4 focus:ring-purple-500/20 focus:border-purple-500/40 transition-all shadow-inner"
+                                    className="w-full bg-[#1D1D1F] border border-[#333333] rounded-[8px] pl-16 pr-6 py-5 text-xl text-white font-bold placeholder-[#333333] focus:outline-none focus:border-[#0071E3]/50 transition-all shadow-inner"
                                 />
-                                {searching && <Loader2 className="absolute right-6 top-1/2 -translate-y-1/2 w-6 h-6 text-purple-500 animate-spin" />}
+                                {searching && <Loader2 className="absolute right-6 top-1/2 -translate-y-1/2 w-6 h-6 text-[#0071E3] animate-spin" />}
                             </div>
                         </div>
 
                         {/* Results Area */}
-                        <div className="flex-1 overflow-hidden flex flex-col bg-[#0f141a]">
+                        <div className="flex-1 overflow-hidden flex flex-col bg-[#121212]">
                             <div className="flex-1 overflow-auto px-6 pb-10">
                                 <table className="w-full text-left border-collapse">
-                                    <thead className="sticky top-0 z-10 bg-[#0f141a]/95 backdrop-blur-lg">
-                                        <tr className="border-b border-white/5">
-                                            <th className="px-6 py-4 text-[10px] font-black text-slate-500 uppercase tracking-widest text-center">Referencia</th>
-                                            <th className="px-6 py-4 text-[10px] font-black text-slate-500 uppercase tracking-widest">Código</th>
-                                            <th className="px-6 py-4 text-[10px] font-black text-slate-500 uppercase tracking-widest">Descripción del Artículo</th>
-                                            <th className="px-6 py-4 text-[10px] font-black text-slate-500 uppercase tracking-widest text-center">Acción</th>
+                                    <thead className="sticky top-0 z-10 bg-[#121212]/95 backdrop-blur-lg">
+                                        <tr className="border-b border-[#333333]">
+                                            <th className="px-6 py-4 text-[10px] font-black text-[#86868B] uppercase tracking-widest text-center">Icono</th>
+                                            <th className="px-6 py-4 text-[10px] font-black text-[#86868B] uppercase tracking-widest">Código</th>
+                                            <th className="px-6 py-4 text-[10px] font-black text-[#86868B] uppercase tracking-widest">Descripción del Artículo</th>
+                                            <th className="px-6 py-4 text-[10px] font-black text-[#86868B] uppercase tracking-widest text-center">Acción</th>
                                         </tr>
                                     </thead>
-                                    <tbody className="divide-y divide-white/[0.03]">
+                                    <tbody className="divide-y divide-[#333333]">
                                         {articulosFound.map((art) => (
                                             <tr key={art.codigo_articulo} className="hover:bg-white/[0.02] transition-all group/row-search h-20">
                                                 <td className="px-6 text-center">
-                                                    <div className="w-12 h-12 bg-black/40 rounded-xl overflow-hidden border border-white/10 mx-auto transform group-hover/row-search:scale-110 transition-transform">
+                                                    <div className="w-12 h-12 bg-black/40 rounded-[4px] overflow-hidden border border-[#333333] mx-auto transform group-hover/row-search:scale-105 transition-transform">
                                                         <img src={art.imagen_url || ''} className="w-full h-full object-cover" />
                                                     </div>
                                                 </td>
                                                 <td className="px-6">
-                                                    <span className="font-mono text-sm font-black text-purple-400 bg-purple-500/5 px-3 py-1 rounded-lg border border-purple-500/10">
+                                                    <span className="font-mono text-sm font-black text-[#0071E3] bg-[#0071E3]/5 px-3 py-1 rounded-[4px] border border-[#0071E3]/10">
                                                         {art.codigo_articulo}
                                                     </span>
                                                 </td>
                                                 <td className="px-6">
-                                                    <div className="font-black text-slate-200 group-hover/row-search:text-white transition-colors uppercase leading-tight">
+                                                    <div className="font-black text-[#F5F5F7] group-hover/row-search:text-[#0071E3] transition-colors uppercase leading-tight">
                                                         {art.nombre_articulo}
                                                     </div>
-                                                    <span className="text-[9px] font-black text-slate-600 uppercase tracking-widest mt-1 block">{art.unidad}</span>
+                                                    <span className="text-[9px] font-black text-[#86868B] uppercase tracking-widest mt-1 block">{art.unidad}</span>
                                                 </td>
                                                 <td className="px-6 text-center">
                                                     <button
@@ -705,10 +699,10 @@ export default function HistorialArticulo() {
                                                             setSearchTerm('');
                                                             setHasSearched(false);
                                                         }}
-                                                        className="px-6 py-3 bg-purple-600 hover:bg-purple-500 text-white rounded-xl text-[10px] font-black uppercase tracking-widest flex items-center gap-2 mx-auto active:scale-95 transition-all shadow-lg shadow-purple-900/40"
+                                                        className="px-6 py-3 bg-[#0071E3] hover:bg-[#0077ED] text-white rounded-[8px] text-[10px] font-black uppercase tracking-widest flex items-center gap-2 mx-auto active:scale-95 transition-all shadow-lg shadow-[#0071E3]/20"
                                                     >
                                                         Seleccionar
-                                                        <ChevronRight className="w-4 h-4" />
+                                                        <ArrowRight className="w-4 h-4" />
                                                     </button>
                                                 </td>
                                             </tr>
@@ -716,8 +710,8 @@ export default function HistorialArticulo() {
                                         {articulosFound.length === 0 && !searching && searchTerm.length >= 2 && (
                                             <tr>
                                                 <td colSpan={4} className="text-center py-20">
-                                                    <AlertCircle className="w-10 h-10 text-slate-700 mx-auto mb-4" />
-                                                    <p className="text-slate-500 font-bold uppercase tracking-widest text-xs">Sin coincidencias para la búsqueda</p>
+                                                    <AlertCircle className="w-10 h-10 text-[#333333] mx-auto mb-4" />
+                                                    <p className="text-[#86868B] font-bold uppercase tracking-widest text-[10px]">Sin coincidencias para la búsqueda</p>
                                                 </td>
                                             </tr>
                                         )}
@@ -727,12 +721,12 @@ export default function HistorialArticulo() {
                         </div>
 
                         {/* Footer */}
-                        <div className="px-10 py-5 bg-slate-950/60 border-t border-white/5 flex justify-between items-center shrink-0">
-                            <span className="text-[9px] font-black text-slate-600 uppercase tracking-[0.2em]">Criterio de búsqueda sensible a mayúsculas</span>
+                        <div className="px-10 py-5 bg-[#1D1D1F] border-t border-[#333333] flex justify-between items-center shrink-0">
+                            <span className="text-[9px] font-black text-[#86868B] uppercase tracking-[0.2em]">Criterio de búsqueda sensible a mayúsculas</span>
                             <div className="flex items-center gap-3">
-                                <span className="text-[9px] font-black text-purple-400 uppercase tracking-widest">{articulosFound.length} Artículos Encontrados</span>
-                                <div className="w-1 h-1 rounded-full bg-slate-700" />
-                                <span className="text-[9px] font-black text-slate-500 uppercase tracking-widest">{searchTerm.length} Caracteres</span>
+                                <span className="text-[9px] font-black text-[#0071E3] uppercase tracking-widest">{articulosFound.length} Artículos Encontrados</span>
+                                <div className="w-1 h-1 rounded-full bg-[#333333]" />
+                                <span className="text-[9px] font-black text-[#86868B] uppercase tracking-widest">{searchTerm.length} Caracteres</span>
                             </div>
                         </div>
                     </div>

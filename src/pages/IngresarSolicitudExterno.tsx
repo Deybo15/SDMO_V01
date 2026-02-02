@@ -536,26 +536,27 @@ export default function IngresarSolicitudExterno() {
     };
 
     return (
-        <div className="min-h-screen bg-[#0a0a0a] text-white font-sans relative overflow-hidden">
-            {/* Background Effects */}
-            <div className="fixed inset-0 pointer-events-none z-0">
-                <div className="absolute top-[85%] left-[20%] w-[80rem] h-[80rem] bg-cyan-500/10 rounded-full blur-[100px] -translate-x-1/2 -translate-y-1/2 animate-pulse"></div>
-                <div className="absolute top-[15%] right-[20%] w-[80rem] h-[80rem] bg-teal-600/5 rounded-full blur-[100px] translate-x-1/2 -translate-y-1/2"></div>
-            </div>
+        <div className="min-h-screen bg-[#000000] text-[#F5F5F7] font-sans relative flex flex-col selection:bg-[#0071E3]/30 pb-20">
+            <style>{`
+                .custom-scrollbar::-webkit-scrollbar { width: 6px; height: 6px; }
+                .custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
+                .custom-scrollbar::-webkit-scrollbar-thumb { background: #333333; border-radius: 3px; }
+                .custom-scrollbar::-webkit-scrollbar-thumb:hover { background: #424245; }
+            `}</style>
 
             {/* Notification Toast */}
             {notification && (
-                <div className={`fixed top-24 right-6 z-[1100] flex items-center gap-3 px-6 py-4 rounded-xl shadow-2xl border backdrop-blur-xl animate-in slide-in-from-right duration-300 ${notification.type === 'success' ? 'bg-green-500/10 border-green-500/30 text-green-400' :
-                    notification.type === 'error' ? 'bg-red-500/10 border-red-500/30 text-red-400' :
-                        notification.type === 'warning' ? 'bg-yellow-500/10 border-yellow-500/30 text-yellow-400' :
-                            'bg-blue-500/10 border-blue-500/30 text-blue-400'
+                <div className={`fixed top-24 right-8 z-[1100] flex items-center gap-4 px-6 py-4 rounded-[8px] shadow-2xl border backdrop-blur-[20px] animate-in slide-in-from-right duration-300 ${notification.type === 'success' ? 'bg-[#1D1D1F] border-[#0071E3]/50 text-[#0071E3]' :
+                    notification.type === 'error' ? 'bg-[#1D1D1F] border-rose-500/30 text-rose-400' :
+                        notification.type === 'warning' ? 'bg-[#1D1D1F] border-yellow-500/30 text-yellow-400' :
+                            'bg-[#1D1D1F] border-[#333333] text-[#F5F5F7]'
                     }`}>
                     {notification.type === 'success' && <CheckCircle className="w-5 h-5" />}
                     {notification.type === 'error' && <AlertTriangle className="w-5 h-5" />}
                     {notification.type === 'warning' && <AlertTriangle className="w-5 h-5" />}
                     {notification.type === 'info' && <Info className="w-5 h-5" />}
-                    <span className="font-medium">{notification.message}</span>
-                    <button onClick={() => setNotification(null)} className="ml-2 opacity-70 hover:opacity-100">
+                    <span className="text-[11px] font-black uppercase tracking-widest">{notification.message}</span>
+                    <button onClick={() => setNotification(null)} className="ml-2 bg-transparent text-[#86868B] hover:text-[#F5F5F7] transition-colors">
                         <X className="w-4 h-4" />
                     </button>
                 </div>
@@ -566,43 +567,42 @@ export default function IngresarSolicitudExterno() {
                 <PageHeader
                     title="REGISTRO DE SOLICITUDES EXTERNAS"
                     icon={FileText}
-                    themeColor="cyan"
                     backRoute="/cliente-externo"
                 />
 
                 {/* Date Display */}
-                <div className="flex items-center gap-2 text-cyan-400 font-bold text-xs uppercase tracking-widest bg-cyan-500/10 w-fit px-4 py-2 rounded-full border border-cyan-500/20 shadow-[0_0_15px_rgba(6,182,212,0.15)]">
-                    <Calendar className="w-3.5 h-3.5" />
+                <div className="flex items-center gap-3 text-[#0071E3] font-black text-[10px] uppercase tracking-[0.2em] bg-[#0071E3]/10 w-fit px-6 py-3 rounded-[8px] border border-[#0071E3]/20 shadow-xl italic">
+                    <Calendar className="w-4 h-4" />
                     {new Date().toLocaleDateString('es-ES', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })}
                 </div>
             </div>
 
             <div className="max-w-6xl mx-auto relative z-10 px-6 pb-8">
                 {/* Content Card */}
-                <div className="bg-[#1E293B]/40 backdrop-blur-3xl border border-white/10 rounded-[2.5rem] overflow-hidden shadow-2xl transition-all duration-500 hover:border-cyan-500/20 mt-8">
+                <div className="bg-[#121212] border border-[#333333] rounded-[8px] overflow-hidden shadow-2xl mt-8">
 
-                    <div className="p-8 md:p-12 relative">
+                    <div className="p-12 relative">
                         {/* Section Title */}
-                        <div className="relative flex items-center gap-3 mb-12">
-                            <div className="w-10 h-10 rounded-xl bg-cyan-500/10 border border-cyan-500/20 flex items-center justify-center text-cyan-400">
-                                <Edit className="w-5 h-5" />
+                        <div className="relative flex items-center gap-4 mb-12">
+                            <div className="w-12 h-12 rounded-[8px] bg-[#0071E3]/10 border border-[#0071E3]/20 flex items-center justify-center text-[#0071E3]">
+                                <Edit className="w-6 h-6" />
                             </div>
                             <div>
-                                <h3 className="text-xl font-black text-white uppercase tracking-tight">Información de la Solicitud</h3>
-                                <p className="text-[10px] font-black text-cyan-400/60 uppercase tracking-widest mt-0.5">Complete todos los campos requeridos</p>
+                                <h3 className="text-2xl font-black text-[#F5F5F7] uppercase italic tracking-tighter">Información de la Solicitud</h3>
+                                <p className="text-[10px] font-black text-[#86868B] uppercase tracking-widest mt-1">Complete todos los campos requeridos</p>
                             </div>
                         </div>
 
                         <div className="space-y-8">
                             {/* Description */}
-                            <div className="space-y-2">
-                                <label className="block text-xs font-black text-cyan-400/80 uppercase tracking-widest ml-1">
-                                    Descripción de la solicitud <span className="text-red-500">*</span>
+                            <div className="space-y-4">
+                                <label className="block text-[11px] font-black text-[#86868B] uppercase tracking-wider ml-1">
+                                    Descripción de la solicitud <span className="text-rose-500">*</span>
                                 </label>
                                 <textarea
                                     value={formData.descripcion}
                                     onChange={(e) => setFormData(prev => ({ ...prev, descripcion: e.target.value }))}
-                                    className="w-full bg-[#0f172a]/40 backdrop-blur-sm border border-white/5 rounded-2xl py-4 px-5 text-white placeholder:text-slate-500 focus:border-cyan-500/50 focus:ring-4 focus:ring-cyan-500/10 focus:outline-none min-h-[140px] transition-all duration-300"
+                                    className="w-full bg-[#1D1D1F] border border-[#333333] rounded-[8px] py-6 px-6 text-[#F5F5F7] placeholder-[#424245] focus:border-[#0071E3]/50 outline-none min-h-[160px] transition-all duration-300 font-medium text-sm italic"
                                     placeholder="Describa detalladamente la solicitud..."
                                 />
                             </div>
@@ -629,29 +629,29 @@ export default function IngresarSolicitudExterno() {
                                         required
                                         icon={MapPin}
                                     />
-                                    <div className={`text-[10px] font-bold px-3 py-1.5 rounded-lg flex items-center gap-2 transition-all duration-300 ${barrioMessage.type === 'success' ? 'bg-green-500/10 text-green-400 border border-green-500/20' :
+                                    <div className={`text-[10px] font-bold px-4 py-2 rounded-[8px] flex items-center gap-2 transition-all duration-300 ${barrioMessage.type === 'success' ? 'bg-green-500/10 text-green-400 border border-green-500/20' :
                                         barrioMessage.type === 'warning' ? 'bg-yellow-500/10 text-yellow-400 border border-yellow-500/20' :
-                                            barrioMessage.type === 'loading' ? 'bg-cyan-500/10 text-cyan-400 border border-cyan-500/20' :
-                                                'bg-white/5 text-slate-400 border border-white/5'
+                                            barrioMessage.type === 'loading' ? 'bg-[#0071E3]/10 text-[#0071E3] border border-[#0071E3]/20' :
+                                                'bg-black/20 text-[#86868B] border border-[#333333]'
                                         }`}>
-                                        {barrioMessage.type === 'loading' ? <Loader2 className="w-3 h-3 animate-spin" /> :
-                                            barrioMessage.type === 'success' ? <CheckCircle className="w-3 h-3" /> :
-                                                barrioMessage.type === 'warning' ? <AlertTriangle className="w-3 h-3" /> :
-                                                    <Info className="w-3 h-3" />}
-                                        {barrioMessage.text}
+                                        {barrioMessage.type === 'loading' ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> :
+                                            barrioMessage.type === 'success' ? <CheckCircle className="w-3.5 h-3.5" /> :
+                                                barrioMessage.type === 'warning' ? <AlertTriangle className="w-3.5 h-3.5" /> :
+                                                    <Info className="w-3.5 h-3.5" />}
+                                        <span className="uppercase tracking-widest">{barrioMessage.text}</span>
                                     </div>
                                 </div>
                             </div>
 
                             {/* Dirección Exacta */}
-                            <div className="space-y-2">
-                                <label className="block text-xs font-black text-cyan-400/80 uppercase tracking-widest ml-1">
-                                    Dirección Exacta <span className="text-red-500">*</span>
+                            <div className="space-y-4">
+                                <label className="block text-[11px] font-black text-[#86868B] uppercase tracking-wider ml-1">
+                                    Dirección Exacta <span className="text-rose-500">*</span>
                                 </label>
                                 <textarea
                                     value={formData.direccion}
                                     onChange={(e) => setFormData(prev => ({ ...prev, direccion: e.target.value }))}
-                                    className="w-full bg-[#0f172a]/40 backdrop-blur-sm border border-white/5 rounded-2xl py-4 px-5 text-white placeholder:text-slate-500 focus:border-cyan-500/50 focus:ring-4 focus:ring-cyan-500/10 focus:outline-none min-h-[100px] transition-all duration-300"
+                                    className="w-full bg-[#1D1D1F] border border-[#333333] rounded-[8px] py-6 px-6 text-[#F5F5F7] placeholder-[#424245] focus:border-[#0071E3]/50 outline-none min-h-[120px] transition-all duration-300 font-medium text-sm italic"
                                     placeholder="Indique la dirección lo más detallada posible..."
                                 />
                             </div>
@@ -703,55 +703,55 @@ export default function IngresarSolicitudExterno() {
                             </div>
 
                             {/* Map */}
-                            <div className="space-y-4">
-                                <label className="block text-xs font-black text-cyan-400/80 uppercase tracking-widest ml-1">
-                                    Ubicación en el Mapa <span className="text-slate-400 font-bold text-[10px] ml-2 tracking-normal lowercase">(Haga clic para seleccionar)</span> <span className="text-red-500">*</span>
+                            <div className="space-y-6">
+                                <label className="block text-[11px] font-black text-[#86868B] uppercase tracking-wider ml-1">
+                                    Ubicación en el Mapa <span className="text-[#86868B]/40 font-bold text-[9px] ml-2 tracking-normal lowercase">(Haga clic para seleccionar)</span> <span className="text-rose-500">*</span>
                                 </label>
-                                <div className="relative w-full h-[450px] rounded-[2rem] border border-white/10 shadow-2xl overflow-hidden bg-[#0f172a]/40 backdrop-blur-md group">
+                                <div className="relative w-full h-[500px] rounded-[8px] border border-[#333333] shadow-3xl overflow-hidden bg-black group/map">
                                     {/* Map Container */}
                                     <div ref={mapRef} id="map" className="w-full h-full z-0 group-hover:scale-[1.01] transition-transform duration-700" />
 
                                     {/* Map Controls Overlay */}
-                                    <div className="absolute top-6 left-6 right-6 z-[1000] flex gap-3">
+                                    <div className="absolute top-8 left-8 right-8 z-[1000] flex gap-4">
                                         <form onSubmit={handleMapSearch} className="flex-1 relative">
                                             <input
                                                 type="text"
                                                 value={mapSearchQuery}
                                                 onChange={(e) => setMapSearchQuery(e.target.value)}
                                                 placeholder="Buscar lugar (ej: Parque Central)..."
-                                                className="w-full bg-[#0a0a0a]/80 backdrop-blur-xl border border-white/10 text-white rounded-2xl pl-12 pr-4 py-3.5 shadow-2xl focus:outline-none focus:border-cyan-500/50 transition-all text-sm font-medium"
+                                                className="w-full bg-black/80 backdrop-blur-[20px] border border-[#333333] text-[#F5F5F7] rounded-[8px] pl-14 pr-6 py-4 shadow-2xl focus:outline-none focus:border-[#0071E3]/50 transition-all text-sm font-medium italic"
                                             />
-                                            <Search className="absolute left-4 top-4 w-4.5 h-4.5 text-cyan-400/60" />
+                                            <Search className="absolute left-5 top-5 w-5 h-5 text-[#0071E3]" />
                                             {isSearchingMap && (
-                                                <div className="absolute right-4 top-4">
-                                                    <Loader2 className="w-4.5 h-4.5 animate-spin text-cyan-400" />
+                                                <div className="absolute right-5 top-5">
+                                                    <Loader2 className="w-5 h-5 animate-spin text-[#0071E3]" />
                                                 </div>
                                             )}
                                         </form>
                                         <button
                                             type="button"
                                             onClick={handleLocateMe}
-                                            className="bg-[#0a0a0a]/80 backdrop-blur-xl border border-white/10 text-cyan-400 p-3.5 rounded-2xl shadow-2xl hover:bg-cyan-500/10 hover:border-cyan-400/30 transition-all duration-300 active:scale-95"
+                                            className="bg-black/80 backdrop-blur-[20px] border border-[#333333] text-[#0071E3] p-4 rounded-[8px] shadow-2xl hover:bg-[#0071E3]/10 hover:border-[#0071E3]/30 transition-all duration-300 active:scale-95"
                                             title="Mi Ubicación"
                                         >
-                                            <Crosshair className="w-6 h-6" />
+                                            <Crosshair className="w-7 h-7" />
                                         </button>
                                     </div>
 
-                                    {/* Subtle Gradient Overlay */}
-                                    <div className="absolute inset-x-0 bottom-0 h-24 bg-gradient-to-t from-[#0a0a0a]/60 to-transparent pointer-events-none" />
+                                    {/* Subtle Overlay */}
+                                    <div className="absolute inset-0 bg-black/10 pointer-events-none" />
                                 </div>
-                                <div className={`text-[10px] font-bold px-3 py-1.5 rounded-lg w-fit flex items-center gap-2 transition-all duration-300 ${locationMessage.type === 'success' ? 'bg-green-500/10 text-green-400 border border-green-500/20' : 'bg-white/5 text-slate-400 border border-white/5'}`}>
-                                    {locationMessage.type === 'success' ? <MapPin className="w-3.5 h-3.5" /> : <Info className="w-3.5 h-3.5" />}
-                                    {locationMessage.text}
+                                <div className={`text-[10px] font-bold px-4 py-2 rounded-[8px] w-fit flex items-center gap-2 transition-all duration-300 ${locationMessage.type === 'success' ? 'bg-green-500/10 text-green-400 border border-green-500/20' : 'bg-black/20 text-[#86868B] border border-[#333333]'}`}>
+                                    {locationMessage.type === 'success' ? <MapPin className="w-4 h-4" /> : <Info className="w-4 h-4" />}
+                                    <span className="uppercase tracking-widest">{locationMessage.text}</span>
                                 </div>
                             </div>
 
                             {/* Footer Buttons */}
-                            <div className="flex flex-col md:flex-row justify-end items-center gap-4 mt-12 pt-8 border-t border-white/5">
+                            <div className="flex flex-col md:flex-row justify-end items-center gap-6 mt-16 pt-8 border-t border-[#333333]">
                                 <button
                                     onClick={() => navigate('/cliente-externo/seguimiento')}
-                                    className="w-full md:w-auto px-8 py-4 bg-white/5 border border-white/10 text-slate-300 font-bold rounded-[1.25rem] hover:bg-white/10 hover:text-white transition-all duration-300 flex items-center justify-center gap-2 group active:scale-95"
+                                    className="w-full md:w-auto px-10 py-4 bg-transparent border border-[#F5F5F7] text-[#F5F5F7] font-black text-[10px] rounded-[8px] hover:bg-white/5 transition-all duration-300 flex items-center justify-center gap-3 group active:scale-95 uppercase tracking-widest"
                                 >
                                     <Table className="w-5 h-5 group-hover:rotate-6 transition-transform" />
                                     Ver Solicitudes
@@ -759,10 +759,10 @@ export default function IngresarSolicitudExterno() {
                                 <button
                                     onClick={handleSave}
                                     disabled={saving}
-                                    className="w-full md:w-auto px-10 py-4 bg-gradient-to-r from-cyan-500 to-teal-500 text-black font-black rounded-[1.25rem] hover:shadow-[0_0_30px_rgba(6,182,212,0.4)] transition-all duration-300 flex items-center justify-center gap-3 disabled:opacity-50 disabled:cursor-not-allowed group active:scale-95"
+                                    className="w-full md:w-auto px-12 py-4 bg-[#0071E3] text-white font-black text-[10px] rounded-[8px] hover:brightness-110 shadow-2xl shadow-[#0071E3]/20 transition-all duration-300 flex items-center justify-center gap-4 disabled:opacity-20 disabled:cursor-not-allowed group active:scale-95 uppercase tracking-widest"
                                 >
                                     {saving ? <Loader2 className="w-5 h-5 animate-spin" /> : <Save className="w-5 h-5 group-hover:translate-x-0.5 transition-transform" />}
-                                    <span className="uppercase tracking-tight">Guardar Solicitud</span>
+                                    Guardar Solicitud
                                 </button>
                             </div>
                         </div>

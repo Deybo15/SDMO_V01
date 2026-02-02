@@ -16,9 +16,10 @@ import {
     ChevronRight,
     UserCircle,
     Building2,
-    Shield
+    Shield,
+    X,
+    Plus
 } from 'lucide-react';
-
 
 import jsPDF from 'jspdf';
 
@@ -26,6 +27,7 @@ import jsPDF from 'jspdf';
 import { PageHeader } from '../components/ui/PageHeader';
 import ArticuloSearchModal from '../components/ArticleSearchModal';
 import ColaboradorSearchModal from '../components/ColaboradorSearchModal';
+import { cn } from '../lib/utils';
 
 interface Origen {
     id: number;
@@ -309,118 +311,112 @@ export default function IngresarArticulo() {
     };
 
     return (
-        <div className="min-h-screen bg-[#0f111a] p-4 md:p-8">
+        <div className="min-h-screen bg-[#000000] text-[#F5F5F7]">
             <PageHeader
                 title="Ingresar Artículo"
                 icon={PlusCircle}
-                themeColor="emerald"
+                themeColor="blue"
             />
 
-            <div className="max-w-7xl mx-auto grid grid-cols-1 lg:grid-cols-12 gap-6 relative">
+            <div className="max-w-7xl mx-auto px-8 py-8 grid grid-cols-1 lg:grid-cols-12 gap-8 relative animate-fade-in-up">
 
                 {/* Main Content */}
-                <div className={`transition-all duration-300 ${showHistory ? 'lg:col-span-9' : 'lg:col-span-12'} space-y-6`}>
+                <div className={cn("transition-all duration-300 space-y-8", showHistory ? "lg:col-span-9" : "lg:col-span-12")}>
 
                     {/* Header Controls */}
                     <div className="flex justify-between items-center gap-4">
-                        <div className="flex items-center gap-3 bg-white/5 border border-white/10 px-4 py-2 rounded-xl">
-                            <Calendar className="w-5 h-5 text-emerald-400" />
-                            <span className="text-gray-300 font-medium">{fecha}</span>
+                        <div className="flex items-center gap-3 bg-[#121212] border border-[#333333] px-5 py-3 rounded-[8px]">
+                            <Calendar className="w-5 h-5 text-[#0071E3]" />
+                            <span className="text-[#F5F5F7] font-bold text-sm">{fecha}</span>
                         </div>
                         <button
                             onClick={() => setShowHistory(!showHistory)}
-                            className={`flex items-center gap-2 px-5 py-2.5 rounded-xl font-bold transition-all shadow-lg ${showHistory
-                                ? 'bg-emerald-500 text-white shadow-emerald-500/20'
-                                : 'bg-[#1e2235] text-gray-400 border border-white/10 hover:bg-[#252a41]'
-                                }`}
+                            className={cn(
+                                "flex items-center gap-2 px-6 py-3 rounded-[8px] font-bold transition-all text-xs uppercase tracking-widest",
+                                showHistory
+                                    ? "bg-[#0071E3] text-white"
+                                    : "bg-transparent border border-[#F5F5F7] text-[#F5F5F7] hover:bg-[#F5F5F7]/10"
+                            )}
                         >
                             <History className="w-5 h-5" />
                             {showHistory ? 'Cerrar Historial' : 'Ver Recientes'}
                         </button>
                     </div>
 
-                    <form onSubmit={handleSubmit} className="space-y-6">
+                    <form onSubmit={handleSubmit} className="space-y-8">
                         {/* Section 1: Cabecera */}
-                        <div className="bg-[#1e2235] border border-white/10 rounded-2xl shadow-xl overflow-hidden p-6 md:p-8">
-                            <h3 className="text-lg font-bold text-emerald-400 mb-6 flex items-center gap-2 border-b border-white/10 pb-3">
+                        <div className="bg-[#121212] border border-[#333333] rounded-[8px] p-8 space-y-8 shadow-2xl">
+                            <h3 className="text-lg font-bold text-[#0071E3] flex items-center gap-2 border-b border-[#333333] pb-4 uppercase italic">
                                 <Info className="w-5 h-5" />
                                 Datos de la Entrada
                             </h3>
 
-                            <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+                            <div className="grid grid-cols-1 md:grid-cols-3 gap-8 mb-8">
                                 {/* Origen Selector */}
-                                <div className="space-y-2">
-                                    <label className="block text-sm font-black text-gray-500 uppercase tracking-widest">Origen</label>
+                                <div className="space-y-3">
+                                    <label className="block text-[10px] font-bold text-[#86868B] uppercase tracking-[0.2em] ml-1">Origen</label>
                                     <div
                                         onClick={() => setShowOrigenModal(true)}
-                                        className="group relative bg-white/5 border border-white/10 rounded-xl p-4 cursor-pointer hover:bg-white/10 hover:border-emerald-500/30 transition-all flex items-center justify-between"
+                                        className="group relative bg-[#1D1D1F] border border-[#333333] rounded-[8px] p-4 cursor-pointer hover:border-[#0071E3]/50 transition-all flex items-center justify-between"
                                     >
                                         <div className="flex items-center gap-3 min-w-0">
-                                            <Building2 className="w-5 h-5 text-emerald-500/50 group-hover:text-emerald-400 transition-colors shrink-0" />
-                                            <span className={`truncate font-bold ${selectedOrigen ? 'text-white' : 'text-gray-500 italic'}`}>
+                                            <Building2 className="w-5 h-5 text-[#0071E3]/50 group-hover:text-[#0071E3] transition-colors shrink-0" />
+                                            <span className={cn("truncate font-bold text-sm", selectedOrigen ? "text-[#F5F5F7]" : "text-[#86868B] italic")}>
                                                 {selectedOrigen ? selectedOrigen.origen : 'Seleccionar origen...'}
                                             </span>
                                         </div>
-                                        <ChevronRight className="w-5 h-5 text-gray-600 group-hover:translate-x-1 transition-transform shrink-0" />
+                                        <ChevronRight className="w-5 h-5 text-[#86868B] group-hover:translate-x-1 transition-transform shrink-0" />
                                     </div>
                                 </div>
 
-                                {/* Autoriza Selector - BLOQUEADO POR SEGURIDAD */}
-                                <div className="space-y-2">
+                                {/* Autoriza Selector */}
+                                <div className="space-y-3">
                                     <div className="flex justify-between items-end">
-                                        <label className="block text-sm font-black text-gray-500 uppercase tracking-widest">Autoriza</label>
+                                        <label className="block text-[10px] font-bold text-[#86868B] uppercase tracking-[0.2em] ml-1">Autoriza</label>
                                         {selectedAutoriza && (
-                                            <span className="text-[10px] font-black text-emerald-500/70 bg-emerald-500/5 px-2 py-0.5 rounded border border-emerald-500/10 mb-1 flex items-center gap-1">
+                                            <span className="text-[9px] font-bold text-[#0071E3] bg-[#0071E3]/10 px-2 py-0.5 rounded-[4px] border border-[#0071E3]/20 mb-1 flex items-center gap-1">
                                                 <Shield className="w-2.5 h-2.5" />
                                                 ASIGNADO: {selectedAutoriza.identificacion}
                                             </span>
                                         )}
                                     </div>
-                                    <div
-                                        className="group relative bg-[#0f111a]/40 border border-white/5 rounded-xl p-4 cursor-default transition-all flex items-center justify-between"
-                                        title="Campo bloqueado por auditoría: Se asigna automáticamente al responsable titular."
-                                    >
-                                        <div className="flex items-center gap-3 min-w-0">
-                                            <Shield className="w-5 h-5 text-emerald-500 transition-colors shrink-0" />
-                                            <div className="flex flex-col min-w-0">
-                                                <span className={`truncate font-bold ${selectedAutoriza ? 'text-white' : 'text-gray-500 italic'}`}>
-                                                    {selectedAutoriza ? selectedAutoriza.alias || selectedAutoriza.colaborador : 'Cargando responsable...'}
-                                                </span>
-                                                {selectedAutoriza && (
-                                                    <span className="text-[10px] text-gray-500 font-bold uppercase truncate">Titular Responsable</span>
-                                                )}
-                                            </div>
+                                    <div className="bg-[#1D1D1F]/50 border border-[#333333] rounded-[8px] p-4 flex items-center gap-4 cursor-default">
+                                        <div className="w-10 h-10 rounded-[8px] bg-[#0071E3]/10 flex items-center justify-center shrink-0">
+                                            <Shield className="w-5 h-5 text-[#0071E3]" />
                                         </div>
-                                        <div className="p-1 px-2 bg-emerald-500/10 rounded-lg border border-emerald-500/20">
-                                            <Info className="w-4 h-4 text-emerald-500/50" />
+                                        <div className="flex flex-col min-w-0">
+                                            <span className={cn("truncate font-bold text-sm", selectedAutoriza ? "text-[#F5F5F7]" : "text-[#86868B] italic")}>
+                                                {selectedAutoriza ? selectedAutoriza.alias || selectedAutoriza.colaborador : 'Cargando responsable...'}
+                                            </span>
+                                            <span className="text-[9px] text-[#86868B] font-bold uppercase tracking-tight">Titular Responsable</span>
                                         </div>
                                     </div>
                                 </div>
 
                                 {/* Recibe Selector */}
-                                <div className="space-y-2">
-                                    <label className="block text-sm font-black text-gray-500 uppercase tracking-widest">Recibe</label>
+                                <div className="space-y-3">
+                                    <label className="block text-[10px] font-bold text-[#86868B] uppercase tracking-[0.2em] ml-1">Recibe</label>
                                     <div
                                         onClick={() => {
                                             setColaboradorField('recibe');
                                             setShowColaboradorModal(true);
                                         }}
-                                        className="group relative bg-white/5 border border-white/10 rounded-xl p-4 cursor-pointer hover:bg-white/10 hover:border-emerald-500/30 transition-all flex items-center justify-between"
+                                        className="group relative bg-[#1D1D1F] border border-[#333333] rounded-[8px] p-4 cursor-pointer hover:border-[#0071E3]/50 transition-all flex items-center justify-between"
                                     >
                                         <div className="flex items-center gap-3 min-w-0">
-                                            <UserCircle className="w-5 h-5 text-emerald-500/50 group-hover:text-emerald-400 transition-colors shrink-0" />
-                                            <span className={`truncate font-bold ${selectedRecibe ? 'text-white' : 'text-gray-500 italic'}`}>
+                                            <UserCircle className="w-5 h-5 text-[#0071E3]/50 group-hover:text-[#0071E3] transition-colors shrink-0" />
+                                            <span className={cn("truncate font-bold text-sm", selectedRecibe ? "text-[#F5F5F7]" : "text-[#86868B] italic")}>
                                                 {selectedRecibe ? selectedRecibe.colaborador : '¿Quién recibe?'}
                                             </span>
                                         </div>
-                                        <ChevronRight className="w-5 h-5 text-gray-600 group-hover:translate-x-1 transition-transform shrink-0" />
+                                        <ChevronRight className="w-5 h-5 text-[#86868B] group-hover:translate-x-1 transition-transform shrink-0" />
                                     </div>
                                 </div>
                             </div>
 
-                            <div className="space-y-2">
-                                <label className="block text-sm font-black text-gray-500 uppercase tracking-widest flex items-center gap-2">
-                                    <ClipboardList className="w-4 h-4" />
+                            <div className="space-y-3">
+                                <label className="block text-[10px] font-bold text-[#86868B] uppercase tracking-[0.2em] ml-1 flex items-center gap-2">
+                                    <ClipboardList className="w-4 h-4 text-[#0071E3]" />
                                     Justificación
                                 </label>
                                 <textarea
@@ -428,15 +424,15 @@ export default function IngresarArticulo() {
                                     onChange={(e) => setJustificacion(e.target.value)}
                                     maxLength={500}
                                     rows={3}
-                                    placeholder="Describa el motivo. Obligatorio si hay cantidades negativas (ajuste de inventario)."
-                                    className="w-full bg-white/5 border border-white/10 rounded-xl p-4 text-white placeholder-gray-600 focus:border-emerald-500 outline-none transition-all focus:ring-4 focus:ring-emerald-500/5 min-h-[100px] shadow-inner"
+                                    placeholder="Describa el motivo. Obligatorio si hay cantidades negativas."
+                                    className="w-full bg-[#1D1D1F] border border-[#333333] rounded-[8px] p-5 text-[#F5F5F7] placeholder-[#424245] focus:border-[#0071E3]/50 outline-none transition-all font-medium text-sm"
                                 />
-                                <div className="flex justify-between items-center text-[10px] font-bold uppercase tracking-tighter">
-                                    <span className="text-gray-500 flex items-center gap-1">
-                                        <Info className="w-3 h-3" />
+                                <div className="flex justify-between items-center text-[9px] font-bold uppercase tracking-widest text-[#86868B]">
+                                    <span className="flex items-center gap-1">
+                                        <Info className="w-3 h-3 text-[#0071E3]" />
                                         Valores negativos = ajuste de inventario
                                     </span>
-                                    <span className={justificacion.length > 450 ? 'text-red-400' : 'text-gray-500'}>
+                                    <span className={cn(justificacion.length > 450 ? "text-rose-500" : "text-[#86868B]")}>
                                         {justificacion.length} / 500
                                     </span>
                                 </div>
@@ -444,18 +440,18 @@ export default function IngresarArticulo() {
                         </div>
 
                         {/* Section 2: Detalle */}
-                        <div className="bg-[#1e2235] border border-white/10 rounded-2xl shadow-xl overflow-hidden p-6 md:p-8">
-                            <div className="flex flex-col sm:flex-row justify-between items-center mb-8 gap-4 border-b border-white/10 pb-4">
-                                <h3 className="text-lg font-bold text-emerald-400 flex items-center gap-2">
+                        <div className="bg-[#121212] border border-[#333333] rounded-[8px] p-8 space-y-8 shadow-2xl">
+                            <div className="flex flex-col sm:flex-row justify-between items-center mb-4 gap-4 border-b border-[#333333] pb-6">
+                                <h3 className="text-lg font-bold text-[#0071E3] flex items-center gap-2 uppercase italic">
                                     <List className="w-5 h-5" />
                                     Detalle de Artículos
                                 </h3>
                                 <button
                                     type="button"
                                     onClick={handleAddRow}
-                                    className="w-full sm:w-auto px-6 py-3 bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 font-black rounded-xl transition-all flex items-center justify-center gap-2 group active:scale-95 shadow-lg shadow-emerald-500/5"
+                                    className="w-full sm:w-auto px-6 py-3 bg-transparent border border-[#0071E3] text-[#0071E3] rounded-[8px] hover:bg-[#0071E3]/10 transition-all flex items-center justify-center gap-2 font-bold text-xs uppercase tracking-widest active:scale-95"
                                 >
-                                    <PlusCircle className="w-5 h-5 group-hover:rotate-90 transition-transform" />
+                                    <PlusCircle className="w-4 h-4" />
                                     Agregar Fila
                                 </button>
                             </div>
@@ -464,54 +460,54 @@ export default function IngresarArticulo() {
                                 {detalles.map((row, index) => (
                                     <div
                                         key={row.id}
-                                        className="bg-[#151921] border border-white/5 rounded-2xl p-5 relative overflow-hidden group animate-in slide-in-from-right-4 duration-300 shadow-lg"
+                                        className="bg-[#1D1D1F] border border-[#333333] rounded-[8px] p-6 relative overflow-hidden group animate-in slide-in-from-right-4 duration-300"
                                         style={{ animationDelay: `${index * 50}ms` }}
                                     >
-                                        <div className="absolute top-0 left-0 w-1.5 h-full bg-emerald-500/50" />
+                                        <div className="absolute top-0 left-0 w-1.5 h-full bg-[#0071E3]" />
 
-                                        <div className="flex flex-col md:flex-row gap-6 items-start">
+                                        <div className="flex flex-col md:flex-row gap-8 items-start">
                                             {/* Article Selector */}
-                                            <div className="flex-1 w-full space-y-2">
-                                                <label className="text-[10px] font-black text-gray-500 uppercase tracking-widest block">Artículo</label>
+                                            <div className="flex-1 w-full space-y-3">
+                                                <label className="text-[10px] font-bold text-[#86868B] uppercase tracking-[0.2em] ml-1">Artículo</label>
                                                 <div
                                                     onClick={() => {
                                                         setCurrentDetailIndex(index);
                                                         setShowArticleModal(true);
                                                     }}
-                                                    className="bg-black/40 border border-white/10 rounded-xl p-4 text-white text-sm min-h-[60px] flex items-center justify-between cursor-pointer hover:bg-white/5 transition-all group/field shadow-inner"
+                                                    className="bg-black/20 border border-[#424245] rounded-[8px] p-4 text-[#F5F5F7] text-sm min-h-[70px] flex items-center justify-between cursor-pointer hover:border-[#0071E3]/50 transition-all group/field"
                                                 >
                                                     <div className="flex items-center gap-4 min-w-0">
-                                                        <div className="w-10 h-10 bg-[#1e2235] rounded-lg border border-white/10 flex items-center justify-center shrink-0 overflow-hidden text-emerald-400/30 font-bold text-xs uppercase">
+                                                        <div className="w-12 h-12 bg-[#121212] rounded-[8px] border border-[#333333] flex items-center justify-center shrink-0 overflow-hidden text-[#0071E3]/30 font-bold text-xs">
                                                             {row.articulo?.imagen_url ? (
                                                                 <img src={row.articulo.imagen_url} className="w-full h-full object-cover" />
                                                             ) : (
                                                                 <Search className="w-5 h-5" />
                                                             )}
                                                         </div>
-                                                        <span className={`line-clamp-2 font-bold leading-tight ${!row.articulo ? 'text-gray-600 italic' : 'text-white'}`}>
+                                                        <span className={cn("line-clamp-2 font-bold leading-tight text-sm", !row.articulo ? "text-[#86868B] italic" : "text-[#F5F5F7]")}>
                                                             {row.articulo ? row.articulo.nombre_articulo : 'Buscar en inventario...'}
                                                         </span>
                                                     </div>
-                                                    <ChevronRight className="w-5 h-5 text-gray-600 group-hover/field:translate-x-1 transition-transform" />
+                                                    <ChevronRight className="w-5 h-5 text-[#86868B] group-hover/field:translate-x-1 transition-transform" />
                                                 </div>
                                             </div>
 
                                             {/* Quantity & Actions */}
                                             <div className="w-full md:w-auto flex gap-4 md:items-end">
-                                                <div className="flex-1 md:w-40 space-y-2">
-                                                    <label className="text-[10px] font-black text-gray-500 uppercase tracking-widest block">Cantidad</label>
+                                                <div className="flex-1 md:w-40 space-y-3">
+                                                    <label className="text-[10px] font-bold text-[#86868B] uppercase tracking-[0.2em] ml-1">Cantidad</label>
                                                     <input
                                                         type="number"
                                                         value={row.cantidad}
                                                         onChange={(e) => handleDetailChange(index, 'cantidad', e.target.value)}
-                                                        className="w-full bg-black/40 border border-white/10 rounded-xl p-4 text-white text-xl font-black focus:border-emerald-500 outline-none transition-all shadow-inner text-center"
+                                                        className="w-full bg-black/20 border border-[#424245] rounded-[8px] p-4 text-[#F5F5F7] text-2xl font-bold focus:border-[#0071E3] outline-none transition-all text-center tabular-nums"
                                                         placeholder="0"
                                                     />
                                                 </div>
                                                 <button
                                                     type="button"
                                                     onClick={() => handleRemoveRow(index)}
-                                                    className="p-4 bg-red-400/10 text-red-400 rounded-xl active:scale-95 transition-all mt-auto shadow-lg shadow-red-400/5 hover:bg-red-400/20"
+                                                    className="p-5 bg-rose-500/10 text-rose-500 rounded-[8px] border border-rose-500/20 active:scale-95 transition-all mt-auto hover:bg-rose-500/20"
                                                 >
                                                     <Trash2 className="w-6 h-6" />
                                                 </button>
@@ -520,16 +516,16 @@ export default function IngresarArticulo() {
 
                                         {/* Metadata Row */}
                                         {row.articulo && (
-                                            <div className="mt-4 pt-4 border-t border-white/5 flex flex-wrap gap-4 items-center">
-                                                <span className="text-[10px] font-black text-gray-600 uppercase tracking-widest">Detalles:</span>
+                                            <div className="mt-5 pt-5 border-t border-[#333333] flex flex-wrap gap-4 items-center">
+                                                <span className="text-[9px] font-bold text-[#86868B] uppercase tracking-[0.2em]">Detalles:</span>
                                                 <div className="flex gap-2">
-                                                    <span className="bg-emerald-400/10 border border-emerald-400/20 text-emerald-400 px-3 py-1 rounded-lg text-xs font-bold font-mono">
+                                                    <span className="bg-[#0071E3]/10 border border-[#0071E3]/20 text-[#0071E3] px-3 py-1 rounded-[4px] text-[10px] font-bold font-mono">
                                                         {row.articulo.codigo_articulo}
                                                     </span>
-                                                    <span className="bg-white/5 border border-white/10 text-gray-400 px-3 py-1 rounded-lg text-xs font-bold uppercase">
+                                                    <span className="bg-black/20 border border-[#333333] text-[#86868B] px-3 py-1 rounded-[4px] text-[10px] font-bold uppercase">
                                                         {row.articulo.marca || 'S/M'}
                                                     </span>
-                                                    <span className="bg-white/5 border border-white/10 text-gray-400 px-3 py-1 rounded-lg text-xs font-bold uppercase">
+                                                    <span className="bg-black/20 border border-[#333333] text-[#86868B] px-3 py-1 rounded-[4px] text-[10px] font-bold uppercase">
                                                         {row.articulo.unidad || 'UND'}
                                                     </span>
                                                 </div>
@@ -541,14 +537,14 @@ export default function IngresarArticulo() {
                         </div>
 
                         {/* Form Submit */}
-                        <div className="flex pt-4">
+                        <div className="flex pt-4 pb-20">
                             <button
                                 type="submit"
                                 disabled={saving || loading}
-                                className="w-full md:w-auto md:ml-auto px-10 py-5 bg-gradient-to-r from-emerald-600 to-emerald-400 text-white font-black rounded-2xl hover:brightness-110 transition-all flex items-center justify-center gap-3 disabled:opacity-50 shadow-xl shadow-emerald-500/20 active:scale-95"
+                                className="w-full md:w-auto md:ml-auto px-12 py-5 bg-[#0071E3] text-white font-bold rounded-[8px] hover:brightness-110 transition-all flex items-center justify-center gap-4 disabled:opacity-30 shadow-2xl active:scale-[0.98] text-xl uppercase tracking-widest"
                             >
                                 {saving ? <Loader2 className="w-7 h-7 animate-spin" /> : <Save className="w-7 h-7" />}
-                                <span className="text-xl">Procesar Entrada</span>
+                                <span>Procesar Entrada</span>
                             </button>
                         </div>
                     </form>
@@ -556,44 +552,40 @@ export default function IngresarArticulo() {
 
                 {/* Recent History Sidebar */}
                 {showHistory && (
-                    <div className="lg:col-span-3 lg:sticky lg:top-24 h-fit animate-in slide-in-from-right-8 duration-500">
-                        <div className="bg-[#1e2235] border border-white/10 rounded-2xl shadow-2xl overflow-hidden flex flex-col">
-                            <div className="p-5 bg-white/5 border-b border-white/10 flex items-center justify-between">
-                                <h3 className="font-black text-white text-sm uppercase tracking-widest flex items-center gap-2">
-                                    <History className="w-4 h-4 text-emerald-400" />
+                    <div className="lg:col-span-3 lg:sticky lg:top-24 h-fit animate-in slide-in-from-right-8 duration-500 pb-20">
+                        <div className="bg-[#121212] border border-[#333333] rounded-[8px] shadow-2xl overflow-hidden flex flex-col">
+                            <div className="p-6 bg-black/20 border-b border-[#333333] flex items-center justify-between">
+                                <h3 className="font-bold text-[#F5F5F7] text-xs uppercase tracking-widest flex items-center gap-2">
+                                    <History className="w-4 h-4 text-[#0071E3]" />
                                     Recientes
                                 </h3>
-                                <Hash className="w-4 h-4 text-gray-600" />
                             </div>
-                            <div className="p-4 space-y-3">
+                            <div className="p-5 space-y-4">
                                 {recentHistory.length === 0 ? (
-                                    <div className="text-center py-12 px-4 space-y-4">
-                                        <div className="w-12 h-12 bg-white/5 rounded-full flex items-center justify-center mx-auto">
-                                            <History className="w-6 h-6 text-gray-700" />
-                                        </div>
-                                        <p className="text-xs text-gray-500 font-bold uppercase tracking-widest leading-relaxed">
-                                            No hay entradas registradas en esta sesión
+                                    <div className="text-center py-12 px-4 space-y-4 text-[#86868B]">
+                                        <History className="w-10 h-10 mx-auto opacity-20" />
+                                        <p className="text-[10px] font-bold uppercase tracking-widest leading-relaxed">
+                                            No hay registros en esta sesión
                                         </p>
                                     </div>
                                 ) : (
                                     recentHistory.map((entry) => (
-                                        <div key={entry.id} className="bg-white/5 border border-white/10 rounded-xl p-4 hover:bg-white/10 transition-all group relative overflow-hidden">
-                                            <div className="flex justify-between items-start mb-3">
-                                                <span className="font-black text-xs text-emerald-400 bg-emerald-400/10 px-2 py-0.5 rounded-lg border border-emerald-400/20">
+                                        <div key={entry.id} className="bg-[#1D1D1F] border border-[#333333] rounded-[8px] p-5 hover:border-[#0071E3]/30 transition-all group relative overflow-hidden">
+                                            <div className="flex justify-between items-start mb-4">
+                                                <span className="font-bold text-[10px] text-[#0071E3] bg-[#0071E3]/10 px-3 py-1 rounded-[4px] border border-[#0071E3]/20 font-mono">
                                                     #{entry.id}
                                                 </span>
-                                                <span className="text-[10px] font-bold text-gray-600 tabular-nums">{entry.timestamp}</span>
+                                                <span className="text-[9px] font-bold text-[#86868B] tabular-nums">{entry.timestamp}</span>
                                             </div>
-                                            <p className="text-sm font-bold text-white mb-1 truncate leading-tight">
+                                            <p className="text-xs font-bold text-[#F5F5F7] mb-2 truncate uppercase italic">
                                                 {entry.origen}
                                             </p>
-                                            <div className="flex items-center gap-1.5 mt-3">
-                                                <div className="w-1 h-1 rounded-full bg-emerald-500" />
-                                                <span className="text-[10px] font-black text-gray-500 uppercase tracking-tighter">
+                                            <div className="flex items-center gap-2 mt-4 text-[#86868B]">
+                                                <div className="w-1.5 h-1.5 rounded-full bg-[#0071E3]" />
+                                                <span className="text-[10px] font-bold uppercase tracking-tight">
                                                     {entry.itemsCount} artículo{entry.itemsCount !== 1 ? 's' : ''}
                                                 </span>
                                             </div>
-                                            <div className="absolute top-0 right-0 w-0.5 h-full bg-emerald-500/0 group-hover:bg-emerald-500/50 transition-colors" />
                                         </div>
                                     ))
                                 )}
@@ -623,40 +615,40 @@ export default function IngresarArticulo() {
                     setCurrentDetailIndex(null);
                 }}
                 onSelect={handleSelectArticle}
-                themeColor="emerald"
+                themeColor="blue"
                 showOnlyAvailable={false}
             />
 
             {/* Origen Search Modal */}
             {showOrigenModal && (
-                <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/90 backdrop-blur-md animate-in fade-in duration-200">
-                    <div className="bg-[#1e2235] border border-white/10 rounded-2xl w-full max-w-md shadow-2xl overflow-hidden flex flex-col max-h-[80vh]">
-                        <div className="p-6 border-b border-white/10 bg-white/5 flex justify-between items-center">
-                            <div>
-                                <h3 className="text-xl font-black text-white uppercase tracking-widest flex items-center gap-2">
-                                    <Building2 className="w-5 h-5 text-emerald-400" />
-                                    Origen
-                                </h3>
-                                <p className="text-[10px] font-bold text-gray-500 uppercase mt-1 tracking-widest">Seleccione la procedencia</p>
+                <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/95 backdrop-blur-sm animate-in fade-in duration-200">
+                    <div className="bg-[#121212] border border-[#333333] rounded-[8px] w-full max-w-md shadow-2xl overflow-hidden flex flex-col max-h-[85vh]">
+                        <div className="p-8 border-b border-[#333333] bg-black/20">
+                            <div className="flex justify-between items-center mb-6">
+                                <div>
+                                    <h3 className="text-xl font-bold text-[#F5F5F7] uppercase tracking-widest flex items-center gap-3 italic">
+                                        <Building2 className="w-6 h-6 text-[#0071E3]" />
+                                        Origen
+                                    </h3>
+                                    <p className="text-[10px] font-bold text-[#86868B] uppercase mt-2 tracking-[0.2em]">Seleccione la procedencia</p>
+                                </div>
+                                <button onClick={() => setShowOrigenModal(false)} className="p-2 border border-[#333333] rounded-[8px] text-[#86868B] hover:text-[#F5F5F7] transition-colors">
+                                    <X className="w-6 h-6" />
+                                </button>
                             </div>
-                            <button onClick={() => setShowOrigenModal(false)} className="p-2 hover:bg-white/10 rounded-lg text-gray-400 hover:text-white transition-colors">
-                                <Search className="w-6 h-6 rotate-90" />
-                            </button>
-                        </div>
-                        <div className="p-6 border-b border-white/5 bg-[#1a1d29]">
                             <div className="relative">
-                                <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-600 w-5 h-5" />
+                                <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-[#424245] w-5 h-5" />
                                 <input
                                     type="text"
                                     autoFocus
                                     placeholder="Buscar origen..."
                                     value={origenSearchTerm}
                                     onChange={(e) => setOrigenSearchTerm(e.target.value)}
-                                    className="w-full bg-[#0f111a] border border-white/10 rounded-xl py-4 pl-12 pr-4 text-white placeholder-gray-700 focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 outline-none transition-all text-lg font-bold"
+                                    className="w-full bg-[#1D1D1F] border border-[#333333] rounded-[8px] py-4 pl-12 pr-4 text-[#F5F5F7] placeholder-[#424245] focus:border-[#0071E3]/50 outline-none transition-all text-sm font-bold uppercase"
                                 />
                             </div>
                         </div>
-                        <div className="flex-1 overflow-y-auto p-4 space-y-2 bg-[#0f111a]/50 scrollbar-thin scrollbar-thumb-white/10 scrollbar-track-transparent">
+                        <div className="flex-1 overflow-y-auto p-4 space-y-2 bg-black/20 custom-scrollbar">
                             {filteredOrigenes.map((item) => (
                                 <button
                                     key={item.id}
@@ -665,16 +657,16 @@ export default function IngresarArticulo() {
                                         setShowOrigenModal(false);
                                         setOrigenSearchTerm('');
                                     }}
-                                    className="w-full text-left px-5 py-4 rounded-xl border border-white/5 hover:border-emerald-500/50 hover:bg-white/5 text-gray-300 hover:text-white transition-all flex items-center justify-between group"
+                                    className="w-full text-left px-6 py-5 rounded-[8px] border border-transparent hover:border-[#333333] hover:bg-[#1D1D1F] text-[#F5F5F7] transition-all flex items-center justify-between group"
                                 >
-                                    <span className="font-bold">{item.origen}</span>
-                                    <ChevronRight className="w-5 h-5 text-gray-700 group-hover:text-emerald-500 group-hover:translate-x-1 transition-all" />
+                                    <span className="font-bold text-sm tracking-wide">{item.origen}</span>
+                                    <ChevronRight className="w-5 h-5 text-[#424245] group-hover:text-[#0071E3] group-hover:translate-x-1 transition-all" />
                                 </button>
                             ))}
                             {filteredOrigenes.length === 0 && (
-                                <div className="text-center py-12 space-y-4">
-                                    <Search className="w-12 h-12 text-gray-800 mx-auto opacity-50" />
-                                    <p className="text-gray-500 font-bold uppercase tracking-widest text-xs">No se encontraron resultados</p>
+                                <div className="text-center py-20 space-y-4 text-[#86868B]">
+                                    <Search className="w-12 h-12 mx-auto opacity-10" />
+                                    <p className="text-[10px] font-bold uppercase tracking-widest">Sin resultados</p>
                                 </div>
                             )}
                         </div>

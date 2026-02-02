@@ -12,7 +12,10 @@ console.log('Supabase Initialization:', {
 });
 
 if (!supabaseUrl || !supabaseAnonKey) {
-    console.error('Supabase environment variables missing! Check your .env file.');
+    console.error('Supabase environment variables missing! Check your .env file.', {
+        url: supabaseUrl,
+        hasKey: !!supabaseAnonKey
+    });
     throw new Error('Missing Supabase environment variables');
 }
 

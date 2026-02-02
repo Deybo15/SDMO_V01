@@ -2,9 +2,11 @@ import { useNavigate } from 'react-router-dom';
 import {
     Users,
     ChevronRight,
-    Settings2
+    Settings2,
+    ArrowLeft
 } from 'lucide-react';
 import { PageHeader } from '../components/ui/PageHeader';
+import { cn } from '../lib/utils';
 
 export default function GestionInterna() {
     const navigate = useNavigate();
@@ -14,48 +16,59 @@ export default function GestionInterna() {
             title: 'Informe de Colaboradores',
             icon: <Users className="w-8 h-8" />,
             path: '/gestion-interna/colaboradores',
-            color: 'orange',
             description: 'Gestión y visualización detallada del personal y sus roles'
         }
     ];
 
     return (
-        <div className="min-h-screen bg-[#0f111a] p-4 md:p-8 relative overflow-hidden">
-            {/* Premium Background Elements */}
-            <div className="absolute top-0 left-0 w-full h-full overflow-hidden pointer-events-none">
-                <div className="absolute top-[-10%] left-[-10%] w-[40%] h-[40%] bg-orange-500/10 rounded-full blur-[120px] animate-pulse" />
-                <div className="absolute bottom-[-10%] right-[-10%] w-[40%] h-[40%] bg-blue-500/10 rounded-full blur-[120px] animate-pulse" />
-            </div>
+        <div className="min-h-screen bg-[#000000] p-8 text-[#F5F5F7]">
+            <div className="max-w-7xl mx-auto space-y-12 animate-fade-in-up">
+                <div className="flex flex-col md:flex-row md:items-end justify-between gap-8">
+                    <PageHeader
+                        title="Gestión Interna"
+                        icon={Settings2}
+                    />
+                    <button
+                        onClick={() => navigate('/')}
+                        className="btn-ghost !px-8 !py-4"
+                    >
+                        <div className="flex items-center gap-3">
+                            <ArrowLeft className="w-5 h-5" />
+                            <span className="text-[10px] font-black uppercase tracking-widest">Menú Principal</span>
+                        </div>
+                    </button>
+                </div>
 
-            <div className="relative z-10 max-w-7xl mx-auto space-y-8">
-                <PageHeader
-                    title="Gestión Interna"
-                    icon={Settings2}
-                    themeColor="blue"
-                />
-
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-8">
                     {modules.map((module, index) => (
                         <button
                             key={index}
                             onClick={() => navigate(module.path)}
-                            className="glass-card group relative p-8 pb-10 flex flex-col h-72 text-left overflow-hidden border-white/5 hover:border-white/20"
+                            className="bg-[#121212] border border-[#333333] rounded-[8px] group relative p-8 flex flex-col h-80 text-left hover:border-[#0071E3]/50 transition-all duration-300"
                         >
-                            {/* Accent Glow */}
-                            <div className={`absolute -right-4 -top-4 w-24 h-24 bg-${module.color}-500/10 rounded-full blur-2xl group-hover:bg-${module.color}-500/20 transition-all duration-500`} />
-
-                            <div className={`mb-6 p-4 bg-${module.color}-500/10 rounded-2xl w-fit group-hover:scale-110 group-hover:rotate-3 transition-all duration-300 text-${module.color}-400 ring-1 ring-${module.color}-500/20`}>
+                            {/* Icon Container */}
+                            <div className="mb-6 p-5 bg-black/40 rounded-[4px] w-fit group-hover:scale-105 transition-all duration-300 text-[#0071E3] border border-[#333333]">
                                 {module.icon}
                             </div>
 
-                            <div className="flex-1 space-y-2">
-                                <h3 className="text-xl font-black text-white leading-tight tracking-tight uppercase italic group-hover:text-blue-400 transition-colors">
+                            {/* Content */}
+                            <div className="flex-1 space-y-4">
+                                <h3 className="text-xl font-black text-[#F5F5F7] leading-tight tracking-tight uppercase group-hover:text-[#0071E3] transition-colors italic">
                                     {module.title}
                                 </h3>
-                                <p className="text-slate-400 text-xs font-medium leading-relaxed line-clamp-2">
+                                <p className="text-[#86868B] text-[11px] font-black uppercase leading-relaxed tracking-wider">
                                     {module.description}
                                 </p>
                             </div>
+
+                            {/* Footer Interaction */}
+                            <div className="mt-6 flex items-center gap-3 text-[#0071E3] opacity-0 group-hover:opacity-100 transition-opacity">
+                                <span className="text-[9px] font-black uppercase tracking-widest">Acceder al módulo</span>
+                                <ChevronRight className="w-4 h-4" />
+                            </div>
+
+                            {/* Apple Accent Indicator */}
+                            <div className="absolute bottom-0 left-0 w-full h-[2px] bg-[#0071E3] transform scale-x-0 group-hover:scale-x-100 transition-transform duration-500 origin-left" />
                         </button>
                     ))}
                 </div>

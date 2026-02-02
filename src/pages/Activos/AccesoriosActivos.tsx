@@ -1,10 +1,16 @@
-// AccesoriosActivos.tsx - v2.2 robust camera fix
+// AccesoriosActivos.tsx - v3.0 Style Guide Alignment & Drag-and-Drop
 import { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '../../lib/supabase';
-import { ChevronLeft, Camera, Upload, Trash2, Wrench, Save, X, RefreshCw, Image as ImageIcon, Search, Loader2 } from 'lucide-react';
+import {
+    ChevronLeft, Camera, Upload, Trash2, Wrench, Save,
+    X, RefreshCw, Image as ImageIcon, Search, Loader2,
+    Package, Plus, MousePointer2
+} from 'lucide-react';
+import { PageHeader } from '../../components/ui/PageHeader';
 import { Toast, ToastType } from '../../components/ui/Toast';
 import { ConfirmationModal } from '../../components/ui/ConfirmationModal';
+import { cn } from '../../lib/utils';
 
 interface Activo {
     numero_activo: number;
@@ -44,6 +50,7 @@ export default function AccesoriosActivos() {
     const canvasRef = useRef<HTMLCanvasElement>(null);
     const [selectedFile, setSelectedFile] = useState<File | null>(null);
     const [previewUrl, setPreviewUrl] = useState<string | null>(null);
+    const [isDragging, setIsDragging] = useState(false);
 
     // Search Modal State
     const [showSearchModal, setShowSearchModal] = useState(false);
@@ -73,11 +80,9 @@ export default function AccesoriosActivos() {
         };
     }, []);
 
-    // Callback ref to attach stream to video element as soon as it mounts
     const setVideoRef = (el: HTMLVideoElement | null) => {
         videoElementRef.current = el;
         if (el && stream) {
-            console.log("Attaching stream to video element:", stream.id);
             el.srcObject = stream;
         }
     };
@@ -98,8 +103,7 @@ export default function AccesoriosActivos() {
         let query = supabase
             .from('accesorio_activo_51')
             .select('*')
-            .order('id_accesorio_activo', { ascending: false })
-            .limit(50);
+            .order('id_accesorio_activo', { ascending: false });
 
         if (filterActivo) {
             query = query.eq('activo_asociado', filterActivo);
@@ -127,16 +131,7 @@ export default function AccesoriosActivos() {
             setShowCamera(true);
         } catch (err: any) {
             console.error("Error accessing camera:", err);
-
-            if (err.name === 'NotAllowedError' || err.name === 'PermissionDeniedError') {
-                showToast("Acceso denegado: Por favor habilite la cámara en su navegador.", "error");
-            } else if (err.name === 'NotFoundError' || err.name === 'DevicesNotFoundError') {
-                showToast("No se encontró ninguna cámara disponible.", "error");
-            } else if (err.name === 'NotReadableError' || err.name === 'TrackStartError') {
-                showToast("La cámara está en uso por otra aplicación.", "error");
-            } else {
-                showToast("Error al acceder a la cámara: " + (err.message || "Desconocido"), "error");
-            }
+            showToast("Error al acceder a la cámara", "error");
         }
     };
 
@@ -175,6 +170,32 @@ export default function AccesoriosActivos() {
         startCamera(newMode);
     };
 
+    // Drag & Drop Handlers
+    const handleDragOver = (e: React.DragEvent) => {
+        e.preventDefault();
+        setIsDragging(true);
+    };
+
+    const handleDragLeave = (e: React.DragEvent) => {
+        e.preventDefault();
+        setIsDragging(false);
+    };
+
+    const handleDrop = (e: React.DragEvent) => {
+        e.preventDefault();
+        setIsDragging(false);
+        const files = e.dataTransfer.files;
+        if (files && files[0]) {
+            const file = files[0];
+            if (file.type.startsWith('image/')) {
+                setSelectedFile(file);
+                setPreviewUrl(URL.createObjectURL(file));
+            } else {
+                showToast('Por favor suba un archivo de imagen válido', 'error');
+            }
+        }
+    };
+
     const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
         if (e.target.files && e.target.files[0]) {
             const file = e.target.files[0];
@@ -194,8 +215,6 @@ export default function AccesoriosActivos() {
         try {
             let imageUrl = null;
 
-            // Upload image if exists
-            // Upload image if exists
             if (selectedFile) {
                 if (!formData.filename_accesorio) {
                     throw new Error('Debe ingresar un nombre para el archivo de imagen');
@@ -217,7 +236,6 @@ export default function AccesoriosActivos() {
                 imageUrl = publicUrl;
             }
 
-            // Insert Data
             const { error: insertError } = await supabase
                 .from('accesorio_activo_51')
                 .insert([{
@@ -231,8 +249,6 @@ export default function AccesoriosActivos() {
             if (insertError) throw insertError;
 
             showToast('Accesorio registrado correctamente', 'success');
-
-            // Reset Form
             setFormData({
                 descripcion_accesorio: '',
                 marca_accesorio: '',
@@ -278,256 +294,335 @@ export default function AccesoriosActivos() {
     };
 
     return (
-        <div className="max-w-7xl mx-auto p-4 md:p-6">
-            {/* Header */}
-            <div className="sticky top-0 z-30 flex items-center justify-between py-4 md:py-6 mb-6 md:mb-8 bg-[#0f1419]/90 backdrop-blur-xl -mx-4 px-4 md:-mx-6 md:px-6 border-b border-white/5 shadow-lg shadow-black/20 transition-all">
-                <div className="flex items-center gap-3 md:gap-4">
-                    <div className="w-10 h-10 md:w-12 md:h-12 rounded-xl bg-orange-600 flex items-center justify-center shadow-lg shadow-orange-500/20 shrink-0">
-                        <Wrench className="w-5 h-5 md:w-6 md:h-6 text-white" />
-                    </div>
-                    <h1 className="text-lg md:text-2xl font-bold text-white truncate">Gestión de Accesorios</h1>
-                </div>
-                <button
-                    onClick={() => navigate('/activos')}
-                    className="flex items-center gap-2 px-3 py-2 md:px-4 md:py-2 bg-slate-800/50 text-slate-300 border border-slate-700 rounded-lg hover:bg-slate-800 hover:text-white transition-all text-xs md:text-sm font-medium shrink-0"
-                >
-                    <ChevronLeft className="w-4 h-4" />
-                    <span className="hidden sm:inline">Regresar</span>
-                </button>
-            </div>
+        <div className="min-h-screen bg-[#000000] text-[#F5F5F7]">
+            <PageHeader
+                title="Gestión de Accesorios"
+                subtitle="Gabinete de Gestión Operativa"
+                icon={Wrench}
+                backRoute="/activos"
+            />
 
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-                {/* Form Section */}
-                <div className="lg:col-span-1 space-y-6">
-                    <div className="bg-slate-800/40 backdrop-blur-xl rounded-2xl border border-white/10 p-4 md:p-6 shadow-2xl">
-                        <h2 className="text-base md:text-lg font-bold text-white mb-5 flex items-center gap-2">
-                            <Save className="w-5 h-5 text-orange-500" />
-                            Nuevo Accesorio
-                        </h2>
-                        <form onSubmit={handleSubmit} className="space-y-5">
-                            <div className="space-y-2">
-                                <label className="text-xs md:text-sm font-medium text-slate-300 ml-1">Activo Asociado</label>
-                                <div className="relative group">
-                                    <select
-                                        required
-                                        value={formData.activo_asociado}
-                                        onChange={e => setFormData({ ...formData, activo_asociado: e.target.value })}
-                                        className="w-full pl-4 pr-12 py-3 bg-slate-950/50 border border-white/10 rounded-xl text-slate-200 focus:ring-2 focus:ring-orange-500/30 focus:border-orange-500 outline-none transition-all appearance-none text-sm md:text-base"
-                                    >
-                                        <option value="">Seleccionar activo...</option>
-                                        {activos.map(activo => (
-                                            <option key={activo.numero_activo} value={activo.numero_activo}>
-                                                #{activo.numero_activo} - {activo.nombre_corto_activo}
-                                            </option>
-                                        ))}
-                                    </select>
-                                    <button
-                                        type="button"
-                                        onClick={() => { setSearchTerm(''); setShowSearchModal(true); }}
-                                        className="absolute right-2 top-1/2 -translate-y-1/2 p-2 text-slate-400 hover:text-orange-500 hover:bg-orange-500/10 rounded-lg transition-colors"
-                                        title="Buscar activo"
-                                    >
-                                        <Search className="w-4 h-4" />
-                                    </button>
-                                </div>
-                            </div>
+            <div className="max-w-7xl mx-auto px-8 pb-12 animate-fade-in-up">
+                <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+                    {/* Sección Formulario */}
+                    <div className="lg:col-span-1">
+                        <div className="bg-[#121212] rounded-[8px] border border-[#333333] shadow-2xl p-6 sticky top-24">
+                            <h2 className="text-[12px] font-black uppercase tracking-widest text-[#F5F5F7] mb-6 flex items-center gap-2">
+                                <Plus className="w-4 h-4 text-[#0071E3]" />
+                                Nuevo Accesorio
+                            </h2>
 
-                            <div className="space-y-2">
-                                <label className="text-xs md:text-sm font-medium text-slate-300 ml-1">Descripción</label>
-                                <input
-                                    required
-                                    value={formData.descripcion_accesorio}
-                                    onChange={e => setFormData({ ...formData, descripcion_accesorio: e.target.value })}
-                                    placeholder="Ej: Cargador original"
-                                    className="w-full px-4 py-3 bg-slate-950/50 border border-white/10 rounded-xl text-slate-200 focus:ring-2 focus:ring-orange-500/30 focus:border-orange-500 outline-none transition-all text-sm md:text-base"
-                                />
-                            </div>
-
-                            <div className="grid grid-cols-2 gap-3 md:gap-4">
+                            <form onSubmit={handleSubmit} className="space-y-6">
                                 <div className="space-y-2">
-                                    <label className="text-xs md:text-sm font-medium text-slate-300 ml-1">Marca</label>
-                                    <input
-                                        value={formData.marca_accesorio}
-                                        onChange={e => setFormData({ ...formData, marca_accesorio: e.target.value })}
-                                        className="w-full px-4 py-3 bg-slate-950/50 border border-white/10 rounded-xl text-slate-200 focus:ring-2 focus:ring-orange-500/30 focus:border-orange-500 outline-none transition-all text-sm md:text-base"
-                                    />
-                                </div>
-                                <div className="space-y-2">
-                                    <label className="text-xs md:text-sm font-medium text-slate-300 ml-1">Serie</label>
-                                    <input
-                                        value={formData.numero_serie_accesorio}
-                                        onChange={e => setFormData({ ...formData, numero_serie_accesorio: e.target.value })}
-                                        className="w-full px-4 py-3 bg-slate-950/50 border border-white/10 rounded-xl text-slate-200 focus:ring-2 focus:ring-orange-500/30 focus:border-orange-500 outline-none transition-all text-sm md:text-base"
-                                    />
-                                </div>
-                            </div>
-
-                            {/* Image Upload */}
-                            <div className="space-y-3">
-                                <label className="text-xs md:text-sm font-medium text-slate-300 ml-1">Fotografía</label>
-                                <div className="flex gap-3">
-                                    <button
-                                        type="button"
-                                        onClick={() => startCamera()}
-                                        className="flex-1 py-3 bg-slate-800/50 hover:bg-slate-700/50 text-slate-200 rounded-xl border border-white/5 transition-all flex items-center justify-center gap-2 active:scale-95 shadow-lg"
-                                    >
-                                        <Camera className="w-5 h-5 text-orange-500" />
-                                        <span className="font-bold">Cámara</span>
-                                    </button>
-                                    <label className="flex-1 py-3 bg-slate-800/50 hover:bg-slate-700/50 text-slate-200 rounded-xl border border-white/5 transition-all flex items-center justify-center gap-2 cursor-pointer active:scale-95 shadow-lg">
-                                        <Upload className="w-5 h-5 text-blue-400" />
-                                        <span className="font-bold">Subir</span>
-                                        <input type="file" accept="image/*" className="hidden" onChange={handleFileSelect} />
+                                    <label className="text-[10px] font-black uppercase tracking-widest text-[#86868B] ml-1">
+                                        Activo Asociado
                                     </label>
+                                    <div className="relative group">
+                                        <select
+                                            required
+                                            value={formData.activo_asociado}
+                                            onChange={e => setFormData({ ...formData, activo_asociado: e.target.value })}
+                                            className="w-full bg-[#1D1D1F] border border-[#333333] rounded-[8px] pl-4 pr-12 py-3 text-[#F5F5F7] focus:border-[#0071E3] outline-none transition-all appearance-none text-sm"
+                                        >
+                                            <option value="">Seleccionar activo...</option>
+                                            {activos.map(activo => (
+                                                <option key={activo.numero_activo} value={activo.numero_activo}>
+                                                    #{activo.numero_activo} - {activo.nombre_corto_activo}
+                                                </option>
+                                            ))}
+                                        </select>
+                                        <button
+                                            type="button"
+                                            onClick={() => { setSearchTerm(''); setShowSearchModal(true); }}
+                                            className="absolute right-2 top-1/2 -translate-y-1/2 p-2 text-[#86868B] hover:text-[#0071E3] rounded-lg transition-colors"
+                                        >
+                                            <Search className="w-4 h-4" />
+                                        </button>
+                                    </div>
                                 </div>
-                            </div>
 
-                            {/* Preview */}
-                            {previewUrl && (
-                                <div className="relative rounded-2xl overflow-hidden border-2 border-orange-500/30 aspect-video bg-black shadow-2xl group">
-                                    <img src={previewUrl} alt="Preview" className="w-full h-full object-contain" />
-                                    <button
-                                        type="button"
-                                        onClick={() => { setPreviewUrl(null); setSelectedFile(null); }}
-                                        className="absolute top-2 right-2 p-2 bg-black/60 text-white rounded-full hover:bg-red-500 transition-all backdrop-blur-md"
-                                    >
-                                        <X className="w-4 h-4" />
-                                    </button>
-                                </div>
-                            )}
-
-                            <div className="space-y-2">
-                                <label className="text-xs md:text-sm font-medium text-slate-300 ml-1">Nombre del archivo *</label>
-                                <div className="flex flex-col gap-2">
+                                <div className="space-y-2">
+                                    <label className="text-[10px] font-black uppercase tracking-widest text-[#86868B] ml-1">
+                                        Descripción
+                                    </label>
                                     <input
                                         required
-                                        value={formData.filename_accesorio}
-                                        onChange={e => setFormData({ ...formData, filename_accesorio: e.target.value })}
-                                        placeholder="Ej. bateria_principal"
-                                        className="w-full px-4 py-3 bg-slate-950/50 border border-white/10 rounded-xl text-slate-200 focus:ring-2 focus:ring-orange-500/30 focus:border-orange-500 outline-none transition-all text-sm md:text-base"
+                                        value={formData.descripcion_accesorio}
+                                        onChange={e => setFormData({ ...formData, descripcion_accesorio: e.target.value })}
+                                        placeholder="Ej: Cargador original"
+                                        className="w-full bg-[#1D1D1F] border border-[#333333] rounded-[8px] px-4 py-3 text-[#F5F5F7] focus:border-[#0071E3] outline-none transition-all placeholder-[#86868B]"
                                     />
-                                    <div className="px-4 py-2.5 bg-slate-900/80 border border-white/5 rounded-xl text-[10px] md:text-xs text-slate-400 font-mono text-center">
-                                        _{formData.activo_asociado || '0000'}.jpg
+                                </div>
+
+                                <div className="grid grid-cols-2 gap-4">
+                                    <div className="space-y-2">
+                                        <label className="text-[10px] font-black uppercase tracking-widest text-[#86868B] ml-1">
+                                            Marca
+                                        </label>
+                                        <input
+                                            value={formData.marca_accesorio}
+                                            onChange={e => setFormData({ ...formData, marca_accesorio: e.target.value })}
+                                            className="w-full bg-[#1D1D1F] border border-[#333333] rounded-[8px] px-4 py-3 text-[#F5F5F7] focus:border-[#0071E3] outline-none transition-all"
+                                        />
+                                    </div>
+                                    <div className="space-y-2">
+                                        <label className="text-[10px] font-black uppercase tracking-widest text-[#86868B] ml-1">
+                                            Serie
+                                        </label>
+                                        <input
+                                            value={formData.numero_serie_accesorio}
+                                            onChange={e => setFormData({ ...formData, numero_serie_accesorio: e.target.value })}
+                                            className="w-full bg-[#1D1D1F] border border-[#333333] rounded-[8px] px-4 py-3 text-[#F5F5F7] focus:border-[#0071E3] outline-none transition-all"
+                                        />
                                     </div>
                                 </div>
-                            </div>
 
-                            <button
-                                type="submit"
-                                disabled={loading}
-                                className="w-full py-4 bg-gradient-to-r from-orange-600 to-orange-500 hover:from-orange-500 hover:to-orange-400 text-white font-black rounded-xl shadow-xl shadow-orange-500/20 transition-all flex items-center justify-center gap-3 active:scale-[0.98] disabled:opacity-50 mt-4 uppercase tracking-wider"
-                            >
-                                {loading ? <Loader2 className="animate-spin w-5 h-5" /> : <Save className="w-5 h-5" />}
-                                Guardar Accesorio
-                            </button>
-                        </form>
+                                <div className="space-y-3">
+                                    <label className="text-[10px] font-black uppercase tracking-widest text-[#86868B] ml-1 flex items-center justify-between">
+                                        Fotografía
+                                        <button
+                                            type="button"
+                                            onClick={() => startCamera()}
+                                            className="text-[#0071E3] hover:underline normal-case tracking-normal text-[11px]"
+                                        >
+                                            Usar Cámara
+                                        </button>
+                                    </label>
+
+                                    <div
+                                        onDragOver={handleDragOver}
+                                        onDragLeave={handleDragLeave}
+                                        onDrop={handleDrop}
+                                        className={cn(
+                                            "relative border-2 border-dashed rounded-[8px] p-8 transition-all flex flex-col items-center justify-center gap-3",
+                                            isDragging
+                                                ? "border-[#0071E3] bg-[#0071E3]/5"
+                                                : "border-[#424245] bg-[#1D1D1F] hover:border-[#333333]"
+                                        )}
+                                    >
+                                        {previewUrl ? (
+                                            <div className="relative w-full aspect-video rounded-lg overflow-hidden group">
+                                                <img src={previewUrl} alt="Preview" className="w-full h-full object-contain" />
+                                                <button
+                                                    type="button"
+                                                    onClick={() => { setPreviewUrl(null); setSelectedFile(null); }}
+                                                    className="absolute top-2 right-2 p-1.5 bg-red-500 text-white rounded-full hover:bg-red-600 transition-all opacity-0 group-hover:opacity-100"
+                                                >
+                                                    <X className="w-4 h-4" />
+                                                </button>
+                                            </div>
+                                        ) : (
+                                            <>
+                                                <div className="w-12 h-12 rounded-full bg-[#121212] flex items-center justify-center border border-[#333333]">
+                                                    <Upload className={cn("w-6 h-6", isDragging ? "text-[#0071E3]" : "text-[#86868B]")} />
+                                                </div>
+                                                <div className="text-center">
+                                                    <p className="text-[12px] font-bold text-[#F5F5F7]">Arrastre una imagen aquí</p>
+                                                    <p className="text-[10px] text-[#86868B] mt-1">O haga clic para seleccionar desde su equipo</p>
+                                                </div>
+                                                <input
+                                                    type="file"
+                                                    accept="image/*"
+                                                    className="absolute inset-0 opacity-0 cursor-pointer"
+                                                    onChange={handleFileSelect}
+                                                />
+                                            </>
+                                        )}
+                                    </div>
+                                </div>
+
+                                <div className="space-y-2">
+                                    <label className="text-[10px] font-black uppercase tracking-widest text-[#86868B] ml-1">
+                                        Nombre del archivo *
+                                    </label>
+                                    <div className="flex flex-col gap-2">
+                                        <input
+                                            required
+                                            value={formData.filename_accesorio}
+                                            onChange={e => setFormData({ ...formData, filename_accesorio: e.target.value })}
+                                            placeholder="Ej. bateria_principal"
+                                            className="w-full bg-[#1D1D1F] border border-[#333333] rounded-[8px] px-4 py-3 text-[#F5F5F7] focus:border-[#0071E3] outline-none transition-all placeholder-[#86868B]"
+                                        />
+                                        <div className="px-4 py-2 bg-[#121212] border border-[#333333] rounded-[8px] text-[10px] text-[#86868B] font-mono text-center">
+                                            _{formData.activo_asociado || '####'}.jpg
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <button
+                                    type="submit"
+                                    disabled={loading}
+                                    className="w-full py-4 bg-[#0071E3] hover:bg-[#0071E3]/90 text-white font-black rounded-[8px] shadow-lg shadow-[#0071E3]/20 transition-all flex items-center justify-center gap-3 active:scale-[0.98] disabled:opacity-50 uppercase tracking-widest text-[11px]"
+                                >
+                                    {loading ? <Loader2 className="animate-spin w-5 h-5" /> : <Save className="w-5 h-5" />}
+                                    Guardar Accesorio
+                                </button>
+                            </form>
+                        </div>
                     </div>
 
-                    {/* Camera Modal Overlay */}
-                    {showCamera && (
-                        <div className="fixed inset-0 z-50 bg-black flex flex-col animate-in fade-in duration-200">
-                            <div className="flex justify-between items-center p-4 bg-[#0f1419] border-b border-white/5">
-                                <button type="button" onClick={stopCamera} className="p-2 bg-white/5 rounded-full text-white">
-                                    <X className="w-6 h-6" />
-                                </button>
-                                <button type="button" onClick={switchCamera} className="p-2 bg-white/5 rounded-full text-white">
-                                    <RefreshCw className="w-6 h-6" />
-                                </button>
-                            </div>
-                            <div className="flex-1 relative bg-black flex items-center justify-center overflow-hidden">
-                                <video
-                                    ref={setVideoRef}
-                                    autoPlay
-                                    playsInline
-                                    muted
-                                    className="w-full h-full object-contain"
-                                />
-                                <canvas ref={canvasRef} className="hidden" />
-                            </div>
-                            <div className="p-8 bg-[#0f1419] border-t border-white/5 flex justify-center pb-12">
-                                <button
-                                    type="button"
-                                    onClick={capturePhoto}
-                                    className="group relative p-1 rounded-full cursor-pointer hover:scale-105 transition-transform"
-                                >
-                                    <div className="absolute inset-0 bg-white/20 rounded-full blur group-hover:bg-white/30 transition-all" />
-                                    <div className="relative w-20 h-20 bg-white rounded-full border-4 border-slate-900 flex items-center justify-center shadow-2xl">
-                                        <div className="w-16 h-16 bg-slate-100 rounded-full group-active:bg-slate-300 transition-colors" />
-                                    </div>
-                                </button>
-                            </div>
-                        </div>
-                    )}
-                </div>
-
-                {/* List Section */}
-                <div className="lg:col-span-2 space-y-6">
-                    <div className="bg-slate-800/40 backdrop-blur-xl rounded-2xl border border-white/10 p-4 md:p-6 shadow-2xl overflow-hidden">
-                        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
-                            <h2 className="text-base md:text-lg font-bold text-white">Accesorios Registrados</h2>
-                            <div className="w-full sm:w-auto">
+                    {/* Sección Lista */}
+                    <div className="lg:col-span-2 space-y-6">
+                        <div className="bg-[#121212] rounded-[8px] border border-[#333333] shadow-2xl p-6">
+                            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-8">
+                                <h2 className="text-[12px] font-black uppercase tracking-widest text-[#F5F5F7] flex items-center gap-2">
+                                    <ImageIcon className="w-4 h-4 text-[#0071E3]" />
+                                    Accesorios Registrados
+                                </h2>
                                 <select
                                     value={filterActivo}
                                     onChange={e => setFilterActivo(e.target.value ? parseInt(e.target.value) : '')}
-                                    className="w-full sm:w-auto px-4 py-2 bg-slate-950/50 border border-white/10 rounded-xl text-slate-300 text-sm focus:ring-2 focus:ring-orange-500/30 outline-none transition-all"
+                                    className="w-full sm:w-auto px-4 py-2 bg-[#1D1D1F] border border-[#333333] rounded-[8px] text-[#86868B] text-[10px] font-black uppercase tracking-widest outline-none transition-all focus:border-[#0071E3]"
                                 >
-                                    <option value="">Filtro: Todos los activos</option>
+                                    <option value="">Todos los activos</option>
                                     {activos.map(a => (
                                         <option key={a.numero_activo} value={a.numero_activo}>Activo #{a.numero_activo}</option>
                                     ))}
                                 </select>
                             </div>
-                        </div>
 
-                        <div className="space-y-4">
-                            {accesorios.length === 0 ? (
-                                <div className="text-center py-16 bg-white/5 border border-dashed border-white/10 rounded-2xl">
-                                    <Wrench className="w-10 h-10 text-slate-600 mx-auto mb-3 opacity-20" />
-                                    <p className="text-slate-500 font-medium">No hay accesorios encontrados.</p>
-                                </div>
-                            ) : (
-                                accesorios.map(accesorio => (
-                                    <div key={accesorio.id_accesorio_activo} className="flex flex-col sm:flex-row items-center sm:items-start gap-4 p-4 bg-slate-900/40 rounded-2xl border border-white/5 hover:border-orange-500/30 transition-all group relative">
-                                        <div className="w-full sm:w-24 h-48 sm:h-24 bg-black rounded-xl border border-white/5 overflow-hidden flex-shrink-0">
-                                            {accesorio.imagen_accesorio ? (
-                                                <img src={accesorio.imagen_accesorio} alt={accesorio.descripcion_accesorio} className="w-full h-full object-cover" />
-                                            ) : (
-                                                <div className="w-full h-full flex items-center justify-center opacity-10">
-                                                    <ImageIcon className="w-10 h-10 text-white" />
-                                                </div>
-                                            )}
-                                        </div>
-                                        <div className="flex-1 min-w-0 w-full text-center sm:text-left">
-                                            <div className="flex justify-between items-start mb-1">
-                                                <h3 className="font-bold text-white text-lg sm:text-base truncate pr-8">{accesorio.descripcion_accesorio}</h3>
-                                                <button
-                                                    onClick={() => handleDelete(accesorio.id_accesorio_activo)}
-                                                    className="p-2 text-slate-500 hover:text-red-400 opacity-100 sm:opacity-0 sm:group-hover:opacity-100 transition-all absolute top-3 right-3 sm:static"
-                                                >
-                                                    <Trash2 className="w-5 h-5 sm:w-4 sm:h-4" />
-                                                </button>
-                                            </div>
-                                            <p className="text-sm font-bold text-orange-400 mb-3 sm:mb-2">
-                                                Activo Asociado: <span className="p-1 px-2 rounded-md bg-orange-500/10 border border-orange-500/20 ml-1 font-mono">#{accesorio.activo_asociado}</span>
-                                            </p>
-                                            <div className="flex flex-wrap justify-center sm:justify-start gap-x-6 gap-y-2 text-xs text-slate-400 font-medium">
-                                                <div className="flex items-center gap-1.5">
-                                                    <span className="text-slate-600">MARCA</span>
-                                                    <span className="text-slate-200">{accesorio.marca_accesorio || '-'}</span>
-                                                </div>
-                                                <div className="flex items-center gap-1.5">
-                                                    <span className="text-slate-600">SERIE</span>
-                                                    <span className="font-mono text-slate-200">{accesorio.numero_serie_accesorio || '-'}</span>
-                                                </div>
-                                            </div>
-                                        </div>
+                            <div className="space-y-4">
+                                {accesorios.length === 0 ? (
+                                    <div className="text-center py-20 bg-[#1D1D1F]/50 rounded-[8px] border border-dashed border-[#333333]">
+                                        <ImageIcon className="w-12 h-12 text-[#333333] mx-auto mb-4" />
+                                        <p className="text-[#86868B] font-black uppercase text-[10px] tracking-widest">No hay accesorios encontrados</p>
                                     </div>
-                                ))
-                            )}
+                                ) : (
+                                    accesorios.map(accesorio => (
+                                        <div
+                                            key={accesorio.id_accesorio_activo}
+                                            className="flex flex-col sm:flex-row items-center sm:items-start gap-6 p-4 bg-[#1D1D1F]/30 rounded-[8px] border border-[#333333] hover:border-[#0071E3]/30 transition-all group"
+                                        >
+                                            <div className="w-full sm:w-28 h-40 sm:h-28 bg-[#000000] rounded-[4px] border border-[#333333] overflow-hidden flex-shrink-0 relative group/img">
+                                                {accesorio.imagen_accesorio ? (
+                                                    <img src={accesorio.imagen_accesorio} alt={accesorio.descripcion_accesorio} className="w-full h-full object-cover transition-transform duration-500 group-hover/img:scale-110" />
+                                                ) : (
+                                                    <div className="w-full h-full flex items-center justify-center opacity-20">
+                                                        <ImageIcon className="w-10 h-10 text-white" />
+                                                    </div>
+                                                )}
+                                            </div>
+
+                                            <div className="flex-1 min-w-0 w-full">
+                                                <div className="flex justify-between items-start mb-2">
+                                                    <div>
+                                                        <h3 className="font-black text-[#F5F5F7] text-[14px] uppercase tracking-wider truncate mb-1">
+                                                            {accesorio.descripcion_accesorio}
+                                                        </h3>
+                                                        <span className="inline-flex items-center px-2 py-0.5 rounded-[4px] bg-[#0071E3]/10 border border-[#0071E3]/20 text-[#0071E3] text-[10px] font-black tracking-widest uppercase">
+                                                            Activo #{accesorio.activo_asociado}
+                                                        </span>
+                                                    </div>
+                                                    <button
+                                                        onClick={() => handleDelete(accesorio.id_accesorio_activo)}
+                                                        className="p-2 text-[#86868B] hover:text-red-500 hover:bg-red-500/10 rounded-[4px] transition-all opacity-0 group-hover:opacity-100"
+                                                    >
+                                                        <Trash2 className="w-4 h-4" />
+                                                    </button>
+                                                </div>
+
+                                                <div className="grid grid-cols-2 gap-4 mt-4 text-[10px] font-black uppercase tracking-widest">
+                                                    <div className="space-y-1">
+                                                        <span className="text-[#86868B] block">Marca</span>
+                                                        <span className="text-[#F5F5F7]">{accesorio.marca_accesorio || '-'}</span>
+                                                    </div>
+                                                    <div className="space-y-1">
+                                                        <span className="text-[#86868B] block">Serie</span>
+                                                        <span className="text-[#F5F5F7] font-mono">{accesorio.numero_serie_accesorio || '-'}</span>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    ))
+                                )}
+                            </div>
                         </div>
                     </div>
                 </div>
-            </div >
+            </div>
+
+            {/* Modal de Búsqueda de Activos */}
+            {showSearchModal && (
+                <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-md animate-in fade-in">
+                    <div className="w-full max-w-md bg-[#121212] border border-[#333333] rounded-[8px] shadow-2xl overflow-hidden flex flex-col max-h-[80vh]">
+                        <div className="p-4 border-b border-[#333333] flex justify-between items-center">
+                            <h3 className="text-[12px] font-black uppercase tracking-widest text-[#F5F5F7]">Buscar Activo</h3>
+                            <button onClick={() => setShowSearchModal(false)} className="text-[#86868B] hover:text-[#F5F5F7] transition-colors">
+                                <X className="w-5 h-5" />
+                            </button>
+                        </div>
+                        <div className="p-4 border-b border-[#333333]">
+                            <div className="relative">
+                                <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-[#86868B] w-4 h-4" />
+                                <input
+                                    type="text"
+                                    autoFocus
+                                    placeholder="Buscar por nombre o número..."
+                                    value={searchTerm}
+                                    onChange={(e) => setSearchTerm(e.target.value)}
+                                    className="w-full pl-10 pr-4 py-3 bg-[#1D1D1F] border border-[#333333] rounded-[8px] text-[#F5F5F7] focus:border-[#0071E3] outline-none transition-all text-sm placeholder-[#86868B]"
+                                />
+                            </div>
+                        </div>
+                        <div className="flex-1 overflow-y-auto p-2 space-y-1 custom-scrollbar">
+                            {activos.filter(a =>
+                                a.nombre_corto_activo.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                                a.numero_activo.toString().includes(searchTerm)
+                            ).map(activo => (
+                                <button
+                                    key={activo.numero_activo}
+                                    onClick={() => {
+                                        setFormData({ ...formData, activo_asociado: activo.numero_activo });
+                                        setShowSearchModal(false);
+                                    }}
+                                    className="w-full text-left p-4 rounded-[8px] hover:bg-[#1D1D1F] transition-all flex flex-col gap-1 group"
+                                >
+                                    <span className="font-bold text-[#F5F5F7] group-hover:text-[#0071E3] transition-colors text-sm">
+                                        {activo.nombre_corto_activo}
+                                    </span>
+                                    <span className="text-[10px] text-[#0071E3] font-black uppercase tracking-widest">
+                                        #{activo.numero_activo}
+                                    </span>
+                                </button>
+                            ))}
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {/* Cámara Overaly */}
+            {showCamera && (
+                <div className="fixed inset-0 z-[60] bg-black flex flex-col animate-in fade-in duration-200">
+                    <div className="flex justify-between items-center p-6 bg-[#000000] border-b border-[#333333]">
+                        <button type="button" onClick={stopCamera} className="p-2 text-[#F5F5F7] hover:bg-[#1D1D1F] rounded-full transition-all">
+                            <X className="w-6 h-6" />
+                        </button>
+                        <span className="text-[10px] font-black uppercase tracking-widest text-[#F5F5F7]">Captura de Imagen</span>
+                        <button type="button" onClick={switchCamera} className="p-2 text-[#F5F5F7] hover:bg-[#1D1D1F] rounded-full transition-all">
+                            <RefreshCw className="w-6 h-6" />
+                        </button>
+                    </div>
+                    <div className="flex-1 relative bg-black flex items-center justify-center overflow-hidden">
+                        <video
+                            ref={setVideoRef}
+                            autoPlay
+                            playsInline
+                            muted
+                            className="w-full h-full object-contain"
+                        />
+                        <canvas ref={canvasRef} className="hidden" />
+                    </div>
+                    <div className="p-12 bg-[#000000] border-t border-[#333333] flex justify-center pb-16">
+                        <button
+                            type="button"
+                            onClick={capturePhoto}
+                            className="w-20 h-20 bg-white rounded-full border-[6px] border-[#333333] p-1 active:scale-95 transition-all shadow-2xl"
+                        >
+                            <div className="w-full h-full bg-white rounded-full border border-[#D1D1D6]" />
+                        </button>
+                    </div>
+                </div>
+            )}
 
             <ConfirmationModal
                 isOpen={confirmationModal.isOpen}
@@ -537,73 +632,13 @@ export default function AccesoriosActivos() {
                 message={confirmationModal.message}
             />
 
-            {
-                toast && (
-                    <Toast
-                        message={toast.message}
-                        type={toast.type}
-                        onClose={() => setToast(null)}
-                    />
-                )
-            }
-            {/* Asset Search Modal */}
-            {
-                showSearchModal && (
-                    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-in fade-in">
-                        <div className="w-full max-w-md bg-slate-900 border border-slate-700 rounded-2xl shadow-2xl overflow-hidden flex flex-col max-h-[80vh]">
-                            <div className="p-4 border-b border-slate-800 flex justify-between items-center">
-                                <h3 className="text-lg font-bold text-white">Buscar Activo</h3>
-                                <button onClick={() => setShowSearchModal(false)} className="text-slate-400 hover:text-white">
-                                    <X className="w-5 h-5" />
-                                </button>
-                            </div>
-                            <div className="p-4 border-b border-slate-800">
-                                <div className="relative">
-                                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 w-4 h-4" />
-                                    <input
-                                        type="text"
-                                        autoFocus
-                                        placeholder="Buscar por nombre o número..."
-                                        value={searchTerm}
-                                        onChange={(e) => setSearchTerm(e.target.value)}
-                                        className="w-full pl-9 pr-4 py-2 bg-slate-800 border border-slate-700 rounded-xl text-white focus:ring-2 focus:ring-orange-500/50 outline-none"
-                                    />
-                                </div>
-                            </div>
-                            <div className="flex-1 overflow-y-auto p-2 space-y-1 custom-scrollbar">
-                                {activos.filter(a =>
-                                    a.nombre_corto_activo.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                                    a.numero_activo.toString().includes(searchTerm)
-                                ).map(activo => (
-                                    <button
-                                        key={activo.numero_activo}
-                                        onClick={() => {
-                                            setFormData({ ...formData, activo_asociado: activo.numero_activo });
-                                            setShowSearchModal(false);
-                                        }}
-                                        className="w-full text-left p-3 rounded-xl hover:bg-slate-800 transition-colors flex flex-col gap-1 group"
-                                    >
-                                        <span className="font-medium text-slate-200 group-hover:text-white transition-colors">
-                                            {activo.nombre_corto_activo}
-                                        </span>
-                                        <span className="text-xs text-orange-400 font-mono">
-                                            #{activo.numero_activo}
-                                        </span>
-                                    </button>
-                                ))}
-                                {activos.filter(a =>
-                                    a.nombre_corto_activo.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                                    a.numero_activo.toString().includes(searchTerm)
-                                ).length === 0 && (
-                                        <div className="text-center py-8 text-slate-500">
-                                            No se encontraron resultados
-                                        </div>
-                                    )}
-                            </div>
-                        </div>
-                    </div>
-                )
-            }
-        </div >
+            {toast && (
+                <Toast
+                    message={toast.message}
+                    type={toast.type}
+                    onClose={() => setToast(null)}
+                />
+            )}
+        </div>
     );
 }

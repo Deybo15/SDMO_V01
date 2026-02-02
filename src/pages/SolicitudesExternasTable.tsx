@@ -24,6 +24,7 @@ import {
 } from 'lucide-react';
 import autoTable from 'jspdf-autotable';
 import { PageHeader } from '../components/ui/PageHeader';
+import { cn } from '../lib/utils';
 
 // Interface for the request data
 interface Solicitud {
@@ -63,8 +64,7 @@ export default function SolicitudesExternasTable() {
     const itemsPerPage = 25;
 
     // Filter state
-    const [filtroNumero, setFiltroNumero] = useState('');
-    const [filtroDescripcion, setFiltroDescripcion] = useState('');
+    const [searchTerm, setSearchTerm] = useState('');
 
     // Load data
     const cargarDatos = async (page: number) => {
@@ -76,11 +76,13 @@ export default function SolicitudesExternasTable() {
                 .eq('tipo_solicitud', 'STE')
                 .eq('seguimiento_solicitud.estado_actual', 'ACTIVA');
 
-            if (filtroNumero && !isNaN(Number(filtroNumero))) {
-                query = query.eq('numero_solicitud', Number(filtroNumero));
-            }
-            if (filtroDescripcion) {
-                query = query.ilike('descripcion_solicitud', `%${filtroDescripcion}%`);
+            if (searchTerm) {
+                const num = Number(searchTerm);
+                if (!isNaN(num)) {
+                    query = query.or(`numero_solicitud.eq.${num},descripcion_solicitud.ilike.%${searchTerm}%`);
+                } else {
+                    query = query.ilike('descripcion_solicitud', `%${searchTerm}%`);
+                }
             }
 
             const from = (page - 1) * itemsPerPage;
@@ -114,7 +116,7 @@ export default function SolicitudesExternasTable() {
             cargarDatos(1);
         }, 500);
         return () => clearTimeout(timer);
-    }, [filtroNumero, filtroDescripcion]);
+    }, [searchTerm]);
 
 
     // Handlers
@@ -133,11 +135,13 @@ export default function SolicitudesExternasTable() {
             .eq('tipo_solicitud', 'STE')
             .eq('seguimiento_solicitud.estado_actual', 'ACTIVA');
 
-        if (filtroNumero && !isNaN(Number(filtroNumero))) {
-            query = query.eq('numero_solicitud', Number(filtroNumero));
-        }
-        if (filtroDescripcion) {
-            query = query.ilike('descripcion_solicitud', `%${filtroDescripcion}%`);
+        if (searchTerm) {
+            const num = Number(searchTerm);
+            if (!isNaN(num)) {
+                query = query.or(`numero_solicitud.eq.${num},descripcion_solicitud.ilike.%${searchTerm}%`);
+            } else {
+                query = query.ilike('descripcion_solicitud', `%${searchTerm}%`);
+            }
         }
 
         const { data } = await query.order('numero_solicitud', { ascending: false });
@@ -218,129 +222,123 @@ export default function SolicitudesExternasTable() {
     const totalPages = Math.ceil(totalItems / itemsPerPage);
 
     return (
-        <div className="min-h-screen bg-[#0f111a] text-slate-100 p-4 md:p-8 relative overflow-hidden">
-            {/* Ambient Background */}
-            <div className="absolute top-0 left-0 w-full h-full overflow-hidden pointer-events-none -z-10">
-                <div className="absolute top-[-20%] left-[-10%] w-[60%] h-[60%] bg-purple-500/5 rounded-full blur-[120px]" />
-                <div className="absolute bottom-[-20%] right-[-10%] w-[60%] h-[60%] bg-blue-500/5 rounded-full blur-[120px]" />
-            </div>
+        <div className="min-h-screen bg-[#000000] text-[#F5F5F7] font-sans relative flex flex-col selection:bg-[#0071E3]/30 pb-20">
+            <style>{`
+                .custom-scrollbar::-webkit-scrollbar { width: 6px; height: 6px; }
+                .custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
+                .custom-scrollbar::-webkit-scrollbar-thumb { background: #333333; border-radius: 3px; }
+                .custom-scrollbar::-webkit-scrollbar-thumb:hover { background: #424245; }
+            `}</style>
 
-            <div className="max-w-7xl mx-auto space-y-6 relative z-10">
-                {/* Header Section */}
-                <div className="flex flex-col md:flex-row justify-between items-end gap-6 pb-2 border-b border-white/5">
-                    <div className="space-y-1">
-                        <PageHeader title="Salidas de Cliente Externo" icon={Table} themeColor="purple" />
-                        <p className="text-slate-500 text-sm font-medium tracking-wide">
-                            Lista maestra de solicitudes activas para clientes externos.
-                        </p>
-                    </div>
-                    <div className="flex gap-3">
-                        <button onClick={exportToPDF} className="glass-button px-5 py-2.5 flex items-center gap-2 text-rose-400 hover:text-white rounded-xl">
-                            <File className="w-4 h-4" />
-                            <span className="font-bold text-xs uppercase tracking-widest">PDF</span>
+            <PageHeader
+                title="Salidas Clientes Externos"
+                icon={Table}
+                subtitle="Gestión y entrega de materiales para órdenes de trabajo activas ST-E."
+                rightElement={
+                    <div className="flex items-center gap-4">
+                        <button
+                            onClick={exportToPDF}
+                            className="h-11 px-6 bg-transparent border border-[#F5F5F7] text-[#F5F5F7] rounded-[8px] text-[10px] font-black uppercase tracking-widest hover:bg-white/5 transition-all flex items-center gap-2.5 active:scale-95"
+                        >
+                            <File className="w-4 h-4" /> PDF Listado
                         </button>
-                        <button onClick={exportToExcel} className="glass-button px-5 py-2.5 flex items-center gap-2 text-emerald-400 hover:text-white rounded-xl">
-                            <FileSpreadsheet className="w-4 h-4" />
-                            <span className="font-bold text-xs uppercase tracking-widest">Excel</span>
+                        <button
+                            onClick={exportToExcel}
+                            className="h-11 px-6 bg-[#0071E3] text-white rounded-[8px] text-[10px] font-black uppercase tracking-widest hover:brightness-110 transition-all flex items-center gap-2.5 shadow-xl active:scale-95"
+                        >
+                            <FileSpreadsheet className="w-4 h-4" /> Excel Completo
                         </button>
                     </div>
-                </div>
+                }
+            />
 
-                {/* Filters Row */}
-                <div className="glass-card p-5 flex flex-col lg:flex-row gap-4 items-center justify-between">
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4 w-full lg:w-[75%]">
-                        <div className="relative group">
-                            <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-600 group-focus-within:text-purple-400 transition-colors" />
-                            <input
-                                type="text"
-                                placeholder="Filtrar por número de solicitud..."
-                                value={filtroNumero}
-                                onChange={e => setFiltroNumero(e.target.value)}
-                                className="w-full bg-slate-950/50 border border-white/10 rounded-2xl pl-12 pr-4 py-3.5 text-sm text-slate-200 focus:ring-1 focus:ring-purple-500/50 outline-none transition-all placeholder:text-slate-700 font-medium"
-                            />
+            <div className="max-w-[1600px] mx-auto w-full px-8 space-y-8 flex-1 flex flex-col">
+                {/* Filters Section */}
+                <div className="bg-[#121212] border border-[#333333] rounded-[8px] p-6 shadow-2xl">
+                    <div className="flex flex-col lg:flex-row gap-6 items-center justify-between">
+                        <div className="w-full lg:w-[70%]">
+                            <div className="relative group">
+                                <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-[#86868B] group-focus-within:text-[#0071E3] transition-colors" />
+                                <input
+                                    type="text"
+                                    placeholder="Buscar por número de solicitud o descripción de la órden..."
+                                    value={searchTerm}
+                                    onChange={e => setSearchTerm(e.target.value)}
+                                    className="w-full bg-[#1D1D1F] border border-[#333333] rounded-[8px] pl-12 pr-4 py-3 text-sm text-[#F5F5F7] focus:border-[#0071E3]/50 outline-none transition-all placeholder:text-[#424245] font-medium"
+                                />
+                            </div>
                         </div>
-                        <div className="relative group">
-                            <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-600 group-focus-within:text-purple-400 transition-colors" />
-                            <input
-                                type="text"
-                                placeholder="Filtrar por descripción..."
-                                value={filtroDescripcion}
-                                onChange={e => setFiltroDescripcion(e.target.value)}
-                                className="w-full bg-slate-950/50 border border-white/10 rounded-2xl pl-12 pr-4 py-3.5 text-sm text-slate-200 focus:ring-1 focus:ring-purple-500/50 outline-none transition-all placeholder:text-slate-700 font-medium"
-                            />
-                        </div>
-                    </div>
-                    <div className="flex items-center gap-4 w-full lg:w-auto">
-                        <button onClick={() => navigate('/cliente-externo')} className="glass-button w-full lg:w-auto px-6 py-3.5 rounded-2xl text-xs font-black uppercase tracking-widest flex items-center justify-center gap-2 text-slate-400 hover:text-white">
-                            <ArrowLeft className="w-4 h-4 text-purple-500" /> Regresar
+                        <button
+                            onClick={() => navigate('/cliente-externo')}
+                            className="h-11 px-8 bg-transparent border border-[#F5F5F7] text-[#F5F5F7] rounded-[8px] text-[10px] font-black uppercase tracking-widest hover:bg-white/5 transition-all flex items-center gap-2.5 active:scale-95"
+                        >
+                            <ArrowLeft className="w-4 h-4" /> Regresar
                         </button>
                     </div>
                 </div>
 
                 {/* Table Section */}
-                <div className="glass-card overflow-hidden flex flex-col min-h-[600px]">
-                    <div className="overflow-x-auto">
-                        <table className="w-full text-left border-collapse">
+                <div className="bg-[#121212] border border-[#333333] rounded-[8px] shadow-3xl overflow-hidden mb-16 h-full min-h-[500px] flex flex-col">
+                    <div className="overflow-x-auto custom-scrollbar flex-1">
+                        <table className="w-full text-left border-collapse min-w-[1000px]">
                             <thead>
-                                <tr className="bg-white/5 text-slate-500 text-[10px] font-black tracking-widest uppercase italic border-b border-white/5">
+                                <tr className="bg-[#1D1D1F] text-[#86868B] text-[10px] font-black tracking-[0.2em] uppercase border-b border-[#333333]">
                                     <th className="p-6 text-center w-[15%]">N° SOLICITUD</th>
-                                    <th className="p-6 w-[45%]">DESCRIPCIÓN</th>
-                                    <th className="p-6 text-center w-[20%]">FECHA</th>
+                                    <th className="p-6 w-[50%]">DESCRIPCIÓN</th>
+                                    <th className="p-6 text-center w-[15%]">FECHA</th>
                                     <th className="p-6 text-center w-[20%]">ACCIONES</th>
                                 </tr>
                             </thead>
-                            <tbody className={`text-sm divide-y divide-white/[0.03] transition-opacity duration-500 ${loading ? 'opacity-30 pointer-events-none' : 'opacity-100'}`}>
+                            <tbody className={cn("text-sm divide-y divide-[#333333]/30 transition-opacity duration-500", loading ? 'opacity-30 pointer-events-none' : 'opacity-100')}>
                                 {solicitudes.length === 0 && !loading ? (
                                     <tr>
-                                        <td colSpan={4} className="py-32 text-center">
+                                        <td colSpan={4} className="py-24 text-center">
                                             <div className="flex flex-col items-center gap-4">
-                                                <AlertOctagon className="w-12 h-12 text-slate-800" />
-                                                <p className="text-xs font-black uppercase text-slate-700 tracking-widest">No hay resultados coincidentes</p>
+                                                <AlertOctagon className="w-12 h-12 text-[#333333]" />
+                                                <p className="text-[10px] font-black uppercase text-[#86868B] tracking-widest">No hay resultados coincidentes</p>
                                             </div>
                                         </td>
                                     </tr>
                                 ) : (
                                     solicitudes.map((sol) => (
-                                        <tr key={sol.numero_solicitud} className="group hover:bg-white/[0.02] transition-colors h-24">
+                                        <tr key={sol.numero_solicitud} className="hover:bg-white/[0.02] transition-colors group h-24">
                                             <td className="p-6 text-center">
-                                                <span
-                                                    className="inline-block px-4 py-2 rounded-xl bg-purple-500/10 text-purple-400 text-sm font-black italic cursor-help ring-1 ring-purple-500/20 shadow-2xl hover:scale-105 transition-all"
+                                                <button
                                                     onDoubleClick={() => handleDoubleClick(sol.numero_solicitud)}
+                                                    className="inline-block px-4 py-2 rounded-[8px] bg-[#0071E3]/10 text-[#0071E3] text-[13px] font-black tracking-tight border border-[#0071E3]/20 hover:bg-[#0071E3]/20 transition-all font-mono italic"
                                                     title="Doble clic para ver materiales"
                                                 >
                                                     {sol.numero_solicitud}
-                                                </span>
+                                                </button>
                                             </td>
                                             <td className="p-6">
-                                                <p className="text-[13px] font-black text-white uppercase italic tracking-tight leading-relaxed line-clamp-2 max-w-xl group-hover:text-purple-400 transition-colors" title={sol.descripcion_solicitud}>
+                                                <p className="text-[11px] font-black text-[#F5F5F7] uppercase tracking-tight leading-relaxed line-clamp-2 max-w-2xl italic" title={sol.descripcion_solicitud}>
                                                     {sol.descripcion_solicitud}
                                                 </p>
                                             </td>
                                             <td className="p-6 text-center">
-                                                <div className="flex flex-col items-center">
-                                                    <div className="p-1.5 bg-white/5 rounded-lg mb-1">
-                                                        <Calendar className="w-3.5 h-3.5 text-slate-600" />
-                                                    </div>
-                                                    <span className="text-[11px] font-mono font-black text-slate-400 uppercase tracking-tighter">
+                                                <div className="flex flex-col items-center gap-1">
+                                                    <Calendar className="w-3.5 h-3.5 text-[#86868B]" />
+                                                    <span className="text-[11px] font-black text-[#F5F5F7] italic">
                                                         {new Date(sol.fecha_solicitud).toLocaleDateString('es-CR')}
                                                     </span>
                                                 </div>
                                             </td>
                                             <td className="p-6">
-                                                <div className="flex items-center justify-center gap-3">
+                                                <div className="flex items-center justify-center gap-4">
                                                     <button
                                                         onClick={() => navigate(`/cliente-externo/registro-salida?numero=${sol.numero_solicitud}`)}
-                                                        className="glass-button p-2.5 rounded-xl text-teal-400 hover:text-white hover:bg-teal-500/20 group/btn transition-all"
+                                                        className="h-10 w-10 bg-[#0071E3]/10 text-[#0071E3] rounded-[8px] border border-[#0071E3]/30 flex items-center justify-center hover:bg-[#0071E3] hover:text-white transition-all active:scale-90"
                                                         title="Realizar Salida"
                                                     >
-                                                        <ExternalLink className="w-5 h-5 group-hover/btn:scale-110 transition-transform" />
+                                                        <ExternalLink className="w-5 h-5" />
                                                     </button>
                                                     <button
                                                         onClick={() => handlePrintRow(sol.numero_solicitud)}
-                                                        className="glass-button p-2.5 rounded-xl text-rose-400 hover:text-white hover:bg-rose-500/20 group/btn transition-all"
+                                                        className="h-10 w-10 bg-transparent border border-[#333333] text-[#86868B] rounded-[8px] flex items-center justify-center hover:bg-white/5 hover:text-[#F5F5F7] transition-all active:scale-90"
                                                         title="Imprimir Orden"
                                                     >
-                                                        <Printer className="w-5 h-5 group-hover/btn:scale-110 transition-transform" />
+                                                        <Printer className="w-5 h-5" />
                                                     </button>
                                                 </div>
                                             </td>
@@ -352,25 +350,25 @@ export default function SolicitudesExternasTable() {
                     </div>
 
                     {/* Pagination Footer */}
-                    <div className="mt-auto p-6 border-t border-white/5 bg-black/20 flex items-center justify-between">
-                        <div className="text-[10px] font-black text-slate-500 uppercase tracking-widest italic">
-                            Mostrando <span className="text-purple-400 mx-1 text-sm font-black">{currentPage}</span> de <span className="text-white mx-1">{totalPages || 1}</span>
+                    <div className="bg-[#1D1D1F] border-t border-[#333333] px-8 py-4 flex items-center justify-between mt-auto">
+                        <div className="text-[10px] font-black text-[#86868B] uppercase tracking-widest italic">
+                            Página <span className="text-[#0071E3] text-[13px]">{currentPage}</span> de <span className="text-white">{totalPages || 1}</span>
                             <span className="ml-4 opacity-40">({totalItems} registros totales)</span>
                         </div>
-                        <div className="flex gap-2">
+                        <div className="flex gap-4">
                             <button
                                 disabled={currentPage <= 1 || loading}
                                 onClick={handlePrevPage}
-                                className="glass-button p-3 rounded-xl disabled:opacity-20 transition-all hover:bg-white/10"
+                                className="h-10 px-6 bg-transparent border border-[#333333] text-[#F5F5F7] rounded-[8px] text-[10px] font-black uppercase tracking-widest hover:bg-white/5 transition-all disabled:opacity-20 flex items-center gap-2"
                             >
-                                <ChevronLeft className="w-5 h-5 text-slate-400" />
+                                <ChevronLeft className="w-5 h-5" /> Anterior
                             </button>
                             <button
                                 disabled={(currentPage * itemsPerPage) >= totalItems || loading}
                                 onClick={handleNextPage}
-                                className="glass-button p-3 rounded-xl disabled:opacity-20 transition-all hover:bg-white/10"
+                                className="h-10 px-6 bg-transparent border border-[#333333] text-[#F5F5F7] rounded-[8px] text-[10px] font-black uppercase tracking-widest hover:bg-white/5 transition-all disabled:opacity-20 flex items-center gap-2"
                             >
-                                <ChevronRight className="w-5 h-5 text-slate-400" />
+                                Siguiente <ChevronRight className="w-5 h-5" />
                             </button>
                         </div>
                     </div>
@@ -379,62 +377,59 @@ export default function SolicitudesExternasTable() {
 
             {/* Premium Details Modal */}
             {showDetailsModal && (
-                <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-[#020617]/90 backdrop-blur-md animate-in fade-in duration-300">
-                    <div className="w-full max-w-4xl glass-card bg-slate-900 shadow-[0_32px_128px_rgba(0,0,0,0.8)] overflow-hidden flex flex-col max-h-[85vh] border-white/10">
-                        <div className="p-8 border-b border-white/5 flex justify-between items-center bg-white/[0.02]">
+                <div className="fixed inset-0 z-[100] flex items-center justify-center p-8 bg-black/80 backdrop-blur-[20px] animate-in fade-in duration-300">
+                    <div className="w-full max-w-4xl bg-[#121212] border border-[#333333] rounded-[8px] shadow-[0_32px_128px_rgba(0,0,0,0.8)] overflow-hidden flex flex-col max-h-[85vh]">
+                        <div className="p-8 border-b border-[#333333] flex justify-between items-center bg-black/20">
                             <div className="flex items-center gap-4">
-                                <div className="p-3 bg-purple-500/10 rounded-2xl ring-1 ring-purple-500/20">
-                                    <Package className="w-7 h-7 text-purple-400" />
+                                <div className="p-3 bg-[#0071E3]/10 rounded-[8px] border border-[#0071E3]/20">
+                                    <Package className="w-7 h-7 text-[#0071E3]" />
                                 </div>
                                 <div>
-                                    <h3 className="text-2xl font-black text-white italic uppercase tracking-tighter">Materiales Entregados</h3>
-                                    <p className="text-xs font-black text-slate-500 uppercase tracking-widest mt-1">Solicitud Identificada: #{selectedSolicitudNum}</p>
+                                    <h3 className="text-2xl font-black text-[#F5F5F7] italic uppercase tracking-tighter">Materiales Entregados</h3>
+                                    <p className="text-[10px] font-black text-[#86868B] uppercase tracking-widest mt-1">Órden de Trabajo #{selectedSolicitudNum}</p>
                                 </div>
                             </div>
                             <button
                                 onClick={() => setShowDetailsModal(false)}
-                                className="p-3 hover:bg-white/5 rounded-2xl transition-all text-slate-500 hover:text-white"
+                                className="p-3 bg-transparent border border-[#F5F5F7]/30 text-[#86868B] rounded-[8px] hover:text-[#F5F5F7] hover:bg-white/5 transition-all"
                             >
                                 <X className="w-6 h-6" />
                             </button>
                         </div>
 
-                        <div className="flex-1 overflow-y-auto p-8 custom-scrollbar space-y-8 bg-slate-950/20">
+                        <div className="flex-1 overflow-y-auto p-8 custom-scrollbar space-y-8 bg-black/40">
                             {loadingDetails ? (
-                                <div className="flex flex-col items-center justify-center py-24 text-slate-400 space-y-4">
-                                    <div className="w-12 h-12 border-4 border-purple-500/20 border-t-purple-500 rounded-full animate-spin" />
+                                <div className="flex flex-col items-center justify-center py-24 text-[#86868B] space-y-4">
+                                    <Loader2 className="w-12 h-12 animate-spin text-[#0071E3]" />
                                     <p className="font-black text-[10px] uppercase tracking-[0.3em]">Recuperando historial histórico...</p>
                                 </div>
                             ) : detailsData.length === 0 ? (
-                                <div className="flex flex-col items-center justify-center py-32 text-slate-800 space-y-4 grayscale opacity-20">
-                                    <Info className="w-16 h-16" />
-                                    <div className="text-center">
-                                        <p className="text-sm font-black uppercase tracking-widest">Sin entregas registradas</p>
-                                        <p className="text-[10px] font-bold text-slate-700 mt-2">No se han encontrado suministros vinculados a esta orden.</p>
-                                    </div>
+                                <div className="flex flex-col items-center justify-center py-32 text-[#86868B] space-y-4">
+                                    <Info className="w-16 h-16 opacity-10" />
+                                    <p className="text-[10px] font-black uppercase tracking-widest">Sin entregas registradas</p>
                                 </div>
                             ) : (
                                 detailsData.map((salida) => (
-                                    <div key={salida.id_salida} className="bg-white/[0.03] border border-white/5 rounded-3xl overflow-hidden shadow-2xl">
-                                        <div className="px-8 py-5 bg-white/5 border-b border-white/5 flex items-center justify-between">
+                                    <div key={salida.id_salida} className="bg-[#1D1D1F] border border-[#333333] rounded-[8px] overflow-hidden shadow-xl">
+                                        <div className="px-8 py-5 bg-black/20 border-b border-[#333333] flex items-center justify-between">
                                             <div className="flex items-center gap-3">
-                                                <span className="text-purple-400 font-black text-sm italic">TRANSACCIÓN #S-{salida.id_salida}</span>
+                                                <span className="text-[#0071E3] font-black text-[13px] uppercase italic">SALIDA #{salida.id_salida}</span>
                                             </div>
-                                            <div className="flex items-center gap-2 text-[11px] font-black text-slate-500 uppercase tracking-widest bg-black/40 px-4 py-2 rounded-full border border-white/5">
-                                                <Calendar className="w-4 h-4 text-slate-700" />
-                                                {new Date(salida.fecha_salida).toLocaleDateString()} <span className="text-slate-700 mx-1">•</span> {new Date(salida.fecha_salida).toLocaleTimeString()}
+                                            <div className="flex items-center gap-3 text-[10px] font-black text-[#86868B] uppercase tracking-widest">
+                                                <Calendar className="w-4 h-4" />
+                                                {new Date(salida.fecha_salida).toLocaleDateString()} <span className="opacity-20 mx-1">•</span> {new Date(salida.fecha_salida).toLocaleTimeString()}
                                             </div>
                                         </div>
                                         <div className="p-2">
                                             <table className="w-full text-left">
                                                 <thead>
-                                                    <tr className="text-slate-600 text-[9px] font-black uppercase tracking-[0.2em]">
-                                                        <th className="px-8 py-4">CÓDIGO</th>
-                                                        <th className="px-8 py-4">ARTÍCULO / MATERIAL</th>
-                                                        <th className="px-8 py-4 text-right">CANTIDAD</th>
+                                                    <tr className="text-[#86868B] text-[9px] font-black uppercase tracking-[0.2em] bg-black/20">
+                                                        <th className="px-6 py-4">CÓDIGO</th>
+                                                        <th className="px-6 py-4">ARTÍCULO / MATERIAL</th>
+                                                        <th className="px-6 py-4 text-right">CANTIDAD</th>
                                                     </tr>
                                                 </thead>
-                                                <tbody className="divide-y divide-white/[0.02]">
+                                                <tbody className="divide-y divide-[#333333]/30">
                                                     {salida.dato_salida_13.map((item, idx) => {
                                                         const nombreArticulo = Array.isArray(item.articulo_01)
                                                             ? item.articulo_01[0]?.nombre_articulo
@@ -442,15 +437,10 @@ export default function SolicitudesExternasTable() {
 
                                                         return (
                                                             <tr key={idx} className="hover:bg-white/[0.01] transition-colors">
-                                                                <td className="px-8 py-4 font-mono text-[11px] font-black text-slate-500">#{item.articulo}</td>
-                                                                <td className="px-8 py-4 text-[13px] font-black text-slate-200 uppercase italic tracking-tight">{nombreArticulo || '—'}</td>
-                                                                <td className="px-8 py-4 text-right">
-                                                                    <div className="flex flex-col items-end">
-                                                                        <span className="bg-emerald-500/10 text-emerald-400 px-4 py-1.5 rounded-xl font-black text-sm ring-1 ring-emerald-500/20 shadow-lg shadow-emerald-500/5">
-                                                                            {item.cantidad}
-                                                                        </span>
-                                                                        <span className="text-[8px] font-black text-slate-700 uppercase mt-1 tracking-widest">Unidades</span>
-                                                                    </div>
+                                                                <td className="px-6 py-4 font-mono text-[11px] font-black text-[#86868B]">#{item.articulo}</td>
+                                                                <td className="px-6 py-4 text-[11px] font-black text-[#F5F5F7] uppercase tracking-tight italic">{nombreArticulo || '—'}</td>
+                                                                <td className="px-6 py-4 text-right">
+                                                                    <span className="bg-[#0071E3]/10 text-[#0071E3] px-3 py-1 rounded-[4px] font-black text-[11px] border border-[#0071E3]/20 italic">{item.cantidad}</span>
                                                                 </td>
                                                             </tr>
                                                         );
@@ -463,10 +453,10 @@ export default function SolicitudesExternasTable() {
                             )}
                         </div>
 
-                        <div className="p-6 border-t border-white/5 bg-white/[0.02] flex justify-end">
+                        <div className="p-8 border-t border-[#333333] bg-black/20 flex justify-end">
                             <button
                                 onClick={() => setShowDetailsModal(false)}
-                                className="glass-button px-10 py-3.5 rounded-2xl text-xs font-black uppercase tracking-widest text-white hover:bg-white/10 transition-all border border-white/5"
+                                className="h-11 px-8 bg-[#0071E3] text-white rounded-[8px] text-[10px] font-black uppercase tracking-widest hover:brightness-110 active:scale-95 transition-all shadow-xl"
                             >
                                 Cerrar Ventana
                             </button>
