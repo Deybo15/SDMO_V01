@@ -16,20 +16,23 @@ const isValidComponent = (c: any) => {
 const resolveComponent = (mod: any, name: string) => {
     if (!mod) return null;
 
-    // 1. Direct named export
-    if (isValidComponent(mod[name])) return mod[name];
+    // 1. Direct access if mod is the component itself
+    if (isValidComponent(mod)) return mod;
 
-    // 2. Default export handling
+    // 2. Default export handling (CommonJS/ESM interop)
     const def = mod.default;
     if (def) {
         if (isValidComponent(def[name])) return def[name];
         if (isValidComponent(def)) return def;
-        // Double default check
         if (def.default && isValidComponent(def.default)) return def.default;
     }
 
-    // 3. Namespace check: only return mod if it's actually a component
-    if (isValidComponent(mod)) return mod;
+    // 3. Named export check
+    if (isValidComponent(mod[name])) return mod[name];
+
+    // 4. Try lowercase names if applicable
+    const lowerName = name.toLowerCase();
+    if (isValidComponent(mod[lowerName])) return mod[lowerName];
 
     return null;
 };
