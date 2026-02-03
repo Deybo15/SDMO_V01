@@ -84,12 +84,26 @@
         --border-color: #333333;
         --border-drag: #424245;
         --radius: 8px;
+
+        /* Typography */
+        --font-sans: 'Inter', system-ui, -apple-system, sans-serif;
+        --font-heading: 'Outfit', sans-serif;
     }
 
     body {
-        @apply bg-[#000000] text-[#F5F5F7];
+        @apply bg-[#000000] text-[#F5F5F7] antialiased;
         background-color: var(--bg-primary);
+        font-family: var(--font-sans);
+        -webkit-font-smoothing: antialiased;
+        -moz-osx-font-smoothing: grayscale;
+        text-rendering: optimizeLegibility;
     }
+
+    /* REVERSION PLAN: To return to system fonts, uncomment below and comment lines 93-95
+    body {
+        font-family: system-ui, -apple-system, sans-serif !important;
+    }
+    */
 }
 
 @layer utilities {

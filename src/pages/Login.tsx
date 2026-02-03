@@ -43,7 +43,7 @@ export default function Login() {
                 <div className="text-center mb-8">
                     <img
                         src="/login-logo-new.png"
-                        alt="Logo Municipalidad de San José"
+                        alt="Logo SDMO"
                         className="w-full max-w-[320px] mx-auto mb-6 h-auto object-contain"
                     />
                     <h1 className="text-3xl font-bold text-white mb-2">SDMO</h1>
@@ -111,7 +111,7 @@ export default function Login() {
 
                 <div className="mt-8 text-center">
                     <p className="text-xs text-slate-500">
-                        Municipalidad de San José © {new Date().getFullYear()}
+                        SDMO © {new Date().getFullYear()}
                     </p>
                 </div>
             </div>

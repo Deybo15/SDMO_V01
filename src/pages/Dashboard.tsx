@@ -127,7 +127,7 @@ export default function Dashboard() {
         <div className="p-6 space-y-8 animate-fade-in">
             <div className="sticky top-0 z-30 flex items-center justify-between py-4 -mx-6 px-6 bg-slate-900/90 backdrop-blur-md border-b border-slate-800 mb-6">
                 <div>
-                    <h2 className="text-3xl font-bold text-white">Panel de Control</h2>
+                    <h2 className="text-3xl font-bold text-white font-heading">Panel de Control</h2>
                     <p className="text-slate-400 mt-1 text-sm">Resumen general de operaciones</p>
                 </div>
                 <div className="text-sm text-slate-400 font-medium bg-slate-800/50 px-3 py-1 rounded-full border border-slate-700">
@@ -301,7 +301,7 @@ export default function Dashboard() {
 
                     <div className="mt-6 pt-6 border-t border-slate-700">
                         <p className="text-xs text-slate-500 text-center">
-                            SDMO v1.0.0 &copy; 2024 Municipalidad de San José
+                            SDMO v1.0.0 &copy; 2024
                         </p>
                     </div>
                 </div>

@@ -73,10 +73,9 @@ export default function Layout() {
                             <span className="text-white font-black text-2xl italic">S</span>
                         </div>
                         <div className="flex flex-col opacity-0 scale-95 group-hover/sidebar:opacity-100 group-hover/sidebar:scale-100 transition-all duration-300 whitespace-nowrap overflow-hidden">
-                            <h1 className="text-2xl font-black text-white tracking-tighter leading-none mb-1 uppercase italic">
+                            <h1 className="text-2xl font-black text-white tracking-tighter leading-none uppercase italic">
                                 SDMO
                             </h1>
-                            <p className="text-[10px] text-[#0071E3] font-black tracking-widest uppercase">Municipalidad</p>
                         </div>
                     </div>
                 </div>

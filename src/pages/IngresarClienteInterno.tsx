@@ -212,7 +212,7 @@ export default function IngresarClienteInterno() {
 
                 <div className="bg-[#121212] p-6 border border-[#333333] rounded-[8px]">
                     <p className="text-[10px] text-[#86868B] font-bold uppercase tracking-widest text-center leading-relaxed italic">
-                        Sistema de Gestión de Clientes Internos • Municipalidad de San José
+                        Sistema de Gestión de Clientes Internos • SDMO
                     </p>
                 </div>
             </div>

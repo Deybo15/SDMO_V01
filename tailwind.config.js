@@ -15,6 +15,10 @@ export default {
                     600: '#0284c7',
                     700: '#0369a1',
                     900: '#0c4a6e',
+                },
+                fontFamily: {
+                    sans: ['Inter', 'system-ui', 'sans-serif'],
+                    heading: ['Outfit', 'sans-serif'],
                 }
             }
         },
