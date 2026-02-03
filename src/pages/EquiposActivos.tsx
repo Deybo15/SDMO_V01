@@ -296,7 +296,10 @@ export default function EquiposActivos() {
             <ArticleSearchGridModal
                 isOpen={showSearch}
                 onClose={() => setShowSearch(false)}
-                onSelect={(article) => updateRowWithArticle(currentRowIndex, article)}
+                onSelect={(article) => {
+                    updateRowWithArticle(currentRowIndex, article);
+                    setShowSearch(false);
+                }}
                 themeColor="blue"
                 title="BUSCADOR"
             />

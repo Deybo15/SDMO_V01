@@ -104,6 +104,8 @@ export const useTransactionManager = ({
             return;
         }
 
+        console.log('✅ SELECCIONADO:', article.nombre_articulo);
+
         setItems(prev => {
             const newItems = [...prev];
             newItems[index] = {

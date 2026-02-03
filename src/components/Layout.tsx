@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { Link, useLocation, useNavigate, Outlet } from 'react-router-dom';
 import { LayoutDashboard, Package, Users, Building2, ClipboardList, Settings2, Wrench, LogOut, UserCircle2, Menu, X, Calculator, History } from 'lucide-react';
 import { cn } from '../lib/utils';
@@ -8,6 +8,35 @@ import CommandPalette from './CommandPalette';
 export default function Layout() {
     const location = useLocation();
     const navigate = useNavigate();
+
+    const [userEmail, setUserEmail] = useState<string | null>(null);
+    const [userName, setUserName] = useState<string | null>(null);
+
+    useEffect(() => {
+        // Fetch current user
+        const getCurrentUser = async () => {
+            const { data: { user } } = await supabase.auth.getUser();
+            if (user) {
+                setUserEmail(user.email ?? null);
+                setUserName(user.user_metadata?.full_name || user.email?.split('@')[0] || 'Usuario');
+            }
+        };
+
+        getCurrentUser();
+
+        // Listen for auth changes
+        const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+            if (session?.user) {
+                setUserEmail(session.user.email ?? null);
+                setUserName(session.user.user_metadata?.full_name || session.user.email?.split('@')[0] || 'Usuario');
+            } else {
+                setUserEmail(null);
+                setUserName(null);
+            }
+        });
+
+        return () => subscription.unsubscribe();
+    }, []);
 
     const handleLogout = async () => {
         await supabase.auth.signOut();
@@ -127,8 +156,12 @@ export default function Layout() {
                                 <UserCircle2 className="w-6 h-6 text-[#86868B]" />
                             </div>
                             <div className="flex flex-col opacity-0 scale-95 group-hover/sidebar:opacity-100 group-hover/sidebar:scale-100 transition-all duration-300 whitespace-nowrap overflow-hidden">
-                                <p className="text-[12px] font-black text-white truncate tracking-tight uppercase">Usuario</p>
-                                <p className="text-[9px] text-[#86868B] truncate font-black tracking-widest uppercase">dgamboa@msj.go.cr</p>
+                                <p className="text-[12px] font-black text-white truncate tracking-tight uppercase">
+                                    {userName || 'Cargando...'}
+                                </p>
+                                <p className="text-[9px] text-[#86868B] truncate font-black tracking-widest uppercase">
+                                    {userEmail || 'Iniciando sesión...'}
+                                </p>
                             </div>
                         </div>
 
