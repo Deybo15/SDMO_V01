@@ -25,7 +25,7 @@ import jsPDF from 'jspdf';
 
 // Shared Components
 import { PageHeader } from '../components/ui/PageHeader';
-import ArticuloSearchModal from '../components/ArticleSearchModal';
+import ArticleSearchGridModal from '../components/ArticleSearchGridModal';
 import ColaboradorSearchModal from '../components/ColaboradorSearchModal';
 import { cn } from '../lib/utils';
 
@@ -608,7 +608,7 @@ export default function IngresarArticulo() {
                 title={`Seleccionar ${colaboradorField === 'autoriza' ? 'Responsable que Autoriza' : 'Persona que Recibe'}`}
             />
 
-            <ArticuloSearchModal
+            <ArticleSearchGridModal
                 isOpen={showArticleModal}
                 onClose={() => {
                     setShowArticleModal(false);
@@ -616,6 +616,7 @@ export default function IngresarArticulo() {
                 }}
                 onSelect={handleSelectArticle}
                 themeColor="blue"
+                title="BUSCADOR"
                 showOnlyAvailable={false}
             />
 

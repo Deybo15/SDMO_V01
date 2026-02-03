@@ -243,11 +243,27 @@ export default function InformeColaboradores() {
 
         try {
             // -- PART 1: Standard Article Requests (Consumables) --
-            const { data: salidas } = await supabase
-                .from('salida_articulo_08')
-                .select('id_salida, fecha_salida, numero_solicitud, retira')
-                .eq('retira', colab.identificacion)
-                .order('fecha_salida', { ascending: false });
+            let allSalidas: any[] = [];
+            let hasMoreSalidas = true;
+            let offsetSalidas = 0;
+            const LIMIT = 1000;
+
+            while (hasMoreSalidas) {
+                const { data: batch, error } = await supabase
+                    .from('salida_articulo_08')
+                    .select('id_salida, fecha_salida, numero_solicitud, retira')
+                    .eq('retira', colab.identificacion)
+                    .order('fecha_salida', { ascending: false })
+                    .range(offsetSalidas, offsetSalidas + LIMIT - 1);
+
+                if (error) throw error;
+                if (!batch || batch.length === 0) break;
+                allSalidas.push(...batch);
+                if (batch.length < LIMIT) break;
+                offsetSalidas += LIMIT;
+            }
+
+            const salidas = allSalidas;
 
             let mergedArticulos: ArticuloSalida[] = [];
 
@@ -255,11 +271,16 @@ export default function InformeColaboradores() {
                 const numerosSolicitud = [...new Set(salidas.map(s => s.numero_solicitud).filter(Boolean))];
                 let tiposMap = new Map();
                 if (numerosSolicitud.length > 0) {
-                    const { data: solicitudes } = await supabase
-                        .from('solicitud_17')
-                        .select('numero_solicitud, tipo_solicitud')
-                        .in('numero_solicitud', numerosSolicitud);
-                    solicitudes?.forEach(s => tiposMap.set(s.numero_solicitud, s.tipo_solicitud));
+                    // Batch .in() for solicitudes
+                    const solBatchSize = 100;
+                    for (let i = 0; i < numerosSolicitud.length; i += solBatchSize) {
+                        const batchArr = numerosSolicitud.slice(i, i + solBatchSize);
+                        const { data: solicitudes } = await supabase
+                            .from('solicitud_17')
+                            .select('numero_solicitud, tipo_solicitud')
+                            .in('numero_solicitud', batchArr);
+                        solicitudes?.forEach(s => tiposMap.set(s.numero_solicitud, s.tipo_solicitud));
+                    }
                 }
 
                 const idsSalida = salidas.map(s => s.id_salida);
@@ -272,11 +293,15 @@ export default function InformeColaboradores() {
                     const codigosArticulo = [...new Set(detalles.map(d => d.articulo))];
                     let articulosMap = new Map();
                     if (codigosArticulo.length > 0) {
-                        const { data: arts } = await supabase
-                            .from('articulo_01')
-                            .select('codigo_articulo, nombre_articulo')
-                            .in('codigo_articulo', codigosArticulo);
-                        arts?.forEach(a => articulosMap.set(a.codigo_articulo, a.nombre_articulo));
+                        const artBatchSize = 100;
+                        for (let i = 0; i < codigosArticulo.length; i += artBatchSize) {
+                            const batchArr = codigosArticulo.slice(i, i + artBatchSize);
+                            const { data: arts } = await supabase
+                                .from('articulo_01')
+                                .select('codigo_articulo, nombre_articulo')
+                                .in('codigo_articulo', batchArr);
+                            arts?.forEach(a => articulosMap.set(a.codigo_articulo, a.nombre_articulo));
+                        }
                     }
 
                     const merged = detalles.map(d => {
@@ -300,11 +325,26 @@ export default function InformeColaboradores() {
             }
 
             // -- PART 2: Asset Assignments (activos_50) --
-            const { data: boletasActivo } = await supabase
-                .from('salida_activo_55')
-                .select('boleta_salida_activo, fecha_salida_activo, usuario_de_activo')
-                .eq('usuario_de_activo', colab.identificacion)
-                .order('fecha_salida_activo', { ascending: false });
+            let allBoletas: any[] = [];
+            let hasMoreBoletas = true;
+            let offsetBoletas = 0;
+
+            while (hasMoreBoletas) {
+                const { data: batch, error } = await supabase
+                    .from('salida_activo_55')
+                    .select('boleta_salida_activo, fecha_salida_activo, usuario_de_activo')
+                    .eq('usuario_de_activo', colab.identificacion)
+                    .order('fecha_salida_activo', { ascending: false })
+                    .range(offsetBoletas, offsetBoletas + LIMIT - 1);
+
+                if (error) throw error;
+                if (!batch || batch.length === 0) break;
+                allBoletas.push(...batch);
+                if (batch.length < LIMIT) break;
+                offsetBoletas += LIMIT;
+            }
+
+            const boletasActivo = allBoletas;
 
             if (boletasActivo && boletasActivo.length > 0) {
                 const idsBoleta = boletasActivo.map(b => b.boleta_salida_activo);

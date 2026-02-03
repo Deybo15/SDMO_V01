@@ -45,6 +45,7 @@ import { utils, writeFile } from 'xlsx';
 
 // Shared Components
 import { PageHeader } from '../components/ui/PageHeader';
+import ArticleSearchGridModal from '../components/ArticleSearchGridModal';
 
 // Interfaces
 interface Articulo {
@@ -73,9 +74,6 @@ export default function HistorialArticulo() {
 
     // State
     const [loading, setLoading] = useState(false);
-    const [searching, setSearching] = useState(false);
-    const [searchTerm, setSearchTerm] = useState('');
-    const [articulosFound, setArticulosFound] = useState<Articulo[]>([]);
     const [selectedArticle, setSelectedArticle] = useState<Articulo | null>(null);
     const [showSearchModal, setShowSearchModal] = useState(false);
 
@@ -86,34 +84,6 @@ export default function HistorialArticulo() {
     const [hasSearched, setHasSearched] = useState(false);
     const [statusMessage, setStatusMessage] = useState<{ type: 'success' | 'error' | 'warning' | 'info', message: string } | null>(null);
 
-    // Search Articles
-    useEffect(() => {
-        const searchArticles = async () => {
-            if (searchTerm.trim().length < 2) {
-                setArticulosFound([]);
-                return;
-            }
-
-            setSearching(true);
-            try {
-                const { data, error } = await supabase
-                    .from('articulo_01')
-                    .select('codigo_articulo, nombre_articulo, unidad, imagen_url')
-                    .or(`nombre_articulo.ilike.%${searchTerm}%,codigo_articulo.ilike.%${searchTerm}%`)
-                    .limit(15);
-
-                if (error) throw error;
-                setArticulosFound(data || []);
-            } catch (error) {
-                console.error('Error searching articles:', error);
-            } finally {
-                setSearching(false);
-            }
-        };
-
-        const debounce = setTimeout(searchArticles, 300);
-        return () => clearTimeout(debounce);
-    }, [searchTerm]);
 
     // Consultar Salidas
     const handleConsultar = async () => {
@@ -130,35 +100,63 @@ export default function HistorialArticulo() {
         setHasSearched(true);
         setStatusMessage(null);
         try {
-            const { data, error } = await supabase
-                .from('dato_salida_13')
-                .select(`
-                    registro_salida,
-                    articulo,
-                    cantidad,
-                    salida_articulo_08!inner (
-                        id_salida,
-                        fecha_salida
-                    )
-                `)
-                .eq('articulo', selectedArticle.codigo_articulo)
-                .gte('salida_articulo_08.fecha_salida', dateFrom)
-                .lte('salida_articulo_08.fecha_salida', dateTo);
+            let allData: any[] = [];
+            let hasMore = true;
+            let offset = 0;
+            const BATCH_SIZE = 1000;
+            let totalCount = 0;
 
-            if (error) throw error;
+            while (hasMore) {
+                const { data, error, count } = await supabase
+                    .from('dato_salida_13')
+                    .select(`
+                        registro_salida,
+                        articulo,
+                        cantidad,
+                        salida_articulo_08 (
+                            id_salida,
+                            fecha_salida
+                        )
+                    `, { count: 'exact' })
+                    .eq('articulo', selectedArticle.codigo_articulo)
+                    .gte('salida_articulo_08.fecha_salida', dateFrom)
+                    .lte('salida_articulo_08.fecha_salida', dateTo)
+                    .range(offset, offset + BATCH_SIZE - 1)
+                    .order('fecha_salida', { foreignTable: 'salida_articulo_08', ascending: true });
+
+                if (error) throw error;
+
+                if (offset === 0 && count !== null) {
+                    totalCount = count;
+                }
+
+                if (data && data.length > 0) {
+                    allData = [...allData, ...data];
+                    offset += data.length;
+                    hasMore = data.length === BATCH_SIZE;
+
+                    if (offset >= 50000) break;
+                } else {
+                    hasMore = false;
+                }
+            }
 
             // Process data
-            const processed: SalidaProcessed[] = (data as any[]).map(item => ({
+            const processed: SalidaProcessed[] = allData.map(item => ({
                 id_salida: item.salida_articulo_08?.id_salida,
                 fecha_salida: item.salida_articulo_08?.fecha_salida,
                 cantidad: Number(item.cantidad) || 0,
                 registro: item.registro_salida
-            })).filter(item => item.fecha_salida)
-                .sort((a, b) => new Date(a.fecha_salida).getTime() - new Date(b.fecha_salida).getTime());
+            })).filter(item => item.fecha_salida);
+
+            console.log('Procesamiento completado. Registros finales:', processed.length);
 
             setSalidas(processed);
             if (processed.length > 0) {
-                setStatusMessage({ type: 'success', message: `${processed.length} registros encontrados.` });
+                setStatusMessage({
+                    type: 'success',
+                    message: `${processed.length} registros recuperados${totalCount > 1000 ? ` de ${totalCount}` : ''}.`
+                });
             }
         } catch (error: any) {
             console.error('Error fetching salidas:', error);
@@ -619,119 +617,19 @@ export default function HistorialArticulo() {
                 )}
             </div>
 
-            {/* Premium Search Modal */}
-            {showSearchModal && (
-                <div className="fixed inset-0 z-50 flex items-center justify-center p-4 md:p-10 animate-in fade-in zoom-in-95 duration-300">
-                    <div className="absolute inset-0 bg-black/80 backdrop-blur-xl" onClick={() => setShowSearchModal(false)} />
-
-                    <div className="bg-[#121212] border border-[#333333] rounded-[8px] w-full max-w-5xl shadow-2xl overflow-hidden flex flex-col max-h-[90vh] relative z-10">
-                        {/* Header */}
-                        <div className="px-10 py-8 border-b border-[#333333] flex justify-between items-center bg-[#1D1D1F]">
-                            <div className="flex items-center gap-4">
-                                <div className="p-3 rounded-[4px] bg-[#0071E3]/10 text-[#0071E3] border border-[#0071E3]/20">
-                                    <Search className="w-6 h-6" />
-                                </div>
-                                <div>
-                                    <h3 className="text-xl font-black text-white uppercase italic tracking-tighter">Buscador Especializado</h3>
-                                    <p className="text-[10px] font-black text-[#86868B] uppercase tracking-[0.2em] mt-1">Localización de artículos por código o descripción</p>
-                                </div>
-                            </div>
-                            <button
-                                onClick={() => setShowSearchModal(false)}
-                                className="w-12 h-12 bg-transparent border border-[#333333] text-[#86868B] hover:text-white rounded-[8px] flex items-center justify-center transition-all hover:bg-white/5"
-                            >
-                                <X className="w-6 h-6" />
-                            </button>
-                        </div>
-
-                        {/* Search Input Area */}
-                        <div className="px-10 py-8 bg-[#121212] relative">
-                            <div className="relative group/search-input">
-                                <Search className="absolute left-6 top-1/2 -translate-y-1/2 w-6 h-6 text-[#86868B] group-focus-within/search-input:text-[#0071E3] transition-colors" />
-                                <input
-                                    type="text"
-                                    autoFocus
-                                    placeholder="Escriba código o nombre del material..."
-                                    value={searchTerm}
-                                    onChange={(e) => setSearchTerm(e.target.value)}
-                                    className="w-full bg-[#1D1D1F] border border-[#333333] rounded-[8px] pl-16 pr-6 py-5 text-xl text-white font-bold placeholder-[#333333] focus:outline-none focus:border-[#0071E3]/50 transition-all shadow-inner"
-                                />
-                                {searching && <Loader2 className="absolute right-6 top-1/2 -translate-y-1/2 w-6 h-6 text-[#0071E3] animate-spin" />}
-                            </div>
-                        </div>
-
-                        {/* Results Area */}
-                        <div className="flex-1 overflow-hidden flex flex-col bg-[#121212]">
-                            <div className="flex-1 overflow-auto px-6 pb-10">
-                                <table className="w-full text-left border-collapse">
-                                    <thead className="sticky top-0 z-10 bg-[#121212]/95 backdrop-blur-lg">
-                                        <tr className="border-b border-[#333333]">
-                                            <th className="px-6 py-4 text-[10px] font-black text-[#86868B] uppercase tracking-widest text-center">Icono</th>
-                                            <th className="px-6 py-4 text-[10px] font-black text-[#86868B] uppercase tracking-widest">Código</th>
-                                            <th className="px-6 py-4 text-[10px] font-black text-[#86868B] uppercase tracking-widest">Descripción del Artículo</th>
-                                            <th className="px-6 py-4 text-[10px] font-black text-[#86868B] uppercase tracking-widest text-center">Acción</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody className="divide-y divide-[#333333]">
-                                        {articulosFound.map((art) => (
-                                            <tr key={art.codigo_articulo} className="hover:bg-white/[0.02] transition-all group/row-search h-20">
-                                                <td className="px-6 text-center">
-                                                    <div className="w-12 h-12 bg-black/40 rounded-[4px] overflow-hidden border border-[#333333] mx-auto transform group-hover/row-search:scale-105 transition-transform">
-                                                        <img src={art.imagen_url || ''} className="w-full h-full object-cover" />
-                                                    </div>
-                                                </td>
-                                                <td className="px-6">
-                                                    <span className="font-mono text-sm font-black text-[#0071E3] bg-[#0071E3]/5 px-3 py-1 rounded-[4px] border border-[#0071E3]/10">
-                                                        {art.codigo_articulo}
-                                                    </span>
-                                                </td>
-                                                <td className="px-6">
-                                                    <div className="font-black text-[#F5F5F7] group-hover/row-search:text-[#0071E3] transition-colors uppercase leading-tight">
-                                                        {art.nombre_articulo}
-                                                    </div>
-                                                    <span className="text-[9px] font-black text-[#86868B] uppercase tracking-widest mt-1 block">{art.unidad}</span>
-                                                </td>
-                                                <td className="px-6 text-center">
-                                                    <button
-                                                        onClick={() => {
-                                                            setSelectedArticle(art);
-                                                            setShowSearchModal(false);
-                                                            setSearchTerm('');
-                                                            setHasSearched(false);
-                                                        }}
-                                                        className="px-6 py-3 bg-[#0071E3] hover:bg-[#0077ED] text-white rounded-[8px] text-[10px] font-black uppercase tracking-widest flex items-center gap-2 mx-auto active:scale-95 transition-all shadow-lg shadow-[#0071E3]/20"
-                                                    >
-                                                        Seleccionar
-                                                        <ArrowRight className="w-4 h-4" />
-                                                    </button>
-                                                </td>
-                                            </tr>
-                                        ))}
-                                        {articulosFound.length === 0 && !searching && searchTerm.length >= 2 && (
-                                            <tr>
-                                                <td colSpan={4} className="text-center py-20">
-                                                    <AlertCircle className="w-10 h-10 text-[#333333] mx-auto mb-4" />
-                                                    <p className="text-[#86868B] font-bold uppercase tracking-widest text-[10px]">Sin coincidencias para la búsqueda</p>
-                                                </td>
-                                            </tr>
-                                        )}
-                                    </tbody>
-                                </table>
-                            </div>
-                        </div>
-
-                        {/* Footer */}
-                        <div className="px-10 py-5 bg-[#1D1D1F] border-t border-[#333333] flex justify-between items-center shrink-0">
-                            <span className="text-[9px] font-black text-[#86868B] uppercase tracking-[0.2em]">Criterio de búsqueda sensible a mayúsculas</span>
-                            <div className="flex items-center gap-3">
-                                <span className="text-[9px] font-black text-[#0071E3] uppercase tracking-widest">{articulosFound.length} Artículos Encontrados</span>
-                                <div className="w-1 h-1 rounded-full bg-[#333333]" />
-                                <span className="text-[9px] font-black text-[#86868B] uppercase tracking-widest">{searchTerm.length} Caracteres</span>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            )}
+            {/* Article Search Modal (Galaxy Grid) */}
+            <ArticleSearchGridModal
+                isOpen={showSearchModal}
+                onClose={() => setShowSearchModal(false)}
+                onSelect={(article) => {
+                    setSelectedArticle(article);
+                    setSalidas([]);
+                    setHasSearched(false);
+                    setShowSearchModal(false);
+                }}
+                themeColor="blue"
+                title="BUSCADOR"
+            />
         </div>
     );
 }

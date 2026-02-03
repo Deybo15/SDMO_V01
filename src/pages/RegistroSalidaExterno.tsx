@@ -26,6 +26,7 @@ import { PageHeader } from '../components/ui/PageHeader';
 import { TransactionTable } from '../components/ui/TransactionTable';
 import ColaboradorSearchModal from '../components/ColaboradorSearchModal';
 import HistorialMaterialesModal from '../components/HistorialMaterialesModal';
+import ArticleSearchGridModal from '../components/ArticleSearchGridModal';
 import { Articulo, DetalleSalida, Colaborador } from '../types/inventory';
 
 export default function RegistroSalidaExterno() {
@@ -59,23 +60,11 @@ export default function RegistroSalidaExterno() {
         autorizados: [],
         todos: []
     });
-    const [inventario, setInventario] = useState<Articulo[]>([]);
-
-    // 4. Modals State
     const [showBusquedaModal, setShowBusquedaModal] = useState(false);
     const [busquedaTipo, setBusquedaTipo] = useState<'autoriza' | 'retira'>('autoriza');
     const [showArticulosModal, setShowArticulosModal] = useState(false);
     const [showHistorialModal, setShowHistorialModal] = useState(false);
     const [currentRowIndex, setCurrentRowIndex] = useState<number>(0);
-    const [showImageModal, setShowImageModal] = useState(false);
-    const [selectedImage, setSelectedImage] = useState<{ src: string, alt: string } | null>(null);
-    const [articuloTermino, setArticuloTermino] = useState('');
-
-    // Inventory Controls
-    const [inventoryPage, setInventoryPage] = useState(1);
-    const [inventoryLoading, setInventoryLoading] = useState(false);
-    const [totalInventory, setTotalInventory] = useState(0);
-    const ITEMS_PER_PAGE = 1000;
 
     const themeColor = 'teal';
 
@@ -135,51 +124,6 @@ export default function RegistroSalidaExterno() {
         }
     };
 
-    const cargarInventario = async (page = 1, append = false) => {
-        setInventoryLoading(true);
-        try {
-            const from = (page - 1) * ITEMS_PER_PAGE;
-            const to = page * ITEMS_PER_PAGE - 1;
-
-            const { data, error, count } = await supabase
-                .from('inventario_actual')
-                .select('codigo_articulo, nombre_articulo, cantidad_disponible, unidad, imagen_url, precio_unitario', { count: 'exact' })
-                .order('nombre_articulo', { ascending: true })
-                .range(from, to);
-
-            if (error) throw error;
-
-            let fetchedItems = data || [];
-
-            // Fetch brands
-            if (fetchedItems.length > 0) {
-                const codigos = fetchedItems.map(i => i.codigo_articulo).filter(Boolean);
-                const { data: marcas } = await supabase
-                    .from('articulo_01')
-                    .select('codigo_articulo, marca')
-                    .in('codigo_articulo', codigos);
-
-                const marcasMap = (marcas || []).reduce((acc: any, curr) => {
-                    acc[curr.codigo_articulo] = curr.marca;
-                    return acc;
-                }, {});
-
-                fetchedItems = fetchedItems.map(item => ({
-                    ...item,
-                    marca: marcasMap[item.codigo_articulo] || 'Sin marca'
-                }));
-            }
-
-            setTotalInventory(count || 0);
-            setInventario(prev => append ? [...prev, ...fetchedItems] : fetchedItems);
-
-        } catch (error) {
-            console.error('Error loading inventory:', error);
-            showAlert('Error al cargar inventario', 'error');
-        } finally {
-            setInventoryLoading(false);
-        }
-    };
 
     // Feedback Helper
     const showAlert = (message: string, type: 'success' | 'error' | 'warning' | 'info') => {
@@ -199,12 +143,9 @@ export default function RegistroSalidaExterno() {
         setShowBusquedaModal(false);
     };
 
-    const handleOpenArticulos = async (index: number) => {
+    const handleOpenArticulos = (index: number) => {
         setCurrentRowIndex(index);
         setShowArticulosModal(true);
-        if (inventario.length === 0) {
-            await cargarInventario(1);
-        }
     };
 
     const handleSelectArticulo = (article: Articulo) => {
@@ -403,11 +344,6 @@ export default function RegistroSalidaExterno() {
         }
     };
 
-    // Filtered lists
-    const filteredArticulos = inventario.filter(i =>
-        i.nombre_articulo.toLowerCase().includes(articuloTermino.toLowerCase()) ||
-        i.codigo_articulo.toLowerCase().includes(articuloTermino.toLowerCase())
-    );
 
     return (
         <div className="min-h-screen bg-[#0f111a] p-4 md:p-8">
@@ -586,165 +522,15 @@ export default function RegistroSalidaExterno() {
                 />
             )}
 
-            {/* Modal: Article Search (Galaxy Version) */}
-            {showArticulosModal && (
-                <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 md:p-6 animate-in fade-in duration-300">
-                    <div className="absolute inset-0 bg-black/40 backdrop-blur-md" onClick={() => setShowArticulosModal(false)} />
-
-                    <div className="relative w-full max-w-5xl bg-[#0f111a]/90 border border-white/10 rounded-3xl shadow-[0_0_50px_rgba(0,0,0,0.5)] overflow-hidden flex flex-col h-[85vh] animate-in zoom-in-95 duration-300">
-                        {/* Modal Header */}
-                        <div className="px-6 py-4 border-b border-white/10 flex justify-between items-center bg-gradient-to-r from-teal-500/10 to-cyan-500/10 shrink-0">
-                            <div>
-                                <h3 className="text-2xl font-bold text-white flex items-center gap-3">
-                                    <Search className="w-6 h-6 text-teal-400" />
-                                    Buscar Artículo
-                                </h3>
-                                <p className="text-sm text-gray-400 mt-1">Seleccione un artículo para agregar a la lista</p>
-                            </div>
-                            <button
-                                onClick={() => setShowArticulosModal(false)}
-                                className="p-2 hover:bg-white/10 rounded-full transition-colors text-gray-400 hover:text-white"
-                            >
-                                <X className="w-6 h-6" />
-                            </button>
-                        </div>
-
-                        {/* Article List Search */}
-                        <div className="px-8 py-4 bg-black/20 border-b border-white/5">
-                            <div className="relative group">
-                                <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-500 group-focus-within:text-teal-400 transition-colors" />
-                                <input
-                                    type="text"
-                                    placeholder="Buscar por código o nombre del artículo..."
-                                    value={articuloTermino}
-                                    onChange={(e) => setArticuloTermino(e.target.value)}
-                                    className="w-full bg-white/5 border border-white/10 rounded-2xl py-4 pl-12 pr-6 text-white outline-none focus:border-teal-500/50 focus:ring-4 focus:ring-teal-500/5 transition-all"
-                                />
-                            </div>
-                        </div>
-
-                        {/* Article List */}
-                        <div className="flex-1 overflow-y-auto p-6 md:p-8 custom-scrollbar">
-                            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-                                {inventoryLoading && inventario.length === 0 ? (
-                                    <div className="col-span-full flex flex-col items-center justify-center py-20 gap-4">
-                                        <Loader2 className="w-12 h-12 text-teal-500 animate-spin" />
-                                        <p className="text-gray-400 animate-pulse text-lg">Cargando inventario galáctico...</p>
-                                    </div>
-                                ) : (
-                                    filteredArticulos.map((art) => (
-                                        <div
-                                            key={art.codigo_articulo}
-                                            onClick={() => handleSelectArticulo(art)}
-                                            className="group relative bg-white/5 border border-white/10 rounded-2xl p-4 hover:bg-white/10 hover:border-teal-500/50 transition-all cursor-pointer flex flex-col h-full shadow-lg hover:shadow-teal-500/10"
-                                        >
-                                            {/* Article Image */}
-                                            <div className="relative aspect-square rounded-xl overflow-hidden mb-4 bg-black/40 border border-white/5">
-                                                <img
-                                                    src={art.imagen_url || 'https://via.placeholder.com/300?text=Sin+Imagen'}
-                                                    alt={art.nombre_articulo}
-                                                    onClick={(e) => {
-                                                        if (art.imagen_url) {
-                                                            e.stopPropagation();
-                                                            setSelectedImage({ src: art.imagen_url, alt: art.nombre_articulo });
-                                                            setShowImageModal(true);
-                                                        }
-                                                    }}
-                                                    className={`w-full h-full object-cover group-hover:scale-110 transition-transform duration-500 ${art.imagen_url ? 'cursor-zoom-in' : ''}`}
-                                                />
-                                                <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none" />
-                                                <div className="absolute top-2 right-2 px-2 py-1 bg-black/60 backdrop-blur-md rounded-lg text-[10px] font-bold text-teal-400 border border-teal-500/30 uppercase tracking-widest pointer-events-none">
-                                                    {art.unidad}
-                                                </div>
-                                            </div>
-
-                                            {/* Article Info */}
-                                            <div className="flex-1">
-                                                <h4 className="font-bold text-white group-hover:text-teal-400 transition-colors mb-2 leading-tight">
-                                                    {art.nombre_articulo}
-                                                </h4>
-                                                <div className="flex items-center gap-2 mb-3">
-                                                    <span className="text-[10px] font-mono text-gray-500 bg-white/5 px-2 py-0.5 rounded border border-white/5 tracking-tighter">
-                                                        {art.codigo_articulo}
-                                                    </span>
-                                                    {art.marca && (
-                                                        <span className="text-[10px] uppercase font-bold text-gray-400">
-                                                            • {art.marca}
-                                                        </span>
-                                                    )}
-                                                </div>
-                                            </div>
-
-                                            {/* Stock & Action */}
-                                            <div className="pt-3 border-t border-white/5 flex items-center justify-between">
-                                                <div className="flex flex-col">
-                                                    <span className="text-xs text-gray-500 uppercase font-medium">Disponible</span>
-                                                    <span className={`text-lg font-black ${art.cantidad_disponible > 0 ? 'text-teal-400' : 'text-red-400'}`}>
-                                                        {art.cantidad_disponible}
-                                                    </span>
-                                                </div>
-                                                <div className="w-10 h-10 rounded-full bg-teal-500/20 flex items-center justify-center group-hover:bg-teal-500 group-hover:text-black transition-all shadow-inner">
-                                                    <PlusCircle className="w-5 h-5" />
-                                                </div>
-                                            </div>
-                                        </div>
-                                    ))
-                                )}
-                            </div>
-
-                            {/* Pagination Button */}
-                            {inventario.length < totalInventory && (
-                                <div className="mt-12 text-center pb-8 border-t border-white/10 pt-8">
-                                    <button
-                                        onClick={() => {
-                                            const nextPage = inventoryPage + 1;
-                                            setInventoryPage(nextPage);
-                                            cargarInventario(nextPage, true);
-                                        }}
-                                        disabled={inventoryLoading}
-                                        className="inline-flex items-center gap-2 px-8 py-3 bg-white/5 hover:bg-white/10 text-teal-400 rounded-xl transition-all border border-white/10 hover:border-teal-500/30 disabled:opacity-50 font-bold"
-                                    >
-                                        {inventoryLoading ? (
-                                            <>
-                                                <Loader2 className="w-5 h-5 animate-spin" />
-                                                Cargando más artículos...
-                                            </>
-                                        ) : (
-                                            'Explorar más artículos'
-                                        )}
-                                    </button>
-                                    <p className="text-xs text-gray-500 mt-3 font-mono">
-                                        Viendo {inventario.length} de {totalInventory} artículos disponibles
-                                    </p>
-                                </div>
-                            )}
-                        </div>
-                    </div>
-                </div>
-            )}
-
-            {/* Image Modal */}
-            {showImageModal && selectedImage && (
-                <div
-                    className="fixed inset-0 z-[200] flex items-center justify-center p-4 bg-black/95 backdrop-blur-xl animate-in fade-in"
-                    onClick={() => setShowImageModal(false)}
-                >
-                    <div className="relative max-w-5xl w-full max-h-[90vh] flex flex-col items-center" onClick={e => e.stopPropagation()}>
-                        <button
-                            onClick={() => setShowImageModal(false)}
-                            className="absolute -top-12 right-0 p-2 text-white/50 hover:text-white transition-colors"
-                        >
-                            <X className="w-8 h-8" />
-                        </button>
-                        <img
-                            src={selectedImage.src}
-                            alt={selectedImage.alt}
-                            className="max-w-full max-h-[80vh] object-contain rounded-2xl shadow-2xl border border-white/10"
-                        />
-                        <p className="mt-4 text-white font-bold text-center text-lg">{selectedImage.alt}</p>
-                    </div>
-                </div>
-            )}
+            {/* Modal: Article Search (Galaxy Version Centralized) */}
+            <ArticleSearchGridModal
+                isOpen={showArticulosModal}
+                onClose={() => setShowArticulosModal(false)}
+                onSelect={handleSelectArticulo}
+                themeColor="teal"
+                title="BUSCADOR"
+                showOnlyAvailable={true}
+            />
             {/* Historial Modal */}
             <HistorialMaterialesModal
                 isOpen={showHistorialModal}

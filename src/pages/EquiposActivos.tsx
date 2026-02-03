@@ -15,7 +15,7 @@ import { PageHeader } from '../components/ui/PageHeader';
 import { TransactionTable } from '../components/ui/TransactionTable';
 import { Card } from '../components/ui/Card';
 import { Equipo } from '../types/inventory';
-import ArticuloSearchModal from '../components/ArticleSearchModal';
+import ArticleSearchGridModal from '../components/ArticleSearchGridModal';
 import ColaboradorSearchModal from '../components/ColaboradorSearchModal';
 import EquipoSearchModal from '../components/EquipoSearchModal';
 import { supabase } from '../lib/supabase';
@@ -293,11 +293,12 @@ export default function EquiposActivos() {
             />
 
             {/* Article Search Modal */}
-            <ArticuloSearchModal
+            <ArticleSearchGridModal
                 isOpen={showSearch}
                 onClose={() => setShowSearch(false)}
                 onSelect={(article) => updateRowWithArticle(currentRowIndex, article)}
-                themeColor={colorTheme}
+                themeColor="blue"
+                title="BUSCADOR"
             />
         </div>
     );

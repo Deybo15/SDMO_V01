@@ -38,6 +38,7 @@ import autoTable from 'jspdf-autotable';
 
 // Shared Components
 import { PageHeader } from '../components/ui/PageHeader';
+import ArticleSearchGridModal from '../components/ArticleSearchGridModal';
 
 interface Articulo {
     codigo_articulo: string;
@@ -67,20 +68,17 @@ interface KardexRow {
 
 export default function KardexDiario() {
     const navigate = useNavigate();
+    // State
     const [loading, setLoading] = useState(false);
-    const [searching, setSearching] = useState(false);
+    const [selectedArticle, setSelectedArticle] = useState<Articulo | null>(null);
+    const [showSearchModal, setShowSearchModal] = useState(false);
 
-    // Filters
-    const [searchTerm, setSearchTerm] = useState('');
     const [fechaDesde, setFechaDesde] = useState('');
     const [fechaHasta, setFechaHasta] = useState('');
 
     // Data
-    const [suggestions, setSuggestions] = useState<Articulo[]>([]);
-    const [selectedArticle, setSelectedArticle] = useState<Articulo | null>(null);
     const [kardexData, setKardexData] = useState<KardexRow[]>([]);
     const [saldoApertura, setSaldoApertura] = useState(0);
-    const [showSuggestions, setShowSuggestions] = useState(false);
 
     // UI State
     const [expandedRows, setExpandedRows] = useState<Set<string>>(new Set());
@@ -109,46 +107,8 @@ export default function KardexDiario() {
         }
     }, [statusMessage]);
 
-    // Autocomplete Search
-    useEffect(() => {
-        const searchArticulos = async () => {
-            if (!searchTerm.trim() || selectedArticle) {
-                setSuggestions([]);
-                setShowSuggestions(false);
-                return;
-            }
-
-            setSearching(true);
-            try {
-                const { data, error } = await supabase
-                    .from('articulo_01')
-                    .select('codigo_articulo, nombre_articulo, unidad, imagen_url')
-                    .or(`codigo_articulo.ilike.%${searchTerm}%,nombre_articulo.ilike.%${searchTerm}%`)
-                    .limit(10);
-
-                if (error) throw error;
-                setSuggestions(data || []);
-                setShowSuggestions(true);
-            } catch (error) {
-                console.error('Error searching articles:', error);
-            } finally {
-                setSearching(false);
-            }
-        };
-
-        const debounce = setTimeout(searchArticulos, 300);
-        return () => clearTimeout(debounce);
-    }, [searchTerm, selectedArticle]);
-
-    const handleSelectArticle = (articulo: Articulo) => {
-        setSelectedArticle(articulo);
-        setSearchTerm(`${articulo.codigo_articulo} - ${articulo.nombre_articulo}`);
-        setShowSuggestions(false);
-        setSuggestions([]);
-    };
 
     const clearSearch = () => {
-        setSearchTerm('');
         setSelectedArticle(null);
         setKardexData([]);
         setSaldoApertura(0);
@@ -183,21 +143,43 @@ export default function KardexDiario() {
 
         try {
             // 1. Get Opening Balance (Saldo Apertura)
-            const { data: entPrev, error: errEntPrev } = await supabase
-                .from('dato_entrada_12')
-                .select('cantidad, entrada:entrada_articulo_07!inner(fecha_entrada)')
-                .eq('articulo', selectedArticle.codigo_articulo)
-                .lt('entrada.fecha_entrada', fechaDesde);
+            let entPrev: any[] = [];
+            let salPrev: any[] = [];
+            const BATCH_SIZE = 1000;
 
-            if (errEntPrev) throw errEntPrev;
+            // Batch for entPrev
+            let offsetEnt = 0;
+            while (true) {
+                const { data, error } = await supabase
+                    .from('dato_entrada_12')
+                    .select('cantidad, entrada:entrada_articulo_07!inner(fecha_entrada)')
+                    .eq('articulo', selectedArticle.codigo_articulo)
+                    .lt('entrada.fecha_entrada', fechaDesde)
+                    .range(offsetEnt, offsetEnt + BATCH_SIZE - 1);
 
-            const { data: salPrev, error: errSalPrev } = await supabase
-                .from('dato_salida_13')
-                .select('cantidad, salida:salida_articulo_08!inner(fecha_salida)')
-                .eq('articulo', selectedArticle.codigo_articulo)
-                .lt('salida.fecha_salida', fechaDesde);
+                if (error) throw error;
+                if (!data || data.length === 0) break;
+                entPrev.push(...data);
+                if (data.length < BATCH_SIZE) break;
+                offsetEnt += BATCH_SIZE;
+            }
 
-            if (errSalPrev) throw errSalPrev;
+            // Batch for salPrev
+            let offsetSal = 0;
+            while (true) {
+                const { data, error } = await supabase
+                    .from('dato_salida_13')
+                    .select('cantidad, salida:salida_articulo_08!inner(fecha_salida)')
+                    .eq('articulo', selectedArticle.codigo_articulo)
+                    .lt('salida.fecha_salida', fechaDesde)
+                    .range(offsetSal, offsetSal + BATCH_SIZE - 1);
+
+                if (error) throw error;
+                if (!data || data.length === 0) break;
+                salPrev.push(...data);
+                if (data.length < BATCH_SIZE) break;
+                offsetSal += BATCH_SIZE;
+            }
 
             const sumEntPrev = (entPrev || []).reduce((acc, curr) => acc + (Number(curr.cantidad) || 0), 0);
             const sumSalPrev = (salPrev || []).reduce((acc, curr) => acc + (Number(curr.cantidad) || 0), 0);
@@ -209,25 +191,43 @@ export default function KardexDiario() {
             hastaDate.setDate(hastaDate.getDate() + 1);
             const hastaNextDay = hastaDate.toISOString().split('T')[0];
 
-            // Fetch Entries with ID
-            const { data: entRange, error: errEntRange } = await supabase
-                .from('dato_entrada_12')
-                .select('cantidad, id_entrada, entrada:entrada_articulo_07!inner(fecha_entrada)')
-                .eq('articulo', selectedArticle.codigo_articulo)
-                .gte('entrada.fecha_entrada', fechaDesde)
-                .lt('entrada.fecha_entrada', hastaNextDay);
+            // Fetch Entries with ID (Batch)
+            let entRange: any[] = [];
+            let offsetEntRange = 0;
+            while (true) {
+                const { data, error } = await supabase
+                    .from('dato_entrada_12')
+                    .select('cantidad, id_entrada, entrada:entrada_articulo_07!inner(fecha_entrada)')
+                    .eq('articulo', selectedArticle.codigo_articulo)
+                    .gte('entrada.fecha_entrada', fechaDesde)
+                    .lt('entrada.fecha_entrada', hastaNextDay)
+                    .range(offsetEntRange, offsetEntRange + BATCH_SIZE - 1);
 
-            if (errEntRange) throw errEntRange;
+                if (error) throw error;
+                if (!data || data.length === 0) break;
+                entRange.push(...data);
+                if (data.length < BATCH_SIZE) break;
+                offsetEntRange += BATCH_SIZE;
+            }
 
-            // Fetch Exits with ID
-            const { data: salRange, error: errSalRange } = await supabase
-                .from('dato_salida_13')
-                .select('cantidad, id_salida, salida:salida_articulo_08!inner(fecha_salida)')
-                .eq('articulo', selectedArticle.codigo_articulo)
-                .gte('salida.fecha_salida', fechaDesde)
-                .lte('salida.fecha_salida', fechaHasta);
+            // Fetch Exits with ID (Batch)
+            let salRange: any[] = [];
+            let offsetSalRange = 0;
+            while (true) {
+                const { data, error } = await supabase
+                    .from('dato_salida_13')
+                    .select('cantidad, id_salida, salida:salida_articulo_08!inner(fecha_salida)')
+                    .eq('articulo', selectedArticle.codigo_articulo)
+                    .gte('salida.fecha_salida', fechaDesde)
+                    .lte('salida.fecha_salida', fechaHasta)
+                    .range(offsetSalRange, offsetSalRange + BATCH_SIZE - 1);
 
-            if (errSalRange) throw errSalRange;
+                if (error) throw error;
+                if (!data || data.length === 0) break;
+                salRange.push(...data);
+                if (data.length < BATCH_SIZE) break;
+                offsetSalRange += BATCH_SIZE;
+            }
 
             // 3. Process Daily Data
             const movementsByDay = new Map<string, { ent: number, sal: number, detalles: KardexDetail[] }>();
@@ -438,51 +438,51 @@ export default function KardexDiario() {
                     </h2>
 
                     <div className="grid grid-cols-1 md:grid-cols-12 gap-6 items-end">
-                        {/* Article Search */}
-                        <div className="md:col-span-12 lg:col-span-5 relative">
+                        {/* Article Search Trigger */}
+                        <div className="md:col-span-12 lg:col-span-6 relative">
                             <label className="block text-[10px] font-black text-[#86868B] uppercase tracking-[0.2em] mb-3 ml-1">Artículo a Consultar</label>
-                            <div className="relative group/input">
-                                <Search className="absolute left-5 top-1/2 -translate-y-1/2 w-5 h-5 text-[#86868B] group-focus-within/input:text-[#0071E3] transition-colors" />
-                                <input
-                                    type="text"
-                                    value={searchTerm}
-                                    onChange={(e) => {
-                                        setSearchTerm(e.target.value);
-                                        if (selectedArticle) setSelectedArticle(null);
-                                    }}
-                                    placeholder="Código o nombre..."
-                                    className="w-full bg-[#1D1D1F] border border-[#333333] rounded-[8px] pl-14 pr-12 py-4 text-white font-bold placeholder-[#424245] focus:outline-none focus:border-[#0071E3]/50 transition-all shadow-inner"
-                                />
-                                {searching && <Loader2 className="absolute right-5 top-1/2 -translate-y-1/2 w-5 h-5 text-[#0071E3] animate-spin" />}
-                            </div>
-
-                            {/* Suggestions Dropdown */}
-                            {showSuggestions && suggestions.length > 0 && (
-                                <div className="absolute top-full left-0 right-0 mt-2 bg-[#121212] backdrop-blur-2xl border border-[#333333] rounded-[8px] shadow-2xl overflow-hidden z-[60] animate-in fade-in slide-in-from-top-2 duration-300">
-                                    {suggestions.map((item) => (
+                            {selectedArticle ? (
+                                <div className="flex items-center gap-4 p-4 bg-[#1D1D1F] border border-[#333333] rounded-[8px] group/selected relative overflow-hidden">
+                                    <div className="absolute top-0 left-0 w-1 h-full bg-[#0071E3]" />
+                                    <div className="w-12 h-12 bg-black/40 rounded-[8px] overflow-hidden border border-[#333333] shrink-0">
+                                        <img src={selectedArticle.imagen_url || ''} className="w-full h-full object-cover opacity-80" />
+                                    </div>
+                                    <div className="flex-1 min-w-0">
+                                        <span className="font-mono text-[10px] font-black text-[#0071E3] bg-[#0071E3]/5 px-2 py-0.5 rounded border border-[#0071E3]/10">
+                                            {selectedArticle.codigo_articulo}
+                                        </span>
+                                        <p className="text-sm font-bold text-white truncate italic uppercase mt-1">{selectedArticle.nombre_articulo}</p>
+                                    </div>
+                                    <div className="flex gap-2">
                                         <button
-                                            key={item.codigo_articulo}
-                                            onClick={() => handleSelectArticle(item)}
-                                            className="w-full text-left px-5 py-4 hover:bg-white/5 border-b border-[#333333] last:border-0 flex items-center gap-4 transition-all group/item"
+                                            onClick={() => setShowSearchModal(true)}
+                                            className="p-3 bg-white/5 hover:bg-white/10 text-[#0071E3] hover:text-white rounded-[8px] transition-all border border-[#333333]"
+                                            title="Cambiar artículo"
                                         >
-                                            <div className="w-10 h-10 bg-black/40 rounded-[8px] overflow-hidden border border-[#333333] shrink-0">
-                                                <img src={item.imagen_url || ''} className="w-full h-full object-cover opacity-60 group-hover/item:opacity-100 transition-opacity" />
-                                            </div>
-                                            <div className="flex-1 min-w-0">
-                                                <div className="flex items-center gap-2">
-                                                    <span className="font-mono text-[10px] font-black text-[#0071E3] bg-[#0071E3]/5 px-2 py-0.5 rounded border border-[#0071E3]/10">
-                                                        {item.codigo_articulo}
-                                                    </span>
-                                                    <span className="text-[10px] font-black text-[#86868B] uppercase tracking-widest">{item.unidad}</span>
-                                                </div>
-                                                <p className="text-sm font-bold text-[#F5F5F7] truncate mt-1 group-hover/item:text-white transition-colors">
-                                                    {item.nombre_articulo}
-                                                </p>
-                                            </div>
-                                            <ArrowRight className="w-4 h-4 text-[#333333] group-hover/item:text-[#0071E3] group-hover/item:translate-x-1 transition-all" />
+                                            <Search className="w-4 h-4" />
                                         </button>
-                                    ))}
+                                        <button
+                                            onClick={() => { clearSearch(); }}
+                                            className="p-3 bg-white/5 hover:bg-white/10 text-rose-400 hover:text-white rounded-[8px] transition-all border border-[#333333]"
+                                            title="Quitar"
+                                        >
+                                            <X className="w-4 h-4" />
+                                        </button>
+                                    </div>
                                 </div>
+                            ) : (
+                                <button
+                                    onClick={() => setShowSearchModal(true)}
+                                    className="w-full bg-[#1D1D1F] border border-[#333333] rounded-[8px] px-6 py-4 text-left flex items-center justify-between group/trigger focus:border-[#0071E3]/50 transition-all shadow-inner h-[58px]"
+                                >
+                                    <div className="flex items-center gap-4">
+                                        <Search className="w-5 h-5 text-[#86868B] group-hover/trigger:text-[#0071E3] transition-colors" />
+                                        <span className="text-[#86868B] font-bold uppercase tracking-widest text-[11px]">Seleccionar artículo de la rejilla...</span>
+                                    </div>
+                                    <span className="text-[10px] font-black text-[#0071E3] bg-[#0071E3]/5 px-3 py-1 rounded-[4px] border border-[#0071E3]/10 uppercase tracking-widest group-hover/trigger:bg-[#0071E3]/10 transition-colors">
+                                        Explorar
+                                    </span>
+                                </button>
                             )}
                         </div>
 
@@ -822,6 +822,18 @@ export default function KardexDiario() {
                     </div>
                 )}
             </div>
+            {/* Article Search Modal (Galaxy Grid) */}
+            <ArticleSearchGridModal
+                isOpen={showSearchModal}
+                onClose={() => setShowSearchModal(false)}
+                onSelect={(article) => {
+                    setSelectedArticle(article);
+                    setKardexData([]);
+                    setShowSearchModal(false);
+                }}
+                themeColor="blue"
+                title="BUSCADOR"
+            />
         </div>
     );
 }

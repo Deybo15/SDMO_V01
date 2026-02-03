@@ -248,38 +248,70 @@ export default function ConsultarSalidas() {
         setStatusMessage(null);
 
         try {
-            const { data, error } = await supabase
-                .from("vw_resumen_diario_salida")
-                .select("*")
-                .gte("fecha", fechaDesde)
-                .lte("fecha", fechaHasta)
-                .order("fecha", { ascending: true })
-                .order("codigo_articulo", { ascending: true });
+            let allData: any[] = [];
+            let hasMore = true;
+            let offset = 0;
+            const BATCH_SIZE = 1000;
+            let totalCount = 0;
 
-            if (error) throw error;
+            console.log('Consultando resumen diario...');
 
-            let finalData = data || [];
+            while (hasMore) {
+                const { data, error, count } = await supabase
+                    .from("vw_resumen_diario_salida")
+                    .select("*", { count: 'exact' })
+                    .gte("fecha", fechaDesde)
+                    .lte("fecha", fechaHasta)
+                    .range(offset, offset + BATCH_SIZE - 1)
+                    .order("fecha", { ascending: true })
+                    .order("codigo_articulo", { ascending: true });
+
+                if (error) throw error;
+
+                if (offset === 0 && count !== null) {
+                    totalCount = count;
+                    console.log('Total detectado por Supabase (Resumen):', totalCount);
+                }
+
+                if (data && data.length > 0) {
+                    allData = [...allData, ...data];
+                    offset += data.length;
+                    hasMore = data.length === BATCH_SIZE;
+                    console.log(`Lote cargado: ${allData.length} registros.`);
+                    if (offset >= 50000) break;
+                } else {
+                    hasMore = false;
+                }
+            }
+
+            let finalData = allData;
 
             if (finalData.length > 0) {
                 const solicitudes = [...new Set(finalData.map(d => d.numero_solicitud).filter(Boolean))];
 
                 if (solicitudes.length > 0) {
-                    const { data: instData, error: instError } = await supabase
-                        .from('solicitud_17')
-                        .select('numero_solicitud, instalaciones_municipales_16(instalacion_municipal)')
-                        .in('numero_solicitud', solicitudes);
+                    // Fetch installations in batches too if there are many unique solicitudes
+                    const uniqueSolBatchSize = 100;
+                    const instMap = new Map();
 
-                    if (!instError && instData) {
-                        const instMap = new Map(instData.map((s: any) => [
-                            s.numero_solicitud,
-                            s.instalaciones_municipales_16?.instalacion_municipal || 'N/A'
-                        ]));
+                    for (let i = 0; i < solicitudes.length; i += uniqueSolBatchSize) {
+                        const batch = solicitudes.slice(i, i + uniqueSolBatchSize);
+                        const { data: instData, error: instError } = await supabase
+                            .from('solicitud_17')
+                            .select('numero_solicitud, instalaciones_municipales_16(instalacion_municipal)')
+                            .in('numero_solicitud', batch);
 
-                        finalData = finalData.map(item => ({
-                            ...item,
-                            instalacion_municipal: instMap.get(item.numero_solicitud) || 'N/A'
-                        }));
+                        if (!instError && instData) {
+                            instData.forEach((s: any) => {
+                                instMap.set(s.numero_solicitud, s.instalaciones_municipales_16?.instalacion_municipal || 'N/A');
+                            });
+                        }
                     }
+
+                    finalData = finalData.map(item => ({
+                        ...item,
+                        instalacion_municipal: instMap.get(item.numero_solicitud) || 'N/A'
+                    }));
                 }
             }
 
@@ -288,7 +320,10 @@ export default function ConsultarSalidas() {
             if (!finalData || finalData.length === 0) {
                 setStatusMessage({ type: 'info', message: "Sin movimientos en este período." });
             } else {
-                setStatusMessage({ type: 'success', message: `${finalData.length} registros cargados.` });
+                setStatusMessage({
+                    type: 'success',
+                    message: `${finalData.length} registros cargados${totalCount > 1000 ? ` de ${totalCount}` : ''}.`
+                });
             }
         } catch (error: any) {
             console.error("Error al obtener resumen diario:", error);

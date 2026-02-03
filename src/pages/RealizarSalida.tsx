@@ -28,7 +28,7 @@ import autoTable from 'jspdf-autotable';
 // Shared Components
 import { PageHeader } from '../components/ui/PageHeader';
 import { TransactionTable } from '../components/ui/TransactionTable';
-import ArticuloSearchModal from '../components/ArticleSearchModal';
+import ArticuloSearchGridModal from '../components/ArticleSearchGridModal';
 import ColaboradorSearchModal from '../components/ColaboradorSearchModal';
 import HistorialMaterialesModal from '../components/HistorialMaterialesModal';
 import { DetalleSalida, Colaborador } from '../types/inventory';
@@ -572,11 +572,12 @@ export default function RealizarSalida() {
                 title={busquedaTipo === 'autoriza' ? 'Autorizado Por...' : 'Recibido Por...'}
             />
 
-            <ArticuloSearchModal
+            <ArticuloSearchGridModal
                 isOpen={showArticulosModal}
                 onClose={() => setShowArticulosModal(false)}
                 onSelect={handleSelectArticulo}
-                themeColor={themeColor}
+                themeColor="blue"
+                title="BUSCADOR"
             />
 
             <HistorialMaterialesModal

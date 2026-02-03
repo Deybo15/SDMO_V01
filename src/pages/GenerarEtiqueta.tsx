@@ -132,58 +132,72 @@ export default function GenerarEtiqueta() {
                     .etiqueta {
                         background: white !important;
                         color: black !important;
-                        border: 1.5px solid #000 !important;
+                        border: 2px solid #000 !important;
                         box-shadow: none !important;
                         margin: 0 !important;
                         width: 6.5cm !important;
                         height: 10.5cm !important;
                         display: flex;
                         flex-direction: column;
-                        padding: 0.25cm !important;
+                        padding: 0.4cm !important;
                         border-radius: 0 !important;
+                        font-family: 'Arial', sans-serif !important;
+                        box-sizing: border-box !important;
+                        overflow: hidden !important;
                     }
 
                     .etiqueta-qr {
-                        margin-top: 0.4cm !important;
-                        padding: 0.3cm !important;
+                        padding: 0 !important;
                         background: white !important;
                         align-self: center;
                         display: flex;
                         justify-content: center;
                     }
 
-                    .etiqueta-codigo {
-                        background: white !important;
-                        color: black !important;
+                    .etiqueta-codigo-box {
                         border: 2.5px solid #000 !important;
+                        border-radius: 6px !important;
+                        padding: 0.2cm !important;
                         text-align: center !important;
-                        margin-top: 0.5cm !important;
-                        margin-bottom: 0.5cm !important;
-                        border-radius: 4px !important;
+                        font-family: 'Courier New', Courier, monospace !important;
                         font-weight: 900 !important;
                         font-size: 1.1rem !important;
-                        letter-spacing: 0.05em !important;
-                        padding: 0.2cm !important;
-                        font-family: monospace !important;
+                        background: white !important;
+                        margin-top: 0.3cm !important;
+                        box-sizing: border-box !important;
+                        width: 100% !important;
                     }
 
                     .etiqueta-info {
-                        background: white !important;
-                        color: black !important;
-                        border-top: 1.5px solid #000 !important;
-                        margin-top: auto !important;
-                        padding: 0.4cm !important;
-                        line-height: 1.4 !important;
-                        font-size: 0.8rem !important;
-                        text-transform: uppercase !important;
+                        flex: 1 !important;
+                        display: flex !important;
+                        flex-direction: column !important;
+                        justify-content: space-evenly !important;
+                        padding-top: 0.3cm !important;
+                        min-height: 0 !important;
                     }
                     
-                    .etiqueta-info strong {
-                        color: #000 !important;
-                        display: block !important;
-                        margin-bottom: 0.2cm !important;
-                        font-size: 0.9rem !important;
-                        font-weight: 900 !important;
+                    .etiqueta-nombre {
+                        font-size: 1.05rem !important;
+                        font-weight: 800 !important;
+                        text-transform: uppercase !important;
+                        line-height: 1.2 !important;
+                        text-align: center !important;
+                        display: -webkit-box !important;
+                        -webkit-line-clamp: 3 !important;
+                        -webkit-box-orient: vertical !important;
+                        overflow: hidden !important;
+                    }
+
+                    .etiqueta-meta {
+                        display: flex !important;
+                        flex-direction: column !important;
+                        gap: 0.1cm !important;
+                        font-size: 0.85rem !important;
+                        font-weight: 700 !important;
+                        text-transform: uppercase !important;
+                        border-top: 1.5px solid #000 !important;
+                        padding-top: 0.3cm !important;
                     }
                 }
             `}</style>
@@ -316,31 +330,38 @@ export default function GenerarEtiqueta() {
                             <div className="flex-1 flex items-center justify-center bg-[#1D1D1F] rounded-[8px] border border-[#333333] p-12 relative overflow-hidden shadow-inner">
                                 {generatedArticle ? (
                                     <div className="transform scale-90 md:scale-100 hover:scale-[1.02] transition-transform duration-500 cursor-default">
-                                        <div className="w-[6.5cm] h-[10.5cm] p-[0.25cm] bg-white rounded-sm shadow-2xl flex flex-col justify-start">
-                                            {/* QR Container Preview */}
-                                            <div className="self-center mt-[0.4cm] p-[0.3cm] bg-white flex justify-center border border-slate-100">
+                                        <div className="w-[6.5cm] h-[10.5cm] bg-white rounded-sm shadow-2xl flex flex-col border-2 border-black overflow-hidden scale-90 md:scale-100 origin-center p-4 justify-between" style={{ boxSizing: 'border-box' }}>
+                                            {/* QR Section */}
+                                            <div className="flex justify-center">
                                                 <QRCode
                                                     value={generatedArticle.codigo_articulo}
-                                                    size={110}
+                                                    size={120}
                                                     fgColor="#000000"
                                                     bgColor="#ffffff"
-                                                    level="M"
+                                                    level="H"
                                                 />
                                             </div>
 
-                                            {/* Code Preview */}
-                                            <div className="text-center my-[0.5cm] bg-white text-black border-[2.5px] border-black rounded-[4px] font-black text-[1.1rem] tracking-[0.05em] p-[0.2cm] font-mono shadow-sm">
-                                                {generatedArticle.codigo_articulo}
+                                            {/* Code Box */}
+                                            <div className="border-[2.5px] border-black rounded-lg p-2 text-center bg-white shadow-sm mt-2">
+                                                <span className="font-mono text-base font-black tracking-wider text-black">{generatedArticle.codigo_articulo}</span>
                                             </div>
 
-                                            {/* Info Preview */}
-                                            <div className="mt-auto bg-white border-t-[1.5px] border-black p-[0.4cm] leading-none">
-                                                <strong className="block mb-[0.2cm] text-black text-sm font-black uppercase tracking-tight">
-                                                    {generatedArticle.nombre_articulo || '(Sin nombre)'}
-                                                </strong>
-                                                <div className="space-y-1">
-                                                    <p className="text-[10px] text-black font-bold uppercase">Unidad: {generatedArticle.unidad || '-'}</p>
-                                                    <p className="text-[10px] text-black font-bold uppercase">Marca: {generatedArticle.marca || 'N/A'}</p>
+                                            {/* Descriptive Info */}
+                                            <div className="flex-1 flex flex-col justify-evenly py-2 overflow-hidden">
+                                                <h4 className="text-[1.1rem] font-extrabold text-black leading-tight text-center uppercase overflow-hidden line-clamp-3">
+                                                    {generatedArticle.nombre_articulo}
+                                                </h4>
+
+                                                <div className="space-y-1 pt-2 border-t-2 border-black text-[10px] font-black text-black uppercase">
+                                                    <div className="flex justify-between">
+                                                        <span>MARCA:</span>
+                                                        <span>{generatedArticle.marca || 'N/A'}</span>
+                                                    </div>
+                                                    <div className="flex justify-between">
+                                                        <span>UNIDAD:</span>
+                                                        <span>{generatedArticle.unidad || '-'}</span>
+                                                    </div>
                                                 </div>
                                             </div>
                                         </div>
@@ -481,17 +502,25 @@ export default function GenerarEtiqueta() {
                         <div className="etiqueta-qr">
                             <QRCode
                                 value={generatedArticle.codigo_articulo}
-                                size={110}
+                                size={120}
                                 fgColor="#000000"
                                 bgColor="#ffffff"
-                                level="M"
+                                level="H"
                             />
                         </div>
-                        <div className="etiqueta-codigo">{generatedArticle.codigo_articulo}</div>
+                        <div className="etiqueta-codigo-box">{generatedArticle.codigo_articulo}</div>
                         <div className="etiqueta-info">
-                            <strong>{generatedArticle.nombre_articulo || '(Sin nombre)'}</strong>
-                            Unidad: {generatedArticle.unidad || '-'}<br />
-                            Marca: {generatedArticle.marca || 'N/A'}
+                            <span className="etiqueta-nombre">{generatedArticle.nombre_articulo || '(Sin nombre)'}</span>
+                            <div className="etiqueta-meta">
+                                <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                                    <span>MARCA:</span>
+                                    <span>{generatedArticle.marca || 'N/A'}</span>
+                                </div>
+                                <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                                    <span>UNIDAD:</span>
+                                    <span>{generatedArticle.unidad || '-'}</span>
+                                </div>
+                            </div>
                         </div>
                     </div>
                 </div>

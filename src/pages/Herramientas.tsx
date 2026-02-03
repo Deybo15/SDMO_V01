@@ -15,7 +15,7 @@ import { useTransactionManager } from '../hooks/useTransactionManager';
 import { PageHeader } from '../components/ui/PageHeader';
 import { TransactionTable } from '../components/ui/TransactionTable';
 import { Card } from '../components/ui/Card';
-import ArticuloSearchModal from '../components/ArticleSearchModal';
+import ArticleSearchGridModal from '../components/ArticleSearchGridModal';
 import ColaboradorSearchModal from '../components/ColaboradorSearchModal';
 import { Articulo } from '../types/inventory';
 
@@ -216,11 +216,12 @@ export default function Herramientas() {
             />
 
             {/* Article Search Modal */}
-            <ArticuloSearchModal
+            <ArticleSearchGridModal
                 isOpen={showSearch}
                 onClose={() => setShowSearch(false)}
                 onSelect={(article) => handleSelectArticle(currentRowIndex, article)}
-                themeColor={colorTheme}
+                themeColor="blue"
+                title="BUSCADOR"
             />
         </div>
     );

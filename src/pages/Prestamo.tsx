@@ -15,7 +15,7 @@ import { useNavigate } from 'react-router-dom';
 
 
 // Custom Architecture
-import ArticuloSearchModal from '../components/ArticleSearchModal';
+import ArticleSearchGridModal from '../components/ArticleSearchGridModal';
 import ColaboradorSearchModal from '../components/ColaboradorSearchModal';
 import { supabase } from '../lib/supabase';
 import { useTransactionManager } from '../hooks/useTransactionManager';
@@ -330,11 +330,12 @@ export default function Prestamo() {
             )}
 
             {/* Premium Article Search Modal */}
-            <ArticuloSearchModal
+            <ArticleSearchGridModal
                 isOpen={showSearch}
                 onClose={() => setShowSearch(false)}
                 onSelect={(article) => handleSelectArticle(currentRowIndex, article)}
-                themeColor={colorTheme}
+                themeColor="blue"
+                title="BUSCADOR"
             />
         </div>
     );
