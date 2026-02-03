@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo, useCallback } from 'react';
 import { supabase } from '../lib/supabase';
 import { useNavigate } from 'react-router-dom';
 import {
@@ -60,6 +60,11 @@ interface RecentEntry {
     timestamp: string;
     itemsCount: number;
     origen: string;
+    items?: {
+        codigo: string;
+        nombre: string;
+        cantidad: number;
+    }[];
 }
 
 export default function IngresarArticulo() {
@@ -94,11 +99,75 @@ export default function IngresarArticulo() {
     const [currentDetailIndex, setCurrentDetailIndex] = useState<number | null>(null);
     const [origenSearchTerm, setOrigenSearchTerm] = useState('');
 
+    const loadRecentHistory = useCallback(async () => {
+        try {
+            const { data: recentEntries, error: recentError } = await supabase
+                .from('entrada_articulo_07')
+                .select(`
+                    id_entrada,
+                    fecha_entrada,
+                    origen:origen_articulo_03(origen)
+                `)
+                .order('fecha_entrada', { ascending: false })
+                .limit(5);
+
+            if (recentError) throw recentError;
+
+            if (recentEntries) {
+                // Get detailed items for these entries
+                const entryIds = recentEntries.map(e => e.id_entrada);
+                const { data: detailsData, error: detailsError } = await supabase
+                    .from('dato_entrada_12')
+                    .select(`
+                        id_entrada,
+                        cantidad,
+                        articulo,
+                        datos_articulo:articulo_01(nombre_articulo)
+                    `)
+                    .in('id_entrada', entryIds);
+
+                if (detailsError) throw detailsError;
+
+                // Group items by entry ID
+                const itemsMap = (detailsData || []).reduce((acc: any, curr: any) => {
+                    if (!acc[curr.id_entrada]) acc[curr.id_entrada] = [];
+                    acc[curr.id_entrada].push({
+                        codigo: curr.articulo,
+                        nombre: curr.datos_articulo?.nombre_articulo || 'Artículo sin nombre',
+                        cantidad: curr.cantidad
+                    });
+                    return acc;
+                }, {});
+
+                const formatted: RecentEntry[] = recentEntries.map((e: any) => ({
+                    id: String(e.id_entrada),
+                    timestamp: new Date(e.fecha_entrada).toLocaleString('es-CR', {
+                        day: '2-digit',
+                        month: '2-digit',
+                        year: 'numeric',
+                        hour: '2-digit',
+                        minute: '2-digit'
+                    }),
+                    itemsCount: itemsMap[e.id_entrada]?.length || 0,
+                    origen: e.origen?.origen || 'Origen Desconocido',
+                    items: itemsMap[e.id_entrada] || []
+                }));
+
+                setRecentHistory(formatted);
+            }
+        } catch (error) {
+            console.error('Error loading recent history:', error);
+        }
+    }, []);
+
     // Load Initial Data
     useEffect(() => {
         const loadData = async () => {
             try {
                 setLoading(true);
+
+                // Load Recent History
+                await loadRecentHistory();
 
                 // Load Origenes
                 const { data: origenesData, error: origenesError } = await supabase
@@ -106,7 +175,6 @@ export default function IngresarArticulo() {
                     .select('id, origen');
                 if (origenesError) throw origenesError;
                 setOrigenes(origenesData || []);
-
 
                 // Load Colaboradores
                 const { data: colabData, error: colabError } = await supabase
@@ -153,7 +221,7 @@ export default function IngresarArticulo() {
         };
 
         loadData();
-    }, []);
+    }, [loadRecentHistory]);
 
     // Filtered Lists
     const filteredOrigenes = useMemo(() => {
@@ -283,17 +351,11 @@ export default function IngresarArticulo() {
 
             if (errorDetalles) throw errorDetalles;
 
-            // Add to Recent History
-            const newEntry: RecentEntry = {
-                id: String(entrada.id_entrada),
-                timestamp: new Date().toLocaleTimeString(),
-                itemsCount: validDetalles.length,
-                origen: selectedOrigen.origen
-            };
-            setRecentHistory(prev => [newEntry, ...prev].slice(0, 5));
-
             alert(`¡Entrada #${entrada.id_entrada} registrada exitosamente!\nSe descargará el comprobante.`);
             handlePrintReceipt(String(entrada.id_entrada), validDetalles, new Date().toLocaleString());
+
+            // Refresh History
+            await loadRecentHistory();
 
             // Reset form
             setDetalles([{ id: crypto.randomUUID(), articulo: null, cantidad: '' }]);
@@ -552,7 +614,7 @@ export default function IngresarArticulo() {
 
                 {/* Recent History Sidebar */}
                 {showHistory && (
-                    <div className="lg:col-span-3 lg:sticky lg:top-24 h-fit animate-in slide-in-from-right-8 duration-500 pb-20">
+                    <div className="lg:col-span-3 lg:sticky lg:top-24 h-fit animate-in slide-in-from-right-8 duration-500">
                         <div className="bg-[#121212] border border-[#333333] rounded-[8px] shadow-2xl overflow-hidden flex flex-col">
                             <div className="p-6 bg-black/20 border-b border-[#333333] flex items-center justify-between">
                                 <h3 className="font-bold text-[#F5F5F7] text-xs uppercase tracking-widest flex items-center gap-2">
@@ -560,7 +622,7 @@ export default function IngresarArticulo() {
                                     Recientes
                                 </h3>
                             </div>
-                            <div className="p-5 space-y-4">
+                            <div className="p-5 space-y-4 overflow-y-auto custom-scrollbar max-h-[calc(100vh-250px)]">
                                 {recentHistory.length === 0 ? (
                                     <div className="text-center py-12 px-4 space-y-4 text-[#86868B]">
                                         <History className="w-10 h-10 mx-auto opacity-20" />
@@ -580,12 +642,33 @@ export default function IngresarArticulo() {
                                             <p className="text-xs font-bold text-[#F5F5F7] mb-2 truncate uppercase italic">
                                                 {entry.origen}
                                             </p>
-                                            <div className="flex items-center gap-2 mt-4 text-[#86868B]">
+                                            <div className="flex items-center gap-2 mt-4 text-[#86868B] mb-4">
                                                 <div className="w-1.5 h-1.5 rounded-full bg-[#0071E3]" />
                                                 <span className="text-[10px] font-bold uppercase tracking-tight">
                                                     {entry.itemsCount} artículo{entry.itemsCount !== 1 ? 's' : ''}
                                                 </span>
                                             </div>
+
+                                            {/* Article details peek */}
+                                            {entry.items && entry.items.length > 0 && (
+                                                <div className="space-y-3 pt-4 border-t border-[#333333]/50">
+                                                    {entry.items.map((item, i) => (
+                                                        <div key={i} className="flex flex-col gap-1">
+                                                            <div className="flex justify-between items-start gap-3">
+                                                                <span className="text-[10px] font-bold text-[#F5F5F7] line-clamp-2 leading-tight flex-1">
+                                                                    {item.nombre}
+                                                                </span>
+                                                                <span className="text-[11px] font-black text-[#0071E3] tabular-nums shrink-0 bg-[#0071E3]/5 px-1.5 py-0.5 rounded">
+                                                                    x{item.cantidad}
+                                                                </span>
+                                                            </div>
+                                                            <span className="text-[9px] font-mono text-[#424245] group-hover:text-[#86868B] transition-colors">
+                                                                {item.codigo}
+                                                            </span>
+                                                        </div>
+                                                    ))}
+                                                </div>
+                                            )}
                                         </div>
                                     ))
                                 )}
