@@ -187,16 +187,20 @@ export default function ConsultarInventario() {
 
             autoTable(doc, {
                 startY: 35,
-                head: [['Código', 'Artículo', 'Unidad', 'Stock', 'Precio']],
+                head: [['Código', 'Artículo', 'Unidad', 'Stock', 'Precio (CRC)']],
                 body: allData.map(item => [
                     item.codigo_articulo,
                     item.nombre_articulo,
                     item.unidad,
                     item.cantidad_disponible,
-                    new Intl.NumberFormat('es-CR', { style: 'currency', currency: 'CRC' }).format(item.precio_unitario)
+                    new Intl.NumberFormat('es-CR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(item.precio_unitario)
                 ]),
                 theme: 'striped',
-                headStyles: { fillColor: [0, 113, 227] }
+                headStyles: { fillColor: [0, 113, 227] },
+                columnStyles: {
+                    3: { halign: 'right' }, // Stock
+                    4: { halign: 'right' }  // Precio
+                }
             });
 
             doc.save("Inventario_Completo_SDMO.pdf");
