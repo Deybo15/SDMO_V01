@@ -99,7 +99,7 @@ export const TransactionTable = ({
                                             placeholder="0"
                                         />
                                         {item.cantidad_disponible !== undefined && item.codigo_articulo && (
-                                            <div className="text-[8px] text-[#86868B] mt-2 font-black uppercase tracking-widest pl-1">
+                                            <div className="text-[11px] text-[#86868B] mt-2 font-black uppercase tracking-widest pl-1">
                                                 Stock: <span className="text-[#0071E3]">{item.cantidad_disponible}</span>
                                             </div>
                                         )}
@@ -186,7 +186,7 @@ export const TransactionTable = ({
                                     {item.codigo_articulo && (
                                         <div className="flex items-center gap-2 mt-2">
                                             <div className="w-1.5 h-1.5 rounded-full bg-[#0071E3]" />
-                                            <span className="text-[9px] text-[#86868B] font-black uppercase tracking-tight">
+                                            <span className="text-[11px] text-[#86868B] font-black uppercase tracking-tight">
                                                 DISP: <span className="text-[#F5F5F7]">{item.cantidad_disponible}</span> {item.unidad}
                                             </span>
                                         </div>

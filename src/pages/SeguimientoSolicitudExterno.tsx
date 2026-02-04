@@ -47,6 +47,11 @@ interface Solicitud {
     distrito?: string;
     tipo_solicitud: string;
     estado_actual?: string;
+    finalizada?: boolean;
+    fecha_actividad?: string;
+    solicitud_17_area_mantenimiento?: {
+        nombre_area: string;
+    };
 }
 
 interface Seguimiento {
@@ -661,94 +666,93 @@ export default function SeguimientoSolicitudExterno() {
                     </div>
                 </section>
 
-                <section className="bg-[#121212] border border-[#333333] shadow-3xl rounded-[8px] overflow-hidden">
-                    <div className="overflow-x-auto">
-                        <table className="w-full text-left border-collapse">
-                            <thead>
-                                <tr className="bg-[#1D1D1F] border-b border-[#333333] text-[10px] font-black text-[#F5F5F7] uppercase tracking-[0.2em]">
-                                    <th className="px-8 py-8">Solicitud</th>
-                                    <th className="px-8 py-8">Descripción</th>
-                                    <th className="px-8 py-8">Estado</th>
-                                    <th className="px-8 py-8">Última Actividad</th>
-                                    <th className="px-8 py-8 text-right">Acciones</th>
-                                </tr>
-                            </thead>
-                            <tbody className="divide-y divide-[#333333]">
-                                {loading ? (
-                                    <tr>
-                                        <td colSpan={5} className="px-8 py-20 text-center">
-                                            <div className="flex flex-col items-center gap-4">
-                                                <div className="w-12 h-12 border-4 border-[#0071E3]/30 border-t-[#0071E3] rounded-full animate-spin"></div>
-                                                <span className="text-[10px] font-black text-[#86868B] uppercase tracking-widest">Sincronizando datos...</span>
-                                            </div>
-                                        </td>
+                <div className="bg-[#121212] border border-[#333333] rounded-3xl shadow-2xl overflow-hidden relative group">
+                    <div className="absolute top-0 right-0 w-64 h-64 bg-[#0071E3]/5 rounded-full blur-3xl -mr-32 -mt-32" />
+                    <div className="p-8 relative z-10">
+                        <div className="overflow-x-auto">
+                            <table className="w-full text-left border-collapse">
+                                <thead>
+                                    <tr className="bg-[#1D1D1F] border-b border-[#333333] text-[10px] font-black text-[#F5F5F7] uppercase tracking-[0.2em]">
+                                        <th className="px-8 py-6">Solicitud</th>
+                                        <th className="px-8 py-6">Descripción</th>
+                                        <th className="px-8 py-6">Estado</th>
+                                        <th className="px-8 py-6">Última Actividad</th>
+                                        <th className="px-8 py-6 text-right">Acciones</th>
                                     </tr>
-                                ) : filteredSolicitudes.length === 0 ? (
-                                    <tr>
-                                        <td colSpan={5} className="px-8 py-20 text-center">
-                                            <div className="flex flex-col items-center gap-4 opacity-30">
-                                                <Search className="w-12 h-12 text-[#333333]" />
-                                                <span className="text-[10px] font-black uppercase tracking-widest text-[#86868B]">No se encontraron solicitudes</span>
-                                            </div>
-                                        </td>
-                                    </tr>
-                                ) : (
-                                    filteredSolicitudes.map((sol) => (
-                                        <tr key={sol.numero_solicitud} className="hover:bg-white/5 transition-all group">
-                                            <td className="px-8 py-8">
-                                                <div className="flex items-center gap-4">
-                                                    <div className="min-w-[70px] px-3 h-12 rounded-[8px] bg-[#1D1D1F] border border-[#333333] flex items-center justify-center font-black text-[#0071E3] shadow-xl text-lg tracking-tight">
-                                                        #{sol.numero_solicitud}
-                                                    </div>
+                                </thead>
+                                <tbody className="divide-y divide-[#333333]">
+                                    {loading ? (
+                                        <tr>
+                                            <td colSpan={5} className="px-8 py-20 text-center">
+                                                <div className="flex flex-col items-center gap-4">
+                                                    <div className="w-12 h-12 border-4 border-[#0071E3]/30 border-t-[#0071E3] rounded-full animate-spin"></div>
+                                                    <span className="text-[10px] font-black text-[#86868B] uppercase tracking-widest">Sincronizando datos...</span>
                                                 </div>
-                                            </td>
-                                            <td className="px-8 py-8">
-                                                <p className="text-sm font-bold text-[#F5F5F7] line-clamp-2 max-w-md leading-relaxed italic">
-                                                    "{sol.descripcion_solicitud}"
-                                                </p>
-                                                <div className="flex items-center gap-2 mt-2">
-                                                    <Calendar className="w-3 h-3 text-[#0071E3]" />
-                                                    <span className="text-[9px] font-black text-[#86868B] uppercase tracking-widest">
-                                                        {new Date(sol.fecha_solicitud).toLocaleDateString('es-ES', { day: '2-digit', month: 'long', year: 'numeric' })}
-                                                    </span>
-                                                </div>
-                                            </td>
-                                            <td className="px-8 py-8">
-                                                <span className={cn(
-                                                    "px-4 py-1.5 rounded-[8px] font-black text-[10px] uppercase tracking-wider border",
-                                                    sol.estado_actual === 'ACTIVA' ? "bg-[#0071E3]/10 border-[#0071E3]/50 text-[#0071E3]" :
-                                                        sol.estado_actual === 'EJECUTADA' ? "bg-emerald-500/10 border-emerald-500/50 text-emerald-400" :
-                                                            "bg-rose-500/10 border-rose-500/30 text-rose-400"
-                                                )}>
-                                                    {sol.estado_actual === 'EJECUTADA' ? 'FINALIZADA' : sol.estado_actual}
-                                                </span>
-                                            </td>
-                                            <td className="px-8 py-8">
-                                                <div className="flex flex-col gap-1">
-                                                    <div className="flex items-center gap-2">
-                                                        <Clock className="w-4 h-4 text-[#0071E3]" />
-                                                        <span className="text-sm font-bold text-[#F5F5F7]">Actualizado</span>
-                                                    </div>
-                                                    <span className="text-[10px] font-black text-[#86868B] uppercase tracking-widest ml-6">
-                                                        {new Date(sol.fecha_solicitud).toLocaleDateString()}
-                                                    </span>
-                                                </div>
-                                            </td>
-                                            <td className="px-8 py-8 text-right">
-                                                <button
-                                                    onClick={() => abrirModalSeguimiento(sol.numero_solicitud)}
-                                                    className="w-12 h-12 bg-transparent border border-[#333333] rounded-[8px] flex items-center justify-center hover:bg-[#0071E3] hover:border-[#0071E3] transition-all text-[#86868B] hover:text-white shadow-xl active:scale-95"
-                                                >
-                                                    <Eye className="w-6 h-6" />
-                                                </button>
                                             </td>
                                         </tr>
-                                    ))
-                                )}
-                            </tbody>
-                        </table>
+                                    ) : filteredSolicitudes.length === 0 ? (
+                                        <tr>
+                                            <td colSpan={5} className="px-8 py-20 text-center">
+                                                <div className="flex flex-col items-center gap-4 opacity-30">
+                                                    <Search className="w-12 h-12 text-[#333333]" />
+                                                    <span className="text-[10px] font-black uppercase tracking-widest text-[#86868B]">No se encontraron solicitudes</span>
+                                                </div>
+                                            </td>
+                                        </tr>
+                                    ) : (
+                                        filteredSolicitudes.map((sol) => (
+                                            <tr key={sol.numero_solicitud} className="hover:bg-white/[0.02] transition-colors group">
+                                                <td className="px-8 py-6">
+                                                    <div className="flex flex-col">
+                                                        <span className="text-[11px] font-black text-[#0071E3] tracking-wider font-mono">#{sol.numero_solicitud}</span>
+                                                        <span className="text-[10px] text-[#86868B] flex items-center gap-1 mt-1">
+                                                            <Calendar className="w-3 h-3" />
+                                                            {new Date(sol.fecha_solicitud).toLocaleDateString("es-CR", { day: '2-digit', month: 'short' })}
+                                                        </span>
+                                                    </div>
+                                                </td>
+                                                <td className="px-8 py-6">
+                                                    <div className="flex flex-col">
+                                                        <span className="text-white text-xs font-bold leading-relaxed line-clamp-1">{sol.descripcion_solicitud || 'Sin descripción'}</span>
+                                                        <span className="text-[10px] text-[#86868B] font-medium mt-0.5">{sol.solicitud_17_area_mantenimiento?.nombre_area || 'Área no def.'}</span>
+                                                    </div>
+                                                </td>
+                                                <td className="px-8 py-6">
+                                                    <div className="flex items-center gap-2">
+                                                        <div className={cn(
+                                                            "w-2 h-2 rounded-full",
+                                                            sol.finalizada ? "bg-[#0071E3]" : "bg-teal-500"
+                                                        )} />
+                                                        <span className={cn(
+                                                            "text-[10px] font-black uppercase tracking-widest",
+                                                            sol.finalizada ? "text-[#0071E3]" : "text-teal-500"
+                                                        )}>
+                                                            {sol.finalizada ? 'Finalizada' : 'En Proceso'}
+                                                        </span>
+                                                    </div>
+                                                </td>
+                                                <td className="px-8 py-6">
+                                                    <span className="text-[10px] text-[#86868B] font-medium">{sol.fecha_actividad ? new Date(sol.fecha_actividad).toLocaleString("es-CR", { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' }) : 'Sin actividad'}</span>
+                                                </td>
+                                                <td className="px-8 py-6 text-right">
+                                                    <div className="flex items-center justify-end gap-2">
+                                                        <button
+                                                            onClick={() => abrirModalSeguimiento(sol.numero_solicitud)}
+                                                            className="p-2.5 bg-[#1D1D1F] border border-[#333333] text-[#86868B] hover:text-[#0071E3] hover:border-[#0071E3]/30 rounded-xl transition-all shadow-inner"
+                                                            title="Ver detalles"
+                                                        >
+                                                            <Eye className="w-5 h-5" />
+                                                        </button>
+                                                    </div>
+                                                </td>
+                                            </tr>
+                                        ))
+                                    )}
+                                </tbody>
+                            </table>
+                        </div>
                     </div>
-                </section>
+                </div>
             </div>
 
             {/* Modal Seguimiento */}

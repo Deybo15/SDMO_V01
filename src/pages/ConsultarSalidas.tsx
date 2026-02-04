@@ -439,12 +439,12 @@ export default function ConsultarSalidas() {
                 )}
 
                 {/* Filter Panel */}
-                <div className="bg-[#121212] p-8 border border-[#333333] rounded-[8px] relative group">
+                <div className="bg-[#121212] p-8 border border-[#333333] rounded-3xl relative group">
                     <div className="absolute top-0 right-0 w-32 h-32 bg-[#0071E3]/5 rounded-full blur-3xl -mr-16 -mt-16" />
 
                     {/* Tabs Selector */}
                     <div className="flex justify-center mb-10">
-                        <div className="bg-[#1D1D1F] p-1.5 rounded-[8px] border border-[#333333] flex gap-2">
+                        <div className="bg-[#1D1D1F] p-1.5 rounded-2xl border border-[#333333] flex gap-2">
                             <button
                                 onClick={() => { setActiveTab('solicitud'); setHasSearched(false); }}
                                 className={`px-8 py-3 rounded-[6px] text-[10px] font-black uppercase tracking-widest transition-all flex items-center gap-3
@@ -599,7 +599,7 @@ export default function ConsultarSalidas() {
                     <div className="space-y-8 animate-in fade-in duration-700">
                         {/* Summary Stats Banner */}
                         {(salidas.length > 0 || resumen.length > 0) && (
-                            <div className="bg-[#121212] p-6 border border-[#333333] border-l-4 border-l-[#0071E3] rounded-[8px] flex flex-col md:flex-row items-center justify-between gap-6 overflow-hidden relative group">
+                            <div className="bg-[#121212] p-6 border border-[#333333] border-l-4 border-l-[#0071E3] rounded-3xl flex flex-col md:flex-row items-center justify-between gap-6 overflow-hidden relative group">
                                 <div className="absolute inset-0 bg-gradient-to-r from-[#0071E3]/[0.03] to-transparent pointer-events-none" />
                                 <div className="flex items-center gap-6">
                                     <div className="p-4 rounded-[8px] bg-[#1D1D1F] border border-[#333333]">
@@ -646,7 +646,7 @@ export default function ConsultarSalidas() {
                                     const isExpanded = expandedSalidas.includes(salida.id_salida);
 
                                     return (
-                                        <div key={salida.id_salida} className={`bg-[#121212] border border-[#333333] rounded-[8px] overflow-hidden transition-all duration-300 ${isExpanded ? 'border-[#0071E3]/30 shadow-2xl' : 'hover:border-[#333333]/60'}`}>
+                                        <div key={salida.id_salida} className={`bg-[#121212] border border-[#333333] rounded-3xl overflow-hidden transition-all duration-300 ${isExpanded ? 'border-[#0071E3]/30 shadow-2xl' : 'hover:border-[#333333]/60'}`}>
                                             <div className="p-8 flex flex-col lg:flex-row items-start lg:items-center justify-between gap-8">
                                                 <div className="flex items-center gap-6">
                                                     <div className="w-16 h-16 rounded-[4px] bg-[#1D1D1F] border border-[#333333] flex items-center justify-center text-[#333333] group-hover:text-[#0071E3] transition-colors">
@@ -761,7 +761,7 @@ export default function ConsultarSalidas() {
                                     </div>
                                 </div>
 
-                                <div className="bg-[#121212] border border-[#333333] rounded-[8px] overflow-hidden">
+                                <div className="bg-[#121212] border border-[#333333] rounded-3xl overflow-hidden">
                                     <div className="overflow-x-auto">
                                         <table className="w-full text-left border-collapse">
                                             <thead>
