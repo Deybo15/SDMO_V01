@@ -214,7 +214,7 @@ export default function ArticleSearchGridModal({
                                             {art.nombre_articulo}
                                         </h4>
                                         <div className="flex items-center gap-3 mb-4">
-                                            <span className="text-[10px] font-mono text-gray-500 bg-black/40 px-2 py-1 rounded-md border border-white/5 tracking-tighter">
+                                            <span className="text-[12px] font-mono text-white/90 bg-black/40 px-2 py-1 rounded-md border border-white/5 tracking-tighter">
                                                 {art.codigo_articulo}
                                             </span>
                                             {art.marca && (

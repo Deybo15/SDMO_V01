@@ -361,7 +361,7 @@ export default function ConsultarInventario() {
                                                         {item.nombre_articulo}
                                                     </h4>
                                                     <div className="flex items-center gap-3">
-                                                        <span className="text-[11px] font-mono font-black text-teal-500/60 tracking-tighter uppercase px-2 py-0.5 bg-black/40 rounded-md border border-white/5">
+                                                        <span className="text-[12px] font-mono font-black text-white/90 tracking-tighter uppercase px-2 py-0.5 bg-black/40 rounded-md border border-white/5">
                                                             {item.codigo_articulo}
                                                         </span>
                                                         {item.marca && (
