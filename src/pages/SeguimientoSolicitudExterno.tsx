@@ -551,7 +551,7 @@ export default function SeguimientoSolicitudExterno() {
             const wbout = XLSX.write(wb, { bookType: 'xlsx', type: 'array' });
             const blob = new Blob([wbout], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
 
-            const dateStr = new Date().toISOString().split('T')[0];
+            const dateStr = new Date().toLocaleDateString('en-CA');
             const fileName = `Seguimiento_Solicitudes_Externas_${dateStr}.xlsx`;
 
             const url = window.URL.createObjectURL(blob);
@@ -996,7 +996,7 @@ export default function SeguimientoSolicitudExterno() {
                                     </h3>
                                     <button
                                         onClick={() => {
-                                            setNuevoRegistro({ fecha: new Date().toISOString().split('T')[0], texto: '', tipo: 'General' });
+                                            setNuevoRegistro({ fecha: new Date().toLocaleDateString('en-CA'), texto: '', tipo: 'General' });
                                             setShowModalRegistro(true);
                                         }}
                                         className="h-10 px-6 bg-transparent border border-[#F5F5F7] rounded-[8px] flex items-center gap-3 text-[10px] font-black uppercase tracking-widest hover:bg-white/5 transition-all text-[#F5F5F7] shadow-xl active:scale-95"

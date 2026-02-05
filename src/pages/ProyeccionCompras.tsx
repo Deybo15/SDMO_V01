@@ -187,7 +187,7 @@ export default function ProyeccionCompras() {
             styles: { fontSize: 8 },
             headStyles: { fillColor: [0, 113, 227] }
         });
-        doc.save(`Requisicion_SDMO_${new Date().toISOString().split('T')[0]}.pdf`);
+        doc.save(`Requisicion_SDMO_${new Date().toLocaleDateString('en-CA')}.pdf`);
     };
 
     const handleExportExcel = () => {
@@ -204,7 +204,7 @@ export default function ProyeccionCompras() {
         })));
         const wb = XLSX.utils.book_new();
         XLSX.utils.book_append_sheet(wb, wsDetalle, "Detalle");
-        XLSX.writeFile(wb, `Proyeccion_SDMO_${new Date().toISOString().split('T')[0]}.xlsx`);
+        XLSX.writeFile(wb, `Proyeccion_SDMO_${new Date().toLocaleDateString('en-CA')}.xlsx`);
     };
 
     const SortIcon = ({ column }: { column: keyof ProyeccionItem }) => {

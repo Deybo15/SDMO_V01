@@ -254,7 +254,7 @@ export default function RealizarSalida() {
             const { data: salida, error: errorSalida } = await supabase
                 .from('salida_articulo_08')
                 .insert({
-                    fecha_salida: new Date().toISOString().split('T')[0],
+                    fecha_salida: new Date().toLocaleDateString('en-CA'),
                     numero_solicitud: numeroSolicitud ? parseInt(numeroSolicitud) : null,
                     autoriza: autorizaId,
                     retira: retiraId,

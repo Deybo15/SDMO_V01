@@ -173,7 +173,7 @@ export default function IngresoActivos() {
                     ...formData,
                     numero_activo: parseInt(formData.numero_activo),
                     valor_activo: valorSanitizado,
-                    ingreso_activo: new Date().toISOString()
+                    ingreso_activo: new Date().toLocaleDateString('en-CA')
                 }])
                 .select()
                 .single();

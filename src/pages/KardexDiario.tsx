@@ -90,10 +90,10 @@ export default function KardexDiario() {
     // Initialize dates (last 30 days)
     useEffect(() => {
         const hoy = new Date();
-        const hasta = hoy.toISOString().split('T')[0];
+        const hasta = hoy.toLocaleDateString('en-CA');
         const desdeDate = new Date();
         desdeDate.setDate(hoy.getDate() - 30);
-        const desde = desdeDate.toISOString().split('T')[0];
+        const desde = desdeDate.toLocaleDateString('en-CA');
 
         setFechaDesde(desde);
         setFechaHasta(hasta);
@@ -189,7 +189,7 @@ export default function KardexDiario() {
             // 2. Get Movements in Range
             const hastaDate = new Date(fechaHasta);
             hastaDate.setDate(hastaDate.getDate() + 1);
-            const hastaNextDay = hastaDate.toISOString().split('T')[0];
+            const hastaNextDay = hastaDate.toLocaleDateString('en-CA');
 
             // Fetch Entries with ID (Batch)
             let entRange: any[] = [];
@@ -237,7 +237,7 @@ export default function KardexDiario() {
             let curr = new Date(fechaDesde);
             const end = new Date(fechaHasta);
             while (curr <= end) {
-                movementsByDay.set(curr.toISOString().split('T')[0], { ent: 0, sal: 0, detalles: [] });
+                movementsByDay.set(curr.toLocaleDateString('en-CA'), { ent: 0, sal: 0, detalles: [] });
                 curr.setDate(curr.getDate() + 1);
             }
 

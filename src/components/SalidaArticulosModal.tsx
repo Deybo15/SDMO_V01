@@ -280,7 +280,7 @@ export default function SalidaArticulosModal({ isOpen, onClose, solicitudId }: S
             const { data: headerData, error: headerError } = await supabase
                 .from('salida_articulo_08')
                 .insert([{
-                    fecha_salida: new Date().toISOString(),
+                    fecha_salida: new Date().toLocaleDateString('en-CA'),
                     autoriza,
                     retira,
                     numero_solicitud: numeroSolicitud,

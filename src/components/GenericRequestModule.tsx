@@ -215,7 +215,7 @@ export default function GenericRequestModule({
             const insertObj = {
                 tipo_solicitud: tipoSolicitud.tipo_solicitud,
                 descripcion_solicitud: tipoSolicitud.descripcion_tipo_salida, // Default description
-                fecha_solicitud: new Date().toISOString().split('T')[0],
+                fecha_solicitud: new Date().toLocaleDateString('en-CA'),
                 profesional_responsable: selectedProfesional,
                 ...extraData // Merge extra data (can override description)
             };
@@ -227,6 +227,12 @@ export default function GenericRequestModule({
                 .single();
 
             if (error) throw error;
+
+            // Automatically create tracking record so it's visible in the dashboard
+            await supabase.from('seguimiento_solicitud').insert({
+                numero_solicitud: data.numero_solicitud,
+                estado_actual: 'ACTIVA'
+            });
 
             setSolicudGuardada(data.numero_solicitud);
             showNotification(`Solicitud guardada exitosamente con número: ${data.numero_solicitud}`, 'success');

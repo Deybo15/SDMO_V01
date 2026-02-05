@@ -220,7 +220,7 @@ export default function InformeColaboradores() {
             const url = URL.createObjectURL(blob);
             const link = document.createElement('a');
             link.href = url;
-            link.setAttribute('download', `colaboradores_${new Date().toISOString().split('T')[0]}.csv`);
+            link.setAttribute('download', `colaboradores_${new Date().toLocaleDateString('en-CA')}.csv`);
             document.body.appendChild(link);
             link.click();
             document.body.removeChild(link);
@@ -428,7 +428,7 @@ export default function InformeColaboradores() {
         if (articulos.length === 0) return;
 
         const nombre = (selectedColaborador?.nombre || 'colaborador').replace(/[^a-zA-Z0-9]/g, '_');
-        const fecha = new Date().toISOString().split('T')[0];
+        const fecha = new Date().toLocaleDateString('en-CA');
 
         let html = `
         <meta charset="utf-8">

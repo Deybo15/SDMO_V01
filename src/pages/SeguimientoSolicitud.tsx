@@ -117,7 +117,7 @@ export default function SeguimientoSolicitud() {
     const [articulos, setArticulos] = useState<ArticuloAsociado[]>([]);
 
     const [showNuevoRegistro, setShowNuevoRegistro] = useState(false);
-    const [nuevoRegistro, setNuevoRegistro] = useState({ fecha: new Date().toISOString().split('T')[0], texto: '' });
+    const [nuevoRegistro, setNuevoRegistro] = useState({ fecha: new Date().toLocaleDateString('en-CA'), texto: '' });
 
     // Advanced States
     const [supervisores, setSupervisores] = useState<{ id: string, alias: string }[]>([]);
@@ -327,7 +327,7 @@ export default function SeguimientoSolicitud() {
 
             const wb = XLSX.utils.book_new();
             XLSX.utils.book_append_sheet(wb, ws, "STI_SEGUIMIENTO");
-            XLSX.writeFile(wb, `Seguimiento_STI_${new Date().toISOString().split('T')[0]}.xlsx`);
+            XLSX.writeFile(wb, `Seguimiento_STI_${new Date().toLocaleDateString('en-CA')}.xlsx`);
             showNotification('Excel generado exitosamente', 'success');
         } catch (error) {
             console.error('Export error:', error);

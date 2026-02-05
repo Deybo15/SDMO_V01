@@ -323,7 +323,7 @@ export default function IngresarArticulo() {
 
             // Insert Header
             const entradaData: any = {
-                fecha_entrada: new Date().toISOString(),
+                fecha_entrada: new Date().toLocaleDateString('en-CA'),
                 origen_entrada: selectedOrigen.id,
                 autoriza_entrada: selectedAutoriza.identificacion,
                 recibe_entrada: selectedRecibe.identificacion

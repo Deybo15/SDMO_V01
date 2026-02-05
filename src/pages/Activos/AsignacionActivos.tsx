@@ -63,14 +63,14 @@ export default function AsignacionActivos() {
 
     // Entrada Form State
     const [entradaForm, setEntradaForm] = useState({
-        fecha_entrada_activo: new Date().toISOString().split('T')[0],
+        fecha_entrada_activo: new Date().toLocaleDateString('en-CA'),
         autoriza_entrada_activo: '',
         activosSeleccionados: [] as Activo[]
     });
 
     // Salida Form State
     const [salidaForm, setSalidaForm] = useState({
-        fecha_salida_activo: new Date().toISOString().split('T')[0],
+        fecha_salida_activo: new Date().toLocaleDateString('en-CA'),
         usuario_de_activo: '',
         nombre_usuario_activo: '', // Helper to show name
         autoriza: '',
@@ -197,7 +197,7 @@ export default function AsignacionActivos() {
 
             showToast('Entrada de activo registrada correctamente.', 'success');
             setEntradaForm({
-                fecha_entrada_activo: new Date().toISOString().split('T')[0],
+                fecha_entrada_activo: new Date().toLocaleDateString('en-CA'),
                 autoriza_entrada_activo: '',
                 activosSeleccionados: []
             });
@@ -288,7 +288,7 @@ export default function AsignacionActivos() {
 
             showToast('Salida/Asignación registrada correctamente.', 'success');
             setSalidaForm({
-                fecha_salida_activo: new Date().toISOString().split('T')[0],
+                fecha_salida_activo: new Date().toLocaleDateString('en-CA'),
                 usuario_de_activo: '',
                 nombre_usuario_activo: '',
                 autoriza: '',

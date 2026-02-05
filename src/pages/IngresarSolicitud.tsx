@@ -304,7 +304,7 @@ export default function IngresarSolicitud() {
                 .from('solicitud_17')
                 .insert([{
                     tipo_solicitud: "STI",
-                    fecha_solicitud: new Date().toISOString().split("T")[0],
+                    fecha_solicitud: new Date().toLocaleDateString('en-CA'),
                     area_mantenimiento: formData.area,
                     descripcion_solicitud: formData.descripcion.trim(),
                     instalacion_municipal: formData.instalacion,
@@ -317,6 +317,12 @@ export default function IngresarSolicitud() {
                 .single();
 
             if (error) throw error;
+
+            // Automatically create tracking record so it's visible in the dashboard
+            await supabase.from('seguimiento_solicitud').insert({
+                numero_solicitud: data.numero_solicitud,
+                estado_actual: 'ACTIVA'
+            });
 
             showNotification(`Solicitud #${data.numero_solicitud} guardada exitosamente`, 'success');
 

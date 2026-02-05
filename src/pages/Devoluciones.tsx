@@ -193,7 +193,7 @@ export default function Devoluciones() {
                 .insert({
                     id_salida: selectedItem.id_salida,
                     motivo: motivoFinal,
-                    fecha_devolucion: new Date().toISOString()
+                    fecha_devolucion: new Date().toLocaleDateString('en-CA')
                 })
                 .select('id_devolucion')
                 .single();

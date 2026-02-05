@@ -21,7 +21,8 @@ import {
     CheckCircle,
     X,
     AlertTriangle,
-    Clock
+    Clock,
+    Zap
 } from 'lucide-react';
 import {
     ResponsiveContainer,
@@ -93,7 +94,7 @@ export default function MaintenanceDashboard() {
         return format(new Date(date.getFullYear(), 0, 1), 'yyyy-MM-dd');
     });
     const [endDate, setEndDate] = useState<string>(() => {
-        return format(new Date(), 'yyyy-MM-dd');
+        return format(lastDayOfMonth(new Date()), 'yyyy-MM-dd');
     });
 
     const [tableData, setTableData] = useState<any[]>([]);
@@ -132,22 +133,50 @@ export default function MaintenanceDashboard() {
         }
 
         if (showCriticalOnly) {
-            query = query.lte('fecha_solicitud', subDays(new Date(), 10).toISOString());
+            query = query.lte('fecha_solicitud', subDays(new Date(), 10).toLocaleDateString('en-CA'));
         }
 
         query = query.not('status_normalized', 'in', '(EJECUTADA,FINALIZADA,COMPLETADA,CERRADA)');
 
         const { data, count, error } = await query;
         if (error) {
-            console.error("Dashboard Table Error:", {
-                message: error.message,
-                details: error.details,
-                hint: error.hint,
-                code: error.code
-            });
+            console.error("Dashboard Table Error:", error);
         } else {
             setTableData(data || []);
             setTotalItems(count || 0);
+        }
+    };
+
+    const handleRepairDates = async () => {
+        try {
+            setLoading(true);
+            const { data: misdated, error: fetchError } = await supabase
+                .from('solicitud_17')
+                .select('numero_solicitud')
+                .eq('fecha_solicitud', '2026-02-05');
+
+            if (fetchError) throw fetchError;
+
+            if (!misdated || misdated.length === 0) {
+                alert('Sincronización completa. No hay registros desfasados.');
+                return;
+            }
+
+            const ids = misdated.map(m => m.numero_solicitud);
+            const { error: updateError } = await supabase
+                .from('solicitud_17')
+                .update({ fecha_solicitud: '2026-02-04' })
+                .in('numero_solicitud', ids);
+
+            if (updateError) throw updateError;
+
+            alert(`¡Éxito! Se han sincronizado ${ids.length} solicitudes.`);
+            loadDashboard();
+        } catch (err) {
+            console.error('Error repairing dates:', err);
+            alert('Error durante la sincronización.');
+        } finally {
+            setLoading(false);
         }
     };
 
@@ -196,7 +225,7 @@ export default function MaintenanceDashboard() {
                 supabase
                     .from('vw_dashboard_analyzed')
                     .select('*')
-                    .lte('fecha_solicitud', subDays(new Date(), 10).toISOString())
+                    .lte('fecha_solicitud', subDays(new Date(), 10).toLocaleDateString('en-CA'))
                     .not('status_normalized', 'in', '(EJECUTADA,FINALIZADA,COMPLETADA,CERRADA,CANCELADA)')
                     .limit(6)
             ]);
@@ -392,7 +421,7 @@ export default function MaintenanceDashboard() {
         <div className="min-h-screen bg-[#000000] text-[#F5F5F7] font-sans selection:bg-[#0071E3]/30">
             <div className="animate-fade-in-up">
                 <PageHeader
-                    title="Panel de Control (STI)"
+                    title="Panel de Control (STI) - V2.2"
                     icon={Activity}
                     themeColor="blue"
                 />
@@ -430,9 +459,15 @@ export default function MaintenanceDashboard() {
                             </div>
                             <button
                                 onClick={handleExport}
-                                className="h-12 px-8 bg-[#0071E3] text-white font-bold text-xs uppercase tracking-widest rounded-[8px] hover:brightness-110 active:scale-95 transition-all flex items-center gap-2"
+                                className="h-12 px-8 bg-[#1D1D1F] border border-[#333333] text-white font-bold text-xs uppercase tracking-widest rounded-[8px] hover:bg-[#333333] active:scale-95 transition-all flex items-center gap-2"
                             >
                                 <Download className="w-4 h-4" /> EXPORTAR
+                            </button>
+                            <button
+                                onClick={handleRepairDates}
+                                className="h-12 px-8 bg-[#0071E3] text-white font-bold text-xs uppercase tracking-widest rounded-[8px] hover:brightness-110 active:scale-95 transition-all flex items-center gap-2 shadow-xl shadow-[#0071E3]/20"
+                            >
+                                <Zap className="w-4 h-4" /> SINCRONIZAR DATOS
                             </button>
                         </div>
 

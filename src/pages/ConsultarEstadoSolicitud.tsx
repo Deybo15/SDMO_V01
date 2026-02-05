@@ -421,7 +421,7 @@ export default function ConsultarEstadoSolicitud() {
                 const ws = XLSX.utils.json_to_sheet(allData);
                 const wb = XLSX.utils.book_new();
                 XLSX.utils.book_append_sheet(wb, ws, 'STI Estado');
-                XLSX.writeFile(wb, `reporte_sti_estado_${new Date().toISOString().split('T')[0]}.xlsx`);
+                XLSX.writeFile(wb, `reporte_sti_estado_${new Date().toLocaleDateString('en-CA')}.xlsx`);
 
             } catch (e: any) {
                 alert('Error exportando: ' + e.message);

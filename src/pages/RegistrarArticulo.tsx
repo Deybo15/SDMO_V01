@@ -153,7 +153,7 @@ export default function RegistrarArticulo() {
                 ...formData,
                 imagen_url: finalImageUrl || formData.imagen_url,
                 precio_unitario: formData.precio_unitario ? Number(formData.precio_unitario) : 0,
-                fecha_registro: new Date().toISOString()
+                fecha_registro: new Date().toLocaleDateString('en-CA')
             };
 
             const { error } = await supabase

@@ -476,7 +476,7 @@ export default function IngresarSolicitudExterno() {
                 .from('solicitud_17')
                 .insert([{
                     tipo_solicitud: "STE",
-                    fecha_solicitud: new Date().toISOString(),
+                    fecha_solicitud: new Date().toLocaleDateString('en-CA'),
                     descripcion_solicitud: formData.descripcion.trim(),
                     tipologia_trabajo: formData.tipologia,
                     barrio_solicitud: formData.barrio,
@@ -501,6 +501,12 @@ export default function IngresarSolicitudExterno() {
                 .single();
 
             if (error) throw error;
+
+            // Automatically create tracking record so it's visible in the dashboard
+            await supabase.from('seguimiento_solicitud').insert({
+                numero_solicitud: data.numero_solicitud,
+                estado_actual: 'ACTIVA'
+            });
 
             showNotification(`Solicitud #${data.numero_solicitud} guardada exitosamente`, 'success');
 

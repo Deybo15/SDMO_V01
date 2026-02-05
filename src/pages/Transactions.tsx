@@ -16,7 +16,7 @@ export default function Transactions() {
     const [type, setType] = useState<TransactionType>('EXPENSE');
     const [amount, setAmount] = useState('');
     const [currency, setCurrency] = useState<Currency>('CRC');
-    const [date, setDate] = useState(new Date().toISOString().split('T')[0]);
+    const [date, setDate] = useState(new Date().toLocaleDateString('en-CA'));
     const [accountId, setAccountId] = useState(''); // Source
     const [destinationAccountId, setDestinationAccountId] = useState(''); // Destination
     const [envelopeId, setEnvelopeId] = useState(''); // Category
@@ -211,7 +211,7 @@ export default function Transactions() {
                                                 </div>
                                             </td>
                                             <td className={`p-4 align-middle text-right font-bold ${tx.type === 'INCOME' ? 'text-green-600' :
-                                                    tx.type === 'EXPENSE' ? 'text-red-600' : 'text-slate-900'
+                                                tx.type === 'EXPENSE' ? 'text-red-600' : 'text-slate-900'
                                                 }`}>
                                                 {tx.type === 'EXPENSE' ? '-' : tx.type === 'INCOME' ? '+' : ''}
                                                 {formatCurrency(tx.amount, tx.currency)}
