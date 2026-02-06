@@ -52,6 +52,8 @@ interface Solicitud {
     solicitud_17_area_mantenimiento?: {
         nombre_area: string;
     };
+    supervisor_asignado?: string;
+    supervisor_alias?: string;
 }
 
 interface Seguimiento {
@@ -129,6 +131,9 @@ export default function SeguimientoSolicitudExterno() {
     // Notification
     const [notification, setNotification] = useState<{ message: string; type: 'success' | 'error' | 'info' } | null>(null);
 
+    // Hovered Description Tooltip State
+    const [hoveredDescription, setHoveredDescription] = useState<{ id: number, text: string, x: number, y: number } | null>(null);
+
     const showNotification = (message: string, type: 'success' | 'error' | 'info') => {
         setNotification({ message, type });
         setTimeout(() => setNotification(null), 4000);
@@ -169,6 +174,7 @@ export default function SeguimientoSolicitudExterno() {
                 descripcion_solicitud, 
                 direccion_exacta,
                 tipo_solicitud,
+                supervisor_asignado,
                 barrios_distritos(barrio, distrito)
             `;
             const solicitudesData = await fetchAll('solicitud_17', selectFields, 'tipo_solicitud', 'STE');
@@ -188,12 +194,24 @@ export default function SeguimientoSolicitudExterno() {
                 estadoMap.set(s.numero_solicitud, s.estado_actual);
             });
 
-            // 3. Merge Data and Extract Nested Location
+            // 3. Fetch Supervisor Aliases
+            const supIds = solicitudesData.map((s: any) => s.supervisor_asignado).filter(Boolean);
+            const colabsMap = new Map();
+            if (supIds.length > 0) {
+                const { data: colabsData } = await supabase
+                    .from('colaboradores_06')
+                    .select('identificacion, alias')
+                    .in('identificacion', supIds);
+                colabsData?.forEach(c => colabsMap.set(c.identificacion, c.alias));
+            }
+
+            // 4. Merge Data and Extract Nested Location
             const mapped: Solicitud[] = solicitudesData.map((s: any) => ({
                 ...s,
                 barrio: s.barrios_distritos?.barrio || 'No especificado',
                 distrito: s.barrios_distritos?.distrito || 'No especificado',
-                estado_actual: estadoMap.get(s.numero_solicitud) || 'ACTIVA'
+                estado_actual: estadoMap.get(s.numero_solicitud) || 'ACTIVA',
+                supervisor_alias: colabsMap.get(s.supervisor_asignado) || 'Sin asignar'
             }));
 
             // 4. Calculate Stats
@@ -210,7 +228,7 @@ export default function SeguimientoSolicitudExterno() {
 
         } catch (error: any) {
             console.error('Error:', error);
-            showNotification(`Error al cargar solicitudes: ${error.message}`, 'error');
+            showNotification(`Error al cargar solicitudes: ${error.message} `, 'error');
         } finally {
             setLoading(false);
         }
@@ -296,7 +314,7 @@ export default function SeguimientoSolicitudExterno() {
 
         } catch (error: any) {
             console.error('Error:', error);
-            showNotification(`Error al abrir seguimiento: ${error.message}`, 'error');
+            showNotification(`Error al abrir seguimiento: ${error.message} `, 'error');
         } finally {
             setLoading(false);
         }
@@ -313,7 +331,7 @@ export default function SeguimientoSolicitudExterno() {
             if (error) throw error;
             setRegistros(data || []);
         } catch (error: any) {
-            showNotification(`Error al cargar registros: ${error.message}`, 'error');
+            showNotification(`Error al cargar registros: ${error.message} `, 'error');
         }
     };
 
@@ -322,14 +340,14 @@ export default function SeguimientoSolicitudExterno() {
             const { data: salidas, error } = await supabase
                 .from('salida_articulo_08')
                 .select(`
-                    id_salida, 
-                    fecha_salida, 
-                    dato_salida_13 (
-                        cantidad, 
-                        articulo, 
-                        articulo_01 (nombre_articulo)
-                    )
-                `)
+            id_salida,
+                fecha_salida,
+                dato_salida_13(
+                    cantidad,
+                    articulo,
+                    articulo_01(nombre_articulo)
+                )
+                    `)
                 .eq('numero_solicitud', numero);
 
             if (error) throw error;
@@ -362,10 +380,10 @@ export default function SeguimientoSolicitudExterno() {
             return null;
         };
 
-        const urlActual = await checkAndGetUrl(`FA_${numero}_STE`);
+        const urlActual = await checkAndGetUrl(`FA_${numero} _STE`);
         if (urlActual) setImgActualPreview(urlActual);
 
-        const urlFinal = await checkAndGetUrl(`FD_${numero}_STE`);
+        const urlFinal = await checkAndGetUrl(`FD_${numero} _STE`);
         if (urlFinal) setImgFinalPreview(urlFinal);
     };
 
@@ -427,8 +445,8 @@ export default function SeguimientoSolicitudExterno() {
         if (!selectedSolicitud || !confirm('¿Estás seguro de que deseas eliminar esta imagen?')) return;
 
         const fileName = type === 'actual'
-            ? `FA_${selectedSolicitud.numero_solicitud}_STE`
-            : `FD_${selectedSolicitud.numero_solicitud}_STE`;
+            ? `FA_${selectedSolicitud.numero_solicitud} _STE`
+            : `FD_${selectedSolicitud.numero_solicitud} _STE`;
 
         try {
             const { error } = await supabase.storage.from('imagenes-ste').remove([fileName]);
@@ -443,7 +461,7 @@ export default function SeguimientoSolicitudExterno() {
             }
             showNotification('Imagen eliminada correctamente', 'success');
         } catch (error: any) {
-            showNotification(`Error al eliminar imagen: ${error.message}`, 'error');
+            showNotification(`Error al eliminar imagen: ${error.message} `, 'error');
         }
     };
 
@@ -472,7 +490,7 @@ export default function SeguimientoSolicitudExterno() {
             let uploadedCount = 0;
             if (fileActual) {
                 await supabase.storage.from('imagenes-ste').upload(
-                    `FA_${selectedSolicitud.numero_solicitud}_STE`,
+                    `FA_${selectedSolicitud.numero_solicitud} _STE`,
                     fileActual,
                     { upsert: true, contentType: fileActual.type }
                 );
@@ -480,7 +498,7 @@ export default function SeguimientoSolicitudExterno() {
             }
             if (fileFinal) {
                 await supabase.storage.from('imagenes-ste').upload(
-                    `FD_${selectedSolicitud.numero_solicitud}_STE`,
+                    `FD_${selectedSolicitud.numero_solicitud} _STE`,
                     fileFinal,
                     { upsert: true, contentType: fileFinal.type }
                 );
@@ -488,7 +506,7 @@ export default function SeguimientoSolicitudExterno() {
             }
 
             const msg = uploadedCount > 0
-                ? `Seguimiento guardado correctamente. ${uploadedCount} imagen(es) subida(s).`
+                ? `Seguimiento guardado correctamente.${uploadedCount} imagen(es) subida(s).`
                 : 'Seguimiento guardado correctamente.';
 
             showNotification(msg, 'success');
@@ -497,7 +515,7 @@ export default function SeguimientoSolicitudExterno() {
 
         } catch (error: any) {
             console.error('Error:', error);
-            showNotification(`Error al guardar: ${error.message}`, 'error');
+            showNotification(`Error al guardar: ${error.message} `, 'error');
         } finally {
             setLoading(false);
         }
@@ -526,7 +544,7 @@ export default function SeguimientoSolicitudExterno() {
             await cargarRegistros(selectedSolicitud.numero_solicitud);
 
         } catch (error: any) {
-            showNotification(`Error al guardar registro: ${error.message}`, 'error');
+            showNotification(`Error al guardar registro: ${error.message} `, 'error');
         }
     };
 
@@ -672,18 +690,19 @@ export default function SeguimientoSolicitudExterno() {
                         <div className="overflow-x-auto">
                             <table className="w-full text-left border-collapse">
                                 <thead>
-                                    <tr className="bg-[#1D1D1F] border-b border-[#333333] text-[10px] font-black text-[#F5F5F7] uppercase tracking-[0.2em]">
-                                        <th className="px-8 py-6">Solicitud</th>
-                                        <th className="px-8 py-6">Descripción</th>
-                                        <th className="px-8 py-6">Estado</th>
-                                        <th className="px-8 py-6">Última Actividad</th>
-                                        <th className="px-8 py-6 text-right">Acciones</th>
+                                    <tr className="bg-[#1D1D1F] border-b border-[#333333] text-[10px] font-black text-white uppercase tracking-[0.2em]">
+                                        <th className="px-6 py-8">N° Solicitud</th>
+                                        <th className="px-6 py-8">Fecha Registro</th>
+                                        <th className="px-6 py-8">Descripción STI</th>
+                                        <th className="px-6 py-8 text-center">Supervisor</th>
+                                        <th className="px-6 py-8 text-center">Estado STI</th>
+                                        <th className="px-6 py-8 text-right">Acciones</th>
                                     </tr>
                                 </thead>
                                 <tbody className="divide-y divide-[#333333]">
                                     {loading ? (
                                         <tr>
-                                            <td colSpan={5} className="px-8 py-20 text-center">
+                                            <td colSpan={6} className="px-8 py-20 text-center">
                                                 <div className="flex flex-col items-center gap-4">
                                                     <div className="w-12 h-12 border-4 border-[#0071E3]/30 border-t-[#0071E3] rounded-full animate-spin"></div>
                                                     <span className="text-[10px] font-black text-[#86868B] uppercase tracking-widest">Sincronizando datos...</span>
@@ -692,7 +711,7 @@ export default function SeguimientoSolicitudExterno() {
                                         </tr>
                                     ) : filteredSolicitudes.length === 0 ? (
                                         <tr>
-                                            <td colSpan={5} className="px-8 py-20 text-center">
+                                            <td colSpan={6} className="px-8 py-20 text-center">
                                                 <div className="flex flex-col items-center gap-4 opacity-30">
                                                     <Search className="w-12 h-12 text-[#333333]" />
                                                     <span className="text-[10px] font-black uppercase tracking-widest text-[#86868B]">No se encontraron solicitudes</span>
@@ -702,39 +721,42 @@ export default function SeguimientoSolicitudExterno() {
                                     ) : (
                                         filteredSolicitudes.map((sol) => (
                                             <tr key={sol.numero_solicitud} className="hover:bg-white/[0.02] transition-colors group">
-                                                <td className="px-8 py-6">
-                                                    <div className="flex flex-col">
-                                                        <span className="text-[11px] font-black text-[#0071E3] tracking-wider font-mono">#{sol.numero_solicitud}</span>
-                                                        <span className="text-[10px] text-[#86868B] flex items-center gap-1 mt-1">
-                                                            <Calendar className="w-3 h-3" />
-                                                            {new Date(sol.fecha_solicitud).toLocaleDateString("es-CR", { day: '2-digit', month: 'short' })}
-                                                        </span>
+                                                <td className="px-6 py-7">
+                                                    <span className="text-lg font-black text-[#0071E3] tracking-tighter">#{sol.numero_solicitud}</span>
+                                                </td>
+                                                <td className="px-6 py-7">
+                                                    <div className="flex items-center gap-2 text-sm font-bold text-[#86868B]">
+                                                        <Calendar className="w-4 h-4" />
+                                                        {new Date(sol.fecha_solicitud).toLocaleDateString("es-CR", { day: '2-digit', month: '2-digit', year: 'numeric' })}
                                                     </div>
                                                 </td>
-                                                <td className="px-8 py-6">
-                                                    <div className="flex flex-col">
-                                                        <span className="text-white text-xs font-bold leading-relaxed line-clamp-1">{sol.descripcion_solicitud || 'Sin descripción'}</span>
-                                                        <span className="text-[10px] text-[#86868B] font-medium mt-0.5">{sol.solicitud_17_area_mantenimiento?.nombre_area || 'Área no def.'}</span>
+                                                <td className="px-6 py-7 italic font-medium text-[#F5F5F7] relative cursor-default" onMouseEnter={e => setHoveredDescription({ id: sol.numero_solicitud, text: sol.descripcion_solicitud, x: e.clientX, y: e.clientY })} onMouseLeave={() => setHoveredDescription(null)}>
+                                                    <div className="truncate max-w-[300px]">
+                                                        {sol.descripcion_solicitud || 'Sin descripción'}
                                                     </div>
                                                 </td>
-                                                <td className="px-8 py-6">
-                                                    <div className="flex items-center gap-2">
+                                                <td className="px-6 py-7 text-center">
+                                                    <span className="px-3 py-1.5 bg-[#1D1D1F] rounded-[6px] border border-[#333333] text-[9px] font-black uppercase tracking-tighter text-[#F5F5F7] whitespace-nowrap block w-fit mx-auto">
+                                                        {sol.supervisor_alias || 'Sin asignar'}
+                                                    </span>
+                                                </td>
+                                                <td className="px-6 py-7 text-center">
+                                                    <div className="flex items-center justify-center gap-2">
                                                         <div className={cn(
                                                             "w-2 h-2 rounded-full",
-                                                            sol.finalizada ? "bg-[#0071E3]" : "bg-teal-500"
+                                                            sol.estado_actual?.toUpperCase() === 'EJECUTADA' ? "bg-emerald-400" :
+                                                                sol.estado_actual?.toUpperCase() === 'CANCELADA' ? "bg-rose-400" : "bg-[#0071E3]"
                                                         )} />
                                                         <span className={cn(
                                                             "text-[10px] font-black uppercase tracking-widest",
-                                                            sol.finalizada ? "text-[#0071E3]" : "text-teal-500"
+                                                            sol.estado_actual?.toUpperCase() === 'EJECUTADA' ? "text-emerald-400" :
+                                                                sol.estado_actual?.toUpperCase() === 'CANCELADA' ? "text-rose-400" : "text-[#0071E3]"
                                                         )}>
-                                                            {sol.finalizada ? 'Finalizada' : 'En Proceso'}
+                                                            {sol.estado_actual || 'ACTIVA'}
                                                         </span>
                                                     </div>
                                                 </td>
-                                                <td className="px-8 py-6">
-                                                    <span className="text-[10px] text-[#86868B] font-medium">{sol.fecha_actividad ? new Date(sol.fecha_actividad).toLocaleString("es-CR", { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' }) : 'Sin actividad'}</span>
-                                                </td>
-                                                <td className="px-8 py-6 text-right">
+                                                <td className="px-6 py-7 text-right">
                                                     <div className="flex items-center justify-end gap-2">
                                                         <button
                                                             onClick={() => abrirModalSeguimiento(sol.numero_solicitud)}
@@ -1093,6 +1115,16 @@ export default function SeguimientoSolicitudExterno() {
                             </div>
                         </div>
                     </div>
+                </div>
+            )}
+
+            {/* Tooltip con más contraste para descripciones largas */}
+            {hoveredDescription && (
+                <div
+                    className="fixed z-[10000] pointer-events-none p-5 bg-black/95 border border-[#333333] rounded-[8px] shadow-4xl max-w-sm backdrop-blur-xl animate-in fade-in zoom-in-95 duration-200"
+                    style={{ left: hoveredDescription.x + 20, top: hoveredDescription.y + 10 }}
+                >
+                    <p className="text-[11px] text-[#F5F5F7] leading-relaxed italic font-bold">"{hoveredDescription.text}"</p>
                 </div>
             )}
         </div>

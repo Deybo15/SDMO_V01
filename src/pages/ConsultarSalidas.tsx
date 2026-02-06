@@ -46,6 +46,8 @@ interface Salida {
     fecha_salida: string;
     finalizada: boolean;
     numero_solicitud: string;
+    retira: string;
+    autoriza: string;
     dato_salida_13: {
         registro_salida: string;
         articulo: string;
@@ -79,10 +81,12 @@ export default function ConsultarSalidas() {
     const navigate = useNavigate();
 
     // State
-    const [activeTab, setActiveTab] = useState<'solicitud' | 'fecha'>('solicitud');
+    const [activeTab, setActiveTab] = useState<'solicitud' | 'fecha' | 'id_salida'>('solicitud');
     const [solicitudInput, setSolicitudInput] = useState('');
+    const [idSalidaInput, setIdSalidaInput] = useState('');
     const [fechaDesde, setFechaDesde] = useState('');
     const [fechaHasta, setFechaHasta] = useState('');
+    const [colaboradores, setColaboradores] = useState<Record<string, string>>({});
 
     const [loading, setLoading] = useState(false);
     const [salidas, setSalidas] = useState<Salida[]>([]);
@@ -100,6 +104,23 @@ export default function ConsultarSalidas() {
         const desde = format(startOfMonth(hoy), 'yyyy-MM-dd');
         setFechaDesde(desde);
         setFechaHasta(hasta);
+    }, []);
+
+    const resetSearchState = () => {
+        setSolicitudInput('');
+        setIdSalidaInput('');
+        setSalidas([]);
+        setResumen([]);
+        setHasSearched(false);
+        setExpandedSalidas([]);
+        setStatusMessage(null);
+    };
+
+    // Reset on unmount
+    useEffect(() => {
+        return () => {
+            resetSearchState();
+        };
     }, []);
 
     // Helper functions
@@ -202,6 +223,8 @@ export default function ConsultarSalidas() {
                     fecha_salida,
                     finalizada,
                     numero_solicitud,
+                    retira,
+                    autoriza,
                     dato_salida_13 (
                         registro_salida,
                         articulo,
@@ -216,7 +239,31 @@ export default function ConsultarSalidas() {
                 .order("fecha_salida", { ascending: false });
 
             if (error) throw error;
-            setSalidas(data as any[] || []);
+            const fetchedSalidas = data as any[] || [];
+            setSalidas(fetchedSalidas);
+
+            // Resolve names
+            if (fetchedSalidas.length > 0) {
+                const idsUnicos = [...new Set([
+                    ...fetchedSalidas.map(s => s.autoriza),
+                    ...fetchedSalidas.map(s => s.retira)
+                ].filter(Boolean))];
+
+                if (idsUnicos.length > 0) {
+                    const { data: cols } = await supabase
+                        .from('colaboradores_06')
+                        .select('identificacion, alias')
+                        .in('identificacion', idsUnicos);
+
+                    if (cols) {
+                        const map = cols.reduce((acc, curr) => {
+                            acc[curr.identificacion] = curr.alias;
+                            return acc;
+                        }, {} as Record<string, string>);
+                        setColaboradores(prev => ({ ...prev, ...map }));
+                    }
+                }
+            }
 
             if (!data || data.length === 0) {
                 setStatusMessage({ type: 'info', message: "No se encontraron resultados." });
@@ -225,6 +272,80 @@ export default function ConsultarSalidas() {
             }
         } catch (error: any) {
             console.error("Error al obtener salidas:", error);
+            setStatusMessage({ type: 'error', message: "Error: " + error.message });
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    const handleBuscarSalidaId = async () => {
+        if (!idSalidaInput.trim()) {
+            setStatusMessage({ type: 'error', message: "Ingrese un ID de salida." });
+            return;
+        }
+
+        setLoading(true);
+        setHasSearched(true);
+        setSalidas([]);
+        setStatusMessage(null);
+
+        try {
+            const { data, error } = await supabase
+                .from("salida_articulo_08")
+                .select(`
+                    id_salida,
+                    fecha_salida,
+                    finalizada,
+                    numero_solicitud,
+                    retira,
+                    autoriza,
+                    dato_salida_13 (
+                        registro_salida,
+                        articulo,
+                        cantidad,
+                        subtotal,
+                        articulo_01 (
+                            nombre_articulo
+                        )
+                    )
+                `)
+                .eq("id_salida", idSalidaInput.trim());
+
+            if (error) throw error;
+            const fetchedSalidas = data as any[] || [];
+            setSalidas(fetchedSalidas);
+
+            // Resolve names
+            if (fetchedSalidas.length > 0) {
+                const idsUnicos = [...new Set([
+                    ...fetchedSalidas.map(s => s.autoriza),
+                    ...fetchedSalidas.map(s => s.retira)
+                ].filter(Boolean))];
+
+                if (idsUnicos.length > 0) {
+                    const { data: cols } = await supabase
+                        .from('colaboradores_06')
+                        .select('identificacion, alias')
+                        .in('identificacion', idsUnicos);
+
+                    if (cols) {
+                        const map = cols.reduce((acc, curr) => {
+                            acc[curr.identificacion] = curr.alias;
+                            return acc;
+                        }, {} as Record<string, string>);
+                        setColaboradores(prev => ({ ...prev, ...map }));
+                    }
+                }
+            }
+
+            if (!data || data.length === 0) {
+                setStatusMessage({ type: 'info', message: "No se encontró la salida." });
+            } else {
+                setStatusMessage({ type: 'success', message: `Salida # ${idSalidaInput} localizada.` });
+                setExpandedSalidas([Number(idSalidaInput)]);
+            }
+        } catch (error: any) {
+            console.error("Error al obtener salida por ID:", error);
             setStatusMessage({ type: 'error', message: "Error: " + error.message });
         } finally {
             setLoading(false);
@@ -407,9 +528,6 @@ export default function ConsultarSalidas() {
                 <div className="flex flex-col md:flex-row justify-between items-end gap-6 pb-2 border-b border-[#333333]">
                     <div className="space-y-1">
                         <PageHeader title="Historial de Salidas" icon={FileSearch} themeColor="blue" />
-                        <p className="text-[#86868B] text-sm font-medium tracking-wide">
-                            Consulta avanzada de movimientos por número de solicitud o resumen temporal.
-                        </p>
                     </div>
                     <button
                         onClick={() => navigate(-1)}
@@ -444,18 +562,26 @@ export default function ConsultarSalidas() {
 
                     {/* Tabs Selector */}
                     <div className="flex justify-center mb-10">
-                        <div className="bg-[#1D1D1F] p-1.5 rounded-2xl border border-[#333333] flex gap-2">
+                        <div className="bg-[#1D1D1F] p-1.5 rounded-2xl border border-[#333333] flex gap-2 overflow-x-auto no-scrollbar">
                             <button
-                                onClick={() => { setActiveTab('solicitud'); setHasSearched(false); }}
-                                className={`px-8 py-3 rounded-[6px] text-[10px] font-black uppercase tracking-widest transition-all flex items-center gap-3
+                                onClick={() => { setActiveTab('solicitud'); resetSearchState(); }}
+                                className={`px-6 md:px-8 py-3 rounded-[6px] text-[10px] font-black uppercase tracking-widest transition-all flex items-center gap-3 whitespace-nowrap
                                      ${activeTab === 'solicitud' ? 'bg-[#0071E3] text-white shadow-lg shadow-[#0071E3]/20' : 'text-[#86868B] hover:text-[#F5F5F7]'}`}
                             >
                                 <FileText className="w-4 h-4" />
                                 Consulta por Solicitud
                             </button>
                             <button
-                                onClick={() => { setActiveTab('fecha'); setHasSearched(false); }}
-                                className={`px-8 py-3 rounded-[6px] text-[10px] font-black uppercase tracking-widest transition-all flex items-center gap-3
+                                onClick={() => { setActiveTab('id_salida'); resetSearchState(); }}
+                                className={`px-6 md:px-8 py-3 rounded-[6px] text-[10px] font-black uppercase tracking-widest transition-all flex items-center gap-3 whitespace-nowrap
+                                     ${activeTab === 'id_salida' ? 'bg-[#0071E3] text-white shadow-lg shadow-[#0071E3]/20' : 'text-[#86868B] hover:text-[#F5F5F7]'}`}
+                            >
+                                <Hash className="w-4 h-4" />
+                                Consulta por Salida
+                            </button>
+                            <button
+                                onClick={() => { setActiveTab('fecha'); resetSearchState(); }}
+                                className={`px-6 md:px-8 py-3 rounded-[6px] text-[10px] font-black uppercase tracking-widest transition-all flex items-center gap-3 whitespace-nowrap
                                      ${activeTab === 'fecha' ? 'bg-[#0071E3] text-white shadow-lg shadow-[#0071E3]/20' : 'text-[#86868B] hover:text-[#F5F5F7]'}`}
                             >
                                 <Calendar className="w-4 h-4" />
@@ -468,7 +594,7 @@ export default function ConsultarSalidas() {
                     {activeTab === 'solicitud' && (
                         <div className="max-w-3xl mx-auto space-y-6 animate-in fade-in zoom-in-95 duration-500">
                             <div className="text-center space-y-2 mb-8">
-                                <h3 className="text-xl font-black text-white italic uppercase tracking-tighter">Búsqueda Unitaria</h3>
+                                <h3 className="text-xl font-black text-white italic uppercase tracking-tighter">Búsqueda por # Solicitud</h3>
                                 <p className="text-[10px] font-black text-[#86868B] uppercase tracking-widest">Ingrese el identificador único para desplegar el desglose de materiales.</p>
                             </div>
 
@@ -490,6 +616,38 @@ export default function ConsultarSalidas() {
                                     className="h-16 px-10 bg-[#0071E3] hover:bg-[#0077ED] text-white font-black uppercase tracking-widest text-xs rounded-[8px] shadow-xl shadow-[#0071E3]/20 active:scale-95 transition-all flex items-center justify-center gap-3 disabled:opacity-50"
                                 >
                                     {loading ? <Loader2 className="w-5 h-5 animate-spin" /> : <CalendarSearch className="w-5 h-5" />}
+                                    Consultar
+                                </button>
+                            </div>
+                        </div>
+                    )}
+
+                    {/* Form: Por ID Salida */}
+                    {activeTab === 'id_salida' && (
+                        <div className="max-w-3xl mx-auto space-y-6 animate-in fade-in zoom-in-95 duration-500">
+                            <div className="text-center space-y-2 mb-8">
+                                <h3 className="text-xl font-black text-white italic uppercase tracking-tighter">Búsqueda por # de Salida</h3>
+                                <p className="text-[10px] font-black text-[#86868B] uppercase tracking-widest">Ingrese el número de salida directo para una consulta inmediata.</p>
+                            </div>
+
+                            <div className="flex flex-col md:flex-row gap-4">
+                                <div className="flex-1 relative group/input">
+                                    <Hash className="absolute left-6 top-1/2 -translate-y-1/2 w-6 h-6 text-[#333333] group-focus-within/input:text-[#0071E3] transition-colors" />
+                                    <input
+                                        type="text"
+                                        placeholder="Número de Salida (Ej: 9657)"
+                                        value={idSalidaInput}
+                                        onChange={(e) => setIdSalidaInput(e.target.value)}
+                                        onKeyDown={(e) => e.key === 'Enter' && handleBuscarSalidaId()}
+                                        className="w-full h-16 bg-[#1D1D1F] border border-[#333333] rounded-[8px] pl-16 pr-6 text-xl text-white font-bold placeholder-[#333333] focus:outline-none focus:border-[#0071E3]/50 transition-all shadow-inner"
+                                    />
+                                </div>
+                                <button
+                                    onClick={handleBuscarSalidaId}
+                                    disabled={loading}
+                                    className="h-16 px-10 bg-[#0071E3] hover:bg-[#0077ED] text-white font-black uppercase tracking-widest text-xs rounded-[8px] shadow-xl shadow-[#0071E3]/20 active:scale-95 transition-all flex items-center justify-center gap-3 disabled:opacity-50"
+                                >
+                                    {loading ? <Loader2 className="w-5 h-5 animate-spin" /> : <Search className="w-5 h-5" />}
                                     Consultar
                                 </button>
                             </div>
@@ -610,18 +768,9 @@ export default function ConsultarSalidas() {
                                         <p className="text-lg font-black text-white italic truncate uppercase">
                                             {activeTab === 'solicitud'
                                                 ? `${salidas.length} Salidas Localizadas • Solicitud: ${solicitudInput}`
-                                                : `${resumen.length} Movimientos Registrados • ${new Set(resumen.map(r => r.fecha)).size} Días`
-                                            }
-                                        </p>
-                                    </div>
-                                </div>
-                                <div className="flex items-center gap-8 md:pr-4">
-                                    <div className="text-right">
-                                        <span className="text-[9px] font-black text-[#86868B] uppercase tracking-widest block mb-1">Monto Total Consultas</span>
-                                        <p className="text-3xl font-black text-[#0071E3] italic leading-none font-mono">
-                                            {activeTab === 'solicitud'
-                                                ? formatearMoneda(salidas.reduce((sum, s) => sum + calcularTotalSalida(s), 0))
-                                                : formatearMoneda(resumen.reduce((sum, r) => sum + Number(r.total_costo || 0), 0))
+                                                : activeTab === 'id_salida'
+                                                    ? `Salida # ${idSalidaInput} Localizada`
+                                                    : `${resumen.length} Movimientos Registrados • ${new Set(resumen.map(r => r.fecha)).size} Días`
                                             }
                                         </p>
                                     </div>
@@ -630,7 +779,7 @@ export default function ConsultarSalidas() {
                         )}
 
                         {/* Empty results */}
-                        {((activeTab === 'solicitud' && salidas.length === 0) || (activeTab === 'fecha' && resumen.length === 0)) && (
+                        {((activeTab === 'solicitud' && salidas.length === 0) || (activeTab === 'id_salida' && salidas.length === 0) || (activeTab === 'fecha' && resumen.length === 0)) && (
                             <div className="py-40 flex flex-col items-center justify-center text-center bg-[#121212] border border-[#333333] rounded-[8px]">
                                 <FileX className="w-16 h-16 text-[#333333] mb-6" />
                                 <h3 className="text-xl font-bold text-[#86868B] uppercase tracking-widest">No hay registros</h3>
@@ -639,14 +788,14 @@ export default function ConsultarSalidas() {
                         )}
 
                         {/* Results: Solicitud Cards */}
-                        {activeTab === 'solicitud' && salidas.length > 0 && (
+                        {(activeTab === 'solicitud' || activeTab === 'id_salida') && salidas.length > 0 && (
                             <div className="grid grid-cols-1 gap-6">
                                 {salidas.map((salida) => {
                                     const totalSalida = calcularTotalSalida(salida);
-                                    const isExpanded = expandedSalidas.includes(salida.id_salida);
 
                                     return (
-                                        <div key={salida.id_salida} className={`bg-[#121212] border border-[#333333] rounded-3xl overflow-hidden transition-all duration-300 ${isExpanded ? 'border-[#0071E3]/30 shadow-2xl' : 'hover:border-[#333333]/60'}`}>
+                                        <div key={salida.id_salida} className="bg-[#121212] border border-[#333333] rounded-3xl overflow-hidden border-[#0071E3]/30 shadow-2xl">
+                                            {/* Header Card */}
                                             <div className="p-8 flex flex-col lg:flex-row items-start lg:items-center justify-between gap-8">
                                                 <div className="flex items-center gap-6">
                                                     <div className="w-16 h-16 rounded-[4px] bg-[#1D1D1F] border border-[#333333] flex items-center justify-center text-[#333333] group-hover:text-[#0071E3] transition-colors">
@@ -671,7 +820,7 @@ export default function ConsultarSalidas() {
                                                     </div>
                                                 </div>
 
-                                                <div className="grid grid-cols-2 md:grid-cols-4 gap-x-12 gap-y-4">
+                                                <div className="grid grid-cols-2 lg:grid-cols-4 gap-x-8 gap-y-4 flex-1 lg:ml-12">
                                                     <div>
                                                         <span className="text-[9px] font-black text-[#86868B] uppercase tracking-widest block mb-1">Fecha</span>
                                                         <p className="font-bold text-[#F5F5F7] text-sm">{formatDate(salida.fecha_salida)}</p>
@@ -680,64 +829,58 @@ export default function ConsultarSalidas() {
                                                         <span className="text-[9px] font-black text-[#86868B] uppercase tracking-widest block mb-1">Contenido</span>
                                                         <p className="font-bold text-[#F5F5F7] text-sm">{salida.dato_salida_13?.length || 0} Líneas</p>
                                                     </div>
-                                                    <div className="col-span-2">
-                                                        <span className="text-[9px] font-black text-[#86868B] uppercase tracking-widest block mb-1">Monto de Salida</span>
-                                                        <p className="font-black text-white text-xl font-mono">{formatearMoneda(totalSalida)}</p>
+                                                    <div>
+                                                        <span className="text-[9px] font-black text-[#86868B] uppercase tracking-widest block mb-1">Solicitud</span>
+                                                        <p className="font-bold text-[#F5F5F7] text-sm truncate max-w-[120px]">{salida.numero_solicitud || 'S/N'}</p>
+                                                    </div>
+                                                    <div>
+                                                        <span className="text-[9px] font-black text-[#86868B] uppercase tracking-widest block mb-1 capitalize">Persona que Retira</span>
+                                                        <p className="font-black text-white text-sm uppercase italic">{colaboradores[salida.retira] || 'No identificado'}</p>
                                                     </div>
                                                 </div>
-
-                                                <button
-                                                    onClick={() => toggleSalidaDetails(salida.id_salida)}
-                                                    className={`px-6 py-3 rounded-[8px] text-[10px] font-black uppercase tracking-widest transition-all flex items-center gap-3
-                                                         ${isExpanded ? 'bg-[#0071E3] text-white shadow-lg shadow-[#0071E3]/20' : 'bg-transparent border border-[#333333] text-[#F5F5F7] hover:bg-white/5'}`}
-                                                >
-                                                    {isExpanded ? 'Cerrar Desglose' : 'Ver Desglose'}
-                                                    <ChevronDown className={`w-4 h-4 transition-transform duration-300 ${isExpanded ? 'rotate-180' : ''}`} />
-                                                </button>
                                             </div>
 
-                                            {isExpanded && (
-                                                <div className="px-8 pb-8 pt-4 bg-black/20 border-t border-[#333333] animate-in slide-in-from-top-4 duration-500">
-                                                    <div className="overflow-x-auto rounded-[8px] border border-[#333333] bg-[#1D1D1F]">
-                                                        <table className="w-full text-left border-collapse">
-                                                            <thead>
-                                                                <tr className="bg-[#121212] text-white text-[9px] font-black uppercase tracking-[0.2em] border-b border-[#333333]">
-                                                                    <th className="p-5">Código Art.</th>
-                                                                    <th className="p-5">Descripción Detallada</th>
-                                                                    <th className="p-5 text-right">Cantidad</th>
-                                                                    <th className="p-5 text-right">Subtotal</th>
-                                                                </tr>
-                                                            </thead>
-                                                            <tbody className="divide-y divide-[#333333]">
-                                                                {salida.dato_salida_13?.map((item, idx) => (
-                                                                    <tr key={idx} className="hover:bg-white/[0.02] transition-colors group h-14">
-                                                                        <td className="p-5">
-                                                                            <span className="font-mono text-xs font-black text-[#0071E3] group-hover:text-[#0077ED] transition-colors">{item.articulo}</span>
-                                                                        </td>
-                                                                        <td className="p-5">
-                                                                            <p className="text-[#F5F5F7] font-bold text-xs uppercase italic">{item.articulo_01?.nombre_articulo}</p>
-                                                                        </td>
-                                                                        <td className="p-5 text-right">
-                                                                            <span className="text-sm font-black text-white font-mono">{item.cantidad.toLocaleString()}</span>
-                                                                        </td>
-                                                                        <td className="p-5 text-right">
-                                                                            <span className="text-sm font-black text-[#86868B] font-mono">{formatearMoneda(item.subtotal)}</span>
-                                                                        </td>
-                                                                    </tr>
-                                                                ))}
-                                                            </tbody>
-                                                            <tfoot>
-                                                                <tr className="bg-[#0071E3]/5">
-                                                                    <td colSpan={3} className="p-6 text-right font-black text-[#86868B] uppercase tracking-widest text-[10px]">Total Acumulado de Salida</td>
-                                                                    <td className="p-6 text-right">
-                                                                        <span className="text-2xl font-black text-white italic font-mono">{formatearMoneda(totalSalida)}</span>
+                                            {/* Alway Visible Breakdown */}
+                                            <div className="px-8 pb-8 pt-4 bg-black/20 border-t border-[#333333]">
+                                                <div className="overflow-x-auto rounded-[8px] border border-[#333333] bg-[#1D1D1F]">
+                                                    <table className="w-full text-left border-collapse">
+                                                        <thead>
+                                                            <tr className="bg-[#121212] text-white text-[9px] font-black uppercase tracking-[0.2em] border-b border-[#333333]">
+                                                                <th className="p-5">Código Art.</th>
+                                                                <th className="p-5">Descripción Detallada</th>
+                                                                <th className="p-5 text-right">Cantidad</th>
+                                                                <th className="p-5 text-right">Subtotal</th>
+                                                            </tr>
+                                                        </thead>
+                                                        <tbody className="divide-y divide-[#333333]">
+                                                            {salida.dato_salida_13?.map((item: any, idx: number) => (
+                                                                <tr key={idx} className="hover:bg-white/[0.02] transition-colors group h-14">
+                                                                    <td className="p-5">
+                                                                        <span className="font-mono text-xs font-black text-[#0071E3] group-hover:text-[#0077ED] transition-colors">{item.articulo}</span>
+                                                                    </td>
+                                                                    <td className="p-5">
+                                                                        <p className="text-[#F5F5F7] font-bold text-xs uppercase italic">{item.articulo_01?.nombre_articulo}</p>
+                                                                    </td>
+                                                                    <td className="p-5 text-right">
+                                                                        <span className="text-sm font-black text-white font-mono">{item.cantidad.toLocaleString()}</span>
+                                                                    </td>
+                                                                    <td className="p-5 text-right">
+                                                                        <span className="text-sm font-black text-[#86868B] font-mono">{formatearMoneda(item.subtotal)}</span>
                                                                     </td>
                                                                 </tr>
-                                                            </tfoot>
-                                                        </table>
-                                                    </div>
+                                                            ))}
+                                                        </tbody>
+                                                        <tfoot>
+                                                            <tr className="bg-[#1D1D1F] border-t border-[#333333]">
+                                                                <td colSpan={3} className="p-5 text-right font-black text-[#86868B] uppercase tracking-widest text-[9px]">Monto Total de Salida</td>
+                                                                <td className="p-5 text-right">
+                                                                    <span className="text-xl font-black text-[#0071E3] italic font-mono">{formatearMoneda(totalSalida)}</span>
+                                                                </td>
+                                                            </tr>
+                                                        </tfoot>
+                                                    </table>
                                                 </div>
-                                            )}
+                                            </div>
                                         </div>
                                     );
                                 })}
@@ -838,9 +981,9 @@ export default function ConsultarSalidas() {
                                 </div>
                             </div>
                         )}
-                    </div>
+                    </div >
                 )}
-            </div>
-        </div>
+            </div >
+        </div >
     );
 }

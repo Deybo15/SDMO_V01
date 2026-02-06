@@ -444,11 +444,15 @@ export default function SeguimientoSolicitud() {
                                     <tr key={sol.numero_solicitud} className="hover:bg-white/5 transition-all group">
                                         <td className="px-6 py-7 font-black text-[#0071E3] text-lg">#{sol.numero_solicitud}</td>
                                         <td className="px-6 py-7 text-sm font-bold text-[#86868B]">{new Date(sol.fecha_solicitud).toLocaleDateString()}</td>
-                                        <td className="px-6 py-7 truncate max-w-[300px] italic font-medium text-[#F5F5F7] relative cursor-default" onMouseEnter={e => setHoveredDescription({ id: sol.numero_solicitud, text: sol.descripcion_solicitud, x: e.clientX, y: e.clientY })} onMouseLeave={() => setHoveredDescription(null)}>
-                                            {sol.descripcion_solicitud}
+                                        <td className="px-6 py-7 italic font-medium text-[#F5F5F7] relative cursor-default" onMouseEnter={e => setHoveredDescription({ id: sol.numero_solicitud, text: sol.descripcion_solicitud, x: e.clientX, y: e.clientY })} onMouseLeave={() => setHoveredDescription(null)}>
+                                            <div className="truncate max-w-[300px]">
+                                                {sol.descripcion_solicitud}
+                                            </div>
                                         </td>
-                                        <td className="px-6 py-7 text-[10px] font-black text-[#86868B] text-center whitespace-nowrap">
-                                            <span className="px-4 py-2 bg-[#1D1D1F] rounded-[8px] border border-[#333333] uppercase tracking-tighter text-[#F5F5F7]">{sol.supervisor_alias}</span>
+                                        <td className="px-6 py-7 text-center">
+                                            <span className="px-3 py-1.5 bg-[#1D1D1F] rounded-[6px] border border-[#333333] text-[9px] font-black uppercase tracking-tighter text-[#F5F5F7] whitespace-nowrap block w-fit mx-auto">
+                                                {sol.supervisor_alias}
+                                            </span>
                                         </td>
                                         <td className="px-6 py-7 text-center">
                                             {getEstadoBadge(sol.estado_actual)}
@@ -476,8 +480,11 @@ export default function SeguimientoSolicitud() {
 
             {/* Tooltip con más contraste */}
             {hoveredDescription && (
-                <div className="fixed z-[10000] pointer-events-none p-6 bg-[#1D1D1F] border border-[#333333] rounded-[8px] shadow-4xl max-w-md backdrop-blur-2xl animate-in fade-in zoom-in-95" style={{ left: hoveredDescription.x + 20, top: hoveredDescription.y + 20 }}>
-                    <p className="text-[12px] text-[#F5F5F7] leading-relaxed italic font-bold">"{hoveredDescription.text}"</p>
+                <div
+                    className="fixed z-[10000] pointer-events-none p-5 bg-black/95 border border-[#333333] rounded-[8px] shadow-4xl max-w-sm backdrop-blur-xl animate-in fade-in zoom-in-95 duration-200"
+                    style={{ left: hoveredDescription.x + 20, top: hoveredDescription.y + 10 }}
+                >
+                    <p className="text-[11px] text-[#F5F5F7] leading-relaxed italic font-bold">"{hoveredDescription.text}"</p>
                 </div>
             )}
 
