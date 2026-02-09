@@ -546,7 +546,7 @@ export default function IngresarArticulo() {
                                                                 <Search className="w-5 h-5" />
                                                             )}
                                                         </div>
-                                                        <span className={cn("line-clamp-2 font-bold leading-tight text-sm", !row.articulo ? "text-[#86868B] italic" : "text-[#F5F5F7]")}>
+                                                        <span className={cn("font-bold leading-tight text-sm", !row.articulo ? "text-[#86868B] italic" : "text-[#F5F5F7]")}>
                                                             {row.articulo ? row.articulo.nombre_articulo : 'Buscar en inventario...'}
                                                         </span>
                                                     </div>

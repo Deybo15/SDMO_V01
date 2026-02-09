@@ -357,7 +357,7 @@ export default function ConsultarInventario() {
                                             {/* Article Info */}
                                             <div className="flex-1 flex flex-col space-y-4">
                                                 <div className="space-y-2">
-                                                    <h4 className="font-black text-white group-hover:text-teal-400 transition-colors leading-tight line-clamp-2 uppercase italic text-[13px] tracking-tighter">
+                                                    <h4 className="font-black text-white group-hover:text-teal-400 transition-colors leading-tight uppercase italic text-[13px] tracking-tighter">
                                                         {item.nombre_articulo}
                                                     </h4>
                                                     <div className="flex items-center gap-3">

@@ -210,7 +210,7 @@ export default function ArticleSearchGridModal({
 
                                     {/* Content */}
                                     <div className="flex-1 flex flex-col">
-                                        <h4 className="font-bold text-white group-hover:text-teal-400 transition-colors mb-3 leading-snug line-clamp-2 uppercase italic text-sm tracking-tight">
+                                        <h4 className="font-bold text-white group-hover:text-teal-400 transition-colors mb-3 leading-snug uppercase italic text-sm tracking-tight">
                                             {art.nombre_articulo}
                                         </h4>
                                         <div className="flex items-center gap-3 mb-4">
