@@ -23,18 +23,19 @@ export const TransactionTable = ({
     maxItems = 10
 }: TransactionTableProps) => {
 
-    const limitReached = items.length >= maxItems;
+    const currentMax = maxItems;
+    const limitReached = items.length >= currentMax;
 
     return (
         <div className="w-full">
             <div className="flex justify-between items-center mb-8 pb-4">
                 <div className="flex flex-col">
                     <span className="text-[10px] font-black text-[#86868B] uppercase tracking-[0.2em] hidden sm:block">
-                        {items.length} {items.length === 1 ? 'Artículo seleccionado' : 'Artículos seleccionados'}
+                        {items.length} / {currentMax} Líneas Seleccionadas
                     </span>
                     {limitReached && (
                         <span className="text-[9px] font-bold text-rose-500 uppercase tracking-widest mt-1 animate-pulse">
-                            Límite máximo alcanzado ({maxItems} líneas)
+                            Límite alcanzado ({currentMax} líneas)
                         </span>
                     )}
                 </div>

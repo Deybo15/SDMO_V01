@@ -82,20 +82,22 @@ export const useTransactionManager = ({
 
     // Actions
     const addEmptyRow = () => {
-        if (items.length >= 10) {
-            showFeedback('Límite máximo de 10 artículos alcanzado', 'warning');
-            return;
-        }
-        setItems(prev => [...prev, {
-            codigo_articulo: '',
-            articulo: '',
-            cantidad: 0,
-            unidad: '',
-            precio_unitario: 0,
-            marca: '',
-            cantidad_disponible: 0,
-            imagen_url: null
-        }]);
+        setItems(prev => {
+            if (prev.length >= 10) {
+                showFeedback('Límite máximo de 10 artículos alcanzado', 'warning');
+                return prev;
+            }
+            return [...prev, {
+                codigo_articulo: '',
+                articulo: '',
+                cantidad: 0,
+                unidad: '',
+                precio_unitario: 0,
+                marca: '',
+                cantidad_disponible: 0,
+                imagen_url: null
+            }];
+        });
     };
 
     // Update a specific row (by index) with an article

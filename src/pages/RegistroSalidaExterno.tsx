@@ -175,19 +175,21 @@ export default function RegistroSalidaExterno() {
     };
 
     const agregarFila = () => {
-        if (items.length >= 10) {
-            showAlert('Límite máximo de 10 artículos alcanzado', 'warning');
-            return;
-        }
-        setItems(prev => [...prev, {
-            codigo_articulo: '',
-            articulo: '',
-            cantidad: 0,
-            unidad: '',
-            precio_unitario: 0,
-            marca: '',
-            cantidad_disponible: 0
-        }]);
+        setItems(prev => {
+            if (prev.length >= 10) {
+                showAlert('Límite máximo de 10 artículos alcanzado', 'warning');
+                return prev;
+            }
+            return [...prev, {
+                codigo_articulo: '',
+                articulo: '',
+                cantidad: 0,
+                unidad: '',
+                precio_unitario: 0,
+                marca: '',
+                cantidad_disponible: 0
+            }];
+        });
     };
 
     const eliminarFila = (index: number) => {
