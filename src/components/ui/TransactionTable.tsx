@@ -1,5 +1,6 @@
 import { Trash2, Search, PlusCircle } from 'lucide-react';
 import { DetalleSalida } from '../../types/inventory';
+import { cn } from '../../lib/utils';
 
 interface TransactionTableProps {
     items: DetalleSalida[];
@@ -9,6 +10,7 @@ interface TransactionTableProps {
     onAddRow: () => void;
     onWarning?: (message: string) => void;
     themeColor?: string;
+    maxItems?: number;
 }
 
 export const TransactionTable = ({
@@ -17,22 +19,38 @@ export const TransactionTable = ({
     onRemoveRow,
     onOpenSearch,
     onAddRow,
-    onWarning
+    onWarning,
+    maxItems = 10
 }: TransactionTableProps) => {
+
+    const limitReached = items.length >= maxItems;
 
     return (
         <div className="w-full">
             <div className="flex justify-between items-center mb-8 pb-4">
-                <span className="text-[10px] font-black text-[#86868B] uppercase tracking-[0.2em] hidden sm:block">
-                    {items.length} {items.length === 1 ? 'Artículo seleccionado' : 'Artículos seleccionados'}
-                </span>
+                <div className="flex flex-col">
+                    <span className="text-[10px] font-black text-[#86868B] uppercase tracking-[0.2em] hidden sm:block">
+                        {items.length} {items.length === 1 ? 'Artículo seleccionado' : 'Artículos seleccionados'}
+                    </span>
+                    {limitReached && (
+                        <span className="text-[9px] font-bold text-rose-500 uppercase tracking-widest mt-1 animate-pulse">
+                            Límite máximo alcanzado ({maxItems} líneas)
+                        </span>
+                    )}
+                </div>
                 <button
                     type="button"
-                    onClick={onAddRow}
-                    className="w-full sm:w-auto h-12 px-8 bg-[#0071E3] hover:brightness-110 text-white font-black rounded-[8px] transition-all flex items-center justify-center gap-2.5 shadow-xl shadow-[#0071E3]/20 text-[10px] uppercase tracking-widest active:scale-95"
+                    onClick={limitReached ? undefined : onAddRow}
+                    disabled={limitReached}
+                    className={cn(
+                        "w-full sm:w-auto h-12 px-8 font-black rounded-[8px] transition-all flex items-center justify-center gap-2.5 text-[10px] uppercase tracking-widest",
+                        limitReached
+                            ? "bg-[#1D1D1F] border border-[#333333] text-[#424245] cursor-not-allowed"
+                            : "bg-[#0071E3] hover:brightness-110 text-white shadow-xl shadow-[#0071E3]/20 active:scale-95"
+                    )}
                 >
                     <PlusCircle className="w-5 h-5" />
-                    Agregar Artículo
+                    {limitReached ? 'Límite alcanzado' : 'Agregar Artículo'}
                 </button>
             </div>
 

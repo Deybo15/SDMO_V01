@@ -82,6 +82,10 @@ export const useTransactionManager = ({
 
     // Actions
     const addEmptyRow = () => {
+        if (items.length >= 10) {
+            showFeedback('Límite máximo de 10 artículos alcanzado', 'warning');
+            return;
+        }
         setItems(prev => [...prev, {
             codigo_articulo: '',
             articulo: '',
@@ -148,6 +152,12 @@ export const useTransactionManager = ({
 
         if (validItems.length === 0) {
             setFeedback({ message: 'Debe agregar al menos un artículo válido con cantidad mayor a 0', type: 'error' });
+            setTimeout(() => setFeedback(null), 3000);
+            return;
+        }
+
+        if (validItems.length > 10) {
+            setFeedback({ message: 'No se permiten más de 10 artículos por salida', type: 'error' });
             setTimeout(() => setFeedback(null), 3000);
             return;
         }

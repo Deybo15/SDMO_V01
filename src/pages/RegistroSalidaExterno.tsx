@@ -175,6 +175,10 @@ export default function RegistroSalidaExterno() {
     };
 
     const agregarFila = () => {
+        if (items.length >= 10) {
+            showAlert('Límite máximo de 10 artículos alcanzado', 'warning');
+            return;
+        }
         setItems(prev => [...prev, {
             codigo_articulo: '',
             articulo: '',
@@ -226,6 +230,11 @@ export default function RegistroSalidaExterno() {
         const validItems = items.filter(d => d.codigo_articulo && Number(d.cantidad) > 0);
         if (validItems.length === 0) {
             showAlert('Debe agregar al menos un artículo válido con cantidad mayor a 0', 'error');
+            return;
+        }
+
+        if (validItems.length > 10) {
+            showAlert('No se permiten más de 10 artículos por salida', 'error');
             return;
         }
 

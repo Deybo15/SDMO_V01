@@ -220,6 +220,10 @@ export default function SalidaArticulosModal({ isOpen, onClose, solicitudId }: S
 
     // Row Management
     const addRow = () => {
+        if (detalles.length >= 10) {
+            showNotify('Máximo 10 líneas permitidas por salida', 'error');
+            return;
+        }
         setDetalles([...detalles, { codigo_articulo: '', articulo: '', cantidad: 0, unidad: '', precio_unitario: 0 }]);
     };
 
@@ -261,6 +265,10 @@ export default function SalidaArticulosModal({ isOpen, onClose, solicitudId }: S
         }
         if (detalles.length === 0) {
             showNotify('Debe agregar al menos un artículo', 'error');
+            return;
+        }
+        if (detalles.length > 10) {
+            showNotify('Máximo 10 líneas permitidas por salida', 'error');
             return;
         }
 
@@ -457,9 +465,14 @@ export default function SalidaArticulosModal({ isOpen, onClose, solicitudId }: S
                             </h3>
                             <button
                                 onClick={addRow}
-                                className="px-3 py-1.5 bg-blue-600 hover:bg-blue-500 text-white text-xs rounded-lg flex items-center gap-2 transition-colors"
+                                disabled={detalles.length >= 10}
+                                className={`px-3 py-1.5 text-white text-xs rounded-lg flex items-center gap-2 transition-all ${detalles.length >= 10
+                                        ? 'bg-slate-700 cursor-not-allowed opacity-50'
+                                        : 'bg-blue-600 hover:bg-blue-500'
+                                    }`}
                             >
-                                <PlusCircle className="w-3 h-3" /> Agregar Artículo
+                                <PlusCircle className="w-3 h-3" />
+                                {detalles.length >= 10 ? 'Límite alcanzado' : 'Agregar Artículo'}
                             </button>
                         </div>
                         <div className="overflow-x-auto">

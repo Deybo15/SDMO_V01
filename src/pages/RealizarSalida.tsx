@@ -137,6 +137,10 @@ export default function RealizarSalida() {
 
     // Table Actions
     const agregarFila = () => {
+        if (items.length >= 10) {
+            showAlert('Límite máximo de 10 artículos alcanzado', 'warning');
+            return;
+        }
         setItems([...items, {
             codigo_articulo: '',
             articulo: '',
@@ -235,6 +239,11 @@ export default function RealizarSalida() {
         const itemsValidos = items.filter(i => i.codigo_articulo !== '' && Number(i.cantidad) > 0);
         if (itemsValidos.length === 0) {
             showAlert('Debe agregar al menos un artículo con cantidad válida', 'error');
+            return;
+        }
+
+        if (itemsValidos.length > 10) {
+            showAlert('No se permiten más de 10 artículos por salida', 'error');
             return;
         }
 
