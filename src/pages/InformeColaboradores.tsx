@@ -432,6 +432,9 @@ export default function InformeColaboradores() {
 
         let html = `
         <meta charset="utf-8">
+        <style>
+            .text { mso-number-format:"\\@"; }
+        </style>
         <table border="1">
             <tr><td colspan="8" style="font-weight:bold;font-size:16px;">Colaborador: ${selectedColaborador?.nombre} (${selectedColaborador?.id})</td></tr>
             <tr></tr>
@@ -442,10 +445,10 @@ export default function InformeColaboradores() {
 
         articulos.forEach(it => {
             html += `<tr>
-                <td>${it.id_salida}</td>
+                <td class="text">${it.id_salida}</td>
                 <td>${new Date(it.fecha_salida).toLocaleDateString('es-ES')}</td>
                 <td>${it.tipo_solicitud}</td>
-                <td>${it.articulo}</td>
+                <td class="text">${it.articulo}</td>
                 <td>${it.nombre_articulo}</td>
                 <td>${it.cantidad}</td>
                 <td>${it.precio_unitario}</td>

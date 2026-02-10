@@ -145,7 +145,27 @@ export default function ConsultarInventario() {
                 }
             }
 
-            const ws = XLSX.utils.json_to_sheet(allData);
+            // Mapear datos para asegurar que el código sea tratado como texto por XLSX
+            const formattedData = allData.map(item => ({
+                'Código': String(item.codigo_articulo),
+                'Artículo': item.nombre_articulo,
+                'Unidad': item.unidad,
+                'Stock': item.cantidad_disponible,
+                'Precio Unitario': item.precio_unitario
+            }));
+
+            const ws = XLSX.utils.json_to_sheet(formattedData);
+
+            // Forzar formato de texto para la columna A (Código)
+            const range = XLSX.utils.decode_range(ws['!ref'] || 'A1');
+            for (let R = range.s.r + 1; R <= range.e.r; ++R) {
+                const cellRef = XLSX.utils.encode_cell({ r: R, c: 0 }); // Columna A
+                if (ws[cellRef]) {
+                    ws[cellRef].t = 's'; // Tipo string
+                    ws[cellRef].z = '@'; // Formato texto
+                }
+            }
+
             const wb = XLSX.utils.book_new();
             XLSX.utils.book_append_sheet(wb, ws, "Inventario");
             XLSX.writeFile(wb, "Inventario_Completo_SDMO.xlsx");
