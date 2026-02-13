@@ -319,6 +319,11 @@ export default function RealizarSalida() {
                 cantidad_disponible: 0
             }]);
 
+            // Redirect after 2 seconds to allow user to see the message or print
+            setTimeout(() => {
+                navigate(-1);
+            }, 2000);
+
         } catch (err: any) {
             console.error('Error guardando salida:', err);
             showAlert(err.message || 'Error al guardar la salida', 'error');

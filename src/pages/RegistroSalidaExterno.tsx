@@ -325,6 +325,11 @@ export default function RegistroSalidaExterno() {
             setFinalizado(false);
             setUltimoIdSalida(null);
 
+            // Redirect after 2 seconds
+            setTimeout(() => {
+                navigate('/cliente-externo/realizar');
+            }, 2000);
+
         } catch (error: any) {
             console.error('Error submitting:', error);
             showAlert('Error al guardar: ' + error.message, 'error');
