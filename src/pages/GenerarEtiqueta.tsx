@@ -183,10 +183,7 @@ export default function GenerarEtiqueta() {
                         text-transform: uppercase !important;
                         line-height: 1.2 !important;
                         text-align: center !important;
-                        display: -webkit-box !important;
-                        -webkit-line-clamp: 3 !important;
-                        -webkit-box-orient: vertical !important;
-                        overflow: hidden !important;
+                        display: block !important;
                     }
 
                     .etiqueta-meta {
