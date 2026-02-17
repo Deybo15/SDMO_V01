@@ -260,7 +260,7 @@ export default function GenerarEtiqueta() {
                                         </div>
                                         <div className="flex-1 min-w-0">
                                             <span className="font-mono text-[10px] font-black text-[#0071E3] uppercase tracking-widest">{generatedArticle.codigo_articulo}</span>
-                                            <p className="text-base font-black text-[#F5F5F7] truncate italic uppercase leading-tight mb-2">{generatedArticle.nombre_articulo}</p>
+                                            <p className="text-base font-black text-[#F5F5F7] italic uppercase leading-tight mb-2">{generatedArticle.nombre_articulo}</p>
                                             <div className="flex flex-wrap gap-2">
                                                 <span className="px-2 py-0.5 bg-white/5 rounded-[4px] text-[9px] font-black text-[#86868B] uppercase tracking-widest border border-[#333333]">
                                                     Marca: {generatedArticle.marca || 'N/A'}
@@ -346,7 +346,7 @@ export default function GenerarEtiqueta() {
 
                                             {/* Descriptive Info */}
                                             <div className="flex-1 flex flex-col justify-evenly py-2 overflow-hidden">
-                                                <h4 className="text-[1.1rem] font-extrabold text-black leading-tight text-center uppercase overflow-hidden line-clamp-3">
+                                                <h4 className="text-[1.1rem] font-extrabold text-black leading-tight text-center uppercase">
                                                     {generatedArticle.nombre_articulo}
                                                 </h4>
 
