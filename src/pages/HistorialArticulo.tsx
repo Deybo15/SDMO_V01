@@ -60,6 +60,7 @@ interface SalidaProcessed {
     fecha_salida: string;
     cantidad: number;
     registro: string;
+    base: string;
 }
 
 interface ChartData {
@@ -115,7 +116,14 @@ export default function HistorialArticulo() {
                         cantidad,
                         salida_articulo_08 (
                             id_salida,
-                            fecha_salida
+                            fecha_salida,
+                            solicitud_17 (
+                                instalaciones_municipales_16 (
+                                    instalacion_base (
+                                        base
+                                    )
+                                )
+                            )
                         )
                     `, { count: 'exact' })
                     .eq('articulo', selectedArticle.codigo_articulo)
@@ -146,7 +154,8 @@ export default function HistorialArticulo() {
                 id_salida: item.salida_articulo_08?.id_salida,
                 fecha_salida: item.salida_articulo_08?.fecha_salida,
                 cantidad: Number(item.cantidad) || 0,
-                registro: item.registro_salida
+                registro: item.registro_salida,
+                base: item.salida_articulo_08?.solicitud_17?.instalaciones_municipales_16?.instalacion_base?.base || 'N/A'
             })).filter(item => item.fecha_salida);
 
             console.log('Procesamiento completado. Registros finales:', processed.length);
@@ -174,6 +183,7 @@ export default function HistorialArticulo() {
             const dataToExport = salidas.map(s => ({
                 'ID Salida': s.id_salida,
                 'Fecha': format(parseISO(s.fecha_salida), 'dd/MM/yyyy'),
+                'Base': s.base,
                 'Cantidad': s.cantidad
             }));
 
@@ -588,6 +598,7 @@ export default function HistorialArticulo() {
                                             <tr className="bg-[#1D1D1F] text-[#86868B] text-[10px] font-black uppercase tracking-[0.2em] border-b border-[#333333]">
                                                 <th className="p-6">ID Salida</th>
                                                 <th className="p-6">Fecha Efectiva</th>
+                                                <th className="p-6">Base</th>
                                                 <th className="p-6 text-right">Cantidad</th>
                                             </tr>
                                         </thead>
@@ -599,6 +610,9 @@ export default function HistorialArticulo() {
                                                     </td>
                                                     <td className="p-6 text-[#F5F5F7] font-medium text-sm">
                                                         {format(parseISO(s.fecha_salida), 'PPPP', { locale: es })}
+                                                    </td>
+                                                    <td className="p-6">
+                                                        <span className="text-[10px] font-black text-[#86868B] uppercase tracking-widest">{s.base}</span>
                                                     </td>
                                                     <td className="p-6 text-right">
                                                         <div className="flex flex-col items-end">
