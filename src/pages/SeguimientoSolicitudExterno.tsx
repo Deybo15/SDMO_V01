@@ -380,10 +380,10 @@ export default function SeguimientoSolicitudExterno() {
             return null;
         };
 
-        const urlActual = await checkAndGetUrl(`FA_${numero} _STE`);
+        const urlActual = await checkAndGetUrl(`FA_${numero}_STE`);
         if (urlActual) setImgActualPreview(urlActual);
 
-        const urlFinal = await checkAndGetUrl(`FD_${numero} _STE`);
+        const urlFinal = await checkAndGetUrl(`FD_${numero}_STE`);
         if (urlFinal) setImgFinalPreview(urlFinal);
     };
 
@@ -445,8 +445,8 @@ export default function SeguimientoSolicitudExterno() {
         if (!selectedSolicitud || !confirm('¿Estás seguro de que deseas eliminar esta imagen?')) return;
 
         const fileName = type === 'actual'
-            ? `FA_${selectedSolicitud.numero_solicitud} _STE`
-            : `FD_${selectedSolicitud.numero_solicitud} _STE`;
+            ? `FA_${selectedSolicitud.numero_solicitud}_STE`
+            : `FD_${selectedSolicitud.numero_solicitud}_STE`;
 
         try {
             const { error } = await supabase.storage.from('imagenes-ste').remove([fileName]);
@@ -490,7 +490,7 @@ export default function SeguimientoSolicitudExterno() {
             let uploadedCount = 0;
             if (fileActual) {
                 await supabase.storage.from('imagenes-ste').upload(
-                    `FA_${selectedSolicitud.numero_solicitud} _STE`,
+                    `FA_${selectedSolicitud.numero_solicitud}_STE`,
                     fileActual,
                     { upsert: true, contentType: fileActual.type }
                 );
@@ -498,7 +498,7 @@ export default function SeguimientoSolicitudExterno() {
             }
             if (fileFinal) {
                 await supabase.storage.from('imagenes-ste').upload(
-                    `FD_${selectedSolicitud.numero_solicitud} _STE`,
+                    `FD_${selectedSolicitud.numero_solicitud}_STE`,
                     fileFinal,
                     { upsert: true, contentType: fileFinal.type }
                 );
