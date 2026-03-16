@@ -383,10 +383,10 @@ export default function SeguimientoSolicitudExterno() {
             return null;
         };
 
-        const urlActual = await checkAndGetUrl(`FA_${String(numero).trim()}_STE`);
+        const urlActual = await checkAndGetUrl(`FA_${String(numero).trim()}_STE`.replace(/\s/g, ''));
         if (urlActual) setImgActualPreview(urlActual);
 
-        const urlFinal = await checkAndGetUrl(`FD_${String(numero).trim()}_STE`);
+        const urlFinal = await checkAndGetUrl(`FD_${String(numero).trim()}_STE`.replace(/\s/g, ''));
         if (urlFinal) setImgFinalPreview(urlFinal);
     };
 
@@ -448,8 +448,8 @@ export default function SeguimientoSolicitudExterno() {
         if (!selectedSolicitud || !confirm('¿Estás seguro de que deseas eliminar esta imagen?')) return;
 
         const fileName = type === 'actual'
-            ? `FA_${String(selectedSolicitud.numero_solicitud).trim()}_STE`
-            : `FD_${String(selectedSolicitud.numero_solicitud).trim()}_STE`;
+            ? `FA_${String(selectedSolicitud.numero_solicitud).trim()}_STE`.replace(/\s/g, '')
+            : `FD_${String(selectedSolicitud.numero_solicitud).trim()}_STE`.replace(/\s/g, '');
 
         try {
             const { error } = await supabase.storage.from('imagenes-ste').remove([fileName]);
@@ -493,7 +493,7 @@ export default function SeguimientoSolicitudExterno() {
             let uploadedCount = 0;
             if (fileActual) {
                 await supabase.storage.from('imagenes-ste').upload(
-                    `FA_${String(selectedSolicitud.numero_solicitud).trim()}_STE`,
+                    `FA_${String(selectedSolicitud.numero_solicitud).trim()}_STE`.replace(/\s/g, ''),
                     fileActual,
                     { upsert: true, contentType: fileActual.type }
                 );
@@ -501,7 +501,7 @@ export default function SeguimientoSolicitudExterno() {
             }
             if (fileFinal) {
                 await supabase.storage.from('imagenes-ste').upload(
-                    `FD_${String(selectedSolicitud.numero_solicitud).trim()}_STE`,
+                    `FD_${String(selectedSolicitud.numero_solicitud).trim()}_STE`.replace(/\s/g, ''),
                     fileFinal,
                     { upsert: true, contentType: fileFinal.type }
                 );
