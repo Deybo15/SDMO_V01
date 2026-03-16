@@ -94,7 +94,10 @@ export default function SolicitudesExternasTable() {
 
             if (error) throw error;
 
-            setSolicitudes(data || []);
+            setSolicitudes((data || []).map((s: any) => ({
+                ...s,
+                numero_solicitud: Number(s.numero_solicitud)
+            })));
             setTotalItems(count || 0);
             setCurrentPage(page);
 

@@ -208,6 +208,7 @@ export default function SeguimientoSolicitudExterno() {
             // 4. Merge Data and Extract Nested Location
             const mapped: Solicitud[] = solicitudesData.map((s: any) => ({
                 ...s,
+                numero_solicitud: Number(s.numero_solicitud),
                 barrio: s.barrios_distritos?.barrio || 'No especificado',
                 distrito: s.barrios_distritos?.distrito || 'No especificado',
                 estado_actual: estadoMap.get(s.numero_solicitud) || 'ACTIVA',
@@ -374,16 +375,18 @@ export default function SeguimientoSolicitudExterno() {
         const checkAndGetUrl = async (name: string) => {
             const { data } = await supabase.storage.from('imagenes-ste').list('', { search: name });
             if (data && data.length > 0) {
-                const { data: publicUrl } = supabase.storage.from('imagenes-ste').getPublicUrl(name);
+                // Usar el nombre real del archivo encontrado (por si tiene extensión o espacios remanentes)
+                const realName = data[0].name;
+                const { data: publicUrl } = supabase.storage.from('imagenes-ste').getPublicUrl(realName);
                 return publicUrl.publicUrl;
             }
             return null;
         };
 
-        const urlActual = await checkAndGetUrl(`FA_${numero}_STE`);
+        const urlActual = await checkAndGetUrl(`FA_${String(numero).trim()}_STE`);
         if (urlActual) setImgActualPreview(urlActual);
 
-        const urlFinal = await checkAndGetUrl(`FD_${numero}_STE`);
+        const urlFinal = await checkAndGetUrl(`FD_${String(numero).trim()}_STE`);
         if (urlFinal) setImgFinalPreview(urlFinal);
     };
 
@@ -445,8 +448,8 @@ export default function SeguimientoSolicitudExterno() {
         if (!selectedSolicitud || !confirm('¿Estás seguro de que deseas eliminar esta imagen?')) return;
 
         const fileName = type === 'actual'
-            ? `FA_${selectedSolicitud.numero_solicitud}_STE`
-            : `FD_${selectedSolicitud.numero_solicitud}_STE`;
+            ? `FA_${String(selectedSolicitud.numero_solicitud).trim()}_STE`
+            : `FD_${String(selectedSolicitud.numero_solicitud).trim()}_STE`;
 
         try {
             const { error } = await supabase.storage.from('imagenes-ste').remove([fileName]);
@@ -490,7 +493,7 @@ export default function SeguimientoSolicitudExterno() {
             let uploadedCount = 0;
             if (fileActual) {
                 await supabase.storage.from('imagenes-ste').upload(
-                    `FA_${selectedSolicitud.numero_solicitud}_STE`,
+                    `FA_${String(selectedSolicitud.numero_solicitud).trim()}_STE`,
                     fileActual,
                     { upsert: true, contentType: fileActual.type }
                 );
@@ -498,7 +501,7 @@ export default function SeguimientoSolicitudExterno() {
             }
             if (fileFinal) {
                 await supabase.storage.from('imagenes-ste').upload(
-                    `FD_${selectedSolicitud.numero_solicitud}_STE`,
+                    `FD_${String(selectedSolicitud.numero_solicitud).trim()}_STE`,
                     fileFinal,
                     { upsert: true, contentType: fileFinal.type }
                 );

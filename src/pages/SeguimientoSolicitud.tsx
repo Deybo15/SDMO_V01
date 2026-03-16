@@ -248,6 +248,7 @@ export default function SeguimientoSolicitud() {
                 const segObj = Array.isArray(s.seguimiento_solicitud) ? s.seguimiento_solicitud[0] : s.seguimiento_solicitud;
                 return {
                     ...s,
+                    numero_solicitud: Number(s.numero_solicitud),
                     estado_actual: segObj?.estado_actual || 'ACTIVA',
                     supervisor_alias: s.supervisor_asignado ? (colabsMap.get(s.supervisor_asignado) || 'No asignado') : 'No asignado'
                 };
