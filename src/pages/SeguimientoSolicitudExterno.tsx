@@ -37,6 +37,11 @@ import {
 } from 'lucide-react';
 import { PageHeader } from '../components/ui/PageHeader';
 
+// Helper para limpiar nombres de archivos
+const sanitizeFileName = (name: string) => {
+    return name.replace(/\s/g, '').replace(/[^a-zA-Z0-9_.]/g, '');
+};
+
 // Interfaces
 interface Solicitud {
     numero_solicitud: number;
@@ -383,10 +388,10 @@ export default function SeguimientoSolicitudExterno() {
             return null;
         };
 
-        const urlActual = await checkAndGetUrl(`FA_${String(numero).trim()}_STE`.replace(/\s/g, ''));
+        const urlActual = await checkAndGetUrl(sanitizeFileName(`FA_${String(numero).trim()}_STE`));
         if (urlActual) setImgActualPreview(urlActual);
 
-        const urlFinal = await checkAndGetUrl(`FD_${String(numero).trim()}_STE`.replace(/\s/g, ''));
+        const urlFinal = await checkAndGetUrl(sanitizeFileName(`FD_${String(numero).trim()}_STE`));
         if (urlFinal) setImgFinalPreview(urlFinal);
     };
 
@@ -448,8 +453,8 @@ export default function SeguimientoSolicitudExterno() {
         if (!selectedSolicitud || !confirm('¿Estás seguro de que deseas eliminar esta imagen?')) return;
 
         const fileName = type === 'actual'
-            ? `FA_${String(selectedSolicitud.numero_solicitud).trim()}_STE`.replace(/\s/g, '')
-            : `FD_${String(selectedSolicitud.numero_solicitud).trim()}_STE`.replace(/\s/g, '');
+            ? sanitizeFileName(`FA_${String(selectedSolicitud.numero_solicitud).trim()}_STE`)
+            : sanitizeFileName(`FD_${String(selectedSolicitud.numero_solicitud).trim()}_STE`);
 
         try {
             const { error } = await supabase.storage.from('imagenes-ste').remove([fileName]);
@@ -492,16 +497,18 @@ export default function SeguimientoSolicitudExterno() {
 
             let uploadedCount = 0;
             if (fileActual) {
+                const fileNameActual = sanitizeFileName(`FA_${String(selectedSolicitud.numero_solicitud).trim()}_STE`);
                 await supabase.storage.from('imagenes-ste').upload(
-                    `FA_${String(selectedSolicitud.numero_solicitud).trim()}_STE`.replace(/\s/g, ''),
+                    fileNameActual,
                     fileActual,
                     { upsert: true, contentType: fileActual.type }
                 );
                 uploadedCount++;
             }
             if (fileFinal) {
+                const fileNameFinal = sanitizeFileName(`FD_${String(selectedSolicitud.numero_solicitud).trim()}_STE`);
                 await supabase.storage.from('imagenes-ste').upload(
-                    `FD_${String(selectedSolicitud.numero_solicitud).trim()}_STE`.replace(/\s/g, ''),
+                    fileNameFinal,
                     fileFinal,
                     { upsert: true, contentType: fileFinal.type }
                 );
