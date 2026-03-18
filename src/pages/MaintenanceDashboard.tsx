@@ -643,7 +643,7 @@ export default function MaintenanceDashboard() {
                                             <Legend wrapperStyle={{ paddingTop: '10px' }} formatter={(value) => <span className="text-[#86868B] text-[10px] font-bold uppercase tracking-widest">{value}</span>} />
                                             <Bar dataKey="executed" name="Ejecutadas" stackId="a" fill="#10B981" barSize={40} radius={[0, 0, 0, 0]} />
                                             <Bar dataKey="pending" name="Pendientes" stackId="a" fill="#EF4444" barSize={40} radius={[4, 4, 0, 0]} />
-                                            <Area type="monotone" dataKey="total" name="Total" stroke="#8B5CF6" strokeWidth={3} fillOpacity={0.1} fill="#8B5CF6" />
+                                            <Line type="linear" dataKey="total" name="Total" stroke="#8B5CF6" strokeWidth={3} dot={{ fill: '#000000', stroke: '#8B5CF6', strokeWidth: 2, r: 4 }} />
                                         </ComposedChart>
                                     </ResponsiveContainer>
                                 </div>
