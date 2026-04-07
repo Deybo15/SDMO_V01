@@ -6,6 +6,7 @@ import {
     ChevronLeft, ChevronRight, X, FileSpreadsheet, Box,
     ShieldCheck, ClipboardCheck, HardHat, TrendingUp, Loader2
 } from 'lucide-react';
+import * as XLSX from 'xlsx';
 import { PageHeader } from '../components/ui/PageHeader';
 import { cn } from '../lib/utils';
 
@@ -56,8 +57,11 @@ export default function InformeColaboradores() {
         autorizado: '',
         supervisor: '',
         operador: '',
-        profesional: ''
+        profesional: '',
+        jefatura: ''
     });
+
+    const [jefaturas, setJefaturas] = useState<{ id: string; label: string }[]>([]);
 
     // Modal State
     const [modalOpen, setModalOpen] = useState(false);
@@ -100,8 +104,40 @@ export default function InformeColaboradores() {
         }
     };
 
+    const cargarJefaturas = async () => {
+        try {
+            const { data: uniqueIds, error: idError } = await supabase
+                .from('colaboradores_06')
+                .select('jefatura_directa')
+                .not('jefatura_directa', 'is', null);
+
+            if (idError) throw idError;
+
+            const ids = [...new Set(uniqueIds.map(v => v.jefatura_directa).filter(Boolean))];
+
+            if (ids.length > 0) {
+                const { data: info, error: infoError } = await supabase
+                    .from('colaboradores_06')
+                    .select('identificacion, colaborador, alias')
+                    .in('identificacion', ids);
+
+                if (infoError) throw infoError;
+
+                const list = (info || []).map(i => ({
+                    id: i.identificacion,
+                    label: i.alias || i.colaborador
+                })).sort((a, b) => a.label.localeCompare(b.label));
+
+                setJefaturas(list);
+            }
+        } catch (error) {
+            console.error('Error loading jefaturas:', error);
+        }
+    };
+
     useEffect(() => {
         cargarMetrics();
+        cargarJefaturas();
     }, []);
 
     const handleApplyFilters = () => {
@@ -121,6 +157,7 @@ export default function InformeColaboradores() {
             if (activeFilters.supervisor) query = query.eq('supervisor', activeFilters.supervisor === 'true');
             if (activeFilters.operador) query = query.eq('operador_de_equipo', activeFilters.operador === 'true');
             if (activeFilters.profesional) query = query.eq('profesional_responsable', activeFilters.profesional === 'true');
+            if (activeFilters.jefatura) query = query.eq('jefatura_directa', activeFilters.jefatura);
 
             query = query.order(sortCol, { ascending: sortDir === 'asc', nullsFirst: true });
             const from = (page - 1) * pageSize;
@@ -164,13 +201,14 @@ export default function InformeColaboradores() {
             autorizado: '',
             supervisor: '',
             operador: '',
-            profesional: ''
+            profesional: '',
+            jefatura: ''
         });
         setPage(1);
     };
 
     // -- Export CSV --
-    const exportCSV = async () => {
+    const exportXLSX = async () => {
         setLoading(true);
         try {
             let allData: any[] = [];
@@ -185,6 +223,7 @@ export default function InformeColaboradores() {
                 if (activeFilters.supervisor) query = query.eq('supervisor', activeFilters.supervisor === 'true');
                 if (activeFilters.operador) query = query.eq('operador_de_equipo', activeFilters.operador === 'true');
                 if (activeFilters.profesional) query = query.eq('profesional_responsable', activeFilters.profesional === 'true');
+                if (activeFilters.jefatura) query = query.eq('jefatura_directa', activeFilters.jefatura);
 
                 query = query.order(sortCol, { ascending: sortDir === 'asc', nullsFirst: true });
                 query = query.range(offset, offset + batch - 1);
@@ -206,24 +245,46 @@ export default function InformeColaboradores() {
                 return;
             }
 
-            const headers = ['identificacion', 'colaborador', 'alias', 'correo_colaborador', 'autorizado', 'supervisor', 'operador_de_equipo', 'profesional_responsable', 'fecha_ingreso'];
-            const csvContent = [
-                headers.join(','),
-                ...allData.map(row => headers.map(fieldName => {
-                    const val = row[fieldName];
-                    const str = val === null || val === undefined ? '' : String(val);
-                    return `"${str.replace(/"/g, '""')}"`;
-                }).join(','))
-            ].join('\n');
+            // Prepare headers for Excel
+            const headers = {
+                identificacion: 'IDENTIFICACIÓN',
+                colaborador: 'COLABORADOR',
+                alias: 'ALIAS',
+                correo_colaborador: 'CORREO',
+                autorizado: 'AUTORIZADO',
+                supervisor: 'SUPERVISOR',
+                operador_de_equipo: 'OPERADOR EQUIPO',
+                profesional_responsable: 'PROF. RESPONSABLE',
+                fecha_ingreso: 'FECHA INGRESO',
+                jefatura_directa: 'JEFATURA DIRECTA'
+            };
 
-            const blob = new Blob(['\uFEFF', csvContent], { type: 'text/csv;charset=utf-8;' });
-            const url = URL.createObjectURL(blob);
-            const link = document.createElement('a');
-            link.href = url;
-            link.setAttribute('download', `colaboradores_${new Date().toLocaleDateString('en-CA')}.csv`);
-            document.body.appendChild(link);
-            link.click();
-            document.body.removeChild(link);
+            const formattedData = allData.map(row => ({
+                [headers.identificacion]: row.identificacion,
+                [headers.colaborador]: row.colaborador,
+                [headers.alias]: row.alias,
+                [headers.correo_colaborador]: row.correo_colaborador,
+                [headers.autorizado]: row.autorizado ? 'SÍ' : 'NO',
+                [headers.supervisor]: row.supervisor ? 'SÍ' : 'NO',
+                [headers.operador_de_equipo]: row.operador_de_equipo ? 'SÍ' : 'NO',
+                [headers.profesional_responsable]: row.profesional_responsable ? 'SÍ' : 'NO',
+                [headers.fecha_ingreso]: row.fecha_ingreso ? new Date(row.fecha_ingreso).toLocaleDateString('es-ES') : '-',
+                [headers.jefatura_directa]: row.jefatura_directa || '-'
+            }));
+
+            const worksheet = XLSX.utils.json_to_sheet(formattedData);
+            const workbook = XLSX.utils.book_new();
+            XLSX.utils.book_append_sheet(workbook, worksheet, 'Colaboradores');
+            
+            // Set column widths
+            const wscols = [
+                { wch: 15 }, { wch: 35 }, { wch: 25 }, { wch: 30 }, 
+                { wch: 12 }, { wch: 12 }, { wch: 15 }, { wch: 15 },
+                { wch: 15 }, { wch: 20 }
+            ];
+            worksheet['!cols'] = wscols;
+
+            XLSX.writeFile(workbook, `colaboradores_${new Date().toISOString().split('T')[0]}.xlsx`);
 
         } catch (error) {
             console.error('Export error:', error);
@@ -545,11 +606,11 @@ export default function InformeColaboradores() {
                                         <Eraser className="w-5 h-5" />
                                     </button>
                                     <button
-                                        onClick={exportCSV}
+                                        onClick={exportXLSX}
                                         className="h-12 w-12 bg-transparent border border-[#333333] hover:bg-white/5 text-[#86868B] hover:text-[#0071E3] rounded-[8px] transition-all flex items-center justify-center"
-                                        title="Exportar CSV"
+                                        title="Exportar EXCEL"
                                     >
-                                        <Download className="w-5 h-5" />
+                                        <FileSpreadsheet className="w-5 h-5" />
                                     </button>
                                 </div>
                             </div>
@@ -580,7 +641,7 @@ export default function InformeColaboradores() {
                             </div>
 
                             {/* Boolean Selects & Page Size */}
-                            <div className="grid grid-cols-2 md:grid-cols-5 gap-6">
+                            <div className="grid grid-cols-2 md:grid-cols-6 gap-6">
                                 {[
                                     { label: 'Autorizado', key: 'autorizado' },
                                     { label: 'Supervisor', key: 'supervisor' },
@@ -602,6 +663,21 @@ export default function InformeColaboradores() {
                                         </select>
                                     </div>
                                 ))}
+                                <div className="space-y-3">
+                                    <label className="text-[10px] font-black text-[#86868B] uppercase tracking-[0.2em] ml-1 block">
+                                        Jefatura Directa
+                                    </label>
+                                    <select
+                                        value={filters.jefatura}
+                                        onChange={(e) => handleFilterChange('jefatura', e.target.value)}
+                                        className="w-full h-14 bg-black border border-[#333333] rounded-[8px] px-5 text-white text-[10px] font-black uppercase tracking-widest focus:outline-none focus:border-[#0071E3]/50 transition-all appearance-none cursor-pointer hover:bg-black/30 [color-scheme:dark]"
+                                    >
+                                        <option value="">Todas</option>
+                                        {jefaturas.map(j => (
+                                            <option key={j.id} value={j.id}>{j.label}</option>
+                                        ))}
+                                    </select>
+                                </div>
                                 <div className="space-y-3">
                                     <label className="text-[10px] font-black text-[#86868B] uppercase tracking-[0.2em] ml-1 block">
                                         Por página
