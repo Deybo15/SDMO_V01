@@ -21,6 +21,7 @@ interface Colaborador {
     operador_de_equipo: boolean;
     profesional_responsable: boolean;
     fecha_ingreso: string;
+    condicion_laboral?: string;
     [key: string]: any;
 }
 
@@ -256,8 +257,11 @@ export default function InformeColaboradores() {
                 operador_de_equipo: 'OPERADOR EQUIPO',
                 profesional_responsable: 'PROF. RESPONSABLE',
                 fecha_ingreso: 'FECHA INGRESO',
-                jefatura_directa: 'JEFATURA DIRECTA'
+                jefatura_directa: 'JEFATURA DIRECTA',
+                condicion_laboral: 'CONDICIÓN LABORAL'
             };
+
+            const jefaturaMap = new Map(jefaturas.map(j => [j.id, j.label]));
 
             const formattedData = allData.map(row => ({
                 [headers.identificacion]: row.identificacion,
@@ -269,7 +273,8 @@ export default function InformeColaboradores() {
                 [headers.operador_de_equipo]: row.operador_de_equipo ? 'SÍ' : 'NO',
                 [headers.profesional_responsable]: row.profesional_responsable ? 'SÍ' : 'NO',
                 [headers.fecha_ingreso]: row.fecha_ingreso ? new Date(row.fecha_ingreso).toLocaleDateString('es-ES') : '-',
-                [headers.jefatura_directa]: row.jefatura_directa || '-'
+                [headers.jefatura_directa]: jefaturaMap.get(row.jefatura_directa) || row.jefatura_directa || '-',
+                [headers.condicion_laboral]: row.condicion_laboral || '-'
             }));
 
             const worksheet = XLSX.utils.json_to_sheet(formattedData);
@@ -280,7 +285,7 @@ export default function InformeColaboradores() {
             const wscols = [
                 { wch: 15 }, { wch: 35 }, { wch: 25 }, { wch: 30 }, 
                 { wch: 12 }, { wch: 12 }, { wch: 15 }, { wch: 15 },
-                { wch: 15 }, { wch: 20 }
+                { wch: 15 }, { wch: 20 }, { wch: 20 }
             ];
             worksheet['!cols'] = wscols;
 
