@@ -254,7 +254,7 @@ export default function MaintenanceDashboard() {
                     };
                 }).slice(0, 10);
 
-                const solicitudesPorMes = (cur.months || []).map((m: any) => {
+                const rawMonths = (cur.months || []).map((m: any) => {
                     const d = parseISO(`${m.month_key}-01`);
                     return {
                         month: format(d, 'MMM. yy', { locale: es }),
@@ -264,6 +264,28 @@ export default function MaintenanceDashboard() {
                         eficiencia: m.total > 0 ? (m.executed / m.total) * 100 : 0
                     };
                 });
+
+                // Calcular tendencia lineal (y = mx + b)
+                let solicitudesPorMes = rawMonths;
+                if (rawMonths.length >= 2) {
+                    const n = rawMonths.length;
+                    let sumX = 0, sumY = 0, sumXY = 0, sumXX = 0;
+
+                    rawMonths.forEach((d, i) => {
+                        sumX += i;
+                        sumY += d.total;
+                        sumXY += i * d.total;
+                        sumXX += i * i;
+                    });
+
+                    const slope = (n * sumXY - sumX * sumY) / (n * sumXX - sumX * sumX);
+                    const intercept = (sumY - slope * sumX) / n;
+
+                    solicitudesPorMes = rawMonths.map((d, i) => ({
+                        ...d,
+                        tendencia: parseFloat((slope * i + intercept).toFixed(1))
+                    }));
+                }
 
                 const topInstalaciones = (cur.installations || []).map((i: any) => {
                     const p = i.total > 0 ? (i.executed / i.total) * 100 : 0;
@@ -643,7 +665,7 @@ export default function MaintenanceDashboard() {
                                             <Legend wrapperStyle={{ paddingTop: '10px' }} formatter={(value) => <span className="text-[#86868B] text-[10px] font-bold uppercase tracking-widest">{value}</span>} />
                                             <Bar dataKey="executed" name="Ejecutadas" stackId="a" fill="#10B981" barSize={40} radius={[0, 0, 0, 0]} />
                                             <Bar dataKey="pending" name="Pendientes" stackId="a" fill="#EF4444" barSize={40} radius={[4, 4, 0, 0]} />
-                                            <Line type="linear" dataKey="total" name="Total" stroke="#8B5CF6" strokeWidth={3} dot={{ fill: '#000000', stroke: '#8B5CF6', strokeWidth: 2, r: 4 }} />
+                                            <Line type="monotone" dataKey="tendencia" name="Tendencia (Proyección)" stroke="#0EA5E9" strokeWidth={2} strokeDasharray="5 5" dot={false} activeDot={{ r: 4, fill: '#0EA5E9' }} />
                                         </ComposedChart>
                                     </ResponsiveContainer>
                                 </div>
