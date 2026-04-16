@@ -69,6 +69,7 @@ interface DashboardMetrics {
     performanceSupervisores: { supervisor: string; total: number; executed: number; pending: number; percentage: number }[];
     stalledRequests: number;
     solicitudesEstancadas: any[];
+    tendenciaFormula?: string;
 }
 
 interface ComparisonMetrics {
@@ -280,11 +281,14 @@ export default function MaintenanceDashboard() {
 
                     const slope = (n * sumXY - sumX * sumY) / (n * sumXX - sumX * sumX);
                     const intercept = (sumY - slope * sumX) / n;
+                    const formula = `y = ${slope.toFixed(2)}x ${intercept >= 0 ? '+' : '-'} ${Math.abs(intercept).toFixed(2)}`;
 
                     solicitudesPorMes = rawMonths.map((d, i) => ({
                         ...d,
                         tendencia: parseFloat((slope * i + intercept).toFixed(1))
                     }));
+
+                    (cur as any).tendenciaFormula = formula;
                 }
 
                 const topInstalaciones = (cur.installations || []).map((i: any) => {
@@ -311,7 +315,8 @@ export default function MaintenanceDashboard() {
                     solicitudesEstancadas: stalledRes?.data?.map((s: any) => ({
                         ...s,
                         dias_espera: differenceInDays(new Date(), parseISO(s.fecha_solicitud))
-                    })) || []
+                    })) || [],
+                    tendenciaFormula: (cur as any).tendenciaFormula
                 });
 
                 const calcChange = (c: number, p: number) => p === 0 ? (c > 0 ? 100 : 0) : ((c - p) / p) * 100;
@@ -665,7 +670,18 @@ export default function MaintenanceDashboard() {
                                             <Legend wrapperStyle={{ paddingTop: '10px' }} formatter={(value) => <span className="text-[#86868B] text-[10px] font-bold uppercase tracking-widest">{value}</span>} />
                                             <Bar dataKey="executed" name="Ejecutadas" stackId="a" fill="#10B981" barSize={40} radius={[0, 0, 0, 0]} />
                                             <Bar dataKey="pending" name="Pendientes" stackId="a" fill="#EF4444" barSize={40} radius={[4, 4, 0, 0]} />
-                                            <Line type="monotone" dataKey="tendencia" name="Tendencia (Proyección)" stroke="#0EA5E9" strokeWidth={2} strokeDasharray="5 5" dot={false} activeDot={{ r: 4, fill: '#0EA5E9' }} />
+                                            <Line type="monotone" dataKey="tendencia" name="Tendencia (Proyección)" stroke="#7DD3FC" strokeWidth={4} strokeDasharray="5 7" dot={false} activeDot={{ r: 4, fill: '#7DD3FC' }} />
+                                            {metrics.tendenciaFormula && (
+                                                <text
+                                                    x="95%"
+                                                    y="10%"
+                                                    textAnchor="end"
+                                                    fill="#7DD3FC"
+                                                    style={{ fontSize: '12px', fontWeight: 'bold', fontFamily: 'monospace', opacity: 0.8 }}
+                                                >
+                                                    {metrics.tendenciaFormula}
+                                                </text>
+                                            )}
                                         </ComposedChart>
                                     </ResponsiveContainer>
                                 </div>
