@@ -67,6 +67,7 @@ interface ResumenDiario {
     codigo_articulo: string;
     nombre_articulo: string;
     numero_solicitud: string;
+    tipo_solicitud?: string; // Nuevo campo
     nombre_dependencia: string;
     area_mantenimiento: string;
     cantidad_total: number;
@@ -532,28 +533,47 @@ export default function ConsultarSalidas() {
                 const solicitudes = [...new Set(finalData.map(d => d.numero_solicitud).filter(Boolean))];
 
                 if (solicitudes.length > 0) {
-                    // Fetch installations in batches too if there are many unique solicitudes
+                    // Fetch Catalogs for mapping
+                    const [{ data: tiposData }, { data: depsData }] = await Promise.all([
+                        supabase.from('tipo_solicitud_75').select('tipo_solicitud, descripcion_tipo_salida'),
+                        supabase.from('dependencias_municipales').select('id_dependencia, dependencia_municipal')
+                    ]);
+
+                    const tiposMap = new Map(tiposData?.map(t => [t.tipo_solicitud, t.descripcion_tipo_salida]));
+                    const depsMap = new Map(depsData?.map(d => [d.id_dependencia, d.dependencia_municipal]));
+
+                    // Fetch details from solicitud_17 in batches
                     const uniqueSolBatchSize = 100;
-                    const instMap = new Map();
+                    const solDataMap = new Map();
 
                     for (let i = 0; i < solicitudes.length; i += uniqueSolBatchSize) {
                         const batch = solicitudes.slice(i, i + uniqueSolBatchSize);
-                        const { data: instData, error: instError } = await supabase
+                        const { data: solDetails, error: solError } = await supabase
                             .from('solicitud_17')
-                            .select('numero_solicitud, instalaciones_municipales_16(instalacion_municipal)')
+                            .select('numero_solicitud, tipo_solicitud, dependencia_municipal, instalaciones_municipales_16(instalacion_municipal)')
                             .in('numero_solicitud', batch);
 
-                        if (!instError && instData) {
-                            instData.forEach((s: any) => {
-                                instMap.set(s.numero_solicitud, s.instalaciones_municipales_16?.instalacion_municipal || 'N/A');
+                        if (!solError && solDetails) {
+                            solDetails.forEach((s: any) => {
+                                solDataMap.set(s.numero_solicitud, {
+                                    instalacion: s.instalaciones_municipales_16?.instalacion_municipal || 'N/A',
+                                    tipo: tiposMap.get(s.tipo_solicitud) || s.tipo_solicitud || 'N/A',
+                                    tipo_id: s.tipo_solicitud,
+                                    dependencia: s.tipo_solicitud === 'P' ? (depsMap.get(Number(s.dependencia_municipal)) || 'N/A') : 'N/A'
+                                });
                             });
                         }
                     }
 
-                    finalData = finalData.map(item => ({
-                        ...item,
-                        instalacion_municipal: instMap.get(item.numero_solicitud) || 'N/A'
-                    }));
+                    finalData = finalData.map(item => {
+                        const details = solDataMap.get(item.numero_solicitud);
+                        return {
+                            ...item,
+                            instalacion_municipal: details?.instalacion || 'N/A',
+                            tipo_solicitud: details?.tipo || 'N/A',
+                            nombre_dependencia: details?.dependencia || 'N/A'
+                        };
+                    });
                 }
             }
 
@@ -587,12 +607,14 @@ export default function ConsultarSalidas() {
             doc.setFontSize(10);
             doc.text(`Período: ${format(new Date(fechaDesde), 'dd/MM/yyyy')} - ${format(new Date(fechaHasta), 'dd/MM/yyyy')}`, 20, 30);
 
-            const columnas = ['Fecha', 'Código', 'Artículo', 'Solicitud', 'Instalación', 'Área', 'Cant.', 'Costo U.', 'Total'];
+            const columnas = ['Fecha', 'Código', 'Artículo', 'Solicitud', 'Tipo', 'Dependencia', 'Instalación', 'Área', 'Cant.', 'Costo U.', 'Total'];
             const filas = sortedResumen.map(item => [
                 formatDate(item.fecha),
                 item.codigo_articulo || '',
                 item.nombre_articulo || '',
                 item.numero_solicitud || '',
+                item.tipo_solicitud || '',
+                item.nombre_dependencia !== 'N/A' ? item.nombre_dependencia : '',
                 item.instalacion_municipal || '',
                 item.area_mantenimiento || '',
                 Number(item.cantidad_total || 0).toFixed(2),
@@ -625,6 +647,8 @@ export default function ConsultarSalidas() {
                 'Código': item.codigo_articulo,
                 'Artículo': item.nombre_articulo,
                 'Solicitud': item.numero_solicitud,
+                'Tipo Solicitud': item.tipo_solicitud || 'N/A',
+                'Dependencia': item.nombre_dependencia !== 'N/A' ? item.nombre_dependencia : '',
                 'Instalación': item.instalacion_municipal,
                 'Área': item.area_mantenimiento,
                 'Cantidad': Number(item.cantidad_total),
@@ -1143,6 +1167,8 @@ export default function ConsultarSalidas() {
                                                         { key: 'codigo_articulo', label: 'Código' },
                                                         { key: 'nombre_articulo', label: 'Descripción' },
                                                         { key: 'numero_solicitud', label: 'Solicitud' },
+                                                        { key: 'tipo_solicitud', label: 'Tipo' },
+                                                        { key: 'nombre_dependencia', label: 'Dependencia' },
                                                         { key: 'instalacion_municipal', label: 'Ubicación' },
                                                         { key: 'area_mantenimiento', label: 'Área' },
                                                         { key: 'cantidad_total', label: 'Cant.', align: 'right' },
@@ -1186,8 +1212,14 @@ export default function ConsultarSalidas() {
                                                             <span className="text-[10px] font-black text-[#86868B] font-mono whitespace-nowrap">{item.numero_solicitud}</span>
                                                         </td>
                                                         <td className="px-3 py-4">
-                                                            <p className="text-[#86868B] font-bold text-[9px] uppercase truncate max-w-[100px]" title={item.instalacion_municipal}>
-                                                                {item.instalacion_municipal || 'N/A'}
+                                                            <span className="text-[9px] font-black text-[#86868B] whitespace-nowrap opacity-60">{item.tipo_solicitud || 'N/A'}</span>
+                                                        </td>
+                                                        <td className="px-3 py-4">
+                                                            <span className="text-[9px] font-black text-[#86868B] whitespace-nowrap italic">{item.nombre_dependencia !== 'N/A' ? item.nombre_dependencia : '-'}</span>
+                                                        </td>
+                                                        <td className="px-3 py-4">
+                                                            <p className="text-[10px] font-bold text-[#F5F5F7] leading-tight max-w-[120px] truncate" title={item.instalacion_municipal}>
+                                                                {item.instalacion_municipal}
                                                             </p>
                                                         </td>
                                                         <td className="px-3 py-4">
