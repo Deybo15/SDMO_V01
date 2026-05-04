@@ -259,6 +259,7 @@ export default function MaintenanceDashboard() {
                     const d = parseISO(`${m.month_key}-01`);
                     return {
                         month: format(d, 'MMM. yy', { locale: es }),
+                        month_key: m.month_key,
                         total: m.total,
                         executed: m.executed,
                         pending: m.total - m.executed,
@@ -266,13 +267,17 @@ export default function MaintenanceDashboard() {
                     };
                 });
 
-                // Calcular tendencia lineal (y = mx + b)
+                // Calcular tendencia lineal (y = mx + b) basada solo en meses anteriores al actual
+                const currentMonthKey = format(new Date(), 'yyyy-MM');
+                const historicalMonths = rawMonths.filter(m => m.month_key < currentMonthKey);
                 let solicitudesPorMes = rawMonths;
-                if (rawMonths.length >= 2) {
-                    const n = rawMonths.length;
+
+                if (historicalMonths.length >= 2) {
+                    const n = historicalMonths.length;
                     let sumX = 0, sumY = 0, sumXY = 0, sumXX = 0;
 
-                    rawMonths.forEach((d, i) => {
+                    historicalMonths.forEach((d) => {
+                        const i = rawMonths.findIndex(m => m.month_key === d.month_key);
                         sumX += i;
                         sumY += d.total;
                         sumXY += i * d.total;
@@ -432,6 +437,12 @@ export default function MaintenanceDashboard() {
                             </div>
                         ))}
                     </div>
+                    {metrics && (
+                        <div className="mt-3 pt-3 border-t border-[#333333] flex items-center justify-between gap-4">
+                            <span className="text-[#86868B] text-[10px] font-bold uppercase tracking-widest">Total Periodo:</span>
+                            <span className="text-[#F5F5F7] text-xs font-bold">{metrics.totalSolicitudes} sol.</span>
+                        </div>
+                    )}
                 </div>
             );
         }
