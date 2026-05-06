@@ -3,7 +3,8 @@ import {
     Users,
     ChevronRight,
     Settings2,
-    ArrowLeft
+    ArrowLeft,
+    Search
 } from 'lucide-react';
 import { PageHeader } from '../components/ui/PageHeader';
 import { cn } from '../lib/utils';
@@ -17,6 +18,12 @@ export default function GestionInterna() {
             icon: <Users className="w-8 h-8" />,
             path: '/gestion-interna/colaboradores',
             description: 'Gestión y visualización detallada del personal y sus roles'
+        },
+        {
+            title: 'Retiros por Artículo',
+            icon: <Search className="w-8 h-8" />,
+            path: '/gestion-interna/retiros-articulo',
+            description: 'Consulta detallada de qué funcionarios han retirado un artículo específico'
         }
     ];
 

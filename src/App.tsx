@@ -49,6 +49,7 @@ import { AuthorizedRoute } from './components/AuthorizedRoute';
 
 import ProyeccionCompras from './pages/ProyeccionCompras';
 import ConsultaActivos from './pages/ConsultaActivos';
+import RetirosPorArticulo from './pages/RetirosPorArticulo';
 
 function App() {
     return (
@@ -72,6 +73,7 @@ function App() {
                         <Route path="/cliente-externo/realizar" element={<SolicitudesExternasTable />} />
                         <Route path="/gestion-interna/colaboradores" element={<InformeColaboradores />} />
                         <Route path="/gestion-interna/proyeccion-compras" element={<ProyeccionCompras />} />
+                        <Route path="/gestion-interna/retiros-articulo" element={<RetirosPorArticulo />} />
                         <Route path="/activos/consulta" element={<ConsultaActivos />} />
 
                         <Route element={<AuthorizedRoute />}>
