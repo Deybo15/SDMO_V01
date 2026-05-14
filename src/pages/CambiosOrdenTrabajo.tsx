@@ -499,7 +499,7 @@ export default function CambiosOrdenTrabajo() {
                 isOpen={searchModal.isOpen}
                 onClose={() => setSearchModal({ isOpen: false, type: null, title: '' })}
                 onSelect={handleSelectSearch}
-                items={searchModal.type ? catalogs[searchModal.type] : []}
+                options={searchModal.type ? catalogs[searchModal.type] : []}
                 title={searchModal.title}
             />
 
