@@ -51,6 +51,7 @@ import ProyeccionCompras from './pages/ProyeccionCompras';
 import ConsultaActivos from './pages/ConsultaActivos';
 import RetirosPorArticulo from './pages/RetirosPorArticulo';
 import GestionCambios from './pages/GestionCambios';
+import CambiosOrdenTrabajo from './pages/CambiosOrdenTrabajo';
 
 function App() {
     return (
@@ -105,6 +106,7 @@ function App() {
                             <Route path="/activos/asignacion" element={<AsignacionActivos />} />
                             <Route path="/activos/accesorios" element={<AccesoriosActivos />} />
                             <Route path="/gestion-interna/auditoria" element={<AuditHistory />} />
+                            <Route path="/gestion-cambios/orden-trabajo" element={<CambiosOrdenTrabajo />} />
                         </Route>
 
                         {/* Navigation / Container Pages */}

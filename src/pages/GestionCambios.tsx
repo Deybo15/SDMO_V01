@@ -12,16 +12,10 @@ export default function GestionCambios() {
 
     const modules = [
         {
-            title: 'Actualización de Precios',
-            icon: <RefreshCw className="w-8 h-8" />,
-            path: '/gestion-cambios/precios',
-            description: 'Ajuste masivo o individual de precios de artículos en el inventario'
-        },
-        {
-            title: 'Modificación de Categorías',
+            title: 'Cambios en Orden de Trabajo',
             icon: <FileEdit className="w-8 h-8" />,
-            path: '/gestion-cambios/categorias',
-            description: 'Cambios en la clasificación y organización de los artículos'
+            path: '/gestion-cambios/orden-trabajo',
+            description: 'Modificar supervisor, área, instalación o solicitante de órdenes activas'
         }
     ];
 
