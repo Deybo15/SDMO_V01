@@ -187,7 +187,7 @@ export default function CambiosOrdenTrabajo() {
         if (!selectedSolicitud) return;
         setSaving(true);
         try {
-            // 1. Actualizar solicitud_17 (Tabla maestra)
+            // 1. Actualizar solicitud_17 (Tabla maestra) - Es el origen para los dashboards
             const { error: solicitudError } = await supabase
                 .from('solicitud_17')
                 .update({
@@ -200,32 +200,20 @@ export default function CambiosOrdenTrabajo() {
 
             if (solicitudError) throw solicitudError;
 
-            // 2. Actualizar seguimiento_solicitud (Donde se guarda el supervisor actual para dashboards y consultas)
-            const { error: seguimientoError } = await supabase
-                .from('seguimiento_solicitud')
-                .update({
-                    supervisor_asignado: editData.supervisor || null,
-                    fecha_seguimiento: new Date().toISOString(),
-                    comentario: 'Datos actualizados por Gestión de Cambios'
-                })
-                .eq('numero_solicitud', selectedSolicitud.numero_solicitud);
-
-            if (seguimientoError) {
-                console.error("Error al actualizar seguimiento_solicitud:", seguimientoError);
-            }
-
-            // 3. Registrar en el historial de seguimiento (registro_seguimiento_solicitud)
-            // Esto permite auditar quién y cuándo se hizo el cambio
+            // 2. Registrar en el historial de seguimiento (registro_seguimiento_solicitud)
+            // Usamos los nombres de columna correctos: fecha_registro y registro_seguimiento
             const newSupervisor = catalogs.supervisores.find(s => s.id.toString() === editData.supervisor);
-            await supabase
+            const { error: auditError } = await supabase
                 .from('registro_seguimiento_solicitud')
                 .insert([{
                     numero_solicitud: selectedSolicitud.numero_solicitud,
-                    estado: 'CAMBIO_DATOS',
-                    fecha: new Date().toISOString(),
-                    usuario: 'SISTEMA',
-                    comentario: `Gestión de cambios: Supervisor actualizado a ${newSupervisor?.label || editData.supervisor}`
+                    fecha_registro: new Date().toLocaleDateString('en-CA'),
+                    registro_seguimiento: `Gestión de cambios: Supervisor actualizado a ${newSupervisor?.label || editData.supervisor}`
                 }]);
+
+            if (auditError) {
+                console.error("Error al registrar auditoría:", auditError);
+            }
 
             showNotification("Orden de trabajo actualizada con éxito", "success");
             setIsEditModalOpen(false);
