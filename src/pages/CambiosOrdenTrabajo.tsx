@@ -187,8 +187,8 @@ export default function CambiosOrdenTrabajo() {
         if (!selectedSolicitud) return;
         setSaving(true);
         try {
-            // 1. Actualizar solicitud_17 (Tabla maestra) - Es el origen para los dashboards
-            const { error: solicitudError } = await supabase
+            // 1. Actualizar la tabla maestra
+            const { data: updateData, error: solicitudError } = await supabase
                 .from('solicitud_17')
                 .update({
                     area_mantenimiento: editData.area ? parseInt(editData.area) : null,
@@ -196,12 +196,22 @@ export default function CambiosOrdenTrabajo() {
                     supervisor_asignado: editData.supervisor || null,
                     cliente_interno: editData.cliente ? parseInt(editData.cliente) : null
                 })
-                .eq('numero_solicitud', selectedSolicitud.numero_solicitud);
+                .eq('numero_solicitud', Number(selectedSolicitud.numero_solicitud))
+                .select();
 
             if (solicitudError) throw solicitudError;
 
-            // 2. Registrar en el historial de seguimiento (registro_seguimiento_solicitud)
-            // Usamos los nombres de columna correctos: fecha_registro y registro_seguimiento
+            // Verificar si el registro realmente se actualizó (RLS puede bloquearlo sin devolver error)
+            if (!updateData || updateData.length === 0) {
+                console.error('Update failed: 0 rows affected. This is likely an RLS policy restriction.', {
+                    numero_solicitud: selectedSolicitud.numero_solicitud,
+                    payload: editData
+                });
+                throw new Error('No se tiene permiso para actualizar esta solicitud o el registro no existe.');
+            }
+
+            // 2. Registrar el cambio en el historial de seguimiento (registro_seguimiento_solicitud)
+            // Esto SI funciona y es lo que permite auditar el cambio aunque la tabla maestra falle por RLS
             const newSupervisor = catalogs.supervisores.find(s => s.id.toString() === editData.supervisor);
             const { error: auditError } = await supabase
                 .from('registro_seguimiento_solicitud')
