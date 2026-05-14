@@ -118,56 +118,27 @@ export default function CambiosOrdenTrabajo() {
     const fetchSolicitudes = useCallback(async () => {
         setLoading(true);
         try {
-            // 1. Fetch active solicitudes from seguimiento
-            const { data: seguimientos } = await supabase
-                .from('seguimiento_solicitud')
-                .select('numero_solicitud')
-                .eq('estado_actual', 'ACTIVA');
-
-            const activeNumbers = seguimientos?.map(s => s.numero_solicitud) || [];
-
-            // 2. Fetch solicitud_17 details for these active numbers
-            let query = supabase
+            // 1. Fetch STI solicitudes
+            const { data, error } = await supabase
                 .from('solicitud_17')
-                .select(`
-                    *,
-                    area_mantenimiento_20 (descripcion_area),
-                    instalaciones_municipales_16 (instalacion_municipal),
-                    colaboradores_06 (alias),
-                    cliente_interno_15 (nombre)
-                `)
+                .select('*')
                 .eq('tipo_solicitud', 'STI')
                 .order('numero_solicitud', { ascending: false });
 
-            // If we have active numbers, filter by them. 
-            // Note: If a solicitud has NO tracking record, it's considered ACTIVA by default in this system
-            if (activeNumbers.length > 0) {
-                // This is a bit complex since some might not have a record yet
-                // We'll fetch all STI and then filter in memory for simplicity if the list isn't huge,
-                // or fetch by id if we have them.
-            }
-
-            const { data, error } = await query;
             if (error) throw error;
 
-            // 3. Merge with tracking to ensure they are ACTIVA
-            // Get all status
+            // 2. Fetch tracking to filter for ACTIVA
             const { data: allStatus } = await supabase
                 .from('seguimiento_solicitud')
                 .select('numero_solicitud, estado_actual');
             
             const statusMap = new Map(allStatus?.map(s => [s.numero_solicitud, s.estado_actual]));
 
+            // 3. Filter raw data
             const filteredData = (data || []).filter(s => {
                 const status = statusMap.get(s.numero_solicitud) || 'ACTIVA';
                 return status === 'ACTIVA';
-            }).map(s => ({
-                ...s,
-                area_descripcion: s.area_mantenimiento_20?.descripcion_area,
-                instalacion_nombre: s.instalaciones_municipales_16?.instalacion_municipal,
-                supervisor_alias: s.colaboradores_06?.alias,
-                cliente_nombre: s.cliente_interno_15?.nombre
-            }));
+            });
 
             setSolicitudes(filteredData);
         } catch (error) {
@@ -182,6 +153,22 @@ export default function CambiosOrdenTrabajo() {
         loadCatalogs();
         fetchSolicitudes();
     }, [fetchSolicitudes]);
+
+    // Derived state with labels
+    const solicitudesConLabels = solicitudes.map(s => {
+        const area = catalogs.areas.find(a => a.id === s.area_mantenimiento);
+        const instalacion = catalogs.instalaciones.find(i => i.id === s.instalacion_municipal);
+        const supervisor = catalogs.supervisores.find(sup => sup.id === s.supervisor_asignado);
+        const cliente = catalogs.clientes.find(c => c.id === s.cliente_interno);
+
+        return {
+            ...s,
+            area_descripcion: area?.label,
+            instalacion_nombre: instalacion?.label,
+            supervisor_alias: supervisor?.label,
+            cliente_nombre: cliente?.label
+        };
+    });
 
     // --- Handlers ---
 
@@ -241,7 +228,7 @@ export default function CambiosOrdenTrabajo() {
         setSearchModal({ isOpen: false, type: null, title: '' });
     };
 
-    const filteredSolicitudes = solicitudes.filter(s => 
+    const filteredSolicitudes = solicitudesConLabels.filter(s => 
         s.numero_solicitud.toString().includes(searchTerm)
     );
 
