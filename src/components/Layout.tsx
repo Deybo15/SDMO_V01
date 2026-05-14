@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Link, useLocation, useNavigate, Outlet } from 'react-router-dom';
-import { LayoutDashboard, Package, Users, Building2, ClipboardList, Settings2, Wrench, LogOut, UserCircle2, Menu, X, Calculator, History } from 'lucide-react';
+import { LayoutDashboard, Package, Users, Building2, ClipboardList, Settings2, Wrench, LogOut, UserCircle2, Menu, X, Calculator, History, RefreshCw } from 'lucide-react';
 import { cn } from '../lib/utils';
 import { supabase } from '../lib/supabase';
 import CommandPalette from './CommandPalette';
@@ -50,6 +50,7 @@ export default function Layout() {
         { icon: Building2, label: 'Cliente Externo', path: '/cliente-externo' },
         { icon: ClipboardList, label: 'Otras Solicitudes', path: '/otras-solicitudes' },
         { icon: Settings2, label: 'Gestión Interna', path: '/gestion-interna' },
+        { icon: RefreshCw, label: 'Gestión de Cambios', path: '/gestion-cambios' },
         { icon: Calculator, label: 'Proyección Compras', path: '/gestion-interna/proyeccion-compras' },
         { icon: Wrench, label: 'Gestión de Activos', path: '/activos' },
         { icon: History, label: 'Historial Auditoría', path: '/gestion-interna/auditoria' },
