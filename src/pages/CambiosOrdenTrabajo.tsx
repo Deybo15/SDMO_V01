@@ -187,7 +187,8 @@ export default function CambiosOrdenTrabajo() {
         if (!selectedSolicitud) return;
         setSaving(true);
         try {
-            const { error } = await supabase
+            // 1. Actualizar solicitud_17 (Tabla maestra)
+            const { error: solicitudError } = await supabase
                 .from('solicitud_17')
                 .update({
                     area_mantenimiento: editData.area ? parseInt(editData.area) : null,
@@ -197,7 +198,34 @@ export default function CambiosOrdenTrabajo() {
                 })
                 .eq('numero_solicitud', selectedSolicitud.numero_solicitud);
 
-            if (error) throw error;
+            if (solicitudError) throw solicitudError;
+
+            // 2. Actualizar seguimiento_solicitud (Donde se guarda el supervisor actual para dashboards y consultas)
+            const { error: seguimientoError } = await supabase
+                .from('seguimiento_solicitud')
+                .update({
+                    supervisor_asignado: editData.supervisor || null,
+                    fecha_seguimiento: new Date().toISOString(),
+                    comentario: 'Datos actualizados por Gestión de Cambios'
+                })
+                .eq('numero_solicitud', selectedSolicitud.numero_solicitud);
+
+            if (seguimientoError) {
+                console.error("Error al actualizar seguimiento_solicitud:", seguimientoError);
+            }
+
+            // 3. Registrar en el historial de seguimiento (registro_seguimiento_solicitud)
+            // Esto permite auditar quién y cuándo se hizo el cambio
+            const newSupervisor = catalogs.supervisores.find(s => s.id.toString() === editData.supervisor);
+            await supabase
+                .from('registro_seguimiento_solicitud')
+                .insert([{
+                    numero_solicitud: selectedSolicitud.numero_solicitud,
+                    estado: 'CAMBIO_DATOS',
+                    fecha: new Date().toISOString(),
+                    usuario: 'SISTEMA',
+                    comentario: `Gestión de cambios: Supervisor actualizado a ${newSupervisor?.label || editData.supervisor}`
+                }]);
 
             showNotification("Orden de trabajo actualizada con éxito", "success");
             setIsEditModalOpen(false);
