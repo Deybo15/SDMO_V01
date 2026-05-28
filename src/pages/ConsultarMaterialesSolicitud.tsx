@@ -241,6 +241,7 @@ export default function ConsultarMaterialesSolicitud() {
     const [expandedSolicitudes, setExpandedSolicitudes] = useState<number[]>([]);
     const [materialsMap, setMaterialsMap] = useState<Record<number, MaterialResumen[]>>({});
     const [loadingMaterials, setLoadingMaterials] = useState<Record<number, boolean>>({});
+    const [basesMap, setBasesMap] = useState<Record<number, string>>({});
 
     // Currency Formatter
     const formatearMoneda = (valor: number) => {
@@ -309,6 +310,7 @@ export default function ConsultarMaterialesSolicitud() {
     useEffect(() => {
         if (allRows.length > 0) {
             cargarMaterialesPorSolicitudes(allRows.map(r => r.numero_solicitud));
+            cargarBasesPorSolicitudes(allRows.map(r => r.numero_solicitud));
         }
     }, [allRows]);
 
@@ -469,6 +471,38 @@ export default function ConsultarMaterialesSolicitud() {
         }
     };
 
+    const cargarBasesPorSolicitudes = async (solicitudIds: number[]) => {
+        if (solicitudIds.length === 0) return;
+        try {
+            const { data: solBases, error } = await supabase
+                .from('solicitud_17')
+                .select(`
+                    numero_solicitud,
+                    instalaciones_municipales_16 (
+                        instalacion_base (
+                            base
+                        )
+                    )
+                `)
+                .in('numero_solicitud', solicitudIds);
+
+            if (error) throw error;
+
+            const map: Record<number, string> = {};
+            solicitudIds.forEach(id => {
+                map[id] = 'N/A';
+            });
+
+            solBases?.forEach((sb: any) => {
+                map[sb.numero_solicitud] = sb.instalaciones_municipales_16?.instalacion_base?.base || 'N/A';
+            });
+
+            setBasesMap(prev => ({ ...prev, ...map }));
+        } catch (err) {
+            console.error('Error cargando bases:', err);
+        }
+    };
+
     const toggleRow = (numeroSolicitud: number) => {
         setExpandedSolicitudes(prev =>
             prev.includes(numeroSolicitud)
@@ -527,37 +561,52 @@ export default function ConsultarMaterialesSolicitud() {
             if (data) allData = [...allData, ...data];
         }
 
-        if (allData.length === 0) return { requests: [], materials: {} };
+        if (allData.length === 0) return { requests: [], materials: {}, bases: {} };
 
-        // 2. Fetch all materials for all these requests in chunks
+        // 2. Fetch all materials and bases for all these requests in chunks
         const allRequestIds = allData.map(r => r.numero_solicitud);
         const materialsGroupedMap: Record<number, MaterialResumen[]> = {};
+        const basesGroupedMap: Record<number, string> = {};
         const CHUNK_SIZE = 500;
 
         for (let i = 0; i < allRequestIds.length; i += CHUNK_SIZE) {
             const chunk = allRequestIds.slice(i, i + CHUNK_SIZE);
 
-            const { data: salidas, error: mError } = await supabase
-                .from('salida_articulo_08')
-                .select(`
-                    numero_solicitud,
-                    id_salida,
-                    dato_salida_13 (
-                        cantidad,
-                        precio_unitario,
-                        subtotal,
-                        articulo,
-                        articulo_01 (
-                            nombre_articulo,
-                            unidad
+            const [materialsRes, basesRes] = await Promise.all([
+                supabase
+                    .from('salida_articulo_08')
+                    .select(`
+                        numero_solicitud,
+                        id_salida,
+                        dato_salida_13 (
+                            cantidad,
+                            precio_unitario,
+                            subtotal,
+                            articulo,
+                            articulo_01 (
+                                nombre_articulo,
+                                unidad
+                            )
                         )
-                    )
-                `)
-                .in('numero_solicitud', chunk);
+                    `)
+                    .in('numero_solicitud', chunk),
+                supabase
+                    .from('solicitud_17')
+                    .select(`
+                        numero_solicitud,
+                        instalaciones_municipales_16 (
+                            instalacion_base (
+                                base
+                            )
+                        )
+                    `)
+                    .in('numero_solicitud', chunk)
+            ]);
 
-            if (mError) throw mError;
+            if (materialsRes.error) throw materialsRes.error;
+            if (basesRes.error) throw basesRes.error;
 
-            salidas?.forEach((s: any) => {
+            materialsRes.data?.forEach((s: any) => {
                 const solNum = Number(s.numero_solicitud);
                 if (!materialsGroupedMap[solNum]) {
                     materialsGroupedMap[solNum] = [];
@@ -583,18 +632,23 @@ export default function ConsultarMaterialesSolicitud() {
                     }
                 });
             });
+
+            basesRes.data?.forEach((sb: any) => {
+                basesGroupedMap[sb.numero_solicitud] = sb.instalaciones_municipales_16?.instalacion_base?.base || 'N/A';
+            });
         }
 
         return {
             requests: allData,
-            materials: materialsGroupedMap
+            materials: materialsGroupedMap,
+            bases: basesGroupedMap
         };
     };
 
     const exportarExcel = async () => {
         if (confirm(`¿Desea exportar los ${totalRecords} registros de solicitudes junto a sus materiales utilizados?`)) {
             try {
-                const { requests, materials } = await fetchAllFilteredDataWithMaterials();
+                const { requests, materials, bases } = await fetchAllFilteredDataWithMaterials();
 
                 if (requests.length === 0) {
                     alert('No hay datos para exportar con los filtros actuales.');
@@ -606,6 +660,7 @@ export default function ConsultarMaterialesSolicitud() {
                 requests.forEach((req: SolicitudSTI) => {
                     const solNum = req.numero_solicitud;
                     const mats = materials[solNum] || [];
+                    const baseVal = bases[solNum] || 'N/A';
 
                     const baseData = {
                         'N° Solicitud': solNum,
@@ -616,6 +671,7 @@ export default function ConsultarMaterialesSolicitud() {
                         'Profesional Responsable': req.profesional_responsable || '',
                         'Supervisor Asignado': req.supervisor_asignado || '',
                         'Instalación': req.instalacion_municipal || '',
+                        'Base': baseVal,
                         'Área Mantenimiento': req.descripcion_area || '',
                         'Estado': req.estado_actual || ''
                     };
@@ -660,7 +716,7 @@ export default function ConsultarMaterialesSolicitud() {
     const exportarPDF = async () => {
         if (confirm(`¿Desea generar el reporte PDF para los ${totalRecords} registros?`)) {
             try {
-                const { requests, materials } = await fetchAllFilteredDataWithMaterials();
+                const { requests, materials, bases } = await fetchAllFilteredDataWithMaterials();
 
                 if (requests.length === 0) {
                     alert('No hay datos para exportar con los filtros actuales.');
@@ -678,6 +734,8 @@ export default function ConsultarMaterialesSolicitud() {
                     'Sol. #',
                     'Fecha',
                     'Cliente',
+                    'Instalación',
+                    'Base',
                     'Estado',
                     'Material (Código - Descripción)',
                     'Cant.',
@@ -691,6 +749,8 @@ export default function ConsultarMaterialesSolicitud() {
                 requests.forEach((req: SolicitudSTI) => {
                     const solNum = req.numero_solicitud;
                     const mats = materials[solNum] || [];
+                    const baseVal = bases[solNum] || 'N/A';
+                    const instVal = req.instalacion_municipal || '';
 
                     const dateStr = req.fecha_solicitud ? new Date(req.fecha_solicitud).toLocaleDateString('es-ES') : '';
                     const client = req.nombre_cliente || '';
@@ -701,6 +761,8 @@ export default function ConsultarMaterialesSolicitud() {
                             solNum,
                             dateStr,
                             client,
+                            instVal,
+                            baseVal,
                             status,
                             'SIN MATERIALES REGISTRADOS',
                             '-',
@@ -715,6 +777,8 @@ export default function ConsultarMaterialesSolicitud() {
                                 idx === 0 ? solNum : '',
                                 idx === 0 ? dateStr : '',
                                 idx === 0 ? client : '',
+                                idx === 0 ? instVal : '',
+                                idx === 0 ? baseVal : '',
                                 idx === 0 ? status : '',
                                 `${mat.articulo} - ${mat.descripcion}`,
                                 mat.cantidad_total.toString(),
@@ -911,10 +975,15 @@ export default function ConsultarMaterialesSolicitud() {
                                                 {/* Expanded Materials Section */}
                                                 {isExpanded && (
                                                     <div className="bg-black/40 border-t border-b border-[#333333]/50 px-12 py-6 animate-in slide-in-from-top-2 duration-200">
-                                                        <div className="flex items-center justify-between mb-4">
-                                                            <div className="flex items-center gap-2">
-                                                                <Package className="w-4 h-4 text-[#0071E3]" />
-                                                                <h4 className="text-[10px] font-black text-white/80 uppercase tracking-wider">Materiales Utilizados</h4>
+                                                        <div className="flex flex-wrap items-center justify-between gap-4 mb-4">
+                                                            <div className="flex flex-wrap items-center gap-6">
+                                                                <div className="flex items-center gap-2">
+                                                                    <Package className="w-4 h-4 text-[#0071E3]" />
+                                                                    <h4 className="text-[10px] font-black text-white/80 uppercase tracking-wider">Materiales Utilizados</h4>
+                                                                </div>
+                                                                <div className="text-[9px] font-black text-[#86868B] uppercase tracking-wider bg-[#1D1D1F] px-3 py-1 rounded-[6px] border border-[#333333]">
+                                                                    Base: <span className="text-[#F5F5F7]">{basesMap[row.numero_solicitud] || 'N/A'}</span>
+                                                                </div>
                                                             </div>
                                                             {materials.length > 0 && (
                                                                 <div className="flex items-center gap-2 text-xs font-bold text-[#0071E3] bg-[#0071E3]/10 px-3 py-1 rounded-[6px]">
