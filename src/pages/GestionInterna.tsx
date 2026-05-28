@@ -4,7 +4,8 @@ import {
     ChevronRight,
     Settings2,
     ArrowLeft,
-    Search
+    Search,
+    ClipboardList
 } from 'lucide-react';
 import { PageHeader } from '../components/ui/PageHeader';
 import { cn } from '../lib/utils';
@@ -24,6 +25,12 @@ export default function GestionInterna() {
             icon: <Search className="w-8 h-8" />,
             path: '/gestion-interna/retiros-articulo',
             description: 'Consulta detallada de qué funcionarios han retirado un artículo específico'
+        },
+        {
+            title: 'Materiales por Solicitud',
+            icon: <ClipboardList className="w-8 h-8" />,
+            path: '/gestion-interna/materiales-solicitud',
+            description: 'Consulta detallada de materiales utilizados por número de solicitud con costos'
         }
     ];
 
