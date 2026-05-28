@@ -911,7 +911,7 @@ export default function ConsultarMaterialesSolicitud() {
                     <div className="overflow-x-auto custom-scrollbar">
                         <div className="min-w-[1400px]">
                             {/* Header Row */}
-                            <div className="grid grid-cols-[80px_100px_2fr_1.5fr_1fr_1.5fr_1fr_60px] bg-[#1D1D1F] border-b border-[#333333] text-[10px] font-black text-[#86868B] uppercase tracking-[0.2em] sticky top-0 z-20">
+                            <div className="grid grid-cols-[80px_100px_2fr_1.5fr_1fr_1fr_1.5fr_1fr_60px] bg-[#1D1D1F] border-b border-[#333333] text-[10px] font-black text-[#86868B] uppercase tracking-[0.2em] sticky top-0 z-20">
                                 <div className="px-6 py-5 cursor-pointer hover:bg-white/5 hover:text-[#F5F5F7] transition-all flex items-center gap-2 border-r border-[#333333]/30" onClick={() => handleSort('numero_solicitud')}>
                                     # <SortIcon field="numero_solicitud" />
                                 </div>
@@ -921,6 +921,7 @@ export default function ConsultarMaterialesSolicitud() {
                                 <div className="px-6 py-5 border-r border-[#333333]/30">Reporte Técnico / Descripción</div>
                                 <div className="px-6 py-5 border-r border-[#333333]/30">Profesional Responsable</div>
                                 <div className="px-6 py-5 border-r border-[#333333]/30">Instalación</div>
+                                <div className="px-6 py-5 border-r border-[#333333]/30">Base</div>
                                 <div className="px-6 py-5 border-r border-[#333333]/30">Área Mantenimiento</div>
                                 <div className="px-6 py-5 cursor-pointer hover:bg-white/5 hover:text-[#F5F5F7] transition-all flex items-center justify-center gap-2 border-r border-[#333333]/30" onClick={() => handleSort('estado_actual')}>
                                     Estado <SortIcon field="estado_actual" />
@@ -949,7 +950,7 @@ export default function ConsultarMaterialesSolicitud() {
                                                 <div
                                                     onClick={() => toggleRow(row.numero_solicitud)}
                                                     className={cn(
-                                                        "grid grid-cols-[80px_100px_2fr_1.5fr_1fr_1.5fr_1fr_60px] items-center transition-all hover:bg-white/[0.02] cursor-pointer",
+                                                        "grid grid-cols-[80px_100px_2fr_1.5fr_1fr_1fr_1.5fr_1fr_60px] items-center transition-all hover:bg-white/[0.02] cursor-pointer",
                                                         index % 2 === 0 ? 'bg-[#121212]' : 'bg-black/20'
                                                     )}
                                                 >
@@ -958,6 +959,7 @@ export default function ConsultarMaterialesSolicitud() {
                                                     <div className="px-6 py-4 text-[11px] italic text-[#F5F5F7] font-medium leading-relaxed truncate" title={row.descripcion_solicitud}>{row.descripcion_solicitud}</div>
                                                     <div className="px-6 py-4 text-[11px] font-black text-[#F5F5F7] uppercase tracking-tight" title={row.profesional_responsable}>{row.profesional_responsable}</div>
                                                     <div className="px-6 py-4 text-[10px] font-bold text-[#86868B] uppercase" title={row.instalacion_municipal}>{row.instalacion_municipal}</div>
+                                                    <div className="px-6 py-4 text-[10px] font-bold text-[#86868B] uppercase" title={basesMap[row.numero_solicitud] || 'N/A'}>{basesMap[row.numero_solicitud] || 'N/A'}</div>
                                                     <div className="px-6 py-4 text-[10px] font-bold text-[#86868B] uppercase" title={row.descripcion_area}>{row.descripcion_area}</div>
                                                     <div className="px-6 py-4 flex items-center justify-center">
                                                         <span className={cn(
