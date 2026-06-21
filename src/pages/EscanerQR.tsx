@@ -47,10 +47,10 @@ export default function EscanerQR() {
                 const s = scannerRef.current;
                 scannerRef.current = null;
                 try {
-                    s.stop().catch(() => { }).finally(() => {
-                        try { s.clear(); } catch (e) { }
+                    s.stop().catch(() => { /* Scanner may already be stopped. */ }).finally(() => {
+                        try { s.clear(); } catch (e) { /* Scanner may already be cleared. */ }
                     });
-                } catch (e) { }
+                } catch (e) { /* Scanner cleanup is best-effort. */ }
             }
         };
     }, []);
@@ -80,7 +80,7 @@ export default function EscanerQR() {
                         (text: string) => {
                             handleScanSuccess(text);
                         },
-                        () => { }
+                        () => { /* Ignore individual frames without a QR result. */ }
                     );
                     setScanning(true);
                     setStatus('Escaneando código...');
@@ -110,7 +110,7 @@ export default function EscanerQR() {
         if (instance) {
             try {
                 await instance.stop().catch((e: any) => console.log("Stop non-fatal:", e));
-                try { instance.clear(); } catch (e) { }
+                try { instance.clear(); } catch (e) { /* Scanner may already be cleared. */ }
             } catch (err) {
                 console.log("Stop non-fatal crash");
             }

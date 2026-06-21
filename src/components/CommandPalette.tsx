@@ -32,12 +32,12 @@ export default function CommandPalette() {
     const navigate = useNavigate();
 
     // Pages for quick navigation
-    const pages: SearchResult[] = [
+    const pages = useMemo<SearchResult[]>(() => [
         { id: 'p1', title: 'Dashboard de Mantenimiento', subtitle: 'Panel principal y KPIs', type: 'page', path: '/' },
         { id: 'p2', title: 'Gestión de Artículos', subtitle: 'Inventario y materiales', type: 'page', path: '/articulos' },
         { id: 'p3', title: 'Cliente Interno', subtitle: 'Solicitudes institucionales', type: 'page', path: '/cliente-interno' },
         { id: 'p4', title: 'Gestión de Activos', subtitle: 'Inventario de activos fijos', type: 'page', path: '/activos' },
-    ];
+    ], []);
 
     // Toggle palette with Ctrl+K
     useEffect(() => {
@@ -123,7 +123,7 @@ export default function CommandPalette() {
 
         const debounce = setTimeout(fetchResults, 300);
         return () => clearTimeout(debounce);
-    }, [query]);
+    }, [pages, query]);
 
     const handleSelect = (result: SearchResult) => {
         navigate(result.path);

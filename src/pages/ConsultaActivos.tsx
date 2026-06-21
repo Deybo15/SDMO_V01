@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { supabase } from '../lib/supabase';
 import {
@@ -36,7 +36,7 @@ export default function ConsultaActivos() {
     const [searchTerm, setSearchTerm] = useState(searchParams.get('search') || '');
     const [results, setResults] = useState<ActivoDetalle[]>([]);
 
-    const buscarActivos = async () => {
+    const buscarActivos = useCallback(async () => {
         if (!searchTerm.trim() || searchTerm.length < 3) return;
 
         setLoading(true);
@@ -149,7 +149,7 @@ export default function ConsultaActivos() {
         } finally {
             setLoading(false);
         }
-    };
+    }, [searchTerm]);
 
     // Debounce search
     useEffect(() => {
@@ -162,7 +162,7 @@ export default function ConsultaActivos() {
         }, 500);
 
         return () => clearTimeout(timer);
-    }, [searchTerm]);
+    }, [buscarActivos, searchTerm]);
 
     return (
         <div className="min-h-screen bg-[#0f111a] text-white p-4 md:p-8">

@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { createPortal } from 'react-dom';
 import { Search, X, Loader2, Image as ImageIcon, PlusCircle } from 'lucide-react';
 import { supabase } from '../lib/supabase';
@@ -33,16 +33,7 @@ export default function ArticleSearchGridModal({
 
     const ITEMS_PER_PAGE = 48;
 
-    useEffect(() => {
-        if (isOpen) {
-            setSearchTerm('');
-            setPage(1);
-            setArticles([]);
-            fetchArticles(1, false, '');
-        }
-    }, [isOpen]);
-
-    const fetchArticles = async (pageToFetch: number, append: boolean, term: string) => {
+    const fetchArticles = useCallback(async (pageToFetch: number, append: boolean, term: string) => {
         setLoading(true);
         try {
             const from = (pageToFetch - 1) * ITEMS_PER_PAGE;
@@ -89,14 +80,23 @@ export default function ArticleSearchGridModal({
 
             setTotalResults(count || 0);
             setArticles(prev => append ? [...prev, ...fetchedItems] : fetchedItems);
-            setHasMore((count || 0) > (append ? articles.length + fetchedItems.length : fetchedItems.length));
+            setHasMore((count || 0) > pageToFetch * ITEMS_PER_PAGE);
 
         } catch (error) {
             console.error('Error fetching articles:', error);
         } finally {
             setLoading(false);
         }
-    };
+    }, [showOnlyAvailable]);
+
+    useEffect(() => {
+        if (isOpen) {
+            setSearchTerm('');
+            setPage(1);
+            setArticles([]);
+            fetchArticles(1, false, '');
+        }
+    }, [fetchArticles, isOpen]);
 
     // Debounced search
     useEffect(() => {
@@ -108,7 +108,7 @@ export default function ArticleSearchGridModal({
             }
         }, 400);
         return () => clearTimeout(timer);
-    }, [searchTerm]);
+    }, [fetchArticles, isOpen, searchTerm]);
 
     const handleLoadMore = () => {
         const nextPage = page + 1;

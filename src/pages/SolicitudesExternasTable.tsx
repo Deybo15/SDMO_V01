@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '../lib/supabase';
 import { useNavigate } from 'react-router-dom';
 import * as XLSX from 'xlsx';
@@ -67,7 +67,7 @@ export default function SolicitudesExternasTable() {
     const [searchTerm, setSearchTerm] = useState('');
 
     // Load data
-    const cargarDatos = async (page: number) => {
+    const cargarDatos = useCallback(async (page: number) => {
         setLoading(true);
         try {
             let query = supabase
@@ -106,12 +106,12 @@ export default function SolicitudesExternasTable() {
         } finally {
             setLoading(false);
         }
-    };
+    }, [searchTerm]);
 
     // Effects
     useEffect(() => {
         cargarDatos(currentPage);
-    }, [currentPage]);
+    }, [cargarDatos, currentPage]);
 
     // Debounce filters
     useEffect(() => {
@@ -119,7 +119,7 @@ export default function SolicitudesExternasTable() {
             cargarDatos(1);
         }, 500);
         return () => clearTimeout(timer);
-    }, [searchTerm]);
+    }, [cargarDatos, searchTerm]);
 
 
     // Handlers

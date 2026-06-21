@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef, useMemo } from 'react';
+import { useState, useEffect, useRef, useMemo, useCallback } from 'react';
 import { supabase } from '../lib/supabase';
 import {
     Calculator,
@@ -63,14 +63,6 @@ export default function ProyeccionCompras() {
     const [isDropdownOpen, setIsDropdownOpen] = useState(false);
     const dropdownRef = useRef<HTMLDivElement>(null);
 
-    // Initial Fetch (triggered by parameters)
-    useEffect(() => {
-        const timer = setTimeout(() => {
-            fetchProyeccion();
-        }, 500);
-        return () => clearTimeout(timer);
-    }, [mesesLeadTime, mesesCiclo, factorSeguridad, mesesHistorico]);
-
     // Click outside for dropdown
     useEffect(() => {
         const handleClickOutside = (event: MouseEvent) => {
@@ -82,7 +74,7 @@ export default function ProyeccionCompras() {
         return () => document.removeEventListener('mousedown', handleClickOutside);
     }, []);
 
-    const fetchProyeccion = async () => {
+    const fetchProyeccion = useCallback(async () => {
         setLoading(true);
         try {
             let allData: ProyeccionItem[] = [];
@@ -113,7 +105,15 @@ export default function ProyeccionCompras() {
         } finally {
             setLoading(false);
         }
-    };
+    }, [factorSeguridad, mesesCiclo, mesesHistorico, mesesLeadTime]);
+
+    // Initial Fetch (triggered by parameters)
+    useEffect(() => {
+        const timer = setTimeout(() => {
+            fetchProyeccion();
+        }, 500);
+        return () => clearTimeout(timer);
+    }, [fetchProyeccion]);
 
     // Derived Logic
     const uniqueGastos = useMemo(() => Array.from(new Set(data.filter(i => i.nombre_partida).map(i => i.nombre_partida))).sort(), [data]);

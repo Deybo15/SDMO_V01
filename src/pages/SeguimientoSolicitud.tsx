@@ -135,7 +135,7 @@ export default function SeguimientoSolicitud() {
 
     // --- Data Loaders ---
 
-    const loadMetadata = async () => {
+    const loadMetadata = useCallback(async () => {
         try {
             const { data } = await supabase.from('colaboradores_06')
                 .select('identificacion, alias')
@@ -143,10 +143,10 @@ export default function SeguimientoSolicitud() {
                 .order('alias');
             if (data) setSupervisores(data.map(d => ({ id: d.identificacion, alias: d.alias })));
         } catch (e) { console.error('Error metadata:', e); }
-    };
+    }, []);
 
-    const fetchAll = async (table: string, select: string, filterField?: string, filterValue?: string) => {
-        let allData: any[] = [];
+    const fetchAll = useCallback(async (table: string, select: string, filterField?: string, filterValue?: string) => {
+        const allData: any[] = [];
         let pageIdx = 0;
         const size = 1000;
         try {
@@ -164,9 +164,9 @@ export default function SeguimientoSolicitud() {
             console.error(`Error fetchAll ${table}:`, e);
         }
         return allData;
-    };
+    }, []);
 
-    const loadStats = async () => {
+    const loadStats = useCallback(async () => {
         try {
             const { count: total } = await supabase
                 .from('solicitud_17')
@@ -194,7 +194,7 @@ export default function SeguimientoSolicitud() {
             newStats.activas += Math.max(0, sinRegistro);
             setStats(newStats);
         } catch (error) { console.error("Error loading stats:", error); }
-    };
+    }, [fetchAll]);
 
     const fetchSolicitudes = useCallback(async () => {
         setLoading(true);
@@ -238,7 +238,7 @@ export default function SeguimientoSolicitud() {
             setTotalRecords(count || 0);
 
             const supIds = data.map(s => s.supervisor_asignado).filter(Boolean) as string[];
-            let colabsMap = new Map();
+            const colabsMap = new Map();
             if (supIds.length > 0) {
                 const { data: colabsData } = await supabase.from('colaboradores_06').select('identificacion, alias').in('identificacion', supIds);
                 colabsData?.forEach(c => colabsMap.set(c.identificacion, c.alias));
@@ -264,7 +264,7 @@ export default function SeguimientoSolicitud() {
             .on('postgres_changes', { event: '*', schema: 'public', table: 'seguimiento_solicitud' }, () => setRealtimeChange(c => c + 1))
             .subscribe();
         return () => { supabase.removeChannel(channel); };
-    }, []);
+    }, [loadMetadata, loadStats]);
 
     useEffect(() => { fetchSolicitudes(); }, [fetchSolicitudes, realtimeChange]);
 
@@ -301,7 +301,7 @@ export default function SeguimientoSolicitud() {
             }
 
             const supIds = allData.map(s => s.supervisor_asignado).filter(Boolean) as string[];
-            let colabsMap = new Map();
+            const colabsMap = new Map();
             if (supIds.length > 0) {
                 const { data: colabsData } = await supabase.from('colaboradores_06').select('identificacion, alias').in('identificacion', Array.from(new Set(supIds)));
                 colabsData?.forEach(c => colabsMap.set(c.identificacion, c.alias));

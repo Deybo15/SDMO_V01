@@ -143,8 +143,8 @@ export default function KardexDiario() {
 
         try {
             // 1. Get Opening Balance (Saldo Apertura)
-            let entPrev: any[] = [];
-            let salPrev: any[] = [];
+            const entPrev: any[] = [];
+            const salPrev: any[] = [];
             const BATCH_SIZE = 1000;
 
             // Batch for entPrev
@@ -192,7 +192,7 @@ export default function KardexDiario() {
             const hastaNextDay = hastaDate.toLocaleDateString('en-CA');
 
             // Fetch Entries with ID (Batch)
-            let entRange: any[] = [];
+            const entRange: any[] = [];
             let offsetEntRange = 0;
             while (true) {
                 const { data, error } = await supabase
@@ -211,7 +211,7 @@ export default function KardexDiario() {
             }
 
             // Fetch Exits with ID (Batch)
-            let salRange: any[] = [];
+            const salRange: any[] = [];
             let offsetSalRange = 0;
             while (true) {
                 const { data, error } = await supabase
@@ -234,7 +234,7 @@ export default function KardexDiario() {
             const getDateStr = (dateVal: string) => dateVal.split('T')[0];
 
             // Initialize days
-            let curr = new Date(fechaDesde);
+            const curr = new Date(fechaDesde);
             const end = new Date(fechaHasta);
             while (curr <= end) {
                 movementsByDay.set(curr.toLocaleDateString('en-CA'), { ent: 0, sal: 0, detalles: [] });
@@ -243,7 +243,6 @@ export default function KardexDiario() {
 
             // Fill entries
             (entRange || []).forEach(r => {
-                // @ts-ignore
                 const d = getDateStr(r.entrada?.fecha_entrada);
                 if (movementsByDay.has(d)) {
                     const curr = movementsByDay.get(d)!;
@@ -254,7 +253,6 @@ export default function KardexDiario() {
                         tipo: 'ENTRADA',
                         cantidad: qty,
                         documento_id: r.id_entrada,
-                        // @ts-ignore
                         fecha_hora: r.entrada?.fecha_entrada
                     });
                 }
@@ -262,7 +260,6 @@ export default function KardexDiario() {
 
             // Fill exits
             (salRange || []).forEach(r => {
-                // @ts-ignore
                 const d = getDateStr(r.salida?.fecha_salida);
                 if (movementsByDay.has(d)) {
                     const curr = movementsByDay.get(d)!;
@@ -273,7 +270,6 @@ export default function KardexDiario() {
                         tipo: 'SALIDA',
                         cantidad: qty,
                         documento_id: r.id_salida,
-                        // @ts-ignore
                         fecha_hora: r.salida?.fecha_salida
                     });
                 }

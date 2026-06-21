@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '../lib/supabase';
 import {
     History,
@@ -33,7 +33,7 @@ export default function AuditHistory() {
     const [totalItems, setTotalItems] = useState(0);
     const itemsPerPage = 15;
 
-    const fetchLogs = async () => {
+    const fetchLogs = useCallback(async () => {
         setLoading(true);
         const start = (currentPage - 1) * itemsPerPage;
         const end = start + itemsPerPage - 1;
@@ -51,11 +51,11 @@ export default function AuditHistory() {
             setTotalItems(count || 0);
         }
         setLoading(false);
-    };
+    }, [currentPage]);
 
     useEffect(() => {
         fetchLogs();
-    }, [currentPage]);
+    }, [fetchLogs]);
 
     const totalPages = Math.ceil(totalItems / itemsPerPage);
 
