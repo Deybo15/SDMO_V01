@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo, useCallback } from 'react';
 import { supabase } from '../lib/supabase';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import {
@@ -80,12 +80,14 @@ export default function RegistroSalidaExterno() {
         return hasAutoriza && hasRetira && hasValidItems;
     }, [autoriza, retira, items]);
 
-    useEffect(() => {
-        cargarColaboradores();
+    // Feedback Helper
+    const showAlert = useCallback((message: string, type: 'success' | 'error' | 'warning' | 'info') => {
+        setFeedback({ message, type });
+        setTimeout(() => setFeedback(null), 5000);
     }, []);
 
     // Load Data
-    const cargarColaboradores = async () => {
+    const cargarColaboradores = useCallback(async () => {
         try {
             // 1. Get current user session
             const { data: { user } } = await supabase.auth.getUser();
@@ -122,14 +124,11 @@ export default function RegistroSalidaExterno() {
             console.error('Error loading collaborators:', error);
             showAlert('Error al cargar colaboradores', 'error');
         }
-    };
+    }, [showAlert]);
 
-
-    // Feedback Helper
-    const showAlert = (message: string, type: 'success' | 'error' | 'warning' | 'info') => {
-        setFeedback({ message, type });
-        setTimeout(() => setFeedback(null), 5000);
-    };
+    useEffect(() => {
+        cargarColaboradores();
+    }, [cargarColaboradores]);
 
     // Handlers
     const handleOpenBusqueda = (tipo: 'autoriza' | 'retira') => {

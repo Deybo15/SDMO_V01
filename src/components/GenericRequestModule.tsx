@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '../lib/supabase';
 import { ArrowLeft, Save, ExternalLink, CheckCircle, AlertCircle, LucideIcon } from 'lucide-react';
@@ -137,6 +137,16 @@ export default function GenericRequestModule({
     // Notification state
     const [notification, setNotification] = useState<{ message: string, type: 'success' | 'error' | null }>({ message: '', type: null });
 
+    const normalizedKeywords = useMemo(
+        () => searchKeywords.map(keyword => keyword.toLowerCase()),
+        [searchKeywords]
+    );
+
+    const showNotification = useCallback((message: string, type: 'success' | 'error') => {
+        setNotification({ message, type });
+        setTimeout(() => setNotification({ message: '', type: null }), 4000);
+    }, []);
+
     useEffect(() => {
         const initData = async () => {
             try {
@@ -155,7 +165,7 @@ export default function GenericRequestModule({
 
                 // Find the specific type based on keywords
                 const targetTipo = tiposData?.find(t =>
-                    searchKeywords.some(keyword => t.descripcion_tipo_salida.toLowerCase().includes(keyword.toLowerCase()))
+                    normalizedKeywords.some(keyword => t.descripcion_tipo_salida.toLowerCase().includes(keyword))
                 );
 
                 if (targetTipo) {
@@ -183,12 +193,7 @@ export default function GenericRequestModule({
         };
 
         initData();
-    }, []);
-
-    const showNotification = (message: string, type: 'success' | 'error') => {
-        setNotification({ message, type });
-        setTimeout(() => setNotification({ message: '', type: null }), 4000);
-    };
+    }, [normalizedKeywords, showNotification, title]);
 
     const handleGuardar = async () => {
         if (!selectedProfesional || !tipoSolicitud) {

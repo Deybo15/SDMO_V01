@@ -309,8 +309,8 @@ export default function InformeColaboradores() {
 
         try {
             // -- PART 1: Standard Article Requests (Consumables) --
-            let allSalidas: any[] = [];
-            let hasMoreSalidas = true;
+            const allSalidas: any[] = [];
+            const hasMoreSalidas = true;
             let offsetSalidas = 0;
             const LIMIT = 1000;
 
@@ -335,7 +335,7 @@ export default function InformeColaboradores() {
 
             if (salidas && salidas.length > 0) {
                 const numerosSolicitud = [...new Set(salidas.map(s => s.numero_solicitud).filter(Boolean))];
-                let tiposMap = new Map();
+                const tiposMap = new Map();
                 if (numerosSolicitud.length > 0) {
                     // Batch .in() for solicitudes
                     const solBatchSize = 100;
@@ -357,7 +357,7 @@ export default function InformeColaboradores() {
 
                 if (detalles && detalles.length > 0) {
                     const codigosArticulo = [...new Set(detalles.map(d => d.articulo))];
-                    let articulosMap = new Map();
+                    const articulosMap = new Map();
                     if (codigosArticulo.length > 0) {
                         const artBatchSize = 100;
                         for (let i = 0; i < codigosArticulo.length; i += artBatchSize) {
@@ -391,8 +391,8 @@ export default function InformeColaboradores() {
             }
 
             // -- PART 2: Asset Assignments (activos_50) --
-            let allBoletas: any[] = [];
-            let hasMoreBoletas = true;
+            const allBoletas: any[] = [];
+            const hasMoreBoletas = true;
             let offsetBoletas = 0;
 
             while (hasMoreBoletas) {
@@ -421,7 +421,7 @@ export default function InformeColaboradores() {
 
                 if (detallesActivo && detallesActivo.length > 0) {
                     const numsActivo = [...new Set(detallesActivo.map(d => d.numero_activo))];
-                    let activosMap = new Map();
+                    const activosMap = new Map();
                     if (numsActivo.length > 0) {
                         const { data: infoActivos } = await supabase
                             .from('activos_50')

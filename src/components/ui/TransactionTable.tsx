@@ -99,7 +99,7 @@ export const TransactionTable = ({
                                                     onUpdateRow(index, 'cantidad', 0);
                                                     return;
                                                 }
-                                                let numVal = parseFloat(val);
+                                                const numVal = parseFloat(val);
                                                 let finalVal: string | number = val;
                                                 if (item.cantidad_disponible !== undefined && numVal > item.cantidad_disponible) {
                                                     finalVal = item.cantidad_disponible;
@@ -185,7 +185,7 @@ export const TransactionTable = ({
                                                 onUpdateRow(index, 'cantidad', 0);
                                                 return;
                                             }
-                                            let numVal = parseFloat(val);
+                                            const numVal = parseFloat(val);
                                             let finalVal: string | number = val;
                                             if (item.cantidad_disponible !== undefined && numVal > item.cantidad_disponible) {
                                                 finalVal = item.cantidad_disponible;

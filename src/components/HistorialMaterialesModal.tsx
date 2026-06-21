@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { supabase } from '../lib/supabase';
 import {
     X,
@@ -31,13 +31,7 @@ const HistorialMaterialesModal: React.FC<HistorialMaterialesModalProps> = ({ isO
     const [materiales, setMateriales] = useState<Material[]>([]);
     const [error, setError] = useState<string | null>(null);
 
-    useEffect(() => {
-        if (isOpen && numeroSolicitud) {
-            cargarHistorial();
-        }
-    }, [isOpen, numeroSolicitud]);
-
-    const cargarHistorial = async () => {
+    const cargarHistorial = useCallback(async () => {
         setLoading(true);
         setError(null);
         try {
@@ -80,7 +74,13 @@ const HistorialMaterialesModal: React.FC<HistorialMaterialesModalProps> = ({ isO
         } finally {
             setLoading(false);
         }
-    };
+    }, [numeroSolicitud]);
+
+    useEffect(() => {
+        if (isOpen && numeroSolicitud) {
+            cargarHistorial();
+        }
+    }, [cargarHistorial, isOpen, numeroSolicitud]);
 
     if (!isOpen) return null;
 

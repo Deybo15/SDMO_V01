@@ -355,7 +355,7 @@ export default function RealizarSalida() {
         doc.setTextColor(60, 60, 60);
         doc.setFontSize(10);
         doc.setFont('helvetica', 'normal');
-        let y = 55;
+        const y = 55;
         doc.text(`ID Transacción: #${ultimoIdSalida}`, 15, y);
         doc.text(`Fecha: ${new Date().toLocaleString()}`, 15, y + 6);
         doc.text(`Solicitud: ${numeroSolicitud || 'N/A'}`, 15, y + 12);

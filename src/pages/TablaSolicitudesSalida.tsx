@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '../lib/supabase';
 import { useNavigate } from 'react-router-dom';
 import {
@@ -65,19 +65,7 @@ export default function TablaSolicitudesSalida() {
     const [totalRecords, setTotalRecords] = useState(0);
     const ITEMS_PER_PAGE = 25;
 
-    useEffect(() => {
-        const delayDebounceFn = setTimeout(() => {
-            fetchSolicitudes(1);
-        }, 500);
-
-        return () => clearTimeout(delayDebounceFn);
-    }, [searchTerm]);
-
-    useEffect(() => {
-        fetchSolicitudes(currentPage);
-    }, [currentPage]);
-
-    const fetchSolicitudes = async (page: number) => {
+    const fetchSolicitudes = useCallback(async (page: number) => {
         setLoading(true);
         try {
             let query = supabase
@@ -117,7 +105,19 @@ export default function TablaSolicitudesSalida() {
         } finally {
             setLoading(false);
         }
-    };
+    }, [searchTerm]);
+
+    useEffect(() => {
+        const delayDebounceFn = setTimeout(() => {
+            fetchSolicitudes(1);
+        }, 500);
+
+        return () => clearTimeout(delayDebounceFn);
+    }, [fetchSolicitudes, searchTerm]);
+
+    useEffect(() => {
+        fetchSolicitudes(currentPage);
+    }, [currentPage, fetchSolicitudes]);
 
     const handleExportExcel = async () => {
         let query = supabase

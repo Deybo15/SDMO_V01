@@ -1,6 +1,4 @@
-// @ts-ignore
 import * as RW_All from 'react-window';
-// @ts-ignore
 import * as AS_All from 'react-virtualized-auto-sizer';
 
 // Robust check for React Component (function, class, or React-specific object)

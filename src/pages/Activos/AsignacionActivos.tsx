@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '../../lib/supabase';
 import {
@@ -79,10 +79,6 @@ export default function AsignacionActivos() {
     });
 
     useEffect(() => {
-        loadData();
-    }, []);
-
-    useEffect(() => {
         if (searchTerm) {
             const lower = searchTerm.toLowerCase();
             setFilteredActivos(activos.filter(a => {
@@ -101,7 +97,7 @@ export default function AsignacionActivos() {
         }
     }, [searchTerm, activos, activeTab, assignedActivos]);
 
-    const loadData = async () => {
+    const loadData = useCallback(async () => {
         try {
             const [activosRes, colabRes, assignedRes] = await Promise.all([
                 supabase.from('activos_50').select('numero_activo, nombre_corto_activo, marca_activo, numero_serie_activo').order('numero_activo', { ascending: false }),
@@ -131,9 +127,13 @@ export default function AsignacionActivos() {
             }
         } catch (error) {
             console.error('Error loading data:', error);
-            showToast('Error al cargar datos', 'error');
+            setToast({ message: 'Error al cargar datos', type: 'error' });
         }
-    };
+    }, []);
+
+    useEffect(() => {
+        loadData();
+    }, [loadData]);
 
     const showToast = (message: string, type: ToastType) => {
         setToast({ message, type });

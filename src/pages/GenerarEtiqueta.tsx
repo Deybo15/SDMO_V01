@@ -77,7 +77,7 @@ export default function GenerarEtiqueta() {
         if (showModal && articulos.length === 0) {
             setSearchTerm('');
         }
-    }, [showModal]);
+    }, [articulos.length, showModal]);
 
     const handleSelectArticle = (article: Articulo) => {
         setGeneratedArticle(article);

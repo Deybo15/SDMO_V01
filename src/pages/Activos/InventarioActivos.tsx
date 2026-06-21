@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '../../lib/supabase';
 import { Search, Edit, Trash2, Eye, LayoutList, Filter, X, Save, Loader2, Package, QrCode, Hash } from 'lucide-react';
@@ -43,11 +43,7 @@ export default function InventarioActivos() {
         onConfirm: () => { }
     });
 
-    useEffect(() => {
-        fetchActivos();
-    }, []);
-
-    const fetchActivos = async () => {
+    const fetchActivos = useCallback(async () => {
         try {
             setLoading(true);
             const { data, error } = await supabase
@@ -59,11 +55,15 @@ export default function InventarioActivos() {
             setActivos(data || []);
         } catch (error) {
             console.error('Error al cargar activos:', error);
-            showToast('Error al cargar el inventario', 'error');
+            setToast({ message: 'Error al cargar el inventario', type: 'error' });
         } finally {
             setLoading(false);
         }
-    };
+    }, []);
+
+    useEffect(() => {
+        fetchActivos();
+    }, [fetchActivos]);
 
     const showToast = (message: string, type: ToastType) => {
         setToast({ message, type });

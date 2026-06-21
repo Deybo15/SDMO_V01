@@ -23,6 +23,8 @@ import {
 import FormSelect from '../components/FormSelect';
 import { PageHeader } from '../components/ui/PageHeader';
 
+const GOOGLE_MAPS_API_KEY = import.meta.env.VITE_GOOGLE_MAPS_API_KEY?.trim();
+
 // Declare Google Maps types for TypeScript
 declare global {
     interface Window {
@@ -61,6 +63,7 @@ export default function IngresarSolicitudExterno() {
     const mapRef = useRef<HTMLDivElement>(null);
     const mapInstanceRef = useRef<any>(null);
     const markerInstanceRef = useRef<any>(null);
+    const handleMapClickRef = useRef<(lat: number, lng: number) => void>(() => undefined);
 
     // Map Search State
     const [mapSearchQuery, setMapSearchQuery] = useState('');
@@ -168,6 +171,11 @@ export default function IngresarSolicitudExterno() {
     // Initialize Google Maps
     useEffect(() => {
         const loadGoogleMaps = () => {
+            if (!GOOGLE_MAPS_API_KEY) {
+                showNotification("Falta configurar VITE_GOOGLE_MAPS_API_KEY.", "error");
+                return;
+            }
+
             if (window.google && window.google.maps) {
                 initMap();
                 return;
@@ -179,7 +187,8 @@ export default function IngresarSolicitudExterno() {
 
             const script = document.createElement('script');
             script.id = 'google-maps-script';
-            script.src = `https://maps.googleapis.com/maps/api/js?key=AIzaSyAJCP3haDL2PFfD7-opPCVINqFbFxsirlc`;
+            const params = new URLSearchParams({ key: GOOGLE_MAPS_API_KEY });
+            script.src = `https://maps.googleapis.com/maps/api/js?${params.toString()}`;
             script.async = true;
             script.defer = true;
             script.onload = () => {
@@ -194,7 +203,6 @@ export default function IngresarSolicitudExterno() {
         const initMap = () => {
             if (!mapRef.current) return;
 
-            // @ts-ignore
             const google = window.google;
 
             // Initial center (San José, Costa Rica)
@@ -212,7 +220,7 @@ export default function IngresarSolicitudExterno() {
             map.addListener('click', (e: any) => {
                 const lat = e.latLng.lat();
                 const lng = e.latLng.lng();
-                handleMapClick(lat, lng);
+                handleMapClickRef.current(lat, lng);
             });
         };
 
@@ -224,7 +232,6 @@ export default function IngresarSolicitudExterno() {
     }, []);
 
     const handleMapClick = async (lat: number, lng: number) => {
-        // @ts-ignore
         const google = window.google;
         const map = mapInstanceRef.current;
 
@@ -253,6 +260,7 @@ export default function IngresarSolicitudExterno() {
         // Detect Barrio
         await detectBarrio(lat, lng);
     };
+    handleMapClickRef.current = handleMapClick;
 
     const handleLocateMe = () => {
         if (!navigator.geolocation) {
@@ -266,7 +274,6 @@ export default function IngresarSolicitudExterno() {
                 const { latitude, longitude } = position.coords;
 
                 if (mapInstanceRef.current && window.google) {
-                    // @ts-ignore
                     const google = window.google;
                     const latLng = new google.maps.LatLng(latitude, longitude);
                     mapInstanceRef.current.setCenter(latLng);
@@ -298,7 +305,6 @@ export default function IngresarSolicitudExterno() {
                 const longitude = parseFloat(lon);
 
                 if (mapInstanceRef.current && window.google) {
-                    // @ts-ignore
                     const google = window.google;
                     const latLng = new google.maps.LatLng(latitude, longitude);
                     mapInstanceRef.current.setCenter(latLng);
@@ -441,6 +447,10 @@ export default function IngresarSolicitudExterno() {
     };
 
     const getStaticMapUrl = (lat: number, lng: number) => {
+        if (!GOOGLE_MAPS_API_KEY) {
+            throw new Error('Falta configurar VITE_GOOGLE_MAPS_API_KEY.');
+        }
+
         const base = "https://maps.googleapis.com/maps/api/staticmap";
         const params = new URLSearchParams({
             center: `${lat},${lng}`,
@@ -448,7 +458,7 @@ export default function IngresarSolicitudExterno() {
             size: "600x400",
             maptype: "roadmap",
             markers: `color:red|${lat},${lng}`,
-            key: "AIzaSyAJCP3haDL2PFfD7-opPCVINqFbFxsirlc"
+            key: GOOGLE_MAPS_API_KEY
         });
         return `${base}?${params.toString()}`;
     };

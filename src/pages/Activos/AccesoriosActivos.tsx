@@ -1,5 +1,5 @@
 // AccesoriosActivos.tsx - v3.0 Style Guide Alignment & Drag-and-Drop
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '../../lib/supabase';
 import {
@@ -45,6 +45,7 @@ export default function AccesoriosActivos() {
     // Camera & Image State
     const [showCamera, setShowCamera] = useState(false);
     const [stream, setStream] = useState<MediaStream | null>(null);
+    const streamRef = useRef<MediaStream | null>(null);
     const [facingMode, setFacingMode] = useState<'user' | 'environment'>('environment');
     const videoElementRef = useRef<HTMLVideoElement | null>(null);
     const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -70,16 +71,6 @@ export default function AccesoriosActivos() {
         onConfirm: () => { }
     });
 
-    useEffect(() => {
-        loadActivos();
-        loadAccesorios();
-        return () => {
-            if (stream) {
-                stream.getTracks().forEach(track => track.stop());
-            }
-        };
-    }, []);
-
     const setVideoRef = (el: HTMLVideoElement | null) => {
         videoElementRef.current = el;
         if (el && stream) {
@@ -87,19 +78,15 @@ export default function AccesoriosActivos() {
         }
     };
 
-    useEffect(() => {
-        loadAccesorios();
-    }, [filterActivo]);
-
-    const loadActivos = async () => {
+    const loadActivos = useCallback(async () => {
         const { data } = await supabase
             .from('activos_50')
             .select('numero_activo, nombre_corto_activo')
             .order('numero_activo', { ascending: false });
         if (data) setActivos(data);
-    };
+    }, []);
 
-    const loadAccesorios = async () => {
+    const loadAccesorios = useCallback(async () => {
         let query = supabase
             .from('accesorio_activo_51')
             .select('*')
@@ -111,7 +98,18 @@ export default function AccesoriosActivos() {
 
         const { data } = await query;
         if (data) setAccesorios(data);
-    };
+    }, [filterActivo]);
+
+    useEffect(() => {
+        loadActivos();
+        return () => {
+            streamRef.current?.getTracks().forEach(track => track.stop());
+        };
+    }, [loadActivos]);
+
+    useEffect(() => {
+        loadAccesorios();
+    }, [loadAccesorios]);
 
     const showToast = (message: string, type: ToastType) => {
         setToast({ message, type });
@@ -121,12 +119,11 @@ export default function AccesoriosActivos() {
     const startCamera = async (mode?: 'user' | 'environment') => {
         const currentMode = mode || facingMode;
         try {
-            if (stream) {
-                stream.getTracks().forEach(track => track.stop());
-            }
+            streamRef.current?.getTracks().forEach(track => track.stop());
             const newStream = await navigator.mediaDevices.getUserMedia({
                 video: { facingMode: currentMode, width: { ideal: 1280 }, height: { ideal: 720 } }
             });
+            streamRef.current = newStream;
             setStream(newStream);
             setShowCamera(true);
         } catch (err: any) {
@@ -136,10 +133,9 @@ export default function AccesoriosActivos() {
     };
 
     const stopCamera = () => {
-        if (stream) {
-            stream.getTracks().forEach(track => track.stop());
-            setStream(null);
-        }
+        streamRef.current?.getTracks().forEach(track => track.stop());
+        streamRef.current = null;
+        setStream(null);
         setShowCamera(false);
     };
 

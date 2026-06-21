@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '../lib/supabase';
 import { useNavigate } from 'react-router-dom';
 import * as XLSX from 'xlsx';
@@ -139,14 +139,14 @@ export default function SeguimientoSolicitudExterno() {
     // Hovered Description Tooltip State
     const [hoveredDescription, setHoveredDescription] = useState<{ id: number, text: string, x: number, y: number } | null>(null);
 
-    const showNotification = (message: string, type: 'success' | 'error' | 'info') => {
+    const showNotification = useCallback((message: string, type: 'success' | 'error' | 'info') => {
         setNotification({ message, type });
         setTimeout(() => setNotification(null), 4000);
-    };
+    }, []);
 
     // Helper to fetch all records handling 1000-row limit
-    const fetchAll = async (table: string, select: string, filterField?: string, filterValue?: string) => {
-        let allData: any[] = [];
+    const fetchAll = useCallback(async (table: string, select: string, filterField?: string, filterValue?: string) => {
+        const allData: any[] = [];
         let page = 0;
         const size = 1000;
         while (true) {
@@ -167,9 +167,9 @@ export default function SeguimientoSolicitudExterno() {
             page++;
         }
         return allData;
-    };
+    }, []);
 
-    const cargarSolicitudes = async () => {
+    const cargarSolicitudes = useCallback(async () => {
         setLoading(true);
         try {
             // 1. Fetch ALL STE Requests with Location Data
@@ -238,11 +238,11 @@ export default function SeguimientoSolicitudExterno() {
         } finally {
             setLoading(false);
         }
-    };
+    }, [fetchAll, showNotification]);
 
     useEffect(() => {
         cargarSolicitudes();
-    }, []);
+    }, [cargarSolicitudes]);
 
     const handleSort = (key: keyof Solicitud) => {
         let direction: 'asc' | 'desc' = 'asc';
@@ -286,7 +286,7 @@ export default function SeguimientoSolicitudExterno() {
         setLoading(true);
 
         try {
-            let { data: seg, error } = await supabase
+            const { data: existingSeg, error } = await supabase
                 .from('seguimiento_solicitud')
                 .select('*')
                 .eq('numero_solicitud', numero)
@@ -294,6 +294,7 @@ export default function SeguimientoSolicitudExterno() {
 
             if (error) throw error;
 
+            let seg = existingSeg;
             if (!seg) {
                 const { data: newSeg, error: insertError } = await supabase
                     .from('seguimiento_solicitud')

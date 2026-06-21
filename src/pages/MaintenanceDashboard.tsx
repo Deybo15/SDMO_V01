@@ -79,6 +79,22 @@ interface ComparisonMetrics {
     instalacionesIntervenidasChange: number;
 }
 
+interface DashboardMonthRpc {
+    month_key: string;
+    total: number;
+    executed: number;
+}
+
+interface DashboardMonth {
+    month: string;
+    month_key: string;
+    total: number;
+    executed: number;
+    pending: number;
+    eficiencia: number;
+    tendencia?: number;
+}
+
 export default function MaintenanceDashboard() {
     const [loading, setLoading] = useState(true);
     const [metrics, setMetrics] = useState<DashboardMetrics | null>(null);
@@ -103,7 +119,7 @@ export default function MaintenanceDashboard() {
     const itemsPerPage = 50;
     const [totalItems, setTotalItems] = useState(0);
 
-    const fetchTableData = async (page: number) => {
+    const fetchTableData = useCallback(async (page: number) => {
         const start = (page - 1) * itemsPerPage;
         const end = start + itemsPerPage - 1;
 
@@ -146,7 +162,15 @@ export default function MaintenanceDashboard() {
             setTableData(data || []);
             setTotalItems(count || 0);
         }
-    };
+    }, [
+        endDate,
+        selectedArea,
+        selectedInstallation,
+        selectedMonth,
+        selectedSupervisor,
+        showCriticalOnly,
+        startDate,
+    ]);
 
     const handleRepairDates = async () => {
         try {
@@ -181,7 +205,7 @@ export default function MaintenanceDashboard() {
         }
     };
 
-    const loadDashboard = async () => {
+    const loadDashboard = useCallback(async () => {
         setLoading(true);
         try {
             const start = parseISO(startDate);
@@ -255,7 +279,7 @@ export default function MaintenanceDashboard() {
                     };
                 }).slice(0, 10);
 
-                const rawMonths = (cur.months || []).map((m: any) => {
+                const rawMonths: DashboardMonth[] = ((cur.months || []) as DashboardMonthRpc[]).map((m) => {
                     const d = parseISO(`${m.month_key}-01`);
                     return {
                         month: format(d, 'MMM. yy', { locale: es }),
@@ -340,16 +364,24 @@ export default function MaintenanceDashboard() {
         } finally {
             setLoading(false);
         }
-    };
+    }, [
+        endDate,
+        fetchTableData,
+        selectedArea,
+        selectedInstallation,
+        selectedMonth,
+        selectedSupervisor,
+        startDate,
+    ]);
 
     useEffect(() => {
         loadDashboard();
         setCurrentPage(1);
-    }, [startDate, endDate, selectedArea, selectedSupervisor, selectedMonth, selectedInstallation, showCriticalOnly]);
+    }, [loadDashboard]);
 
     useEffect(() => {
         fetchTableData(currentPage);
-    }, [currentPage]);
+    }, [currentPage, fetchTableData]);
 
     const handleExport = async () => {
         if (!metrics) return;

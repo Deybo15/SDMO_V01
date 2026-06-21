@@ -298,7 +298,7 @@ export default function ConsultarMaterialesSolicitud() {
         refetchOnWindowFocus: false,
     });
 
-    const allRows = data?.data || [];
+    const allRows = useMemo(() => data?.data || [], [data?.data]);
     const totalRecords = data?.count || 0;
     const totalPages = Math.ceil(totalRecords / PAGE_SIZE);
 
