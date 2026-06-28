@@ -289,50 +289,62 @@ export async function registrarSeguimiento(seguimiento: Omit<SeguimientoProyecto
 }
 
 /**
- * Obtener métricas para el Dashboard
+ * Obtener métricas y datos completos para el Dashboard ejecutivo
  */
 export async function getDashboardStats() {
   try {
-    const [resProyectos, resPresupuestos, resUltimosSeguimientos] = await Promise.all([
-      supabase.from('proyecto_obra').select('id, semaforo, dependencia, avance_poa'),
-      supabase.from('presupuesto_proyecto').select('presupuesto_asignado, presupuesto_ejecutado, es_vigente'),
-      supabase.from('seguimiento_proyecto').select('*, proyecto_obra(nombre_proyecto)').order('fecha_corte', { ascending: false }).limit(5)
+    const [resProyectos, resPresupuestos, resFases, resSeguimientos, resColabs] = await Promise.all([
+      supabase.from('proyecto_obra').select('*'),
+      supabase.from('presupuesto_proyecto').select('*').eq('es_vigente', true),
+      supabase.from('fase_proyecto').select('*'),
+      supabase.from('seguimiento_proyecto').select('*').order('fecha_corte', { ascending: false }),
+      supabase.from('colaboradores_06').select('identificacion, colaborador, alias')
     ]);
 
     const proyectos = resProyectos.data || [];
     const presupuestos = resPresupuestos.data || [];
-    const ultimosSeguimientos = resUltimosSeguimientos.data || [];
+    const fases = resFases.data || [];
+    const seguimientos = resSeguimientos.data || [];
+    const colaboradores = resColabs.data || [];
 
-    // Conteo por semáforo
-    const conteoSemaforo: Record<string, number> = { Verde: 0, Rojo: 0, Amarillo: 0, Morado: 0, Azul: 0 };
-    const porDependencia: Record<string, number> = {};
+    // Mapa de colaboradores (identificacion o alias -> alias/nombre)
+    const colabMap = new Map<string, string>();
+    colaboradores.forEach((c: any) => {
+      if (c.identificacion) colabMap.set(String(c.identificacion).trim(), c.alias || c.colaborador);
+      if (c.alias) colabMap.set(String(c.alias).trim(), c.alias);
+    });
 
-    proyectos.forEach(p => {
-      if (p.semaforo && conteoSemaforo[p.semaforo] !== undefined) {
-        conteoSemaforo[p.semaforo]++;
-      }
-      if (p.dependencia) {
-        porDependencia[p.dependencia] = (porDependencia[p.dependencia] || 0) + 1;
+    // Mapa del último seguimiento por proyecto
+    const ultimosSeguimientosMap = new Map<string | number, any>();
+    seguimientos.forEach((s: any) => {
+      if (!ultimosSeguimientosMap.has(s.proyecto_id)) {
+        ultimosSeguimientosMap.set(s.proyecto_id, s);
       }
     });
 
-    // Suma de presupuesto vigente
-    let totalAsignado = 0;
-    let totalEjecutado = 0;
-    presupuestos.forEach(p => {
-      if (p.es_vigente) {
-        totalAsignado += Number(p.presupuesto_asignado || 0);
-        totalEjecutado += Number(p.presupuesto_ejecutado || 0);
-      }
+    // Mapa del presupuesto vigente por proyecto
+    const presupuestosMap = new Map<string | number, any>();
+    presupuestos.forEach((p: any) => {
+      presupuestosMap.set(p.proyecto_id, p);
+    });
+
+    // Mapa de fases por proyecto
+    const fasesMap = new Map<string | number, any[]>();
+    fases.forEach((f: any) => {
+      if (!fasesMap.has(f.proyecto_id)) fasesMap.set(f.proyecto_id, []);
+      fasesMap.get(f.proyecto_id)!.push(f);
     });
 
     return {
-      totalProyectos: proyectos.length,
-      conteoSemaforo,
-      porDependencia,
-      totalAsignado,
-      totalEjecutado,
-      ultimosSeguimientos
+      proyectos,
+      presupuestos,
+      fases,
+      seguimientos,
+      colaboradores,
+      colabMap,
+      ultimosSeguimientosMap,
+      presupuestosMap,
+      fasesMap
     };
   } catch (err) {
     console.error('Error obteniendo métricas del dashboard:', err);

@@ -1,207 +1,674 @@
-import React, { useState, useEffect } from 'react';
-import { Link } from 'react-router-dom';
+import React, { useState, useEffect, useMemo } from 'react';
+import { Link, useNavigate } from 'react-router-dom';
+import {
+  ResponsiveContainer, BarChart, Bar, XAxis, YAxis, Tooltip, Legend,
+  PieChart, Pie, Cell, ComposedChart, Line
+} from 'recharts';
 import { getDashboardStats, formatMonedaCRC, formatFechaCR, SEMAFORO_COLORS } from '../../lib/proyectosObraService';
 import { SemaforoBadge } from '../../components/proyectos/SemaforoBadge';
-import { LayoutDashboard, ArrowLeft, Building2, TrendingUp, Activity, PieChart, Layers } from 'lucide-react';
+import {
+  ArrowLeft, RefreshCw, AlertTriangle, TrendingUp, DollarSign, Briefcase,
+  Calendar, CheckCircle2, Clock, Activity, Filter, Layers
+} from 'lucide-react';
 
 export default function ProyectosObraDashboard() {
-  const [stats, setStats] = useState<any>(null);
+  const navigate = useNavigate();
   const [loading, setLoading] = useState<boolean>(true);
+  const [rawStats, setRawStats] = useState<any>(null);
+
+  // Filtros interactivos
+  const [filtroAnio, setFiltroAnio] = useState<string>('TODOS');
+  const [semaforoFiltroTabla, setSemaforoFiltroTabla] = useState<string | null>('Rojo');
 
   useEffect(() => {
-    cargarStats();
+    cargarDatos();
   }, []);
 
-  const cargarStats = async () => {
+  const cargarDatos = async () => {
     setLoading(true);
     try {
       const data = await getDashboardStats();
-      setStats(data);
+      setRawStats(data);
     } catch (err) {
-      console.error('Error al cargar dashboard de proyectos:', err);
+      console.error('Error cargando estadísticas del dashboard:', err);
     } finally {
       setLoading(false);
     }
   };
+
+  // ---------------------------------------------------------
+  // CÁLCULOS Y PROCESAMIENTO DINÁMICO DE DATOS (Filtrados por año)
+  // ---------------------------------------------------------
+  const proyectosFiltrados = useMemo(() => {
+    if (!rawStats?.proyectos) return [];
+    if (filtroAnio === 'TODOS') return rawStats.proyectos;
+    return rawStats.proyectos.filter((p: any) => String(p.anio) === filtroAnio);
+  }, [rawStats, filtroAnio]);
+
+  // KPIs principales
+  const kpis = useMemo(() => {
+    const total = proyectosFiltrados.length;
+    let finalizados = 0;
+    let enEjecucion = 0;
+    let sinIniciar = 0;
+    let sumaAvance = 0;
+    let rojosCount = 0;
+    const conteoSemaforo: Record<string, number> = { Verde: 0, Rojo: 0, Amarillo: 0, Morado: 0, Azul: 0 };
+
+    let totalAsignado = 0;
+    let totalEjecutado = 0;
+
+    proyectosFiltrados.forEach((p: any) => {
+      const avance = Number(p.avance_poa ?? p.cumplimiento_poa ?? 0);
+      sumaAvance += avance;
+
+      const estadoStr = (p.estado || '').toLowerCase();
+      if (estadoStr.includes('finaliz') || avance >= 1) {
+        finalizados++;
+      } else if (avance > 0 || estadoStr.includes('ejecu') || estadoStr.includes('activo')) {
+        enEjecucion++;
+      } else {
+        sinIniciar++;
+      }
+
+      if (p.semaforo) {
+        conteoSemaforo[p.semaforo] = (conteoSemaforo[p.semaforo] || 0) + 1;
+        if (p.semaforo === 'Rojo') rojosCount++;
+      }
+
+      // Presupuesto desde el mapa
+      const pres = rawStats?.presupuestosMap?.get(p.id);
+      if (pres) {
+        totalAsignado += Number(pres.presupuesto_asignado || 0);
+        totalEjecutado += Number(pres.presupuesto_ejecutado || 0);
+      }
+    });
+
+    const avancePromedio = total > 0 ? (sumaAvance / total) : 0;
+    const pctEjecucionPresupuesto = totalAsignado > 0 ? Math.round((totalEjecutado / totalAsignado) * 100) : 0;
+
+    return {
+      total,
+      finalizados,
+      enEjecucion,
+      sinIniciar,
+      avancePromedio,
+      totalAsignado,
+      totalEjecutado,
+      pctEjecucionPresupuesto,
+      rojosCount,
+      conteoSemaforo
+    };
+  }, [proyectosFiltrados, rawStats]);
+
+  // 1. Carga por Profesional
+  const cargaProfesionalesData = useMemo(() => {
+    if (!proyectosFiltrados.length) return [];
+    const profMap = new Map<string, { total: number; sumaAvance: number; rojos: number }>();
+
+    proyectosFiltrados.forEach((p: any) => {
+      const respKey = p.profesional_responsable
+        ? (rawStats?.colabMap?.get(String(p.profesional_responsable).trim()) || p.profesional_responsable)
+        : 'Sin Asignar';
+
+      if (!profMap.has(respKey)) {
+        profMap.set(respKey, { total: 0, sumaAvance: 0, rojos: 0 });
+      }
+      const item = profMap.get(respKey)!;
+      item.total++;
+      item.sumaAvance += Number(p.avance_poa ?? p.cumplimiento_poa ?? 0);
+      if (p.semaforo === 'Rojo') item.rojos++;
+    });
+
+    return Array.from(profMap.entries()).map(([nombre, datos]) => {
+      const promAvance = datos.total > 0 ? (datos.sumaAvance / datos.total) : 0;
+      let fillColor = '#ef4444'; // Rojo si <40%
+      if (promAvance >= 0.6) fillColor = '#22c55e'; // Verde
+      else if (promAvance >= 0.4) fillColor = '#eab308'; // Amarillo
+
+      return {
+        nombre,
+        proyectos: datos.total,
+        promAvance: Math.round(promAvance * 100),
+        rojos: datos.rojos,
+        fillColor
+      };
+    }).sort((a, b) => b.proyectos - a.proyectos);
+  }, [proyectosFiltrados, rawStats]);
+
+  // 2. Estado del Portafolio por Semáforo (Donut)
+  const donutSemafotoData = useMemo(() => {
+    const order = ['Verde', 'Rojo', 'Amarillo', 'Morado', 'Azul'];
+    return order.map(sem => ({
+      name: sem,
+      value: kpis.conteoSemaforo[sem] || 0,
+      color: SEMAFORO_COLORS[sem as keyof typeof SEMAFORO_COLORS]?.bg || '#3b82f6'
+    })).filter(d => d.value > 0);
+  }, [kpis.conteoSemaforo]);
+
+  // 3. Proyectos por Año (Gráfico Agrupado 2023-2026)
+  const proyectosPorAnioData = useMemo(() => {
+    if (!rawStats?.proyectos) return [];
+    const aniosList = [2023, 2024, 2025, 2026];
+
+    return aniosList.map(a => {
+      const proysAnio = rawStats.proyectos.filter((p: any) => Number(p.anio) === a);
+      const total = proysAnio.length;
+      const verdes = proysAnio.filter((p: any) => p.semaforo === 'Verde').length;
+      const rojos = proysAnio.filter((p: any) => p.semaforo === 'Rojo').length;
+      const sumaAvance = proysAnio.reduce((acc: number, p: any) => acc + Number(p.avance_poa ?? 0), 0);
+      const avanceProm = total > 0 ? Math.round((sumaAvance / total) * 100) : 0;
+
+      return {
+        anio: String(a),
+        Total: total,
+        Verdes: verdes,
+        Rojos: rojos,
+        avancePromedio: avanceProm
+      };
+    });
+  }, [rawStats]);
+
+  // 4. Proyectos por Fase Activa
+  const fasesActivasData = useMemo(() => {
+    const fasesMap = new Map<string, { count: number; sumaAvance: number }>();
+    const nombresFases = ['Inicio y Estudios Preliminares', 'Planeación y Diseños', 'Ejecución y Construcción', 'Recepción y Cierre'];
+    nombresFases.forEach(f => fasesMap.set(f, { count: 0, sumaAvance: 0 }));
+
+    proyectosFiltrados.forEach((p: any) => {
+      const fasesProj = rawStats?.fasesMap?.get(p.id) || [];
+      const faseEnProgreso = fasesProj.find((f: any) => !f.completada) || fasesProj[fasesProj.length - 1];
+      const nombreFase = faseEnProgreso ? faseEnProgreso.fase.replace(/_/g, ' ') : 'Inicio y Estudios Preliminares';
+      
+      if (!fasesMap.has(nombreFase)) {
+        fasesMap.set(nombreFase, { count: 0, sumaAvance: 0 });
+      }
+      const item = fasesMap.get(nombreFase)!;
+      item.count++;
+      item.sumaAvance += Number(p.avance_poa ?? 0);
+    });
+
+    return Array.from(fasesMap.entries()).map(([fase, datos]) => ({
+      fase,
+      proyectos: datos.count,
+      promAvance: datos.count > 0 ? Math.round((datos.sumaAvance / datos.count) * 100) : 0
+    }));
+  }, [proyectosFiltrados, rawStats]);
+
+  // 5. Tabla de alertas (Proyectos en Rojo o filtrados por clic en donut)
+  const tablaAlertasProyectos = useMemo(() => {
+    if (!proyectosFiltrados.length) return [];
+    let filtrados = proyectosFiltrados;
+
+    if (semaforoFiltroTabla) {
+      filtrados = filtrados.filter((p: any) => p.semaforo === semaforoFiltroTabla);
+    }
+
+    return filtrados.map((p: any) => {
+      const seg = rawStats?.ultimosSeguimientosMap?.get(p.id);
+      const respNombre = p.profesional_responsable
+        ? (rawStats?.colabMap?.get(String(p.profesional_responsable).trim()) || p.profesional_responsable)
+        : 'Sin Asignar';
+
+      return {
+        id: p.id,
+        nombre: p.nombre_proyecto,
+        responsable: respNombre,
+        avance: Math.round(Number(p.avance_poa ?? 0) * 100),
+        semaforo: p.semaforo,
+        observacion: seg?.observaciones || p.observaciones_meta_poa || 'Sin observaciones registradas',
+        fechaUltimoRegistro: formatFechaCR(seg?.fecha_corte || seg?.creado_en)
+      };
+    });
+  }, [proyectosFiltrados, semaforoFiltroTabla, rawStats]);
 
   if (loading) {
     return (
       <div className="min-h-screen bg-[#09090b] flex items-center justify-center text-white">
         <div className="flex flex-col items-center gap-3">
           <div className="w-8 h-8 border-4 border-[#0071E3] border-t-transparent rounded-full animate-spin" />
-          <p className="text-sm text-[#a1a1aa]">Cargando estadísticas del dashboard...</p>
+          <p className="text-sm text-[#a1a1aa]">Cargando Dashboard Ejecutivo de Proyectos SDMO...</p>
         </div>
       </div>
     );
   }
 
-  if (!stats) return null;
-
-  const porcentajeEjecucion = stats.totalAsignado > 0 
-    ? Math.round((stats.totalEjecutado / stats.totalAsignado) * 100) 
-    : 0;
-
   return (
     <div className="min-h-screen bg-[#09090b] text-[#f4f4f5] p-4 md:p-8 space-y-8">
-      {/* Navigation and Header */}
-      <div className="space-y-4">
-        <Link
-          to="/proyectos-obra"
-          className="inline-flex items-center gap-2 text-sm font-semibold text-[#a1a1aa] hover:text-white transition-colors"
-        >
-          <ArrowLeft className="w-4 h-4" />
-          <span>Volver a Lista de Proyectos</span>
-        </Link>
-
-        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-[#27272a] pb-6">
+      {/* HEADER PRINCIPAL */}
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-[#27272a] pb-6">
+        <div>
+          <Link
+            to="/proyectos-obra"
+            className="inline-flex items-center gap-2 text-xs font-semibold text-[#a1a1aa] hover:text-white transition-colors mb-2"
+          >
+            <ArrowLeft className="w-3.5 h-3.5" />
+            <span>Volver a Lista de Proyectos</span>
+          </Link>
           <div className="flex items-center gap-3">
             <div className="p-3 rounded-xl bg-[#0071E3]/10 text-[#0071E3] border border-[#0071E3]/20">
-              <LayoutDashboard className="w-7 h-7" />
+              <TrendingUp className="w-7 h-7" />
             </div>
             <div>
-              <h1 className="text-2xl md:text-3xl font-black text-white">Dashboard de Proyectos</h1>
-              <p className="text-sm text-[#a1a1aa]">Visión general y métricas clave de desarrollo de obras</p>
+              <h1 className="text-2xl md:text-3xl font-black text-white">Dashboard Ejecutivo SDMO</h1>
+              <p className="text-sm text-[#a1a1aa]">Monitoreo estratégico y portafolio de obras de la Municipalidad de San José</p>
+            </div>
+          </div>
+        </div>
+
+        <div className="flex items-center gap-3 flex-wrap">
+          {/* Selector de Año */}
+          <div className="flex items-center gap-2 bg-[#18181b] px-3 py-2 rounded-xl border border-[#27272a]">
+            <Filter className="w-4 h-4 text-[#0071E3]" />
+            <span className="text-xs text-[#a1a1aa] font-semibold">Año:</span>
+            <select
+              value={filtroAnio}
+              onChange={(e) => setFiltroAnio(e.target.value)}
+              className="bg-transparent text-xs font-bold text-white focus:outline-none cursor-pointer"
+            >
+              <option value="TODOS" className="bg-[#18181b]">Todos los años</option>
+              <option value="2026" className="bg-[#18181b]">2026</option>
+              <option value="2025" className="bg-[#18181b]">2025</option>
+              <option value="2024" className="bg-[#18181b]">2024</option>
+              <option value="2023" className="bg-[#18181b]">2023</option>
+            </select>
+          </div>
+
+          <button
+            onClick={cargarDatos}
+            className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-[#27272a] hover:bg-[#3f3f46] text-white text-xs font-semibold transition-all border border-[#3f3f46]/50 shadow-sm"
+          >
+            <RefreshCw className="w-3.5 h-3.5 text-[#0071E3]" />
+            <span>Actualizar datos</span>
+          </button>
+        </div>
+      </div>
+
+      {/* FILA 1 — KPIS PRINCIPALES (4 TARJETAS) */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
+        {/* KPI 1: Total Proyectos */}
+        <div className="bg-[#18181b] p-5 rounded-2xl border border-[#27272a] shadow-xl space-y-3">
+          <div className="flex justify-between items-center text-[#a1a1aa]">
+            <span className="text-xs font-semibold uppercase tracking-wider">Total Proyectos</span>
+            <Layers className="w-5 h-5 text-[#0071E3]" />
+          </div>
+          <div className="flex items-baseline gap-2">
+            <span className="text-3xl font-black text-white font-mono">{kpis.total}</span>
+            <span className="text-xs text-[#a1a1aa]">obras</span>
+          </div>
+          <div className="grid grid-cols-3 gap-1 pt-2 border-t border-[#27272a] text-[10px] text-center">
+            <div className="bg-emerald-500/10 text-emerald-400 p-1.5 rounded font-bold border border-emerald-500/20">
+              {kpis.finalizados} Fin.
+            </div>
+            <div className="bg-blue-500/10 text-blue-400 p-1.5 rounded font-bold border border-blue-500/20">
+              {kpis.enEjecucion} Ejec.
+            </div>
+            <div className="bg-amber-500/10 text-amber-400 p-1.5 rounded font-bold border border-amber-500/20">
+              {kpis.sinIniciar} Sin in.
+            </div>
+          </div>
+        </div>
+
+        {/* KPI 2: Avance POA Promedio */}
+        <div className="bg-[#18181b] p-5 rounded-2xl border border-[#27272a] shadow-xl flex items-center justify-between">
+          <div className="space-y-2">
+            <span className="text-xs font-semibold text-[#a1a1aa] uppercase tracking-wider block">Avance POA Promedio</span>
+            <span className="text-3xl font-black text-emerald-400 font-mono">
+              {Math.round(kpis.avancePromedio * 100)}%
+            </span>
+            <span className="text-[11px] text-[#71717a] block">Cumplimiento metas físicas</span>
+          </div>
+
+          <div className="w-16 h-16">
+            <ResponsiveContainer width="100%" height="100%">
+              <PieChart>
+                <Pie
+                  data={[
+                    { name: 'Avance', value: kpis.avancePromedio },
+                    { name: 'Restante', value: Math.max(0, 1 - kpis.avancePromedio) }
+                  ]}
+                  innerRadius={18}
+                  outerRadius={28}
+                  startAngle={90}
+                  endAngle={-270}
+                  dataKey="value"
+                  stroke="none"
+                >
+                  <Cell fill="#22c55e" />
+                  <Cell fill="#27272a" />
+                </Pie>
+              </PieChart>
+            </ResponsiveContainer>
+          </div>
+        </div>
+
+        {/* KPI 3: Presupuesto Asignado vs Ejecutado */}
+        <div className="bg-[#18181b] p-5 rounded-2xl border border-[#27272a] shadow-xl space-y-3">
+          <div className="flex justify-between items-center text-[#a1a1aa]">
+            <span className="text-xs font-semibold uppercase tracking-wider">Presupuesto Vigente</span>
+            <DollarSign className="w-5 h-5 text-emerald-400" />
+          </div>
+          <div>
+            <div className="flex justify-between items-baseline">
+              <span className="text-xs text-[#a1a1aa]">Ejecutado:</span>
+              <span className="text-lg font-black text-white font-mono">{formatMonedaCRC(kpis.totalEjecutado)}</span>
+            </div>
+            <div className="w-full bg-[#09090b] h-2 rounded-full overflow-hidden mt-1.5 mb-1.5 border border-[#27272a]">
+              <div
+                className="bg-emerald-500 h-full rounded-full transition-all duration-500"
+                style={{ width: `${Math.min(100, kpis.pctEjecucionPresupuesto)}%` }}
+              />
+            </div>
+            <div className="flex justify-between items-center text-[10px] text-[#71717a]">
+              <span>Asignado: {formatMonedaCRC(kpis.totalAsignado)}</span>
+              <span className="font-bold text-emerald-400 font-mono">{kpis.pctEjecucionPresupuesto}% ejec.</span>
+            </div>
+          </div>
+        </div>
+
+        {/* KPI 4: Proyectos en Riesgo (Alerta Parpadeante) */}
+        <div className={`p-5 rounded-2xl border shadow-xl flex items-center justify-between transition-all ${
+          kpis.rojosCount > 0 
+            ? 'bg-rose-950/20 border-rose-500/40 animate-pulse' 
+            : 'bg-[#18181b] border-[#27272a]'
+        }`}>
+          <div className="space-y-2">
+            <span className="text-xs font-semibold text-rose-400 uppercase tracking-wider flex items-center gap-1.5">
+              <AlertTriangle className="w-4 h-4 text-rose-500" />
+              <span>Proyectos en Riesgo</span>
+            </span>
+            <div className="flex items-baseline gap-2">
+              <span className="text-3xl font-black text-rose-500 font-mono">{kpis.rojosCount}</span>
+              <span className="text-xs text-rose-300 font-semibold">Semáforo Rojo</span>
+            </div>
+            <span className="text-[11px] text-[#a1a1aa] block">Requieren atención inmediata</span>
+          </div>
+        </div>
+      </div>
+
+      {/* FILA 2 — GRÁFICOS PRINCIPALES (2 COLUMNAS) */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        {/* Gráfico 1: Carga por Profesional (Barras Horizontales) */}
+        <div className="bg-[#18181b] p-6 rounded-2xl border border-[#27272a] shadow-xl space-y-4">
+          <div className="flex justify-between items-center border-b border-[#27272a] pb-3">
+            <h3 className="text-base font-bold text-white flex items-center gap-2">
+              <Briefcase className="w-4 h-4 text-[#0071E3]" />
+              <span>Carga por Profesional Responsable</span>
+            </h3>
+            <span className="text-[11px] text-[#71717a]">Color según avance prom.</span>
+          </div>
+
+          <div className="h-72 w-full">
+            <ResponsiveContainer width="100%" height="100%">
+              <BarChart layout="vertical" data={cargaProfesionalesData} margin={{ top: 5, right: 30, left: 40, bottom: 5 }}>
+                <XAxis type="number" stroke="#71717a" fontSize={11} />
+                <YAxis type="category" dataKey="nombre" stroke="#a1a1aa" fontSize={11} width={110} tickLine={false} />
+                <Tooltip
+                  content={({ active, payload }) => {
+                    if (active && payload && payload.length) {
+                      const d = payload[0].payload;
+                      return (
+                        <div className="bg-[#09090b] p-3 rounded-xl border border-[#27272a] text-xs text-white space-y-1.5 shadow-2xl">
+                          <p className="font-bold text-[#0071E3] border-b border-[#27272a] pb-1">{d.nombre}</p>
+                          <p>Total Proyectos: <strong className="font-mono">{d.proyectos}</strong></p>
+                          <p>Promedio Avance: <strong className="font-mono text-emerald-400">{d.promAvance}%</strong></p>
+                          <p>Proyectos en Rojo: <strong className="font-mono text-rose-400">{d.rojos}</strong></p>
+                        </div>
+                      );
+                    }
+                    return null;
+                  }}
+                />
+                <Bar dataKey="proyectos" radius={[0, 6, 6, 0]}>
+                  {cargaProfesionalesData.map((entry, index) => (
+                    <Cell key={`cell-${index}`} fill={entry.fillColor} />
+                  ))}
+                </Bar>
+              </BarChart>
+            </ResponsiveContainer>
+          </div>
+        </div>
+
+        {/* Gráfico 2: Estado del Portafolio por Semáforo (Donut Interactivo) */}
+        <div className="bg-[#18181b] p-6 rounded-2xl border border-[#27272a] shadow-xl space-y-4">
+          <div className="flex justify-between items-center border-b border-[#27272a] pb-3">
+            <h3 className="text-base font-bold text-white flex items-center gap-2">
+              <Activity className="w-4 h-4 text-emerald-400" />
+              <span>Estado del Portafolio por Semáforo</span>
+            </h3>
+            {semaforoFiltroTabla && (
+              <button
+                onClick={() => setSemaforoFiltroTabla(null)}
+                className="text-[11px] text-[#0071E3] hover:underline font-semibold"
+              >
+                Limpiar filtro
+              </button>
+            )}
+          </div>
+
+          <div className="h-72 w-full flex flex-col md:flex-row items-center justify-center gap-6">
+            <div className="h-64 w-64">
+              <ResponsiveContainer width="100%" height="100%">
+                <PieChart>
+                  <Pie
+                    data={donutSemafotoData}
+                    innerRadius={55}
+                    outerRadius={85}
+                    paddingAngle={4}
+                    dataKey="value"
+                    onClick={(entry) => setSemaforoFiltroTabla(entry.name)}
+                    className="cursor-pointer"
+                  >
+                    {donutSemafotoData.map((entry, index) => (
+                      <Cell 
+                        key={`cell-${index}`} 
+                        fill={entry.color} 
+                        stroke={semaforoFiltroTabla === entry.name ? '#ffffff' : 'none'}
+                        strokeWidth={2}
+                      />
+                    ))}
+                  </Pie>
+                  <Tooltip
+                    content={({ active, payload }) => {
+                      if (active && payload && payload.length) {
+                        const d = payload[0];
+                        return (
+                          <div className="bg-[#09090b] p-2.5 rounded-xl border border-[#27272a] text-xs text-white shadow-xl">
+                            <span className="font-bold" style={{ color: d.payload.color }}>{d.name}: </span>
+                            <span className="font-mono">{d.value} proyectos</span>
+                          </div>
+                        );
+                      }
+                      return null;
+                    }}
+                  />
+                </PieChart>
+              </ResponsiveContainer>
+            </div>
+
+            <div className="space-y-2 flex-1">
+              {donutSemafotoData.map(d => (
+                <button
+                  key={d.name}
+                  onClick={() => setSemaforoFiltroTabla(d.name)}
+                  className={`w-full flex items-center justify-between p-2.5 rounded-xl border transition-all text-xs ${
+                    semaforoFiltroTabla === d.name 
+                      ? 'bg-[#27272a] border-white text-white font-bold' 
+                      : 'bg-[#09090b] border-[#27272a] text-[#a1a1aa] hover:bg-[#27272a]/50'
+                  }`}
+                >
+                  <div className="flex items-center gap-2">
+                    <span className="w-3 h-3 rounded-full" style={{ backgroundColor: d.color }} />
+                    <span>{d.name}</span>
+                  </div>
+                  <span className="font-mono text-white font-bold">{d.value}</span>
+                </button>
+              ))}
             </div>
           </div>
         </div>
       </div>
 
-      {/* Métricas Generales / Tarjetas */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        <div className="bg-[#18181b] p-6 rounded-2xl border border-[#27272a] shadow-xl space-y-2">
-          <div className="flex items-center justify-between text-[#71717a]">
-            <span className="text-xs font-semibold uppercase tracking-wider">Total de Proyectos</span>
-            <Layers className="w-5 h-5 text-[#0071E3]" />
-          </div>
-          <p className="text-3xl font-black text-white">{stats.totalProyectos}</p>
-          <p className="text-xs text-[#a1a1aa]">Proyectos registrados en la plataforma</p>
-        </div>
-
-        <div className="bg-[#18181b] p-6 rounded-2xl border border-[#27272a] shadow-xl space-y-2">
-          <div className="flex items-center justify-between text-[#71717a]">
-            <span className="text-xs font-semibold uppercase tracking-wider">Presupuesto Asignado Vigente</span>
-            <TrendingUp className="w-5 h-5 text-emerald-400" />
-          </div>
-          <p className="text-2xl font-black text-emerald-400 font-mono">{formatMonedaCRC(stats.totalAsignado)}</p>
-          <p className="text-xs text-[#a1a1aa]">Suma total de fondos asignados activos</p>
-        </div>
-
-        <div className="bg-[#18181b] p-6 rounded-2xl border border-[#27272a] shadow-xl space-y-2">
-          <div className="flex items-center justify-between text-[#71717a]">
-            <span className="text-xs font-semibold uppercase tracking-wider">Presupuesto Ejecutado</span>
-            <span className="text-xs font-mono font-bold px-2 py-0.5 rounded bg-purple-500/20 text-purple-300">
-              {porcentajeEjecucion}% Ejecutado
-            </span>
-          </div>
-          <p className="text-2xl font-black text-purple-400 font-mono">{formatMonedaCRC(stats.totalEjecutado)}</p>
-          <div className="w-full h-2 bg-[#27272a] rounded-full overflow-hidden mt-2">
-            <div
-              className="h-full bg-gradient-to-r from-purple-500 to-indigo-400 rounded-full transition-all duration-500"
-              style={{ width: `${Math.min(porcentajeEjecucion, 100)}%` }}
-            />
-          </div>
-        </div>
-      </div>
-
-      {/* Grid Secundario: Semáforos y Dependencias */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-        {/* Conteo por Semáforo */}
-        <div className="bg-[#18181b] p-6 rounded-2xl border border-[#27272a] shadow-xl space-y-6">
-          <div className="flex items-center justify-between border-b border-[#27272a] pb-4">
-            <h3 className="text-lg font-bold text-white flex items-center gap-2">
-              <PieChart className="w-5 h-5 text-[#0071E3]" />
-              <span>Proyectos por Semáforo</span>
+      {/* FILA 3 — GRÁFICOS SECUNDARIOS (2 COLUMNAS) */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        {/* Gráfico 3: Proyectos por Año (ComposedChart Agrupado + Línea Eje Derecho) */}
+        <div className="bg-[#18181b] p-6 rounded-2xl border border-[#27272a] shadow-xl space-y-4">
+          <div className="flex justify-between items-center border-b border-[#27272a] pb-3">
+            <h3 className="text-base font-bold text-white flex items-center gap-2">
+              <Calendar className="w-4 h-4 text-purple-400" />
+              <span>Evolución e Histórico de Proyectos por Año</span>
             </h3>
           </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            {Object.entries(stats.conteoSemaforo).map(([color, count]) => {
-              const semConfig = SEMAFORO_COLORS[color as keyof typeof SEMAFORO_COLORS] || SEMAFORO_COLORS.Azul;
-              return (
-                <div
-                  key={color}
-                  className="flex items-center justify-between p-4 rounded-xl border transition-all"
-                  style={{
-                    backgroundColor: semConfig.badgeBg,
-                    borderColor: semConfig.border
+          <div className="h-72 w-full">
+            <ResponsiveContainer width="100%" height="100%">
+              <ComposedChart data={proyectosPorAnioData} margin={{ top: 10, right: 20, left: 0, bottom: 5 }}>
+                <XAxis dataKey="anio" stroke="#71717a" fontSize={11} />
+                <YAxis yAxisId="left" stroke="#a1a1aa" fontSize={11} />
+                <YAxis yAxisId="right" orientation="right" stroke="#3b82f6" fontSize={11} unit="%" />
+                <Tooltip
+                  content={({ active, payload }) => {
+                    if (active && payload && payload.length) {
+                      const d = payload[0].payload;
+                      return (
+                        <div className="bg-[#09090b] p-3 rounded-xl border border-[#27272a] text-xs text-white space-y-1 shadow-2xl">
+                          <p className="font-bold text-white border-b border-[#27272a] pb-1">Año {d.anio}</p>
+                          <p>Total Obras: <strong className="font-mono">{d.Total}</strong></p>
+                          <p>Verdes: <strong className="font-mono text-emerald-400">{d.Verdes}</strong></p>
+                          <p>Rojos: <strong className="font-mono text-rose-400">{d.Rojos}</strong></p>
+                          <p>Avance Promedio: <strong className="font-mono text-blue-400">{d.avancePromedio}%</strong></p>
+                        </div>
+                      );
+                    }
+                    return null;
                   }}
-                >
-                  <div className="flex items-center gap-3">
-                    <span className="w-3.5 h-3.5 rounded-full" style={{ backgroundColor: semConfig.bg }} />
-                    <span className="font-bold text-white text-sm">{color}</span>
-                  </div>
-                  <span className="text-xl font-black text-white font-mono">{count as number}</span>
-                </div>
-              );
-            })}
+                />
+                <Legend wrapperStyle={{ fontSize: '11px', paddingTop: '10px' }} />
+                <Bar yAxisId="left" dataKey="Total" fill="#3f3f46" radius={[4, 4, 0, 0]} />
+                <Bar yAxisId="left" dataKey="Verdes" fill="#22c55e" radius={[4, 4, 0, 0]} />
+                <Bar yAxisId="left" dataKey="Rojos" fill="#ef4444" radius={[4, 4, 0, 0]} />
+                <Line yAxisId="right" type="monotone" dataKey="avancePromedio" name="Avance Prom. (%)" stroke="#3b82f6" strokeWidth={3} dot={{ r: 4 }} />
+              </ComposedChart>
+            </ResponsiveContainer>
           </div>
         </div>
 
-        {/* Proyectos por Dependencia */}
-        <div className="bg-[#18181b] p-6 rounded-2xl border border-[#27272a] shadow-xl space-y-6">
-          <div className="flex items-center justify-between border-b border-[#27272a] pb-4">
-            <h3 className="text-lg font-bold text-white flex items-center gap-2">
-              <Building2 className="w-5 h-5 text-[#0071E3]" />
-              <span>Proyectos por Dependencia</span>
+        {/* Gráfico 4: Proyectos por Fase Activa */}
+        <div className="bg-[#18181b] p-6 rounded-2xl border border-[#27272a] shadow-xl space-y-4">
+          <div className="flex justify-between items-center border-b border-[#27272a] pb-3">
+            <h3 className="text-base font-bold text-white flex items-center gap-2">
+              <Clock className="w-4 h-4 text-amber-400" />
+              <span>Distribución por Fase Activa del Proyecto</span>
             </h3>
           </div>
 
-          <div className="space-y-3 max-h-[300px] overflow-y-auto pr-2">
-            {Object.entries(stats.porDependencia).length === 0 ? (
-              <p className="text-xs text-[#71717a]">No hay datos de dependencias disponibles.</p>
-            ) : (
-              Object.entries(stats.porDependencia).map(([dep, count]) => (
-                <div key={dep} className="flex items-center justify-between bg-[#09090b] p-3 rounded-xl border border-[#27272a]">
-                  <span className="text-sm font-medium text-[#f4f4f5] truncate max-w-[240px]">{dep}</span>
-                  <span className="text-xs font-mono font-bold bg-[#27272a] px-3 py-1 rounded-full text-white">
-                    {count as number} {count === 1 ? 'proyecto' : 'proyectos'}
-                  </span>
-                </div>
-              ))
-            )}
+          <div className="h-72 w-full">
+            <ResponsiveContainer width="100%" height="100%">
+              <BarChart layout="vertical" data={fasesActivasData} margin={{ top: 5, right: 30, left: 50, bottom: 5 }}>
+                <XAxis type="number" stroke="#71717a" fontSize={11} />
+                <YAxis type="category" dataKey="fase" stroke="#a1a1aa" fontSize={10} width={130} tickLine={false} />
+                <Tooltip
+                  content={({ active, payload }) => {
+                    if (active && payload && payload.length) {
+                      const d = payload[0].payload;
+                      return (
+                        <div className="bg-[#09090b] p-3 rounded-xl border border-[#27272a] text-xs text-white space-y-1 shadow-xl">
+                          <p className="font-bold text-amber-400 border-b border-[#27272a] pb-1">{d.fase}</p>
+                          <p>Proyectos en esta fase: <strong className="font-mono">{d.proyectos}</strong></p>
+                          <p>Promedio Avance: <strong className="font-mono text-emerald-400">{d.promAvance}%</strong></p>
+                        </div>
+                      );
+                    }
+                    return null;
+                  }}
+                />
+                <Bar dataKey="proyectos" fill="#0071E3" radius={[0, 6, 6, 0]} />
+              </BarChart>
+            </ResponsiveContainer>
           </div>
         </div>
       </div>
 
-      {/* Últimas 5 entradas de seguimiento */}
-      <div className="bg-[#18181b] p-6 rounded-2xl border border-[#27272a] shadow-xl space-y-6">
-        <div className="flex items-center justify-between border-b border-[#27272a] pb-4">
-          <h3 className="text-lg font-bold text-white flex items-center gap-2">
-            <Activity className="w-5 h-5 text-[#0071E3]" />
-            <span>Últimas 5 Entradas de Seguimiento</span>
-          </h3>
+      {/* FILA 4 — TABLA DE ALERTAS (PROYECTOS QUE REQUIEREN ATENCIÓN) */}
+      <div className="bg-[#18181b] p-6 rounded-2xl border border-[#27272a] shadow-xl space-y-4">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-[#27272a] pb-4">
+          <div>
+            <h3 className="text-lg font-bold text-white flex items-center gap-2">
+              <AlertTriangle className="w-5 h-5 text-rose-500" />
+              <span>Proyectos que Requieren Atención</span>
+            </h3>
+            <p className="text-xs text-[#a1a1aa]">
+              {semaforoFiltroTabla 
+                ? `Mostrando proyectos filtrados en semáforo: ${semaforoFiltroTabla}` 
+                : 'Mostrando obras con semáforo Rojo o en seguimiento prioritario'}
+            </p>
+          </div>
+
+          {semaforoFiltroTabla && (
+            <button
+              onClick={() => setSemaforoFiltroTabla(null)}
+              className="px-3 py-1.5 rounded-lg bg-[#27272a] hover:bg-[#3f3f46] text-white text-xs font-semibold transition-all w-fit"
+            >
+              Mostrar Todos
+            </button>
+          )}
         </div>
 
-        {stats.ultimosSeguimientos.length === 0 ? (
-          <p className="text-sm text-[#71717a] py-6 text-center">No se registran bitácoras recientes de seguimiento.</p>
-        ) : (
-          <div className="space-y-4">
-            {stats.ultimosSeguimientos.map((seg: any) => (
-              <div key={seg.id} className="bg-[#09090b] p-4 rounded-xl border border-[#27272a] flex flex-col md:flex-row md:items-center justify-between gap-4">
-                <div className="space-y-1">
-                  <div className="flex items-center gap-2">
-                    <SemaforoBadge color={seg.semaforo} size="sm" />
-                    <Link
-                      to={`/proyectos-obra/${seg.proyecto_id}`}
-                      className="font-bold text-white hover:text-[#0071E3] transition-colors text-sm"
-                    >
-                      {seg.proyecto_obra?.nombre_proyecto || `Proyecto ID: ${seg.proyecto_id}`}
-                    </Link>
-                  </div>
-                  {seg.observaciones && (
-                    <p className="text-xs text-[#a1a1aa] line-clamp-1">{seg.observaciones}</p>
-                  )}
-                </div>
-
-                <div className="flex items-center gap-4 text-xs shrink-0">
-                  <span className="font-mono text-[#71717a]">Fecha corte: {formatFechaCR(seg.fecha_corte)}</span>
-                  <span className="font-mono font-bold text-emerald-400 bg-emerald-500/10 px-2.5 py-1 rounded">
-                    {Math.round(seg.avance_registrado * 100)}%
-                  </span>
-                </div>
-              </div>
-            ))}
+        {tablaAlertasProyectos.length > 0 ? (
+          <div className="overflow-x-auto rounded-xl border border-[#27272a] bg-[#09090b]">
+            <table className="w-full text-left text-xs">
+              <thead className="bg-[#18181b] text-[#71717a] uppercase font-semibold border-b border-[#27272a]">
+                <tr>
+                  <th className="px-4 py-3">Nombre del Proyecto</th>
+                  <th className="px-4 py-3">Profesional Responsable</th>
+                  <th className="px-4 py-3">Avance POA</th>
+                  <th className="px-4 py-3 text-center">Semáforo</th>
+                  <th className="px-4 py-3">Última Observación</th>
+                  <th className="px-4 py-3">Último Registro</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-[#27272a]/50 text-[#f4f4f5]">
+                {tablaAlertasProyectos.map((p: any) => (
+                  <tr
+                    key={p.id}
+                    onClick={() => navigate(`/proyectos-obra/${p.id}`)}
+                    className="hover:bg-[#18181b]/80 transition-colors cursor-pointer group"
+                  >
+                    <td className="px-4 py-3.5 font-bold text-white group-hover:text-[#0071E3] transition-colors max-w-xs truncate">
+                      {p.nombre}
+                    </td>
+                    <td className="px-4 py-3.5 text-[#a1a1aa] font-medium whitespace-nowrap">
+                      {p.responsable}
+                    </td>
+                    <td className="px-4 py-3.5 whitespace-nowrap">
+                      <div className="flex items-center gap-2">
+                        <div className="w-20 bg-[#27272a] h-2 rounded-full overflow-hidden border border-[#3f3f46]/50">
+                          <div
+                            className="bg-emerald-500 h-full rounded-full"
+                            style={{ width: `${Math.min(100, p.avance)}%` }}
+                          />
+                        </div>
+                        <span className="font-mono font-bold text-white">{p.avance}%</span>
+                      </div>
+                    </td>
+                    <td className="px-4 py-3.5 text-center whitespace-nowrap">
+                      <SemaforoBadge color={p.semaforo} size="sm" />
+                    </td>
+                    <td className="px-4 py-3.5 text-[#a1a1aa] max-w-md truncate" title={p.observacion}>
+                      {p.observacion.length > 80 ? p.observacion.substring(0, 80) + '...' : p.observacion}
+                    </td>
+                    <td className="px-4 py-3.5 text-[#71717a] font-mono whitespace-nowrap">
+                      {p.fechaUltimoRegistro}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
           </div>
+        ) : (
+          <p className="text-xs text-[#71717a] py-8 text-center bg-[#09090b] rounded-xl border border-[#27272a]">
+            No hay proyectos que requieran atención con el filtro de semáforo seleccionado.
+          </p>
         )}
       </div>
     </div>
