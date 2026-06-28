@@ -3,6 +3,7 @@ import autoTable from 'jspdf-autotable';
 import * as XLSX from 'xlsx';
 import { ProyectoObraConDetalles } from '../types/proyectosObra';
 import { formatMonedaCRC, formatFechaCR } from './proyectosObraService';
+import { supabase } from './supabase';
 
 /**
  * Formateador de moneda específico para celdas de PDF (reemplaza cualquier ₡ por CRC para evitar incompatibilidad en PDF standard fonts)
@@ -348,4 +349,167 @@ export function generarReporteProyectoExcel(proyecto: ProyectoObraConDetalles) {
 
   // Descargar Excel
   XLSX.writeFile(wb, `Reporte_Proyecto_${proyecto.codigo_meta || proyecto.id}.xlsx`);
+}
+
+/**
+ * Genera un informe general consolidado de todos los proyectos en un archivo Excel con la estructura oficial
+ */
+export async function generarInformeGeneralExcel() {
+  try {
+    // 1. Consultar todos los proyectos
+    const { data: proyectos, error: errProyectos } = await supabase
+      .from('proyecto_obra')
+      .select('*')
+      .order('id', { ascending: true });
+
+    if (errProyectos || !proyectos) throw errProyectos || new Error('Error al consultar proyectos');
+
+    // 2. Consultar tablas secundarias en paralelo
+    const [resPresupuestos, resContratos, resFases, resSeguimientos, resColabs] = await Promise.all([
+      supabase.from('presupuesto_proyecto').select('*').eq('es_vigente', true),
+      supabase.from('contrato_obra').select('*'),
+      supabase.from('fase_proyecto').select('*'),
+      supabase.from('seguimiento_proyecto').select('*').order('fecha_corte', { ascending: false }),
+      supabase.from('colaboradores_06').select('identificacion, colaborador')
+    ]);
+
+    const presupuestosMap = new Map<string | number, any>();
+    (resPresupuestos.data || []).forEach(p => presupuestosMap.set(p.proyecto_id, p));
+
+    const contratosMap = new Map<string | number, any>();
+    (resContratos.data || []).forEach(c => contratosMap.set(c.proyecto_id, c));
+
+    const fasesMap = new Map<string | number, any[]>();
+    (resFases.data || []).forEach(f => {
+      if (!fasesMap.has(f.proyecto_id)) fasesMap.set(f.proyecto_id, []);
+      fasesMap.get(f.proyecto_id)!.push(f);
+    });
+
+    const seguimientosMap = new Map<string | number, any>();
+    (resSeguimientos.data || []).forEach(s => {
+      if (!seguimientosMap.has(s.proyecto_id)) {
+        seguimientosMap.set(s.proyecto_id, s);
+      }
+    });
+
+    const colabsMap = new Map<string, string>();
+    (resColabs.data || []).forEach(c => {
+      if (c.identificacion) colabsMap.set(String(c.identificacion).trim(), c.colaborador);
+    });
+
+    // 3. Encabezados de la hoja única oficial
+    const headers = [
+      'Prioridad',
+      'Gerencia',
+      'Dependencia',
+      'Profesional Responsable',
+      'Código Meta',
+      'Nombre del proyecto',
+      'Fecha envío a proveeduría',
+      'Fecha estimación adjudicación',
+      'Fase',
+      'Distrito',
+      'Georreferencia',
+      'Fecha Inicio Estudios Preliminares',
+      'Fecha Final Estudios Preliminares',
+      'Fecha Inicio Contratación',
+      'Fecha Final Contratación',
+      'Fecha inicio Obras',
+      'Fecha final Obra',
+      'Vigencia del Contrato',
+      'POA de Origen',
+      'Origen presupuesto',
+      'Presupuesto Asignado',
+      'Presupuesto Adjudicado',
+      'Presupuesto Ejecutado',
+      'Presupuesto Reserva',
+      'Presupuesto Libre',
+      'Tipo de Ejecución',
+      'Porcentaje Físico de Avance del Proyecto',
+      'Línea Estratégica',
+      'Programa',
+      'Semáforo',
+      'Estado',
+      'Observaciones más recientes'
+    ];
+
+    // 4. Mapear filas
+    const dataRows = proyectos.map(p => {
+      const pres = presupuestosMap.get(p.id);
+      const cont = contratosMap.get(p.id);
+      const fases = fasesMap.get(p.id) || [];
+      const seg = seguimientosMap.get(p.id);
+
+      const respNombre = p.profesional_responsable 
+        ? (colabsMap.get(String(p.profesional_responsable).trim()) || p.profesional_responsable)
+        : '-';
+
+      // Fases específicas
+      const faseEstudios = fases.find(f => f.fase === 'Inicio_y_Estudios_Preliminares');
+      const faseContratacion = fases.find(f => f.fase === 'Planeación_y_Diseños');
+      const faseObras = fases.find(f => f.fase === 'Ejecución_y_Construcción');
+
+      // Determinación de la Fase Actual
+      const ordenLógico = ['Inicio_y_Estudios_Preliminares', 'Planeación_y_Diseños', 'Ejecución_y_Construcción', 'Recepción_y_Cierre'];
+      const faseEnProgreso = fases.find(f => !f.completada) || fases[fases.length - 1];
+      const faseNombreStr = faseEnProgreso ? faseEnProgreso.fase.replace(/_/g, ' ') : '-';
+
+      // Montos en formato numérico puro
+      const asignado = pres ? Number(pres.presupuesto_asignado || 0) : 0;
+      const adjudicado = pres ? Number(pres.presupuesto_adjudicado || 0) : 0;
+      const ejecutado = pres ? Number(pres.presupuesto_ejecutado || 0) : 0;
+      const reserva = pres ? Number(pres.presupuesto_reserva || 0) : 0;
+      const comprometido = pres ? Number(pres.presupuesto_comprometido || 0) : 0;
+      const libre = pres ? Number(pres.presupuesto_libre ?? (asignado - ejecutado - comprometido)) : (asignado - ejecutado - comprometido);
+
+      // Avance físico como decimal (ej. 0.95)
+      const avanceDecimal = seg ? Number(seg.avance_registrado) : Number(p.avance_poa ?? 0);
+
+      return [
+        p.prioridad || '-',
+        p.gerencia || '-',
+        p.dependencia || '-',
+        respNombre,
+        p.codigo_meta || '-',
+        p.nombre_proyecto || '-',
+        formatFechaCR(cont?.fecha_envio_proveeduria),
+        formatFechaCR(cont?.fecha_estimacion_adjudicacion),
+        faseNombreStr,
+        p.distrito || '-',
+        p.georeferencia ? (typeof p.georeferencia === 'object' ? JSON.stringify(p.georeferencia) : String(p.georeferencia)) : '-',
+        formatFechaCR(faseEstudios?.fecha_inicio_real || faseEstudios?.fecha_inicio_plan),
+        formatFechaCR(faseEstudios?.fecha_fin_real || faseEstudios?.fecha_fin_plan),
+        formatFechaCR(faseContratacion?.fecha_inicio_real || faseContratacion?.fecha_inicio_plan),
+        formatFechaCR(faseContratacion?.fecha_fin_real || faseContratacion?.fecha_fin_plan),
+        formatFechaCR(faseObras?.fecha_inicio_real || faseObras?.fecha_inicio_plan),
+        formatFechaCR(faseObras?.fecha_fin_real || faseObras?.fecha_fin_plan),
+        cont?.vigencia_contrato || (cont?.fecha_adjudicacion ? 'Vigente' : '-'),
+        p.poa_origen || '-',
+        p.origen_presupuesto || '-',
+        asignado,
+        adjudicado,
+        ejecutado,
+        reserva,
+        libre,
+        p.tipo_ejecucion || '-',
+        avanceDecimal,
+        (p.linea_estrategica || '-').replace(/_/g, ' '),
+        p.programa || '-',
+        p.semaforo || '-',
+        p.estado || '-',
+        seg?.observaciones || p.observaciones_meta_poa || '-'
+      ];
+    });
+
+    // 5. Construcción del archivo Excel
+    const wb = XLSX.utils.book_new();
+    const ws = XLSX.utils.aoa_to_sheet([headers, ...dataRows]);
+    XLSX.utils.book_append_sheet(wb, ws, 'Construcción de Obra 2026');
+
+    const fechaStr = new Date().toISOString().split('T')[0];
+    XLSX.writeFile(wb, `Informe_General_Proyectos_SDMO_${fechaStr}.xlsx`);
+  } catch (err: any) {
+    console.error('Error al generar informe general en Excel:', err);
+    alert('Error al generar el informe general: ' + (err.message || err));
+  }
 }

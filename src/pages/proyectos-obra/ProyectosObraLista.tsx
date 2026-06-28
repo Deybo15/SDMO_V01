@@ -2,12 +2,14 @@ import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { ProyectoObraConDetalles, SemaforoColor } from '../../types/proyectosObra';
 import { getProyectosObra, getAniosProyectos } from '../../lib/proyectosObraService';
+import { generarInformeGeneralExcel } from '../../lib/reportesService';
 import { ProyectoCard } from '../../components/proyectos/ProyectoCard';
-import { Search, Filter, LayoutDashboard, ChevronLeft, ChevronRight, RefreshCw, Layers, Plus, MapPin } from 'lucide-react';
+import { Search, Filter, LayoutDashboard, ChevronLeft, ChevronRight, RefreshCw, Layers, Plus, MapPin, FileSpreadsheet } from 'lucide-react';
 
 export default function ProyectosObraLista() {
   const [proyectos, setProyectos] = useState<ProyectoObraConDetalles[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
+  const [generandoExcel, setGenerandoExcel] = useState<boolean>(false);
   const [totalCount, setTotalCount] = useState<number>(0);
   const [pagina, setPagina] = useState<number>(1);
   const porPagina = 15;
@@ -67,6 +69,15 @@ export default function ProyectosObraLista() {
     setPagina(1);
   };
 
+  const handleDescargarInformeGeneral = async () => {
+    setGenerandoExcel(true);
+    try {
+      await generarInformeGeneralExcel();
+    } finally {
+      setGenerandoExcel(false);
+    }
+  };
+
   const totalPaginas = Math.ceil(totalCount / porPagina) || 1;
 
   return (
@@ -93,6 +104,15 @@ export default function ProyectosObraLista() {
             <Plus className="w-4 h-4" />
             <span>Nuevo Proyecto</span>
           </Link>
+          <button
+            onClick={handleDescargarInformeGeneral}
+            disabled={generandoExcel}
+            className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-[#27272a] hover:bg-[#3f3f46] text-white text-sm font-semibold transition-all duration-200 border border-[#3f3f46]/50 shadow-sm disabled:opacity-50"
+            title="Descargar Informe General Consolidado en Excel"
+          >
+            <FileSpreadsheet className="w-4 h-4 text-emerald-400" />
+            <span>{generandoExcel ? 'Generando...' : 'Informe General'}</span>
+          </button>
           <Link
             to="/proyectos-obra/mapa"
             className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-[#27272a] hover:bg-[#3f3f46] text-white text-sm font-semibold transition-all duration-200 border border-[#3f3f46]/50 shadow-sm"
