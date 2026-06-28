@@ -5,6 +5,15 @@ import { ProyectoObraConDetalles } from '../types/proyectosObra';
 import { formatMonedaCRC, formatFechaCR } from './proyectosObraService';
 
 /**
+ * Formateador de moneda específico para celdas de PDF (reemplaza ₡ por CRC para evitar incompatibilidad en PDF standard fonts)
+ */
+export const formatMonedaPDF = (monto: number | null | undefined): string => {
+  if (monto === null || monto === undefined || isNaN(monto)) return 'CRC 0';
+  const dects = Math.round(monto);
+  return 'CRC ' + dects.toLocaleString('es-CR');
+};
+
+/**
  * Genera y descarga un informe completo en formato PDF para un proyecto de obra
  */
 export function generarReporteProyectoPDF(proyecto: ProyectoObraConDetalles) {
@@ -102,15 +111,15 @@ export function generarReporteProyectoPDF(proyecto: ProyectoObraConDetalles) {
     head: [[{ content: 'RESUMEN PRESUPUESTARIO', colSpan: 4, styles: { fillColor: secondaryColor, textColor: 255, fontStyle: 'bold' } }]],
     body: [
       [
-        { content: 'Presupuesto Asignado:', styles: { fontStyle: 'bold' } }, formatMonedaCRC(asignado),
-        { content: 'Presupuesto Adjudicado:', styles: { fontStyle: 'bold' } }, formatMonedaCRC(adjudicado)
+        { content: 'Presupuesto Asignado:', styles: { fontStyle: 'bold' } }, formatMonedaPDF(asignado),
+        { content: 'Presupuesto Adjudicado:', styles: { fontStyle: 'bold' } }, formatMonedaPDF(adjudicado)
       ],
       [
-        { content: 'Presupuesto Ejecutado:', styles: { fontStyle: 'bold' } }, formatMonedaCRC(ejecutado),
-        { content: 'Presupuesto Comprometido:', styles: { fontStyle: 'bold' } }, formatMonedaCRC(comprometido)
+        { content: 'Presupuesto Ejecutado:', styles: { fontStyle: 'bold' } }, formatMonedaPDF(ejecutado),
+        { content: 'Presupuesto Comprometido:', styles: { fontStyle: 'bold' } }, formatMonedaPDF(comprometido)
       ],
       [
-        { content: 'Presupuesto Libre:', styles: { fontStyle: 'bold', textColor: [16, 185, 129] } }, formatMonedaCRC(libre),
+        { content: 'Presupuesto Libre:', styles: { fontStyle: 'bold', textColor: [16, 185, 129] } }, formatMonedaPDF(libre),
         { content: 'Origen Presupuesto:', styles: { fontStyle: 'bold' } }, proyecto.origen_presupuesto || '-'
       ]
     ],
