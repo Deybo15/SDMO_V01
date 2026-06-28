@@ -8,15 +8,12 @@ export default function ProyectoObraFormulario() {
   const navigate = useNavigate();
 
   const [loading, setLoading] = useState<boolean>(false);
-  const [dependenciasExistentes, setDependenciasExistentes] = useState<string[]>([]);
   const [colaboradores, setColaboradores] = useState<any[]>([]);
 
   // Estado del formulario (inicializados en vacíos para mostrar "--Seleccionar--")
   const [nombreProyecto, setNombreProyecto] = useState<string>('');
   const [codigoMeta, setCodigoMeta] = useState<string>('');
   const [gerencia, setGerencia] = useState<string>('');
-  const [dependencia, setDependencia] = useState<string>('');
-  const [nuevaDependencia, setNuevaDependencia] = useState<string>('');
   const [profesionalResponsable, setProfesionalResponsable] = useState<string>('');
   const [tipoContrato, setTipoContrato] = useState<string>('');
   const [tipoEjecucion, setTipoEjecucion] = useState<string>('');
@@ -37,11 +34,7 @@ export default function ProyectoObraFormulario() {
   }, []);
 
   const cargarCatalogos = async () => {
-    const [deps, colabs] = await Promise.all([
-      getDependenciasProyectos(),
-      getColaboradores()
-    ]);
-    setDependenciasExistentes(deps);
+    const colabs = await getColaboradores();
     setColaboradores(colabs);
   };
 
@@ -54,14 +47,12 @@ export default function ProyectoObraFormulario() {
 
     setLoading(true);
     try {
-      const depFinal = dependencia === '__OTRA__' ? nuevaDependencia.trim() : dependencia;
-
       await crearProyectoObra(
         {
           nombre_proyecto: nombreProyecto.trim(),
           codigo_meta: codigoMeta.trim(),
           gerencia: gerencia.trim(),
-          dependencia: depFinal,
+          dependencia: 'Desarrollo y Mantenimiento de Obras',
           profesional_responsable: profesionalResponsable,
           tipo_contrato: tipoContrato.trim(),
           tipo_ejecucion: tipoEjecucion.trim(),
@@ -160,31 +151,6 @@ export default function ProyectoObraFormulario() {
                 <option value="">--Seleccionar--</option>
                 <option value="Provisión de Servicios">Provisión de Servicios</option>
               </select>
-            </div>
-
-            <div>
-              <label className="block text-xs font-semibold text-[#a1a1aa] uppercase mb-1.5">Dependencia</label>
-              <select
-                value={dependencia}
-                onChange={(e) => setDependencia(e.target.value)}
-                className="w-full px-4 py-2.5 bg-[#09090b] border border-[#27272a] rounded-xl text-sm text-white focus:outline-none focus:border-[#0071E3] transition-all cursor-pointer"
-              >
-                <option value="">--Seleccionar--</option>
-                {dependenciasExistentes.map((dep) => (
-                  <option key={dep} value={dep}>{dep}</option>
-                ))}
-                <option value="__OTRA__">+ Escribir nueva dependencia...</option>
-              </select>
-              {dependencia === '__OTRA__' && (
-                <input
-                  type="text"
-                  placeholder="Escriba el nombre de la nueva dependencia"
-                  value={nuevaDependencia}
-                  onChange={(e) => setNuevaDependencia(e.target.value)}
-                  className="w-full mt-2 px-4 py-2 bg-[#09090b] border border-[#0071E3] rounded-xl text-sm text-white focus:outline-none"
-                  required
-                />
-              )}
             </div>
 
             <div>

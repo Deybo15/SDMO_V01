@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { ProyectoObraConDetalles, SemaforoColor } from '../../types/proyectosObra';
-import { getProyectosObra, getDependenciasProyectos, getAniosProyectos } from '../../lib/proyectosObraService';
+import { getProyectosObra, getAniosProyectos } from '../../lib/proyectosObraService';
 import { ProyectoCard } from '../../components/proyectos/ProyectoCard';
 import { Search, Filter, LayoutDashboard, ChevronLeft, ChevronRight, RefreshCw, Layers, Plus } from 'lucide-react';
 
@@ -14,12 +14,10 @@ export default function ProyectosObraLista() {
 
   // Filtros
   const [filtroNombre, setFiltroNombre] = useState<string>('');
-  const [filtroDependencia, setFiltroDependencia] = useState<string>('');
   const [filtroAnio, setFiltroAnio] = useState<string>('');
   const [filtroSemaforo, setFiltroSemaforo] = useState<SemaforoColor | ''>('');
 
   // Listas para dropdowns de filtros
-  const [dependencias, setDependencias] = useState<string[]>([]);
   const [anios, setAnios] = useState<number[]>([]);
 
   useEffect(() => {
@@ -28,14 +26,10 @@ export default function ProyectosObraLista() {
 
   useEffect(() => {
     cargarProyectos();
-  }, [pagina, filtroDependencia, filtroAnio, filtroSemaforo]);
+  }, [pagina, filtroAnio, filtroSemaforo]);
 
   const cargarCatalogos = async () => {
-    const [deps, ans] = await Promise.all([
-      getDependenciasProyectos(),
-      getAniosProyectos()
-    ]);
-    setDependencias(deps);
+    const ans = await getAniosProyectos();
     setAnios(ans);
   };
 
@@ -45,7 +39,6 @@ export default function ProyectosObraLista() {
       const res = await getProyectosObra(
         {
           nombre: filtroNombre,
-          dependencia: filtroDependencia,
           anio: filtroAnio,
           semaforo: filtroSemaforo
         },
@@ -69,7 +62,6 @@ export default function ProyectosObraLista() {
 
   const handleLimpiarFiltros = () => {
     setFiltroNombre('');
-    setFiltroDependencia('');
     setFiltroAnio('');
     setFiltroSemaforo('');
     setPagina(1);
@@ -113,7 +105,7 @@ export default function ProyectosObraLista() {
 
       {/* Barra de Filtros */}
       <div className="bg-[#18181b] p-5 rounded-2xl border border-[#27272a] shadow-xl space-y-4">
-        <form onSubmit={handleBuscar} className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
+        <form onSubmit={handleBuscar} className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
           {/* Nombre */}
           <div className="relative lg:col-span-2">
             <Search className="w-4 h-4 absolute left-3.5 top-1/2 -translate-y-1/2 text-[#71717a]" />
@@ -124,20 +116,6 @@ export default function ProyectosObraLista() {
               onChange={(e) => setFiltroNombre(e.target.value)}
               className="w-full pl-10 pr-4 py-2.5 bg-[#09090b] border border-[#27272a] rounded-xl text-sm text-white placeholder-[#71717a] focus:outline-none focus:border-[#0071E3] focus:ring-1 focus:ring-[#0071E3] transition-all"
             />
-          </div>
-
-          {/* Dependencia */}
-          <div>
-            <select
-              value={filtroDependencia}
-              onChange={(e) => { setFiltroDependencia(e.target.value); setPagina(1); }}
-              className="w-full px-3 py-2.5 bg-[#09090b] border border-[#27272a] rounded-xl text-sm text-white focus:outline-none focus:border-[#0071E3] transition-all cursor-pointer"
-            >
-              <option value="">Todas las Dependencias</option>
-              {dependencias.map((dep) => (
-                <option key={dep} value={dep}>{dep}</option>
-              ))}
-            </select>
           </div>
 
           {/* Año */}
