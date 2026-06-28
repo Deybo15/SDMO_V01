@@ -1,13 +1,13 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
 import { ProyectoObraConDetalles, SemaforoColor } from '../../types/proyectosObra';
-import { getProyectoObraPorId, registrarSeguimiento, formatMonedaCRC, formatFechaCR } from '../../lib/proyectosObraService';
+import { getProyectoObraPorId, registrarSeguimiento, actualizarFaseProyecto, formatMonedaCRC, formatFechaCR } from '../../lib/proyectosObraService';
 import { SemaforoBadge } from '../../components/proyectos/SemaforoBadge';
 import { PoaProgressBar } from '../../components/proyectos/PoaProgressBar';
 import { supabase } from '../../lib/supabase';
 import { 
   ArrowLeft, Building2, User, FileText, DollarSign, Briefcase, 
-  Clock, Activity, Plus, CheckCircle2, AlertCircle, Calendar, Send
+  Clock, Activity, Plus, CheckCircle2, AlertCircle, Calendar, Send, Edit3, History, Save, X
 } from 'lucide-react';
 
 export default function ProyectoObraDetalle() {
@@ -25,6 +25,82 @@ export default function ProyectoObraDetalle() {
   const [nuevasObservaciones, setNuevasObservaciones] = useState<string>('');
   const [nuevaEtapa, setNuevaEtapa] = useState<string>('');
   const [guardandoSeguimiento, setGuardandoSeguimiento] = useState<boolean>(false);
+
+  // Estado para edición de Fases
+  const [faseEnEdicion, setFaseEnEdicion] = useState<string | number | null>(null);
+  const [editFechaInicioReal, setEditFechaInicioReal] = useState<string>('');
+  const [editFechaFinReal, setEditFechaFinReal] = useState<string>('');
+  const [editPorcentajeAvance, setEditPorcentajeAvance] = useState<number>(0);
+  const [guardandoFase, setGuardandoFase] = useState<boolean>(false);
+
+  const handleIniciarEdicionFase = (fase: any) => {
+    setFaseEnEdicion(fase.id);
+    setEditFechaInicioReal(fase.fecha_inicio_real || '');
+    setEditFechaFinReal(fase.fecha_fin_real || '');
+    setEditPorcentajeAvance(fase.porcentaje_avance || 0);
+  };
+
+  const handleGuardarEdicionFase = async (fase: any) => {
+    if (!proyecto || !id) return;
+    setGuardandoFase(true);
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      const modificadoPor = user?.email || 'Usuario SDMO';
+
+      // 1. Comparar fecha_inicio_real
+      const valIniNuevo = editFechaInicioReal.trim() || null;
+      const valIniAnterior = fase.fecha_inicio_real || null;
+      if (valIniNuevo !== valIniAnterior) {
+        await actualizarFaseProyecto(
+          proyecto.id,
+          fase.id,
+          fase.fase,
+          'fecha_inicio_real',
+          valIniAnterior || 'Sin definir',
+          valIniNuevo || 'Sin definir',
+          modificadoPor
+        );
+      }
+
+      // 2. Comparar fecha_fin_real
+      const valFinNuevo = editFechaFinReal.trim() || null;
+      const valFinAnterior = fase.fecha_fin_real || null;
+      if (valFinNuevo !== valFinAnterior) {
+        await actualizarFaseProyecto(
+          proyecto.id,
+          fase.id,
+          fase.fase,
+          'fecha_fin_real',
+          valFinAnterior || 'Sin definir',
+          valFinNuevo || 'Sin definir',
+          modificadoPor
+        );
+      }
+
+      // 3. Comparar porcentaje_avance
+      const numAvance = Number(editPorcentajeAvance);
+      const numAvanceAnterior = Number(fase.porcentaje_avance);
+      if (numAvance !== numAvanceAnterior) {
+        await actualizarFaseProyecto(
+          proyecto.id,
+          fase.id,
+          fase.fase,
+          'porcentaje_avance',
+          `${Math.round(numAvanceAnterior * 100)}%`,
+          `${Math.round(numAvance * 100)}%`,
+          modificadoPor
+        );
+      }
+
+      setFaseEnEdicion(null);
+      await cargarDetalle();
+    } catch (err) {
+      console.error('Error guardando cambios de fase:', err);
+      alert('Error guardando los cambios en la fase');
+    } finally {
+      setGuardandoFase(false);
+    }
+  };
 
   useEffect(() => {
     if (id) {
@@ -315,52 +391,165 @@ export default function ProyectoObraDetalle() {
 
         {/* 4. FASES */}
         {tabActiva === 'fases' && (
-          <div className="space-y-6">
-            <h3 className="text-lg font-bold text-white border-b border-[#27272a] pb-3">Línea de Tiempo y Fases del Proyecto</h3>
+          <div className="space-y-8">
+            <div className="flex justify-between items-center border-b border-[#27272a] pb-3">
+              <h3 className="text-lg font-bold text-white">Línea de Tiempo y Fases del Proyecto</h3>
+            </div>
+
             {proyecto.fases && proyecto.fases.length > 0 ? (
               <div className="space-y-4">
-                {proyecto.fases.map((fase) => (
-                  <div key={fase.id} className="bg-[#09090b] p-5 rounded-xl border border-[#27272a] space-y-3">
-                    <div className="flex justify-between items-center">
-                      <div className="flex items-center gap-3">
-                        {fase.completada ? (
-                          <CheckCircle2 className="w-5 h-5 text-emerald-400" />
-                        ) : (
-                          <Clock className="w-5 h-5 text-amber-400" />
-                        )}
-                        <h4 className="font-bold text-white text-base">
-                          {fase.fase.replace(/_/g, ' ')}
-                        </h4>
+                {proyecto.fases.map((fase) => {
+                  const enEdicion = faseEnEdicion === fase.id;
+                  return (
+                    <div key={fase.id} className="bg-[#09090b] p-5 rounded-xl border border-[#27272a] space-y-4">
+                      <div className="flex justify-between items-center flex-wrap gap-2">
+                        <div className="flex items-center gap-3">
+                          {fase.completada ? (
+                            <CheckCircle2 className="w-5 h-5 text-emerald-400" />
+                          ) : (
+                            <Clock className="w-5 h-5 text-amber-400" />
+                          )}
+                          <h4 className="font-bold text-white text-base">
+                            {fase.fase.replace(/_/g, ' ')}
+                          </h4>
+                        </div>
+                        <div className="flex items-center gap-3">
+                          <span className="text-xs font-mono font-bold px-2.5 py-1 rounded bg-[#27272a] text-white">
+                            Avance: {Math.round(fase.porcentaje_avance * 100)}%
+                          </span>
+                          {!enEdicion ? (
+                            <button
+                              onClick={() => handleIniciarEdicionFase(fase)}
+                              className="flex items-center gap-1.5 px-3 py-1 bg-[#27272a] hover:bg-[#3f3f46] text-white text-xs font-semibold rounded-lg transition-all"
+                            >
+                              <Edit3 className="w-3.5 h-3.5 text-[#0071E3]" />
+                              <span>Editar</span>
+                            </button>
+                          ) : (
+                            <div className="flex items-center gap-2">
+                              <button
+                                onClick={() => handleGuardarEdicionFase(fase)}
+                                disabled={guardandoFase}
+                                className="flex items-center gap-1 px-3 py-1 bg-[#0071E3] hover:bg-[#0071E3]/80 text-white text-xs font-semibold rounded-lg transition-all disabled:opacity-50"
+                              >
+                                <Save className="w-3.5 h-3.5" />
+                                <span>{guardandoFase ? 'Guardando...' : 'Guardar'}</span>
+                              </button>
+                              <button
+                                onClick={() => setFaseEnEdicion(null)}
+                                className="p-1 bg-[#27272a] hover:bg-[#3f3f46] text-[#a1a1aa] hover:text-white rounded-lg transition-all"
+                              >
+                                <X className="w-4 h-4" />
+                              </button>
+                            </div>
+                          )}
+                        </div>
                       </div>
-                      <span className="text-xs font-mono font-bold px-2.5 py-1 rounded bg-[#27272a] text-white">
-                        Avance: {Math.round(fase.porcentaje_avance * 100)}%
-                      </span>
-                    </div>
 
-                    <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-xs pt-2 border-t border-[#27272a]/50">
-                      <div>
-                        <span className="text-[#71717a] block">Inicio Plan</span>
-                        <span className="font-mono text-white">{formatFechaCR(fase.fecha_inicio_plan)}</span>
-                      </div>
-                      <div>
-                        <span className="text-[#71717a] block">Fin Plan</span>
-                        <span className="font-mono text-white">{formatFechaCR(fase.fecha_fin_plan)}</span>
-                      </div>
-                      <div>
-                        <span className="text-[#71717a] block">Inicio Real</span>
-                        <span className="font-mono text-emerald-400">{formatFechaCR(fase.fecha_inicio_real)}</span>
-                      </div>
-                      <div>
-                        <span className="text-[#71717a] block">Fin Real</span>
-                        <span className="font-mono text-emerald-400">{formatFechaCR(fase.fecha_fin_real)}</span>
-                      </div>
+                      {!enEdicion ? (
+                        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-xs pt-2 border-t border-[#27272a]/50">
+                          <div>
+                            <span className="text-[#71717a] block">Inicio Plan</span>
+                            <span className="font-mono text-white">{formatFechaCR(fase.fecha_inicio_plan)}</span>
+                          </div>
+                          <div>
+                            <span className="text-[#71717a] block">Fin Plan</span>
+                            <span className="font-mono text-white">{formatFechaCR(fase.fecha_fin_plan)}</span>
+                          </div>
+                          <div>
+                            <span className="text-[#71717a] block">Inicio Real</span>
+                            <span className="font-mono text-emerald-400">{formatFechaCR(fase.fecha_inicio_real)}</span>
+                          </div>
+                          <div>
+                            <span className="text-[#71717a] block">Fin Real</span>
+                            <span className="font-mono text-emerald-400">{formatFechaCR(fase.fecha_fin_real)}</span>
+                          </div>
+                        </div>
+                      ) : (
+                        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-xs pt-3 border-t border-[#0071E3]/30 bg-[#18181b]/50 p-4 rounded-xl">
+                          <div>
+                            <label className="block text-[#a1a1aa] font-semibold mb-1">Fecha Inicio Real</label>
+                            <input
+                              type="date"
+                              value={editFechaInicioReal}
+                              onChange={(e) => setEditFechaInicioReal(e.target.value)}
+                              className="w-full px-3 py-2 bg-[#09090b] border border-[#27272a] rounded-lg text-white focus:outline-none focus:border-[#0071E3]"
+                            />
+                          </div>
+                          <div>
+                            <label className="block text-[#a1a1aa] font-semibold mb-1">Fecha Fin Real</label>
+                            <input
+                              type="date"
+                              value={editFechaFinReal}
+                              onChange={(e) => setEditFechaFinReal(e.target.value)}
+                              className="w-full px-3 py-2 bg-[#09090b] border border-[#27272a] rounded-lg text-white focus:outline-none focus:border-[#0071E3]"
+                            />
+                          </div>
+                          <div>
+                            <label className="block text-[#a1a1aa] font-semibold mb-1">Porcentaje de Avance (0 a 1)</label>
+                            <input
+                              type="number"
+                              step="0.01"
+                              min="0"
+                              max="1"
+                              value={editPorcentajeAvance}
+                              onChange={(e) => setEditPorcentajeAvance(parseFloat(e.target.value) || 0)}
+                              className="w-full px-3 py-2 bg-[#09090b] border border-[#27272a] rounded-lg text-white focus:outline-none focus:border-[#0071E3]"
+                            />
+                            <span className="text-[10px] text-[#71717a] mt-0.5 block">Ej. 0.50 = 50%</span>
+                          </div>
+                        </div>
+                      )}
                     </div>
-                  </div>
-                ))}
+                  );
+                })}
               </div>
             ) : (
               <p className="text-sm text-[#71717a] py-8 text-center">No hay fases configuradas para este proyecto.</p>
             )}
+
+            {/* Sección de Historial de Modificaciones de Fases */}
+            <div className="pt-6 border-t border-[#27272a] space-y-4">
+              <h4 className="text-base font-bold text-white flex items-center gap-2">
+                <History className="w-4 h-4 text-[#0071E3]" />
+                <span>Historial de Modificaciones de Fases (Audit Log)</span>
+              </h4>
+
+              {proyecto.historial_fases && proyecto.historial_fases.length > 0 ? (
+                <div className="overflow-x-auto rounded-xl border border-[#27272a] bg-[#09090b]">
+                  <table className="w-full text-left text-xs">
+                    <thead className="bg-[#18181b] text-[#71717a] uppercase font-semibold border-b border-[#27272a]">
+                      <tr>
+                        <th className="px-4 py-3">Fase</th>
+                        <th className="px-4 py-3">Campo Modificado</th>
+                        <th className="px-4 py-3">Valor Anterior</th>
+                        <th className="px-4 py-3">Valor Nuevo</th>
+                        <th className="px-4 py-3">Fecha</th>
+                        <th className="px-4 py-3">Modificado Por</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-[#27272a]/50 text-[#f4f4f5]">
+                      {proyecto.historial_fases.map((h: any) => (
+                        <tr key={h.id || Math.random()} className="hover:bg-[#18181b]/50 transition-colors">
+                          <td className="px-4 py-3 font-semibold text-[#0071E3]">
+                            {h.fase?.replace(/_/g, ' ')}
+                          </td>
+                          <td className="px-4 py-3 font-mono text-[#a1a1aa]">{h.campo_modificado}</td>
+                          <td className="px-4 py-3 font-mono text-rose-400">{formatFechaCR(h.valor_anterior) || h.valor_anterior || '-'}</td>
+                          <td className="px-4 py-3 font-mono text-emerald-400">{formatFechaCR(h.valor_nuevo) || h.valor_nuevo || '-'}</td>
+                          <td className="px-4 py-3 text-[#71717a] font-mono">{formatFechaCR(h.creado_en)}</td>
+                          <td className="px-4 py-3 text-[#a1a1aa] font-medium">{h.modificado_por || 'Sistema'}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              ) : (
+                <p className="text-xs text-[#71717a] py-4 text-center bg-[#09090b] rounded-xl border border-[#27272a]">
+                  No se registran modificaciones anteriores en las fases de este proyecto.
+                </p>
+              )}
+            </div>
           </div>
         )}
 

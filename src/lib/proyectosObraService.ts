@@ -169,11 +169,12 @@ export async function getProyectoObraPorId(id: string | number): Promise<Proyect
     if (errProyecto || !proyecto) throw errProyecto || new Error('Proyecto no encontrado');
 
     // Consultas paralelas de tablas secundarias
-    const [resPresupuestos, resContrato, resFases, resSeguimientos, resColab] = await Promise.all([
+    const [resPresupuestos, resContrato, resFases, resSeguimientos, resHistorialFases, resColab] = await Promise.all([
       supabase.from('presupuesto_proyecto').select('*').eq('proyecto_id', id),
       supabase.from('contrato_obra').select('*').eq('proyecto_id', id).maybeSingle(),
       supabase.from('fase_proyecto').select('*').eq('proyecto_id', id).order('id', { ascending: true }),
       supabase.from('seguimiento_proyecto').select('*').eq('proyecto_id', id).order('fecha_corte', { ascending: false }),
+      supabase.from('historial_fase_proyecto').select('*').eq('proyecto_id', id).order('creado_en', { ascending: false }),
       proyecto.profesional_responsable 
         ? supabase.from('colaboradores_06').select('colaborador').eq('identificacion', proyecto.profesional_responsable).maybeSingle()
         : Promise.resolve({ data: null, error: null })
@@ -188,11 +189,69 @@ export async function getProyectoObraPorId(id: string | number): Promise<Proyect
       presupuesto_vigente: presupuestoVigente,
       contrato: resContrato.data || null,
       fases: resFases.data || [],
-      seguimientos: resSeguimientos.data || []
+      seguimientos: resSeguimientos.data || [],
+      historial_fases: resHistorialFases.data || []
     };
   } catch (err) {
     console.error('Error cargando detalle del proyecto:', err);
     return null;
+  }
+}
+
+/**
+ * Actualizar una fase del proyecto y registrar la auditaría en historial_fase_proyecto
+ */
+export async function actualizarFaseProyecto(
+  proyecto_id: string | number,
+  fase_id: string | number,
+  fase: string,
+  campo_modificado: string,
+  valor_anterior: any,
+  valor_nuevo: any,
+  modificado_por: string
+) {
+  try {
+    // 1. Actualizar el campo en la tabla fase_proyecto
+    let updatePayload: Record<string, any> = {
+      [campo_modificado]: valor_nuevo
+    };
+
+    // Si se modifica el porcentaje de avance, actualizar completada si es 1 (100%)
+    if (campo_modificado === 'porcentaje_avance') {
+      const p = Number(valor_nuevo);
+      if (p >= 1) {
+        updatePayload.completada = true;
+      }
+    }
+
+    const { error: errFase } = await supabase
+      .from('fase_proyecto')
+      .update(updatePayload)
+      .eq('id', fase_id);
+
+    if (errFase) throw errFase;
+
+    // 2. Insertar registro de auditoría en historial_fase_proyecto
+    const { error: errHistorial } = await supabase
+      .from('historial_fase_proyecto')
+      .insert([{
+        proyecto_id,
+        fase_id,
+        fase,
+        campo_modificado,
+        valor_anterior: valor_anterior !== null && valor_anterior !== undefined ? String(valor_anterior) : '',
+        valor_nuevo: valor_nuevo !== null && valor_nuevo !== undefined ? String(valor_nuevo) : '',
+        modificado_por
+      }]);
+
+    if (errHistorial) {
+      console.error('Error insertando en historial_fase_proyecto:', errHistorial);
+    }
+
+    return true;
+  } catch (err) {
+    console.error('Error al actualizar fase de proyecto:', err);
+    throw err;
   }
 }
 

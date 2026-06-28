@@ -90,6 +90,18 @@ export interface SeguimientoProyecto {
   creado_en?: string;
 }
 
+export interface HistorialFaseProyecto {
+  id?: string | number;
+  proyecto_id: string | number;
+  fase_id: string | number;
+  fase: string;
+  campo_modificado: string;
+  valor_anterior?: string | null;
+  valor_nuevo?: string | null;
+  modificado_por?: string | null;
+  creado_en?: string;
+}
+
 // Interfaces compuestas para vistas UI
 export interface ProyectoObraConDetalles extends ProyectoObra {
   nombre_responsable?: string;
@@ -97,6 +109,7 @@ export interface ProyectoObraConDetalles extends ProyectoObra {
   contrato?: ContratoObra | null;
   fases?: FaseProyecto[];
   seguimientos?: SeguimientoProyecto[];
+  historial_fases?: HistorialFaseProyecto[];
 }
 
 export interface FiltrosProyectoObra {
