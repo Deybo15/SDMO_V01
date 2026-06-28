@@ -2,13 +2,13 @@ import React, { useState, useEffect, useMemo } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import {
   ResponsiveContainer, BarChart, Bar, XAxis, YAxis, Tooltip, Legend,
-  PieChart, Pie, Cell, ComposedChart, Line
+  PieChart, Pie, Cell
 } from 'recharts';
 import { getDashboardStats, formatMonedaCRC, formatFechaCR, SEMAFORO_COLORS } from '../../lib/proyectosObraService';
 import { SemaforoBadge } from '../../components/proyectos/SemaforoBadge';
 import {
   ArrowLeft, RefreshCw, AlertTriangle, TrendingUp, DollarSign, Briefcase,
-  Calendar, CheckCircle2, Clock, Activity, Filter, Layers
+  Clock, Activity, Filter, Layers
 } from 'lucide-react';
 
 export default function ProyectosObraDashboard() {
@@ -136,7 +136,45 @@ export default function ProyectosObraDashboard() {
     }).sort((a, b) => b.proyectos - a.proyectos);
   }, [proyectosFiltrados, rawStats]);
 
-  // 2. Estado del Portafolio por Semáforo (Donut)
+  // 2. Presupuesto Asignado por Profesional (Barras apiladas en millones)
+  const presupuestoProfesionalesData = useMemo(() => {
+    if (!proyectosFiltrados.length) return [];
+    const profMap = new Map<string, { asignado: number; ejecutado: number }>();
+
+    proyectosFiltrados.forEach((p: any) => {
+      const respKey = p.profesional_responsable
+        ? (rawStats?.colabMap?.get(String(p.profesional_responsable).trim()) || p.profesional_responsable)
+        : 'Sin Asignar';
+
+      if (!profMap.has(respKey)) {
+        profMap.set(respKey, { asignado: 0, ejecutado: 0 });
+      }
+      const item = profMap.get(respKey)!;
+      const pres = rawStats?.presupuestosMap?.get(p.id);
+      if (pres) {
+        item.asignado += Number(pres.presupuesto_asignado || 0);
+        item.ejecutado += Number(pres.presupuesto_ejecutado || 0);
+      }
+    });
+
+    return Array.from(profMap.entries()).map(([nombre, datos]) => {
+      const asignadoM = datos.asignado / 1000000;
+      const ejecutadoM = datos.ejecutado / 1000000;
+      const restanteM = Math.max(0, asignadoM - ejecutadoM);
+      const pctEjecucion = datos.asignado > 0 ? Math.round((datos.ejecutado / datos.asignado) * 100) : 0;
+
+      return {
+        nombre,
+        ejecutadoM: Number(ejecutadoM.toFixed(1)),
+        restanteM: Number(restanteM.toFixed(1)),
+        asignadoTotal: datos.asignado,
+        ejecutadoTotal: datos.ejecutado,
+        pctEjecucion
+      };
+    }).filter(d => d.asignadoTotal > 0).sort((a, b) => b.asignadoTotal - a.asignadoTotal);
+  }, [proyectosFiltrados, rawStats]);
+
+  // 3. Estado del Portafolio por Semáforo (Donut)
   const donutSemafotoData = useMemo(() => {
     const order = ['Verde', 'Rojo', 'Amarillo', 'Morado', 'Azul'];
     return order.map(sem => ({
@@ -145,29 +183,6 @@ export default function ProyectosObraDashboard() {
       color: SEMAFORO_COLORS[sem as keyof typeof SEMAFORO_COLORS]?.bg || '#3b82f6'
     })).filter(d => d.value > 0);
   }, [kpis.conteoSemaforo]);
-
-  // 3. Proyectos por Año (Gráfico Agrupado 2023-2026)
-  const proyectosPorAnioData = useMemo(() => {
-    if (!rawStats?.proyectos) return [];
-    const aniosList = [2023, 2024, 2025, 2026];
-
-    return aniosList.map(a => {
-      const proysAnio = rawStats.proyectos.filter((p: any) => Number(p.anio) === a);
-      const total = proysAnio.length;
-      const verdes = proysAnio.filter((p: any) => p.semaforo === 'Verde').length;
-      const rojos = proysAnio.filter((p: any) => p.semaforo === 'Rojo').length;
-      const sumaAvance = proysAnio.reduce((acc: number, p: any) => acc + Number(p.avance_poa ?? 0), 0);
-      const avanceProm = total > 0 ? Math.round((sumaAvance / total) * 100) : 0;
-
-      return {
-        anio: String(a),
-        Total: total,
-        Verdes: verdes,
-        Rojos: rojos,
-        avancePromedio: avanceProm
-      };
-    });
-  }, [rawStats]);
 
   // 4. Proyectos por Fase Activa
   const fasesActivasData = useMemo(() => {
@@ -386,7 +401,7 @@ export default function ProyectosObraDashboard() {
         </div>
       </div>
 
-      {/* FILA 2 — GRÁFICOS PRINCIPALES (2 COLUMNAS) */}
+      {/* FILA 2 — GRÁFICOS PRINCIPALES DE CARGA Y PRESUPUESTO POR PROFESIONAL (2 COLUMNAS) */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* Gráfico 1: Carga por Profesional (Barras Horizontales) */}
         <div className="bg-[#18181b] p-6 rounded-2xl border border-[#27272a] shadow-xl space-y-4">
@@ -429,7 +444,49 @@ export default function ProyectosObraDashboard() {
           </div>
         </div>
 
-        {/* Gráfico 2: Estado del Portafolio por Semáforo (Donut Interactivo) */}
+        {/* Gráfico 2: Presupuesto Asignado por Profesional (Barras Horizontales Apiladas) */}
+        <div className="bg-[#18181b] p-6 rounded-2xl border border-[#27272a] shadow-xl space-y-4">
+          <div className="flex justify-between items-center border-b border-[#27272a] pb-3">
+            <h3 className="text-base font-bold text-white flex items-center gap-2">
+              <DollarSign className="w-4 h-4 text-emerald-400" />
+              <span>Presupuesto Asignado por Profesional</span>
+            </h3>
+            <span className="text-[11px] text-[#71717a]">En Millones de Colones</span>
+          </div>
+
+          <div className="h-72 w-full">
+            <ResponsiveContainer width="100%" height="100%">
+              <BarChart layout="vertical" data={presupuestoProfesionalesData} margin={{ top: 5, right: 30, left: 40, bottom: 5 }}>
+                <XAxis type="number" stroke="#71717a" fontSize={11} tickFormatter={(v) => `₡${v}M`} />
+                <YAxis type="category" dataKey="nombre" stroke="#a1a1aa" fontSize={11} width={110} tickLine={false} />
+                <Tooltip
+                  content={({ active, payload }) => {
+                    if (active && payload && payload.length) {
+                      const d = payload[0].payload;
+                      return (
+                        <div className="bg-[#09090b] p-3 rounded-xl border border-[#27272a] text-xs text-white space-y-1.5 shadow-2xl">
+                          <p className="font-bold text-[#0071E3] border-b border-[#27272a] pb-1">{d.nombre}</p>
+                          <p>Presupuesto Asignado Total: <strong className="font-mono text-white">{formatMonedaCRC(d.asignadoTotal)}</strong></p>
+                          <p>Presupuesto Ejecutado: <strong className="font-mono text-emerald-400">{formatMonedaCRC(d.ejecutadoTotal)}</strong></p>
+                          <p>Porcentaje Ejecución: <strong className="font-mono text-blue-400">{d.pctEjecucion}%</strong></p>
+                        </div>
+                      );
+                    }
+                    return null;
+                  }}
+                />
+                <Legend wrapperStyle={{ fontSize: '11px', paddingTop: '10px' }} />
+                <Bar dataKey="ejecutadoM" name="Ejecutado (M)" stackId="a" fill="#22c55e" />
+                <Bar dataKey="restanteM" name="Restante (M)" stackId="a" fill="#3b82f6" radius={[0, 6, 6, 0]} />
+              </BarChart>
+            </ResponsiveContainer>
+          </div>
+        </div>
+      </div>
+
+      {/* FILA 3 — GRÁFICOS SECUNDARIOS: PORTAFOLIO Y FASES ACTIVAS (2 COLUMNAS) */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        {/* Gráfico 3: Estado del Portafolio por Semáforo (Donut Interactivo) */}
         <div className="bg-[#18181b] p-6 rounded-2xl border border-[#27272a] shadow-xl space-y-4">
           <div className="flex justify-between items-center border-b border-[#27272a] pb-3">
             <h3 className="text-base font-bold text-white flex items-center gap-2">
@@ -507,58 +564,13 @@ export default function ProyectosObraDashboard() {
             </div>
           </div>
         </div>
-      </div>
-
-      {/* FILA 3 — GRÁFICOS SECUNDARIOS (2 COLUMNAS) */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* Gráfico 3: Proyectos por Año (ComposedChart Agrupado + Línea Eje Derecho) */}
-        <div className="bg-[#18181b] p-6 rounded-2xl border border-[#27272a] shadow-xl space-y-4">
-          <div className="flex justify-between items-center border-b border-[#27272a] pb-3">
-            <h3 className="text-base font-bold text-white flex items-center gap-2">
-              <Calendar className="w-4 h-4 text-purple-400" />
-              <span>Evolución e Histórico de Proyectos por Año</span>
-            </h3>
-          </div>
-
-          <div className="h-72 w-full">
-            <ResponsiveContainer width="100%" height="100%">
-              <ComposedChart data={proyectosPorAnioData} margin={{ top: 10, right: 20, left: 0, bottom: 5 }}>
-                <XAxis dataKey="anio" stroke="#71717a" fontSize={11} />
-                <YAxis yAxisId="left" stroke="#a1a1aa" fontSize={11} />
-                <YAxis yAxisId="right" orientation="right" stroke="#3b82f6" fontSize={11} unit="%" />
-                <Tooltip
-                  content={({ active, payload }) => {
-                    if (active && payload && payload.length) {
-                      const d = payload[0].payload;
-                      return (
-                        <div className="bg-[#09090b] p-3 rounded-xl border border-[#27272a] text-xs text-white space-y-1 shadow-2xl">
-                          <p className="font-bold text-white border-b border-[#27272a] pb-1">Año {d.anio}</p>
-                          <p>Total Obras: <strong className="font-mono">{d.Total}</strong></p>
-                          <p>Verdes: <strong className="font-mono text-emerald-400">{d.Verdes}</strong></p>
-                          <p>Rojos: <strong className="font-mono text-rose-400">{d.Rojos}</strong></p>
-                          <p>Avance Promedio: <strong className="font-mono text-blue-400">{d.avancePromedio}%</strong></p>
-                        </div>
-                      );
-                    }
-                    return null;
-                  }}
-                />
-                <Legend wrapperStyle={{ fontSize: '11px', paddingTop: '10px' }} />
-                <Bar yAxisId="left" dataKey="Total" fill="#3f3f46" radius={[4, 4, 0, 0]} />
-                <Bar yAxisId="left" dataKey="Verdes" fill="#22c55e" radius={[4, 4, 0, 0]} />
-                <Bar yAxisId="left" dataKey="Rojos" fill="#ef4444" radius={[4, 4, 0, 0]} />
-                <Line yAxisId="right" type="monotone" dataKey="avancePromedio" name="Avance Prom. (%)" stroke="#3b82f6" strokeWidth={3} dot={{ r: 4 }} />
-              </ComposedChart>
-            </ResponsiveContainer>
-          </div>
-        </div>
 
         {/* Gráfico 4: Proyectos por Fase Activa */}
         <div className="bg-[#18181b] p-6 rounded-2xl border border-[#27272a] shadow-xl space-y-4">
           <div className="flex justify-between items-center border-b border-[#27272a] pb-3">
             <h3 className="text-base font-bold text-white flex items-center gap-2">
               <Clock className="w-4 h-4 text-amber-400" />
-              <span>Distribución por Fase Activa del Proyecto</span>
+              <span>Proyectos por Fase Activa</span>
             </h3>
           </div>
 
