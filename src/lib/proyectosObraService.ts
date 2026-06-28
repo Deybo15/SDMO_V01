@@ -397,3 +397,23 @@ export async function crearProyectoObra(proyectoData: Partial<ProyectoObra>, pre
     throw err;
   }
 }
+
+/**
+ * Actualizar datos generales de un proyecto existente
+ */
+export async function actualizarProyectoObra(id: string | number, proyectoData: Partial<ProyectoObra>) {
+  try {
+    const { data, error } = await supabase
+      .from('proyecto_obra')
+      .update(proyectoData)
+      .eq('id', id)
+      .select()
+      .single();
+
+    if (error) throw error;
+    return data;
+  } catch (err) {
+    console.error('Error actualizando proyecto de obra:', err);
+    throw err;
+  }
+}

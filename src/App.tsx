@@ -57,6 +57,7 @@ import ProyectosObraLista from './pages/proyectos-obra/ProyectosObraLista';
 import ProyectoObraDetalle from './pages/proyectos-obra/ProyectoObraDetalle';
 import ProyectosObraDashboard from './pages/proyectos-obra/ProyectosObraDashboard';
 import ProyectoObraFormulario from './pages/proyectos-obra/ProyectoObraFormulario';
+import ProyectoObraEditar from './pages/proyectos-obra/ProyectoObraEditar';
 
 function App() {
     return (
@@ -131,6 +132,7 @@ function App() {
                         <Route path="/proyectos-obra" element={<ProyectosObraLista />} />
                         <Route path="/proyectos-obra/dashboard" element={<ProyectosObraDashboard />} />
                         <Route path="/proyectos-obra/nuevo" element={<ProyectoObraFormulario />} />
+                        <Route path="/proyectos-obra/:id/editar" element={<ProyectoObraEditar />} />
                         <Route path="/proyectos-obra/:id" element={<ProyectoObraDetalle />} />
                     </Route>
                 </Route>

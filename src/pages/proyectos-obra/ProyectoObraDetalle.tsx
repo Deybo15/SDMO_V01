@@ -207,8 +207,17 @@ export default function ProyectoObraDetalle() {
             </p>
           </div>
 
-          <div className="w-full md:w-64 bg-[#09090b] p-4 rounded-xl border border-[#27272a] space-y-2">
-            <PoaProgressBar percentage={proyecto.avance_poa ?? proyecto.cumplimiento_poa ?? 0} />
+          <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-4">
+            <Link
+              to={`/proyectos-obra/${proyecto.id}/editar`}
+              className="flex items-center justify-center gap-2 px-4 py-2.5 bg-[#0071E3] hover:bg-[#0071E3]/80 text-white rounded-xl text-sm font-semibold transition-all shadow-lg shadow-[#0071E3]/20 shrink-0"
+            >
+              <Edit3 className="w-4 h-4" />
+              <span>Editar Proyecto</span>
+            </Link>
+            <div className="w-full md:w-64 bg-[#09090b] p-4 rounded-xl border border-[#27272a] space-y-2">
+              <PoaProgressBar percentage={proyecto.avance_poa ?? proyecto.cumplimiento_poa ?? 0} />
+            </div>
           </div>
         </div>
       </div>
