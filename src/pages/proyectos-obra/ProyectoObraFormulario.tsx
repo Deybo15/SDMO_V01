@@ -11,7 +11,7 @@ export default function ProyectoObraFormulario() {
   const [dependenciasExistentes, setDependenciasExistentes] = useState<string[]>([]);
   const [colaboradores, setColaboradores] = useState<any[]>([]);
 
-  // Estado del formulario
+  // Estado del formulario (inicializados en vacíos para mostrar "--Seleccionar--")
   const [nombreProyecto, setNombreProyecto] = useState<string>('');
   const [codigoMeta, setCodigoMeta] = useState<string>('');
   const [gerencia, setGerencia] = useState<string>('');
@@ -24,10 +24,10 @@ export default function ProyectoObraFormulario() {
   const [origenPresupuesto, setOrigenPresupuesto] = useState<string>('');
   const [lineaEstrategica, setLineaEstrategica] = useState<string>('');
   const [programa, setPrograma] = useState<string>('');
-  const [canton, setCanton] = useState<string>('San José');
+  const [canton, setCanton] = useState<string>('');
   const [distrito, setDistrito] = useState<string>('');
   const [semaforo, setSemaforo] = useState<SemaforoColor>('Verde');
-  const [estado, setEstado] = useState<string>('En Planeación');
+  const [estado, setEstado] = useState<string>('');
   const [anio, setAnio] = useState<number>(new Date().getFullYear());
   const [observacionesMetaPoa, setObservacionesMetaPoa] = useState<string>('');
   const [presupuestoAsignado, setPresupuestoAsignado] = useState<number>(0);
@@ -43,9 +43,6 @@ export default function ProyectoObraFormulario() {
     ]);
     setDependenciasExistentes(deps);
     setColaboradores(colabs);
-    if (deps.length > 0) {
-      setDependencia(deps[0]);
-    }
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -152,15 +149,17 @@ export default function ProyectoObraFormulario() {
               />
             </div>
 
+            {/* Gerencia Dropdown */}
             <div>
               <label className="block text-xs font-semibold text-[#a1a1aa] uppercase mb-1.5">Gerencia</label>
-              <input
-                type="text"
-                placeholder="Ej. Gerencia de Provisión de Servicios"
+              <select
                 value={gerencia}
                 onChange={(e) => setGerencia(e.target.value)}
-                className="w-full px-4 py-2.5 bg-[#09090b] border border-[#27272a] rounded-xl text-sm text-white focus:outline-none focus:border-[#0071E3] transition-all"
-              />
+                className="w-full px-4 py-2.5 bg-[#09090b] border border-[#27272a] rounded-xl text-sm text-white focus:outline-none focus:border-[#0071E3] transition-all cursor-pointer"
+              >
+                <option value="">--Seleccionar--</option>
+                <option value="Provisión de Servicios">Provisión de Servicios</option>
+              </select>
             </div>
 
             <div>
@@ -170,6 +169,7 @@ export default function ProyectoObraFormulario() {
                 onChange={(e) => setDependencia(e.target.value)}
                 className="w-full px-4 py-2.5 bg-[#09090b] border border-[#27272a] rounded-xl text-sm text-white focus:outline-none focus:border-[#0071E3] transition-all cursor-pointer"
               >
+                <option value="">--Seleccionar--</option>
                 {dependenciasExistentes.map((dep) => (
                   <option key={dep} value={dep}>{dep}</option>
                 ))}
@@ -196,7 +196,7 @@ export default function ProyectoObraFormulario() {
                 onChange={(e) => setProfesionalResponsable(e.target.value)}
                 className="w-full px-4 py-2.5 bg-[#09090b] border border-[#27272a] rounded-xl text-sm text-white focus:outline-none focus:border-[#0071E3] transition-all cursor-pointer"
               >
-                <option value="">-- Seleccionar Responsable --</option>
+                <option value="">--Seleccionar--</option>
                 {colaboradores.map((c) => (
                   <option key={c.identificacion} value={c.identificacion}>
                     {c.colaborador} ({c.identificacion})
@@ -215,26 +215,34 @@ export default function ProyectoObraFormulario() {
           </h3>
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            {/* Tipo de Contrato Dropdown */}
             <div>
               <label className="block text-xs font-semibold text-[#a1a1aa] uppercase mb-1.5">Tipo de Contrato</label>
-              <input
-                type="text"
-                placeholder="Ej. Licitación Mayor"
+              <select
                 value={tipoContrato}
                 onChange={(e) => setTipoContrato(e.target.value)}
-                className="w-full px-4 py-2.5 bg-[#09090b] border border-[#27272a] rounded-xl text-sm text-white focus:outline-none focus:border-[#0071E3] transition-all"
-              />
+                className="w-full px-4 py-2.5 bg-[#09090b] border border-[#27272a] rounded-xl text-sm text-white focus:outline-none focus:border-[#0071E3] transition-all cursor-pointer"
+              >
+                <option value="">--Seleccionar--</option>
+                <option value="Obra Pública">Obra Pública</option>
+                <option value="Servicio">Servicio</option>
+                <option value="Insumos">Insumos</option>
+              </select>
             </div>
 
+            {/* Tipo de Ejecución Dropdown */}
             <div>
               <label className="block text-xs font-semibold text-[#a1a1aa] uppercase mb-1.5">Tipo de Ejecución</label>
-              <input
-                type="text"
-                placeholder="Ej. Contratación Externa"
+              <select
                 value={tipoEjecucion}
                 onChange={(e) => setTipoEjecucion(e.target.value)}
-                className="w-full px-4 py-2.5 bg-[#09090b] border border-[#27272a] rounded-xl text-sm text-white focus:outline-none focus:border-[#0071E3] transition-all"
-              />
+                className="w-full px-4 py-2.5 bg-[#09090b] border border-[#27272a] rounded-xl text-sm text-white focus:outline-none focus:border-[#0071E3] transition-all cursor-pointer"
+              >
+                <option value="">--Seleccionar--</option>
+                <option value="Contrato">Contrato</option>
+                <option value="Administración">Administración</option>
+                <option value="Mixto">Mixto</option>
+              </select>
             </div>
 
             <div>
@@ -248,26 +256,36 @@ export default function ProyectoObraFormulario() {
               />
             </div>
 
+            {/* Origen Presupuesto Dropdown */}
             <div>
               <label className="block text-xs font-semibold text-[#a1a1aa] uppercase mb-1.5">Origen Presupuesto</label>
-              <input
-                type="text"
-                placeholder="Ej. Fondo Ordinario"
+              <select
                 value={origenPresupuesto}
                 onChange={(e) => setOrigenPresupuesto(e.target.value)}
-                className="w-full px-4 py-2.5 bg-[#09090b] border border-[#27272a] rounded-xl text-sm text-white focus:outline-none focus:border-[#0071E3] transition-all"
-              />
+                className="w-full px-4 py-2.5 bg-[#09090b] border border-[#27272a] rounded-xl text-sm text-white focus:outline-none focus:border-[#0071E3] transition-all cursor-pointer"
+              >
+                <option value="">--Seleccionar--</option>
+                <option value="Ordinario">Ordinario</option>
+                <option value="Extraordinario">Extraordinario</option>
+                <option value="Fondo de emergencias">Fondo de emergencias</option>
+              </select>
             </div>
 
+            {/* Línea Estratégica Dropdown */}
             <div>
               <label className="block text-xs font-semibold text-[#a1a1aa] uppercase mb-1.5">Línea Estratégica</label>
-              <input
-                type="text"
-                placeholder="Ej. Infraestructura Vial"
+              <select
                 value={lineaEstrategica}
                 onChange={(e) => setLineaEstrategica(e.target.value)}
-                className="w-full px-4 py-2.5 bg-[#09090b] border border-[#27272a] rounded-xl text-sm text-white focus:outline-none focus:border-[#0071E3] transition-all"
-              />
+                className="w-full px-4 py-2.5 bg-[#09090b] border border-[#27272a] rounded-xl text-sm text-white focus:outline-none focus:border-[#0071E3] transition-all cursor-pointer"
+              >
+                <option value="">--Seleccionar--</option>
+                <option value="Planificación_urbana_y_movilidad_sostenible">Planificación urbana y movilidad sostenible</option>
+                <option value="Resiliencia_y_sostenibilidad_ambiental">Resiliencia y sostenibilidad ambiental</option>
+                <option value="Equilibrio_y_Derecho_a_la_Ciudad">Equilibrio y Derecho a la Ciudad</option>
+                <option value="Gestión_Operativa_y_Administrativa_Ordinaria">Gestión Operativa y Administrativa Ordinaria</option>
+                <option value="Competitividad_e_Innovación">Competitividad e Innovación</option>
+              </select>
             </div>
 
             <div>
@@ -291,14 +309,17 @@ export default function ProyectoObraFormulario() {
           </h3>
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            {/* Cantón Dropdown */}
             <div>
               <label className="block text-xs font-semibold text-[#a1a1aa] uppercase mb-1.5">Cantón</label>
-              <input
-                type="text"
+              <select
                 value={canton}
                 onChange={(e) => setCanton(e.target.value)}
-                className="w-full px-4 py-2.5 bg-[#09090b] border border-[#27272a] rounded-xl text-sm text-white focus:outline-none focus:border-[#0071E3] transition-all"
-              />
+                className="w-full px-4 py-2.5 bg-[#09090b] border border-[#27272a] rounded-xl text-sm text-white focus:outline-none focus:border-[#0071E3] transition-all cursor-pointer"
+              >
+                <option value="">--Seleccionar--</option>
+                <option value="San José">San José</option>
+              </select>
             </div>
 
             <div>
@@ -327,14 +348,20 @@ export default function ProyectoObraFormulario() {
               </select>
             </div>
 
+            {/* Estado Dropdown */}
             <div>
               <label className="block text-xs font-semibold text-[#a1a1aa] uppercase mb-1.5">Estado</label>
-              <input
-                type="text"
+              <select
                 value={estado}
                 onChange={(e) => setEstado(e.target.value)}
-                className="w-full px-4 py-2.5 bg-[#09090b] border border-[#27272a] rounded-xl text-sm text-white focus:outline-none focus:border-[#0071E3] transition-all"
-              />
+                className="w-full px-4 py-2.5 bg-[#09090b] border border-[#27272a] rounded-xl text-sm text-white focus:outline-none focus:border-[#0071E3] transition-all cursor-pointer"
+              >
+                <option value="">--Seleccionar--</option>
+                <option value="Activo">Activo</option>
+                <option value="Adjudicado">Adjudicado</option>
+                <option value="Finalizado">Finalizado</option>
+                <option value="Suspendido">Suspendido</option>
+              </select>
             </div>
 
             <div>
