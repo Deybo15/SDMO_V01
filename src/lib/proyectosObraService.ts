@@ -417,3 +417,68 @@ export async function actualizarProyectoObra(id: string | number, proyectoData: 
     throw err;
   }
 }
+
+/**
+ * Helper para extraer coordenadas [lat, lng] desde formatos GeoJSON, EWKT o WKB de PostGIS
+ */
+export function parseCoordinates(geo: any): [number, number] | null {
+  if (!geo) return null;
+
+  try {
+    let obj = geo;
+    if (typeof geo === 'string') {
+      const trimmed = geo.trim();
+      if (trimmed.startsWith('{')) {
+        obj = JSON.parse(trimmed);
+      } else if (trimmed.includes('POINT')) {
+        const match = trimmed.match(/POINT\s*\(\s*([-\d.]+)\s+([-\d.]+)\s*\)/i);
+        if (match) {
+          const lng = parseFloat(match[1]);
+          const lat = parseFloat(match[2]);
+          if (!isNaN(lat) && !isNaN(lng)) return [lat, lng];
+        }
+      }
+    }
+
+    if (obj && typeof obj === 'object') {
+      if (obj.type === 'Point' && Array.isArray(obj.coordinates) && obj.coordinates.length >= 2) {
+        const lng = parseFloat(obj.coordinates[0]);
+        const lat = parseFloat(obj.coordinates[1]);
+        if (!isNaN(lat) && !isNaN(lng)) return [lat, lng];
+      }
+    }
+  } catch (e) {
+    console.error('Error parseando coordenadas:', e);
+  }
+  return null;
+}
+
+/**
+ * Obtener proyectos con georeferencia para el mapa
+ */
+export async function getProyectosConGeo() {
+  try {
+    const { data, error } = await supabase
+      .from('proyecto_obra')
+      .select('id, nombre_proyecto, dependencia, semaforo, estado, georeferencia')
+      .not('georeferencia', 'is', null);
+
+    if (error) throw error;
+    if (!data) return [];
+
+    return data
+      .map((p: any) => {
+        const coords = parseCoordinates(p.georeferencia);
+        if (!coords) return null;
+        return {
+          ...p,
+          lat: coords[0],
+          lng: coords[1]
+        };
+      })
+      .filter(Boolean);
+  } catch (err) {
+    console.error('Error obteniendo proyectos georeferenciados:', err);
+    return [];
+  }
+}

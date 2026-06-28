@@ -3,7 +3,7 @@ import { Link } from 'react-router-dom';
 import { ProyectoObraConDetalles, SemaforoColor } from '../../types/proyectosObra';
 import { getProyectosObra, getAniosProyectos } from '../../lib/proyectosObraService';
 import { ProyectoCard } from '../../components/proyectos/ProyectoCard';
-import { Search, Filter, LayoutDashboard, ChevronLeft, ChevronRight, RefreshCw, Layers, Plus } from 'lucide-react';
+import { Search, Filter, LayoutDashboard, ChevronLeft, ChevronRight, RefreshCw, Layers, Plus, MapPin } from 'lucide-react';
 
 export default function ProyectosObraLista() {
   const [proyectos, setProyectos] = useState<ProyectoObraConDetalles[]>([]);
@@ -85,13 +85,20 @@ export default function ProyectosObraLista() {
           </p>
         </div>
 
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-3 flex-wrap">
           <Link
             to="/proyectos-obra/nuevo"
             className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-[#0071E3] hover:bg-[#0071E3]/80 text-white text-sm font-semibold transition-all duration-200 shadow-lg shadow-[#0071E3]/20"
           >
             <Plus className="w-4 h-4" />
             <span>Nuevo Proyecto</span>
+          </Link>
+          <Link
+            to="/proyectos-obra/mapa"
+            className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-[#27272a] hover:bg-[#3f3f46] text-white text-sm font-semibold transition-all duration-200 border border-[#3f3f46]/50 shadow-sm"
+          >
+            <MapPin className="w-4 h-4 text-emerald-400" />
+            <span>Ver Mapa</span>
           </Link>
           <Link
             to="/proyectos-obra/dashboard"
