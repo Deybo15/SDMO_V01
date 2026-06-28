@@ -95,6 +95,13 @@ export default function ProyectosObraLista() {
 
         <div className="flex items-center gap-3">
           <Link
+            to="/proyectos-obra/nuevo"
+            className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-[#0071E3] hover:bg-[#0071E3]/80 text-white text-sm font-semibold transition-all duration-200 shadow-lg shadow-[#0071E3]/20"
+          >
+            <Plus className="w-4 h-4" />
+            <span>Nuevo Proyecto</span>
+          </Link>
+          <Link
             to="/proyectos-obra/dashboard"
             className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-[#27272a] hover:bg-[#3f3f46] text-white text-sm font-semibold transition-all duration-200 border border-[#3f3f46]/50 shadow-sm"
           >

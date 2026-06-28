@@ -266,3 +266,61 @@ export async function getDashboardStats() {
     throw err;
   }
 }
+
+/**
+ * Obtener lista de colaboradores para el selector de responsable
+ */
+export async function getColaboradores() {
+  try {
+    const { data, error } = await supabase
+      .from('colaboradores_06')
+      .select('identificacion, colaborador, alias')
+      .order('colaborador', { ascending: true });
+
+    if (error) throw error;
+    return data || [];
+  } catch (err) {
+    console.error('Error obteniendo colaboradores:', err);
+    return [];
+  }
+}
+
+/**
+ * Crear un nuevo proyecto de obra con presupuesto inicial opcional
+ */
+export async function crearProyectoObra(proyectoData: Partial<ProyectoObra>, presupuestoAsignado: number = 0) {
+  try {
+    const { data: proyecto, error: errProyecto } = await supabase
+      .from('proyecto_obra')
+      .insert([{
+        ...proyectoData,
+        activo: proyectoData.activo ?? true
+      }])
+      .select()
+      .single();
+
+    if (errProyecto || !proyecto) throw errProyecto || new Error('Error creando proyecto');
+
+    // Si se proporciona presupuesto inicial, insertarlo en presupuesto_proyecto
+    if (presupuestoAsignado > 0) {
+      const { data: user } = await supabase.auth.getUser();
+      await supabase.from('presupuesto_proyecto').insert([{
+        proyecto_id: proyecto.id,
+        version: 1,
+        descripcion_modificacion: 'Presupuesto inicial asignado al crear el proyecto',
+        presupuesto_asignado: presupuestoAsignado,
+        presupuesto_adjudicado: 0,
+        presupuesto_ejecutado: 0,
+        presupuesto_comprometido: 0,
+        presupuesto_reserva: 0,
+        es_vigente: true,
+        registrado_por: user.user?.email || 'Sistema'
+      }]);
+    }
+
+    return proyecto;
+  } catch (err) {
+    console.error('Error al crear proyecto de obra:', err);
+    throw err;
+  }
+}
