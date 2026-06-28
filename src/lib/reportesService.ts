@@ -49,7 +49,7 @@ export function generarReporteProyectoPDF(proyecto: ProyectoObraConDetalles) {
   doc.setFont('helvetica', 'bold');
 
   const titleText = `Informe de Proyecto: ${proyecto.nombre_proyecto}`;
-  const maxTitleWidth = pageWidth - 28; // 182mm aprox de ancho disponible
+  const maxTitleWidth = 170; // 170mm disponibles
   const titleLines = doc.splitTextToSize(titleText, maxTitleWidth);
 
   doc.text(titleLines, 14, currentY);
