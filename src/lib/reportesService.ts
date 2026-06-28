@@ -5,12 +5,13 @@ import { ProyectoObraConDetalles } from '../types/proyectosObra';
 import { formatMonedaCRC, formatFechaCR } from './proyectosObraService';
 
 /**
- * Formateador de moneda específico para celdas de PDF (reemplaza ₡ por CRC para evitar incompatibilidad en PDF standard fonts)
+ * Formateador de moneda específico para celdas de PDF (reemplaza cualquier ₡ por CRC para evitar incompatibilidad en PDF standard fonts)
  */
 export const formatMonedaPDF = (monto: number | null | undefined): string => {
   if (monto === null || monto === undefined || isNaN(monto)) return 'CRC 0';
   const dects = Math.round(monto);
-  return 'CRC ' + dects.toLocaleString('es-CR');
+  const numStr = dects.toLocaleString('es-CR').replace(/₡/g, '').trim();
+  return 'CRC ' + numStr;
 };
 
 /**
@@ -42,19 +43,27 @@ export function generarReporteProyectoPDF(proyecto: ProyectoObraConDetalles) {
 
   currentY = 32;
 
-  // Título del Reporte
+  // Título del Reporte (soporta títulos largos en 2 o 3 líneas sin cortarse)
   doc.setTextColor(...textColor);
-  doc.setFontSize(16);
+  doc.setFontSize(14);
   doc.setFont('helvetica', 'bold');
-  doc.text(`Informe de Proyecto: ${proyecto.nombre_proyecto}`, 14, currentY);
 
-  currentY += 6;
+  const titleText = `Informe de Proyecto: ${proyecto.nombre_proyecto}`;
+  const maxTitleWidth = pageWidth - 28; // 182mm aprox de ancho disponible
+  const titleLines = doc.splitTextToSize(titleText, maxTitleWidth);
+
+  doc.text(titleLines, 14, currentY);
+
+  // Ajustar espaciado dinámicamente según las líneas del título
+  const lineHeight = 6;
+  currentY += (titleLines.length * lineHeight) + 1;
+
   doc.setFontSize(9);
   doc.setFont('helvetica', 'normal');
   doc.setTextColor(100, 116, 139);
   doc.text(`Fecha de emisión: ${new Date().toLocaleDateString('es-CR')} | ID: ${proyecto.id}`, 14, currentY);
 
-  currentY += 8;
+  currentY += 7;
 
   // SECCIÓN 1: DATOS GENERALES
   autoTable(doc, {
