@@ -208,6 +208,20 @@ export async function registrarSeguimiento(seguimiento: Omit<SeguimientoProyecto
       .single();
 
     if (error) throw error;
+
+    // Actualizar semáforo y avance_poa en la tabla proyecto_obra
+    const { error: errUpdate } = await supabase
+      .from('proyecto_obra')
+      .update({
+        semaforo: seguimiento.semaforo,
+        avance_poa: seguimiento.avance_registrado
+      })
+      .eq('id', seguimiento.proyecto_id);
+
+    if (errUpdate) {
+      console.error('Error actualizando semaforo y avance_poa en proyecto_obra:', errUpdate);
+    }
+
     return data;
   } catch (err) {
     console.error('Error registrando seguimiento:', err);
