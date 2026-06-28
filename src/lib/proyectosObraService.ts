@@ -347,7 +347,8 @@ export async function getColaboradores() {
   try {
     const { data, error } = await supabase
       .from('colaboradores_06')
-      .select('identificacion, colaborador, alias')
+      .select('identificacion, colaborador')
+      .eq('profesional_responsable', true)
       .order('colaborador', { ascending: true });
 
     if (error) throw error;
