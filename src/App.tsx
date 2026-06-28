@@ -53,6 +53,9 @@ import RetirosPorArticulo from './pages/RetirosPorArticulo';
 import GestionCambios from './pages/GestionCambios';
 import CambiosOrdenTrabajo from './pages/CambiosOrdenTrabajo';
 import ConsultarMaterialesSolicitud from './pages/ConsultarMaterialesSolicitud';
+import ProyectosObraLista from './pages/proyectos-obra/ProyectosObraLista';
+import ProyectoObraDetalle from './pages/proyectos-obra/ProyectoObraDetalle';
+import ProyectosObraDashboard from './pages/proyectos-obra/ProyectosObraDashboard';
 
 function App() {
     return (
@@ -122,6 +125,11 @@ function App() {
                         <Route path="/gestion-cambios" element={<GestionCambios />} />
                         <Route path="/activos" element={<Activos />} />
                         <Route path="/activos/inventario" element={<InventarioActivos />} />
+
+                        {/* Proyectos de Obra */}
+                        <Route path="/proyectos-obra" element={<ProyectosObraLista />} />
+                        <Route path="/proyectos-obra/dashboard" element={<ProyectosObraDashboard />} />
+                        <Route path="/proyectos-obra/:id" element={<ProyectoObraDetalle />} />
                     </Route>
                 </Route>
             </Routes>

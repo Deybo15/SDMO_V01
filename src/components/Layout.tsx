@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Link, useLocation, useNavigate, Outlet } from 'react-router-dom';
-import { LayoutDashboard, Package, Users, Building2, ClipboardList, Settings2, Wrench, LogOut, UserCircle2, Menu, X, Calculator, History, RefreshCw } from 'lucide-react';
+import { LayoutDashboard, Package, Users, Building2, ClipboardList, Settings2, Wrench, LogOut, UserCircle2, Menu, X, Calculator, History, RefreshCw, Layers } from 'lucide-react';
 import { cn } from '../lib/utils';
 import { supabase } from '../lib/supabase';
 import CommandPalette from './CommandPalette';
@@ -45,6 +45,7 @@ export default function Layout() {
 
     const navItems = [
         { icon: LayoutDashboard, label: 'Inicio', path: '/' },
+        { icon: Layers, label: 'Proyectos de Obra', path: '/proyectos-obra' },
         { icon: Package, label: 'Gestión de Artículos', path: '/articulos' },
         { icon: Users, label: 'Cliente Interno', path: '/cliente-interno' },
         { icon: Building2, label: 'Cliente Externo', path: '/cliente-externo' },
@@ -54,7 +55,6 @@ export default function Layout() {
         { icon: Calculator, label: 'Proyección Compras', path: '/gestion-interna/proyeccion-compras' },
         { icon: Wrench, label: 'Gestión de Activos', path: '/activos' },
         { icon: History, label: 'Historial Auditoría', path: '/gestion-interna/auditoria' },
-
     ];
 
     // Mobile Menu State
