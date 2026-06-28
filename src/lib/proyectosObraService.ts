@@ -19,12 +19,12 @@ export const formatMonedaCRC = (monto: number | null | undefined): string => {
 export const formatFechaCR = (fechaStr: string | null | undefined): string => {
   if (!fechaStr) return '-';
   try {
-    const d = new Date(fechaStr);
-    if (isNaN(d.getTime())) return fechaStr;
-    const day = String(d.getDate()).padStart(2, '0');
-    const month = String(d.getMonth() + 1).padStart(2, '0');
-    const year = d.getFullYear();
-    return `${day}/${month}/${year}`;
+    const parts = fechaStr.split('T')[0].split('-');
+    if (parts.length === 3) {
+      const [year, month, day] = parts;
+      return `${day.padStart(2, '0')}/${month.padStart(2, '0')}/${year}`;
+    }
+    return fechaStr;
   } catch {
     return fechaStr;
   }
