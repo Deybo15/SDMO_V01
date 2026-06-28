@@ -2,12 +2,13 @@ import React, { useState, useEffect } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
 import { ProyectoObraConDetalles, SemaforoColor } from '../../types/proyectosObra';
 import { getProyectoObraPorId, registrarSeguimiento, actualizarFaseProyecto, formatMonedaCRC, formatFechaCR } from '../../lib/proyectosObraService';
+import { generarReporteProyectoPDF, generarReporteProyectoExcel } from '../../lib/reportesService';
 import { SemaforoBadge } from '../../components/proyectos/SemaforoBadge';
 import { PoaProgressBar } from '../../components/proyectos/PoaProgressBar';
 import { supabase } from '../../lib/supabase';
 import { 
   ArrowLeft, Building2, User, FileText, DollarSign, Briefcase, 
-  Clock, Activity, Plus, CheckCircle2, AlertCircle, Calendar, Send, Edit3, History, Save, X
+  Clock, Activity, Plus, CheckCircle2, AlertCircle, Calendar, Send, Edit3, History, Save, X, FileSpreadsheet, Download
 } from 'lucide-react';
 
 export default function ProyectoObraDetalle() {
@@ -207,15 +208,34 @@ export default function ProyectoObraDetalle() {
             </p>
           </div>
 
-          <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-4">
+          <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 flex-wrap">
+            <button
+              onClick={() => generarReporteProyectoPDF(proyecto)}
+              className="flex items-center justify-center gap-2 px-3.5 py-2.5 bg-[#27272a] hover:bg-[#3f3f46] text-white rounded-xl text-xs font-semibold transition-all border border-[#3f3f46]/50 shadow-sm shrink-0"
+              title="Descargar Informe en PDF"
+            >
+              <FileText className="w-4 h-4 text-rose-400" />
+              <span>PDF</span>
+            </button>
+
+            <button
+              onClick={() => generarReporteProyectoExcel(proyecto)}
+              className="flex items-center justify-center gap-2 px-3.5 py-2.5 bg-[#27272a] hover:bg-[#3f3f46] text-white rounded-xl text-xs font-semibold transition-all border border-[#3f3f46]/50 shadow-sm shrink-0"
+              title="Descargar Libro en Excel"
+            >
+              <FileSpreadsheet className="w-4 h-4 text-emerald-400" />
+              <span>Excel</span>
+            </button>
+
             <Link
               to={`/proyectos-obra/${proyecto.id}/editar`}
-              className="flex items-center justify-center gap-2 px-4 py-2.5 bg-[#0071E3] hover:bg-[#0071E3]/80 text-white rounded-xl text-sm font-semibold transition-all shadow-lg shadow-[#0071E3]/20 shrink-0"
+              className="flex items-center justify-center gap-2 px-4 py-2.5 bg-[#0071E3] hover:bg-[#0071E3]/80 text-white rounded-xl text-xs font-semibold transition-all shadow-lg shadow-[#0071E3]/20 shrink-0"
             >
               <Edit3 className="w-4 h-4" />
               <span>Editar Proyecto</span>
             </Link>
-            <div className="w-full md:w-64 bg-[#09090b] p-4 rounded-xl border border-[#27272a] space-y-2">
+
+            <div className="w-full md:w-56 bg-[#09090b] p-3 rounded-xl border border-[#27272a] space-y-1.5">
               <PoaProgressBar percentage={proyecto.avance_poa ?? proyecto.cumplimiento_poa ?? 0} />
             </div>
           </div>
