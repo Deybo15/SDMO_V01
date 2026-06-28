@@ -80,19 +80,19 @@ export async function getProyectosObra(
       return { proyectos: [], totalCount: count || 0 };
     }
 
-    // Obtener cédulas únicas de colaboradores para traer sus nombres
-    const cedulas = Array.from(new Set(data.map(p => p.profesional_responsable).filter(Boolean)));
+    // Obtener identificaciones/alias únicos de colaboradores para traer sus nombres o alias
+    const valoresResp = Array.from(new Set(data.map(p => p.profesional_responsable).filter(Boolean)));
     
     let colabMap: Record<string, string> = {};
-    if (cedulas.length > 0) {
+    if (valoresResp.length > 0) {
       const { data: colabs } = await supabase
         .from('colaboradores_06')
-        .select('identificacion, colaborador')
-        .in('identificacion', cedulas);
+        .select('identificacion, colaborador, alias');
 
       if (colabs) {
         colabs.forEach((c: any) => {
-          colabMap[c.identificacion] = c.colaborador;
+          if (c.identificacion) colabMap[c.identificacion] = c.alias || c.colaborador;
+          if (c.alias) colabMap[c.alias] = c.alias;
         });
       }
     }
@@ -176,7 +176,7 @@ export async function getProyectoObraPorId(id: string | number): Promise<Proyect
       supabase.from('seguimiento_proyecto').select('*').eq('proyecto_id', id).order('fecha_corte', { ascending: false }),
       supabase.from('historial_fase_proyecto').select('*').eq('proyecto_id', id).order('creado_en', { ascending: false }),
       proyecto.profesional_responsable 
-        ? supabase.from('colaboradores_06').select('colaborador').eq('identificacion', proyecto.profesional_responsable).maybeSingle()
+        ? supabase.from('colaboradores_06').select('colaborador, alias').or(`identificacion.eq.${proyecto.profesional_responsable},alias.eq.${proyecto.profesional_responsable}`).maybeSingle()
         : Promise.resolve({ data: null, error: null })
     ]);
 
@@ -185,7 +185,7 @@ export async function getProyectoObraPorId(id: string | number): Promise<Proyect
 
     return {
       ...proyecto,
-      nombre_responsable: resColab.data?.colaborador || proyecto.profesional_responsable || 'No asignado',
+      nombre_responsable: resColab.data?.alias || resColab.data?.colaborador || proyecto.profesional_responsable || 'No asignado',
       presupuesto_vigente: presupuestoVigente,
       contrato: resContrato.data || null,
       fases: resFases.data || [],
@@ -347,9 +347,10 @@ export async function getColaboradores() {
   try {
     const { data, error } = await supabase
       .from('colaboradores_06')
-      .select('identificacion, colaborador')
+      .select('identificacion, colaborador, alias')
       .eq('profesional_responsable', true)
-      .order('colaborador', { ascending: true });
+      .not('alias', 'is', null)
+      .order('alias', { ascending: true });
 
     if (error) throw error;
     return data || [];

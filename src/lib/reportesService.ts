@@ -370,7 +370,7 @@ export async function generarInformeGeneralExcel() {
       supabase.from('contrato_obra').select('*'),
       supabase.from('fase_proyecto').select('*'),
       supabase.from('seguimiento_proyecto').select('*').order('fecha_corte', { ascending: false }),
-      supabase.from('colaboradores_06').select('identificacion, colaborador')
+      supabase.from('colaboradores_06').select('identificacion, colaborador, alias')
     ]);
 
     const presupuestosMap = new Map<string | number, any>();
@@ -394,7 +394,8 @@ export async function generarInformeGeneralExcel() {
 
     const colabsMap = new Map<string, string>();
     (resColabs.data || []).forEach(c => {
-      if (c.identificacion) colabsMap.set(String(c.identificacion).trim(), c.colaborador);
+      if (c.identificacion) colabsMap.set(String(c.identificacion).trim(), c.alias || c.colaborador);
+      if (c.alias) colabsMap.set(String(c.alias).trim(), c.alias);
     });
 
     // 3. Encabezados de la hoja única oficial
