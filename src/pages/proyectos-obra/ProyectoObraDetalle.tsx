@@ -407,10 +407,23 @@ export default function ProyectoObraDetalle() {
 
             {proyecto.fases && proyecto.fases.length > 0 ? (
               <div className="space-y-4">
-                {proyecto.fases.map((fase) => {
-                  const enEdicion = faseEnEdicion === fase.id;
-                  return (
-                    <div key={fase.id} className="bg-[#09090b] p-5 rounded-xl border border-[#27272a] space-y-4">
+                {(() => {
+                  const ordenFases = [
+                    'Inicio_y_Estudios_Preliminares',
+                    'Planeación_y_Diseños',
+                    'Ejecución_y_Construcción',
+                    'Recepción_y_Cierre'
+                  ];
+                  const fasesOrdenadas = [...proyecto.fases].sort((a, b) => {
+                    const idxA = ordenFases.indexOf(a.fase);
+                    const idxB = ordenFases.indexOf(b.fase);
+                    return (idxA === -1 ? 99 : idxA) - (idxB === -1 ? 99 : idxB);
+                  });
+
+                  return fasesOrdenadas.map((fase) => {
+                    const enEdicion = faseEnEdicion === fase.id;
+                    return (
+                      <div key={fase.id} className="bg-[#09090b] p-5 rounded-xl border border-[#27272a] space-y-4">
                       <div className="flex justify-between items-center flex-wrap gap-2">
                         <div className="flex items-center gap-3">
                           {fase.completada ? (
@@ -511,7 +524,8 @@ export default function ProyectoObraDetalle() {
                       )}
                     </div>
                   );
-                })}
+                });
+              })()}
               </div>
             ) : (
               <p className="text-sm text-[#71717a] py-8 text-center">No hay fases configuradas para este proyecto.</p>
