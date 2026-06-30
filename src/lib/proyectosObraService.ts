@@ -30,14 +30,6 @@ export const formatFechaCR = (fechaStr: string | null | undefined): string => {
   }
 };
 
-export const SEMAFORO_COLORS = {
-  Verde: { bg: '#22c55e', text: '#ffffff', badgeBg: 'rgba(34, 197, 94, 0.15)', border: 'rgba(34, 197, 94, 0.4)' },
-  Rojo: { bg: '#ef4444', text: '#ffffff', badgeBg: 'rgba(239, 68, 68, 0.15)', border: 'rgba(239, 68, 68, 0.4)' },
-  Amarillo: { bg: '#eab308', text: '#ffffff', badgeBg: 'rgba(234, 179, 8, 0.15)', border: 'rgba(234, 179, 8, 0.4)' },
-  Morado: { bg: '#a855f7', text: '#ffffff', badgeBg: 'rgba(168, 85, 247, 0.15)', border: 'rgba(168, 85, 247, 0.4)' },
-  Azul: { bg: '#3b82f6', text: '#ffffff', badgeBg: 'rgba(59, 130, 246, 0.15)', border: 'rgba(59, 130, 246, 0.4)' },
-};
-
 /**
  * Obtener lista paginada de proyectos con filtros
  */
@@ -63,9 +55,6 @@ export async function getProyectosObra(
       query = query.eq('anio', Number(filtros.anio));
     }
 
-    if (filtros.semaforo) {
-      query = query.eq('semaforo', filtros.semaforo);
-    }
 
     const desde = (pagina - 1) * porPagina;
     const hasta = desde + porPagina - 1;
@@ -268,17 +257,16 @@ export async function registrarSeguimiento(seguimiento: Omit<SeguimientoProyecto
 
     if (error) throw error;
 
-    // Actualizar semáforo y avance_poa en la tabla proyecto_obra
+    // Actualizar avance_poa en la tabla proyecto_obra
     const { error: errUpdate } = await supabase
       .from('proyecto_obra')
       .update({
-        semaforo: seguimiento.semaforo,
         avance_poa: seguimiento.avance_registrado
       })
       .eq('id', seguimiento.proyecto_id);
 
     if (errUpdate) {
-      console.error('Error actualizando semaforo y avance_poa en proyecto_obra:', errUpdate);
+      console.error('Error actualizando avance_poa en proyecto_obra:', errUpdate);
     }
 
     return data;
@@ -474,7 +462,7 @@ export async function getProyectosConGeo() {
   try {
     const { data, error } = await supabase
       .from('proyecto_obra')
-      .select('id, nombre_proyecto, dependencia, semaforo, estado, georeferencia')
+      .select('id, nombre_proyecto, dependencia, estado, georeferencia')
       .not('georeferencia', 'is', null);
 
     if (error) throw error;

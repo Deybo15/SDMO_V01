@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { ProyectoObraConDetalles, SemaforoColor } from '../../types/proyectosObra';
+import { ProyectoObraConDetalles } from '../../types/proyectosObra';
 import { getProyectosObra, getAniosProyectos } from '../../lib/proyectosObraService';
 import { generarInformeGeneralExcel } from '../../lib/reportesService';
 import { ProyectoCard } from '../../components/proyectos/ProyectoCard';
@@ -17,7 +17,7 @@ export default function ProyectosObraLista() {
   // Filtros
   const [filtroNombre, setFiltroNombre] = useState<string>('');
   const [filtroAnio, setFiltroAnio] = useState<string>('');
-  const [filtroSemaforo, setFiltroSemaforo] = useState<SemaforoColor | ''>('');
+
 
   // Listas para dropdowns de filtros
   const [anios, setAnios] = useState<number[]>([]);
@@ -28,7 +28,7 @@ export default function ProyectosObraLista() {
 
   useEffect(() => {
     cargarProyectos();
-  }, [pagina, filtroAnio, filtroSemaforo]);
+  }, [pagina, filtroAnio]);
 
   const cargarCatalogos = async () => {
     const ans = await getAniosProyectos();
@@ -41,8 +41,7 @@ export default function ProyectosObraLista() {
       const res = await getProyectosObra(
         {
           nombre: filtroNombre,
-          anio: filtroAnio,
-          semaforo: filtroSemaforo
+          anio: filtroAnio
         },
         pagina,
         porPagina
@@ -65,7 +64,6 @@ export default function ProyectosObraLista() {
   const handleLimpiarFiltros = () => {
     setFiltroNombre('');
     setFiltroAnio('');
-    setFiltroSemaforo('');
     setPagina(1);
   };
 
@@ -132,7 +130,7 @@ export default function ProyectosObraLista() {
 
       {/* Barra de Filtros */}
       <div className="bg-[#18181b] p-5 rounded-2xl border border-[#27272a] shadow-xl space-y-4">
-        <form onSubmit={handleBuscar} className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        <form onSubmit={handleBuscar} className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
           {/* Nombre */}
           <div className="relative lg:col-span-2">
             <Search className="w-4 h-4 absolute left-3.5 top-1/2 -translate-y-1/2 text-[#71717a]" />
@@ -159,21 +157,7 @@ export default function ProyectosObraLista() {
             </select>
           </div>
 
-          {/* Semáforo */}
-          <div>
-            <select
-              value={filtroSemaforo}
-              onChange={(e) => { setFiltroSemaforo(e.target.value as SemaforoColor | ''); setPagina(1); }}
-              className="w-full px-3 py-2.5 bg-[#09090b] border border-[#27272a] rounded-xl text-sm text-white focus:outline-none focus:border-[#0071E3] transition-all cursor-pointer"
-            >
-              <option value="">Todos los Semáforos</option>
-              <option value="Verde">🟢 Verde</option>
-              <option value="Rojo">🔴 Rojo</option>
-              <option value="Amarillo">🟡 Amarillo</option>
-              <option value="Morado">🟣 Morado</option>
-              <option value="Azul">🔵 Azul</option>
-            </select>
-          </div>
+
         </form>
 
         <div className="flex justify-between items-center pt-2 border-t border-[#27272a]/50 text-xs text-[#a1a1aa]">

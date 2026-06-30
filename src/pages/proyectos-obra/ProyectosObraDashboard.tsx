@@ -4,8 +4,7 @@ import {
   ResponsiveContainer, BarChart, Bar, XAxis, YAxis, Tooltip, Legend,
   PieChart, Pie, Cell
 } from 'recharts';
-import { getDashboardStats, formatMonedaCRC, formatFechaCR, SEMAFORO_COLORS } from '../../lib/proyectosObraService';
-import { SemaforoBadge } from '../../components/proyectos/SemaforoBadge';
+import { getDashboardStats, formatMonedaCRC, formatFechaCR } from '../../lib/proyectosObraService';
 import {
   ArrowLeft, RefreshCw, AlertTriangle, TrendingUp, DollarSign, Briefcase,
   Clock, Activity, Filter, Layers
@@ -18,7 +17,7 @@ export default function ProyectosObraDashboard() {
 
   // Filtros interactivos
   const [filtroAnio, setFiltroAnio] = useState<string>('TODOS');
-  const [semaforoFiltroTabla, setSemaforoFiltroTabla] = useState<string | null>('Rojo');
+
 
   useEffect(() => {
     cargarDatos();
@@ -52,8 +51,7 @@ export default function ProyectosObraDashboard() {
     let enEjecucion = 0;
     let sinIniciar = 0;
     let sumaAvance = 0;
-    let rojosCount = 0;
-    const conteoSemaforo: Record<string, number> = { Verde: 0, Rojo: 0, Amarillo: 0, Morado: 0, Azul: 0 };
+    let riesgoCount = 0;
 
     let totalAsignado = 0;
     let totalEjecutado = 0;
@@ -71,9 +69,8 @@ export default function ProyectosObraDashboard() {
         sinIniciar++;
       }
 
-      if (p.semaforo) {
-        conteoSemaforo[p.semaforo] = (conteoSemaforo[p.semaforo] || 0) + 1;
-        if (p.semaforo === 'Rojo') rojosCount++;
+      if (avance < 0.30) {
+        riesgoCount++;
       }
 
       // Presupuesto desde el mapa
@@ -96,15 +93,14 @@ export default function ProyectosObraDashboard() {
       totalAsignado,
       totalEjecutado,
       pctEjecucionPresupuesto,
-      rojosCount,
-      conteoSemaforo
+      riesgoCount
     };
   }, [proyectosFiltrados, rawStats]);
 
   // 1. Carga por Profesional
   const cargaProfesionalesData = useMemo(() => {
     if (!proyectosFiltrados.length) return [];
-    const profMap = new Map<string, { total: number; sumaAvance: number; rojos: number }>();
+    const profMap = new Map<string, { total: number; sumaAvance: number; riesgo: number }>();
 
     proyectosFiltrados.forEach((p: any) => {
       const respKey = p.profesional_responsable
@@ -112,25 +108,25 @@ export default function ProyectosObraDashboard() {
         : 'Sin Asignar';
 
       if (!profMap.has(respKey)) {
-        profMap.set(respKey, { total: 0, sumaAvance: 0, rojos: 0 });
+        profMap.set(respKey, { total: 0, sumaAvance: 0, riesgo: 0 });
       }
       const item = profMap.get(respKey)!;
       item.total++;
-      item.sumaAvance += Number(p.avance_poa ?? p.cumplimiento_poa ?? 0);
-      if (p.semaforo === 'Rojo') item.rojos++;
+      const avance = Number(p.avance_poa ?? p.cumplimiento_poa ?? 0);
+      item.sumaAvance += avance;
+      if (avance < 0.30) item.riesgo++;
     });
 
     return Array.from(profMap.entries()).map(([nombre, datos]) => {
       const promAvance = datos.total > 0 ? (datos.sumaAvance / datos.total) : 0;
-      let fillColor = '#ef4444'; // Rojo si <40%
-      if (promAvance >= 0.6) fillColor = '#22c55e'; // Verde
-      else if (promAvance >= 0.4) fillColor = '#eab308'; // Amarillo
+      let fillColor = '#3b82f6'; // Azul estándar
+      if (promAvance < 0.30) fillColor = '#ef4444'; // Rojo si avance < 30%
 
       return {
         nombre,
         proyectos: datos.total,
         promAvance: Math.round(promAvance * 100),
-        rojos: datos.rojos,
+        riesgo: datos.riesgo,
         fillColor
       };
     }).sort((a, b) => b.proyectos - a.proyectos);
@@ -174,15 +170,7 @@ export default function ProyectosObraDashboard() {
     }).filter(d => d.asignadoTotal > 0).sort((a, b) => b.asignadoTotal - a.asignadoTotal);
   }, [proyectosFiltrados, rawStats]);
 
-  // 3. Estado del Portafolio por Semáforo (Donut)
-  const donutSemafotoData = useMemo(() => {
-    const order = ['Verde', 'Rojo', 'Amarillo', 'Morado', 'Azul'];
-    return order.map(sem => ({
-      name: sem,
-      value: kpis.conteoSemaforo[sem] || 0,
-      color: SEMAFORO_COLORS[sem as keyof typeof SEMAFORO_COLORS]?.bg || '#3b82f6'
-    })).filter(d => d.value > 0);
-  }, [kpis.conteoSemaforo]);
+
 
   // 4. Proyectos por Fase Activa
   const fasesActivasData = useMemo(() => {
@@ -210,14 +198,15 @@ export default function ProyectosObraDashboard() {
     }));
   }, [proyectosFiltrados, rawStats]);
 
-  // 5. Tabla de alertas (Proyectos en Rojo o filtrados por clic en donut)
+  // 5. Tabla de alertas (Proyectos con avance menor a 30%)
   const tablaAlertasProyectos = useMemo(() => {
     if (!proyectosFiltrados.length) return [];
-    let filtrados = proyectosFiltrados;
-
-    if (semaforoFiltroTabla) {
-      filtrados = filtrados.filter((p: any) => p.semaforo === semaforoFiltroTabla);
-    }
+    
+    // Filter projects where progress is low (less than 30%)
+    const filtrados = proyectosFiltrados.filter((p: any) => {
+      const avance = Number(p.avance_poa ?? p.cumplimiento_poa ?? 0);
+      return avance < 0.30;
+    });
 
     return filtrados.map((p: any) => {
       const seg = rawStats?.ultimosSeguimientosMap?.get(p.id);
@@ -230,12 +219,11 @@ export default function ProyectosObraDashboard() {
         nombre: p.nombre_proyecto,
         responsable: respNombre,
         avance: Math.round(Number(p.avance_poa ?? 0) * 100),
-        semaforo: p.semaforo,
         observacion: seg?.observaciones || p.observaciones_meta_poa || 'Sin observaciones registradas',
         fechaUltimoRegistro: formatFechaCR(seg?.fecha_corte || seg?.creado_en)
       };
     });
-  }, [proyectosFiltrados, semaforoFiltroTabla, rawStats]);
+  }, [proyectosFiltrados, rawStats]);
 
   if (loading) {
     return (
@@ -383,7 +371,7 @@ export default function ProyectosObraDashboard() {
 
         {/* KPI 4: Proyectos en Riesgo (Alerta Parpadeante) */}
         <div className={`p-5 rounded-2xl border shadow-xl flex items-center justify-between transition-all ${
-          kpis.rojosCount > 0 
+          kpis.riesgoCount > 0 
             ? 'bg-rose-950/20 border-rose-500/40 animate-pulse' 
             : 'bg-[#18181b] border-[#27272a]'
         }`}>
@@ -393,8 +381,8 @@ export default function ProyectosObraDashboard() {
               <span>Proyectos en Riesgo</span>
             </span>
             <div className="flex items-baseline gap-2">
-              <span className="text-3xl font-black text-rose-500 font-mono">{kpis.rojosCount}</span>
-              <span className="text-xs text-rose-300 font-semibold">Semáforo Rojo</span>
+              <span className="text-3xl font-black text-rose-500 font-mono">{kpis.riesgoCount}</span>
+              <span className="text-xs text-rose-300 font-semibold">Avance &lt; 30%</span>
             </div>
             <span className="text-[11px] text-[#a1a1aa] block">Requieren atención inmediata</span>
           </div>
@@ -427,7 +415,7 @@ export default function ProyectosObraDashboard() {
                           <p className="font-bold text-[#0071E3] border-b border-[#27272a] pb-1">{d.nombre}</p>
                           <p>Total Proyectos: <strong className="font-mono">{d.proyectos}</strong></p>
                           <p>Promedio Avance: <strong className="font-mono text-emerald-400">{d.promAvance}%</strong></p>
-                          <p>Proyectos en Rojo: <strong className="font-mono text-rose-400">{d.rojos}</strong></p>
+                          <p>Proyectos en Riesgo: <strong className="font-mono text-rose-400">{d.riesgo}</strong></p>
                         </div>
                       );
                     }
@@ -484,120 +472,38 @@ export default function ProyectosObraDashboard() {
         </div>
       </div>
 
-      {/* FILA 3 — GRÁFICOS SECUNDARIOS: PORTAFOLIO Y FASES ACTIVAS (2 COLUMNAS) */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* Gráfico 3: Estado del Portafolio por Semáforo (Donut Interactivo) */}
-        <div className="bg-[#18181b] p-6 rounded-2xl border border-[#27272a] shadow-xl space-y-4">
-          <div className="flex justify-between items-center border-b border-[#27272a] pb-3">
-            <h3 className="text-base font-bold text-white flex items-center gap-2">
-              <Activity className="w-4 h-4 text-emerald-400" />
-              <span>Estado del Portafolio por Semáforo</span>
-            </h3>
-            {semaforoFiltroTabla && (
-              <button
-                onClick={() => setSemaforoFiltroTabla(null)}
-                className="text-[11px] text-[#0071E3] hover:underline font-semibold"
-              >
-                Limpiar filtro
-              </button>
-            )}
-          </div>
-
-          <div className="h-72 w-full flex flex-col md:flex-row items-center justify-center gap-6">
-            <div className="h-64 w-64">
-              <ResponsiveContainer width="100%" height="100%">
-                <PieChart>
-                  <Pie
-                    data={donutSemafotoData}
-                    innerRadius={55}
-                    outerRadius={85}
-                    paddingAngle={4}
-                    dataKey="value"
-                    onClick={(entry) => setSemaforoFiltroTabla(entry.name)}
-                    className="cursor-pointer"
-                  >
-                    {donutSemafotoData.map((entry, index) => (
-                      <Cell 
-                        key={`cell-${index}`} 
-                        fill={entry.color} 
-                        stroke={semaforoFiltroTabla === entry.name ? '#ffffff' : 'none'}
-                        strokeWidth={2}
-                      />
-                    ))}
-                  </Pie>
-                  <Tooltip
-                    content={({ active, payload }) => {
-                      if (active && payload && payload.length) {
-                        const d = payload[0];
-                        return (
-                          <div className="bg-[#09090b] p-2.5 rounded-xl border border-[#27272a] text-xs text-white shadow-xl">
-                            <span className="font-bold" style={{ color: d.payload.color }}>{d.name}: </span>
-                            <span className="font-mono">{d.value} proyectos</span>
-                          </div>
-                        );
-                      }
-                      return null;
-                    }}
-                  />
-                </PieChart>
-              </ResponsiveContainer>
-            </div>
-
-            <div className="space-y-2 flex-1">
-              {donutSemafotoData.map(d => (
-                <button
-                  key={d.name}
-                  onClick={() => setSemaforoFiltroTabla(d.name)}
-                  className={`w-full flex items-center justify-between p-2.5 rounded-xl border transition-all text-xs ${
-                    semaforoFiltroTabla === d.name 
-                      ? 'bg-[#27272a] border-white text-white font-bold' 
-                      : 'bg-[#09090b] border-[#27272a] text-[#a1a1aa] hover:bg-[#27272a]/50'
-                  }`}
-                >
-                  <div className="flex items-center gap-2">
-                    <span className="w-3 h-3 rounded-full" style={{ backgroundColor: d.color }} />
-                    <span>{d.name}</span>
-                  </div>
-                  <span className="font-mono text-white font-bold">{d.value}</span>
-                </button>
-              ))}
-            </div>
-          </div>
+      {/* FILA 3 — GRÁFICOS SECUNDARIOS: FASES ACTIVAS */}
+      <div className="bg-[#18181b] p-6 rounded-2xl border border-[#27272a] shadow-xl space-y-4">
+        <div className="flex justify-between items-center border-b border-[#27272a] pb-3">
+          <h3 className="text-base font-bold text-white flex items-center gap-2">
+            <Clock className="w-4 h-4 text-amber-400" />
+            <span>Proyectos por Fase Activa</span>
+          </h3>
         </div>
 
-        {/* Gráfico 4: Proyectos por Fase Activa */}
-        <div className="bg-[#18181b] p-6 rounded-2xl border border-[#27272a] shadow-xl space-y-4">
-          <div className="flex justify-between items-center border-b border-[#27272a] pb-3">
-            <h3 className="text-base font-bold text-white flex items-center gap-2">
-              <Clock className="w-4 h-4 text-amber-400" />
-              <span>Proyectos por Fase Activa</span>
-            </h3>
-          </div>
-
-          <div className="h-72 w-full">
-            <ResponsiveContainer width="100%" height="100%">
-              <BarChart layout="vertical" data={fasesActivasData} margin={{ top: 5, right: 30, left: 50, bottom: 5 }}>
-                <XAxis type="number" stroke="#71717a" fontSize={11} />
-                <YAxis type="category" dataKey="fase" stroke="#a1a1aa" fontSize={10} width={130} tickLine={false} />
-                <Tooltip
-                  content={({ active, payload }) => {
-                    if (active && payload && payload.length) {
-                      const d = payload[0].payload;
-                      return (
-                        <div className="bg-[#09090b] p-3 rounded-xl border border-[#27272a] text-xs text-white space-y-1 shadow-xl">
-                          <p className="font-bold text-amber-400 border-b border-[#27272a] pb-1">{d.fase}</p>
-                          <p>Proyectos en esta fase: <strong className="font-mono">{d.proyectos}</strong></p>
-                          <p>Promedio Avance: <strong className="font-mono text-emerald-400">{d.promAvance}%</strong></p>
-                        </div>
-                      );
-                    }
-                    return null;
-                  }}
-                />
-                <Bar dataKey="proyectos" fill="#0071E3" radius={[0, 6, 6, 0]} />
-              </BarChart>
-            </ResponsiveContainer>
-          </div>
+        <div className="h-72 w-full">
+          <ResponsiveContainer width="100%" height="100%">
+            <BarChart layout="vertical" data={fasesActivasData} margin={{ top: 5, right: 30, left: 50, bottom: 5 }}>
+              <XAxis type="number" stroke="#71717a" fontSize={11} />
+              <YAxis type="category" dataKey="fase" stroke="#a1a1aa" fontSize={10} width={130} tickLine={false} />
+              <Tooltip
+                content={({ active, payload }) => {
+                  if (active && payload && payload.length) {
+                    const d = payload[0].payload;
+                    return (
+                      <div className="bg-[#09090b] p-3 rounded-xl border border-[#27272a] text-xs text-white space-y-1 shadow-xl">
+                        <p className="font-bold text-amber-400 border-b border-[#27272a] pb-1">{d.fase}</p>
+                        <p>Proyectos en esta fase: <strong className="font-mono">{d.proyectos}</strong></p>
+                        <p>Promedio Avance: <strong className="font-mono text-emerald-400">{d.promAvance}%</strong></p>
+                      </div>
+                    );
+                  }
+                  return null;
+                }}
+              />
+              <Bar dataKey="proyectos" fill="#0071E3" radius={[0, 6, 6, 0]} />
+            </BarChart>
+          </ResponsiveContainer>
         </div>
       </div>
 
@@ -610,20 +516,9 @@ export default function ProyectosObraDashboard() {
               <span>Proyectos que Requieren Atención</span>
             </h3>
             <p className="text-xs text-[#a1a1aa]">
-              {semaforoFiltroTabla 
-                ? `Mostrando proyectos filtrados en semáforo: ${semaforoFiltroTabla}` 
-                : 'Mostrando obras con semáforo Rojo o en seguimiento prioritario'}
+              Mostrando obras con avance menor al 30%
             </p>
           </div>
-
-          {semaforoFiltroTabla && (
-            <button
-              onClick={() => setSemaforoFiltroTabla(null)}
-              className="px-3 py-1.5 rounded-lg bg-[#27272a] hover:bg-[#3f3f46] text-white text-xs font-semibold transition-all w-fit"
-            >
-              Mostrar Todos
-            </button>
-          )}
         </div>
 
         {tablaAlertasProyectos.length > 0 ? (
@@ -634,7 +529,6 @@ export default function ProyectosObraDashboard() {
                   <th className="px-4 py-3">Nombre del Proyecto</th>
                   <th className="px-4 py-3">Profesional Responsable</th>
                   <th className="px-4 py-3">Avance POA</th>
-                  <th className="px-4 py-3 text-center">Semáforo</th>
                   <th className="px-4 py-3">Última Observación</th>
                   <th className="px-4 py-3">Último Registro</th>
                 </tr>
@@ -663,9 +557,7 @@ export default function ProyectosObraDashboard() {
                         <span className="font-mono font-bold text-white">{p.avance}%</span>
                       </div>
                     </td>
-                    <td className="px-4 py-3.5 text-center whitespace-nowrap">
-                      <SemaforoBadge color={p.semaforo} size="sm" />
-                    </td>
+
                     <td className="px-4 py-3.5 text-[#a1a1aa] max-w-md truncate" title={p.observacion}>
                       {p.observacion.length > 80 ? p.observacion.substring(0, 80) + '...' : p.observacion}
                     </td>
@@ -679,7 +571,7 @@ export default function ProyectosObraDashboard() {
           </div>
         ) : (
           <p className="text-xs text-[#71717a] py-8 text-center bg-[#09090b] rounded-xl border border-[#27272a]">
-            No hay proyectos que requieran atención con el filtro de semáforo seleccionado.
+            No hay proyectos que requieran atención.
           </p>
         )}
       </div>

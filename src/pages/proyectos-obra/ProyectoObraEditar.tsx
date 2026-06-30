@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
-import { SemaforoColor } from '../../types/proyectosObra';
+
 import { getProyectoObraPorId, actualizarProyectoObra, getColaboradores } from '../../lib/proyectosObraService';
 import { ArrowLeft, Save, Building2, User, Layers, FileText, DollarSign } from 'lucide-react';
 
@@ -25,7 +25,7 @@ export default function ProyectoObraEditar() {
   const [programa, setPrograma] = useState<string>('');
   const [canton, setCanton] = useState<string>('San José');
   const [distrito, setDistrito] = useState<string>('');
-  const [semaforo, setSemaforo] = useState<SemaforoColor>('Verde');
+
   const [estado, setEstado] = useState<string>('Activo');
   const [anio, setAnio] = useState<number>(new Date().getFullYear());
   const [observacionesMetaPoa, setObservacionesMetaPoa] = useState<string>('');
@@ -65,7 +65,7 @@ export default function ProyectoObraEditar() {
       setPrograma(proyecto.programa || '');
       setCanton(proyecto.canton || 'San José');
       setDistrito(proyecto.distrito || '');
-      setSemaforo(proyecto.semaforo || 'Verde');
+
       setEstado(proyecto.estado || 'Activo');
       setAnio(proyecto.anio || new Date().getFullYear());
       setObservacionesMetaPoa(proyecto.observaciones_meta_poa || '');
@@ -101,7 +101,7 @@ export default function ProyectoObraEditar() {
         programa: programa.trim(),
         canton: canton.trim(),
         distrito: distrito.trim(),
-        semaforo,
+
         estado: estado.trim(),
         anio: Number(anio),
         observaciones_meta_poa: observacionesMetaPoa.trim()
@@ -341,20 +341,7 @@ export default function ProyectoObraEditar() {
               />
             </div>
 
-            <div>
-              <label className="block text-xs font-semibold text-[#a1a1aa] uppercase mb-1.5">Semáforo</label>
-              <select
-                value={semaforo}
-                onChange={(e) => setSemaforo(e.target.value as SemaforoColor)}
-                className="w-full px-4 py-2.5 bg-[#09090b] border border-[#27272a] rounded-xl text-sm text-white focus:outline-none focus:border-[#0071E3] transition-all cursor-pointer"
-              >
-                <option value="Verde">🟢 Verde</option>
-                <option value="Rojo">🔴 Rojo</option>
-                <option value="Amarillo">🟡 Amarillo</option>
-                <option value="Morado">🟣 Morado</option>
-                <option value="Azul">🔵 Azul</option>
-              </select>
-            </div>
+
 
             {/* Estado */}
             <div>

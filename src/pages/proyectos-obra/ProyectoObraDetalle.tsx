@@ -1,9 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
-import { ProyectoObraConDetalles, SemaforoColor } from '../../types/proyectosObra';
+import { ProyectoObraConDetalles } from '../../types/proyectosObra';
 import { getProyectoObraPorId, registrarSeguimiento, actualizarFaseProyecto, formatMonedaCRC, formatFechaCR } from '../../lib/proyectosObraService';
 import { generarReporteProyectoPDF, generarReporteProyectoExcel } from '../../lib/reportesService';
-import { SemaforoBadge } from '../../components/proyectos/SemaforoBadge';
+
 import { PoaProgressBar } from '../../components/proyectos/PoaProgressBar';
 import { supabase } from '../../lib/supabase';
 import { 
@@ -22,7 +22,7 @@ export default function ProyectoObraDetalle() {
   // Formulario para nuevo seguimiento (APPEND-ONLY)
   const [mostrarModalSeguimiento, setMostrarModalSeguimiento] = useState<boolean>(false);
   const [nuevoAvance, setNuevoAvance] = useState<number>(0);
-  const [nuevoSemaforo, setNuevoSemaforo] = useState<SemaforoColor>('Verde');
+
   const [nuevasObservaciones, setNuevasObservaciones] = useState<string>('');
   const [nuevaEtapa, setNuevaEtapa] = useState<string>('');
   const [guardandoSeguimiento, setGuardandoSeguimiento] = useState<boolean>(false);
@@ -118,7 +118,7 @@ export default function ProyectoObraDetalle() {
       return;
     }
     setProyecto(data);
-    setNuevoSemaforo(data.semaforo);
+
     setNuevoAvance(data.avance_poa ?? 0);
     setLoading(false);
   };
@@ -136,7 +136,6 @@ export default function ProyectoObraDetalle() {
         proyecto_id: id,
         fecha_corte: new Date().toISOString().split('T')[0],
         avance_registrado: Number(nuevoAvance),
-        semaforo: nuevoSemaforo,
         observaciones: nuevasObservaciones,
         etapa: nuevaEtapa,
         registrado_por: registradoPor
@@ -195,7 +194,7 @@ export default function ProyectoObraDetalle() {
               <span className="text-xs font-mono font-bold px-2.5 py-1 rounded bg-[#27272a] text-[#a1a1aa] tracking-wider uppercase">
                 {proyecto.codigo_meta || `ID: ${proyecto.id}`}
               </span>
-              <SemaforoBadge color={proyecto.semaforo} size="md" />
+
               <span className="text-xs font-semibold px-2.5 py-1 rounded-full bg-[#27272a] text-white">
                 {proyecto.estado || 'Activo'}
               </span>
@@ -619,7 +618,7 @@ export default function ProyectoObraDetalle() {
                   <div key={seg.id} className="bg-[#09090b] p-5 rounded-xl border border-[#27272a] space-y-3">
                     <div className="flex justify-between items-start">
                       <div className="flex items-center gap-3">
-                        <SemaforoBadge color={seg.semaforo} size="sm" />
+
                         <span className="text-xs font-mono text-[#a1a1aa] flex items-center gap-1">
                           <Calendar className="w-3.5 h-3.5" />
                           Fecha Corte: {formatFechaCR(seg.fecha_corte)}
@@ -661,20 +660,7 @@ export default function ProyectoObraDetalle() {
             <p className="text-xs text-[#a1a1aa]">Esta acción insertará una nueva entrada inmutable en el historial.</p>
 
             <form onSubmit={handleGuardarSeguimiento} className="space-y-4">
-              <div>
-                <label className="block text-xs font-semibold text-[#a1a1aa] uppercase mb-1">Semáforo</label>
-                <select
-                  value={nuevoSemaforo}
-                  onChange={(e) => setNuevoSemaforo(e.target.value as SemaforoColor)}
-                  className="w-full px-3 py-2 bg-[#09090b] border border-[#27272a] rounded-xl text-sm text-white focus:outline-none focus:border-[#0071E3]"
-                >
-                  <option value="Verde">🟢 Verde</option>
-                  <option value="Rojo">🔴 Rojo</option>
-                  <option value="Amarillo">🟡 Amarillo</option>
-                  <option value="Morado">🟣 Morado</option>
-                  <option value="Azul">🔵 Azul</option>
-                </select>
-              </div>
+
 
               <div>
                 <label className="block text-xs font-semibold text-[#a1a1aa] uppercase mb-1">Porcentaje de Avance (0 a 1)</label>

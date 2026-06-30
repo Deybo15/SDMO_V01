@@ -2,8 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { MapContainer, TileLayer, CircleMarker, Popup } from 'react-leaflet';
 import 'leaflet/dist/leaflet.css';
-import { getProyectosConGeo, SEMAFORO_COLORS } from '../../lib/proyectosObraService';
-import { SemaforoBadge } from '../../components/proyectos/SemaforoBadge';
+import { getProyectosConGeo } from '../../lib/proyectosObraService';
 import { ArrowLeft, MapPin, Layers, ExternalLink } from 'lucide-react';
 
 export default function ProyectosObraMapa() {
@@ -78,15 +77,15 @@ export default function ProyectosObraMapa() {
               />
 
               {proyectos.map((p) => {
-                const semConfig = SEMAFORO_COLORS[p.semaforo as keyof typeof SEMAFORO_COLORS] || SEMAFORO_COLORS.Azul;
+
                 return (
                   <CircleMarker
                     key={p.id}
                     center={[p.lat, p.lng]}
                     radius={12}
                     pathOptions={{
-                      color: semConfig.bg,
-                      fillColor: semConfig.bg,
+                      color: '#0071E3',
+                      fillColor: '#0071E3',
                       fillOpacity: 0.85,
                       weight: 3
                     }}
@@ -97,7 +96,7 @@ export default function ProyectosObraMapa() {
                           <span className="text-[10px] font-mono font-bold px-2 py-0.5 rounded bg-[#27272a] text-[#a1a1aa]">
                             ID: {p.id}
                           </span>
-                          <SemaforoBadge color={p.semaforo} size="sm" />
+
                         </div>
                         <h4 className="font-bold text-sm text-white leading-snug">{p.nombre_proyecto}</h4>
                         <p className="text-xs text-[#a1a1aa]">{p.dependencia}</p>

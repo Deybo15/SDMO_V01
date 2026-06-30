@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
-import { SemaforoColor } from '../../types/proyectosObra';
+
 import { crearProyectoObra, getDependenciasProyectos, getColaboradores } from '../../lib/proyectosObraService';
 import { ArrowLeft, Save, Building2, User, Layers, DollarSign, FileText, Calendar } from 'lucide-react';
 
@@ -23,7 +23,7 @@ export default function ProyectoObraFormulario() {
   const [programa, setPrograma] = useState<string>('');
   const [canton, setCanton] = useState<string>('');
   const [distrito, setDistrito] = useState<string>('');
-  const [semaforo, setSemaforo] = useState<SemaforoColor>('Verde');
+
   const [estado, setEstado] = useState<string>('');
   const [anio, setAnio] = useState<number>(new Date().getFullYear());
   const [observacionesMetaPoa, setObservacionesMetaPoa] = useState<string>('');
@@ -62,7 +62,7 @@ export default function ProyectoObraFormulario() {
           programa: programa.trim(),
           canton: canton.trim(),
           distrito: distrito.trim(),
-          semaforo,
+
           estado: estado.trim(),
           anio: Number(anio),
           observaciones_meta_poa: observacionesMetaPoa.trim(),
@@ -299,20 +299,7 @@ export default function ProyectoObraFormulario() {
               />
             </div>
 
-            <div>
-              <label className="block text-xs font-semibold text-[#a1a1aa] uppercase mb-1.5">Semáforo Inicial</label>
-              <select
-                value={semaforo}
-                onChange={(e) => setSemaforo(e.target.value as SemaforoColor)}
-                className="w-full px-4 py-2.5 bg-[#09090b] border border-[#27272a] rounded-xl text-sm text-white focus:outline-none focus:border-[#0071E3] transition-all cursor-pointer"
-              >
-                <option value="Verde">🟢 Verde</option>
-                <option value="Rojo">🔴 Rojo</option>
-                <option value="Amarillo">🟡 Amarillo</option>
-                <option value="Morado">🟣 Morado</option>
-                <option value="Azul">🔵 Azul</option>
-              </select>
-            </div>
+
 
             {/* Estado Dropdown */}
             <div>

@@ -1,9 +1,9 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
 import { ProyectoObraConDetalles } from '../../types/proyectosObra';
-import { SemaforoBadge } from './SemaforoBadge';
+
 import { PoaProgressBar } from './PoaProgressBar';
-import { formatMonedaCRC, SEMAFORO_COLORS } from '../../lib/proyectosObraService';
+import { formatMonedaCRC } from '../../lib/proyectosObraService';
 import { Building2, UserCheck, Calendar, ArrowUpRight } from 'lucide-react';
 
 interface ProyectoCardProps {
@@ -11,7 +11,7 @@ interface ProyectoCardProps {
 }
 
 export const ProyectoCard: React.FC<ProyectoCardProps> = ({ proyecto }) => {
-  const semaforoConfig = SEMAFORO_COLORS[proyecto.semaforo] || SEMAFORO_COLORS.Azul;
+
   const presupuestoAsignado = proyecto.presupuesto_vigente?.presupuesto_asignado ?? 0;
 
   return (
@@ -19,24 +19,14 @@ export const ProyectoCard: React.FC<ProyectoCardProps> = ({ proyecto }) => {
       to={`/proyectos-obra/${proyecto.id}`}
       className="group relative flex flex-col justify-between bg-[#18181b]/90 backdrop-blur-md rounded-xl border border-[#27272a] hover:border-[#3f3f46] p-5 transition-all duration-300 hover:shadow-2xl hover:shadow-black/60 overflow-hidden"
     >
-      {/* Barra lateral del color del semáforo que se expande al hover */}
-      <div
-        className="absolute top-0 left-0 bottom-0 w-1.5 group-hover:w-3 transition-all duration-300 ease-out z-10"
-        style={{
-          backgroundColor: semaforoConfig.bg,
-          boxShadow: `0 0 12px ${semaforoConfig.bg}`
-        }}
-      />
 
-      <div className="pl-3">
+
+      <div>
         {/* Encabezado: Código meta, Estado y Semáforo */}
         <div className="flex items-center justify-between gap-2 mb-3">
           <span className="text-[11px] font-mono font-bold px-2 py-0.5 rounded bg-[#27272a] text-[#a1a1aa] tracking-wider uppercase">
             {proyecto.codigo_meta || `ID: ${proyecto.id}`}
           </span>
-          <div className="flex items-center gap-2">
-            <SemaforoBadge color={proyecto.semaforo} size="sm" />
-          </div>
         </div>
 
         {/* Nombre del Proyecto */}
@@ -63,7 +53,7 @@ export const ProyectoCard: React.FC<ProyectoCardProps> = ({ proyecto }) => {
         </div>
       </div>
 
-      <div className="pl-3 pt-3 border-t border-[#27272a]/80 mt-auto space-y-3">
+      <div className="pt-3 border-t border-[#27272a]/80 mt-auto space-y-3">
         {/* Presupuesto Asignado */}
         <div className="flex justify-between items-end">
           <div>

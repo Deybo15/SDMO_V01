@@ -1,4 +1,3 @@
-export type SemaforoColor = 'Verde' | 'Rojo' | 'Amarillo' | 'Morado' | 'Azul';
 
 export type FaseProyectoEnum = 
   | 'Inicio_y_Estudios_Preliminares'
@@ -22,7 +21,6 @@ export interface ProyectoObra {
   canton?: string | null;
   distrito?: string | null;
   georeferencia?: any; // PostGIS Point SRID 4326
-  semaforo: SemaforoColor;
   estado: string;
   anio: number;
   cumplimiento_poa?: number | null;
@@ -83,7 +81,6 @@ export interface SeguimientoProyecto {
   proyecto_id: string | number;
   fecha_corte: string;
   avance_registrado: number; // 0 a 1
-  semaforo: SemaforoColor;
   observaciones?: string | null;
   etapa?: string | null;
   registrado_por?: string | null;
@@ -116,5 +113,4 @@ export interface FiltrosProyectoObra {
   nombre?: string;
   dependencia?: string;
   anio?: string | number;
-  semaforo?: SemaforoColor | '';
 }

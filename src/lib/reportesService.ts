@@ -81,19 +81,18 @@ export function generarReporteProyectoPDF(proyecto: ProyectoObraConDetalles) {
       ],
       [
         { content: 'Responsable:', styles: { fontStyle: 'bold' } }, proyecto.nombre_responsable || proyecto.profesional_responsable || '-',
-        { content: 'Semáforo:', styles: { fontStyle: 'bold' } }, proyecto.semaforo || '-'
+        { content: 'Estado:', styles: { fontStyle: 'bold' } }, proyecto.estado || 'Activo'
       ],
       [
-        { content: 'Estado:', styles: { fontStyle: 'bold' } }, proyecto.estado || 'Activo',
-        { content: 'Avance POA:', styles: { fontStyle: 'bold' } }, `${Math.round((proyecto.avance_poa ?? 0) * 100)}%`
+        { content: 'Avance POA:', styles: { fontStyle: 'bold' } }, `${Math.round((proyecto.avance_poa ?? 0) * 100)}%`,
+        { content: 'Tipo Ejecución:', styles: { fontStyle: 'bold' } }, proyecto.tipo_ejecucion || '-'
       ],
       [
-        { content: 'Tipo Ejecución:', styles: { fontStyle: 'bold' } }, proyecto.tipo_ejecucion || '-',
-        { content: 'Tipo Contrato:', styles: { fontStyle: 'bold' } }, proyecto.tipo_contrato || '-'
+        { content: 'Tipo Contrato:', styles: { fontStyle: 'bold' } }, proyecto.tipo_contrato || '-',
+        { content: 'Ubicación:', styles: { fontStyle: 'bold' } }, `${proyecto.canton || 'San José'}, ${proyecto.distrito || 'Sin distrito'}`
       ],
       [
-        { content: 'Ubicación:', styles: { fontStyle: 'bold' } }, `${proyecto.canton || 'San José'}, ${proyecto.distrito || 'Sin distrito'}`,
-        { content: 'Línea Estratégica:', styles: { fontStyle: 'bold' } }, (proyecto.linea_estrategica || '-').replace(/_/g, ' ')
+        { content: 'Línea Estratégica:', styles: { fontStyle: 'bold' } }, { content: (proyecto.linea_estrategica || '-').replace(/_/g, ' '), colSpan: 3 }
       ]
     ],
     theme: 'grid',
@@ -216,7 +215,6 @@ export function generarReporteProyectoPDF(proyecto: ProyectoObraConDetalles) {
   // SECCIÓN 5: BITÁCORA DE SEGUIMIENTO
   const seguimientosBody = (proyecto.seguimientos || []).map(s => [
     formatFechaCR(s.fecha_corte),
-    s.semaforo,
     `${Math.round(s.avance_registrado * 100)}%`,
     s.etapa || '-',
     s.observaciones || '-',
@@ -226,15 +224,15 @@ export function generarReporteProyectoPDF(proyecto: ProyectoObraConDetalles) {
   autoTable(doc, {
     startY: currentY,
     head: [
-      [{ content: 'HISTORIAL Y BITÁCORA DE SEGUIMIENTO (APPEND-ONLY)', colSpan: 6, styles: { fillColor: primaryColor, textColor: 255, fontStyle: 'bold' } }],
-      ['Fecha Corte', 'Semáforo', 'Avance', 'Etapa', 'Observaciones', 'Registrado Por']
+      [{ content: 'HISTORIAL Y BITÁCORA DE SEGUIMIENTO (APPEND-ONLY)', colSpan: 5, styles: { fillColor: primaryColor, textColor: 255, fontStyle: 'bold' } }],
+      ['Fecha Corte', 'Avance', 'Etapa', 'Observaciones', 'Registrado Por']
     ],
-    body: seguimientosBody.length > 0 ? seguimientosBody : [['Sin registros de seguimiento', '', '', '', '', '']],
+    body: seguimientosBody.length > 0 ? seguimientosBody : [['Sin registros de seguimiento', '', '', '', '']],
     theme: 'striped',
     styles: { fontSize: 7.5, cellPadding: 2 },
     headStyles: { fillColor: [51, 65, 85], textColor: 255, fontStyle: 'bold' },
     columnStyles: {
-      4: { cellWidth: 60 }
+      3: { cellWidth: 60 }
     }
   });
 
@@ -257,7 +255,6 @@ export function generarReporteProyectoExcel(proyecto: ProyectoObraConDetalles) {
     ['Dependencia', proyecto.dependencia],
     ['Gerencia', proyecto.gerencia || '-'],
     ['Profesional Responsable', proyecto.nombre_responsable || proyecto.profesional_responsable || '-'],
-    ['Semáforo', proyecto.semaforo],
     ['Estado', proyecto.estado || 'Activo'],
     ['Año', proyecto.anio],
     ['Avance POA', `${Math.round((proyecto.avance_poa ?? 0) * 100)}%`],
@@ -334,11 +331,10 @@ export function generarReporteProyectoExcel(proyecto: ProyectoObraConDetalles) {
   XLSX.utils.book_append_sheet(wb, wsFases, 'Fases');
 
   // 5. HOJA: Seguimiento
-  const seguimientoHeader = [['ID Seguimiento', 'Fecha Corte', 'Semáforo', 'Avance Registrado', 'Etapa', 'Observaciones', 'Registrado Por']];
+  const seguimientoHeader = [['ID Seguimiento', 'Fecha Corte', 'Avance Registrado', 'Etapa', 'Observaciones', 'Registrado Por']];
   const seguimientoRows = (proyecto.seguimientos || []).map(s => [
     s.id,
     formatFechaCR(s.fecha_corte),
-    s.semaforo,
     `${Math.round(s.avance_registrado * 100)}%`,
     s.etapa || '-',
     s.observaciones || '-',
@@ -429,7 +425,6 @@ export async function generarInformeGeneralExcel() {
       'Porcentaje Físico de Avance del Proyecto',
       'Línea Estratégica',
       'Programa',
-      'Semáforo',
       'Estado',
       'Observaciones más recientes'
     ];
@@ -496,7 +491,6 @@ export async function generarInformeGeneralExcel() {
         avanceDecimal,
         (p.linea_estrategica || '-').replace(/_/g, ' '),
         p.programa || '-',
-        p.semaforo || '-',
         p.estado || '-',
         seg?.observaciones || p.observaciones_meta_poa || '-'
       ];
