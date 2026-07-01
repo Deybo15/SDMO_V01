@@ -1,40 +1,9 @@
-import { useEffect, useState } from 'react';
 import { Navigate, Outlet } from 'react-router-dom';
-import { supabase } from '../lib/supabase';
 import { Loader2, ShieldAlert } from 'lucide-react';
+import { useAuthorization } from '../hooks/useAuthorization';
 
 export const AuthorizedRoute = () => {
-    const [status, setStatus] = useState<'loading' | 'authorized' | 'unauthorized' | 'no-session'>('loading');
-
-    useEffect(() => {
-        const checkAuth = async () => {
-            try {
-                const { data: { session } } = await supabase.auth.getSession();
-
-                if (!session) {
-                    setStatus('no-session');
-                    return;
-                }
-
-                const { data: colabs, error } = await supabase
-                    .from('colaboradores_06')
-                    .select('autorizado')
-                    .eq('correo_colaborador', session.user.email)
-                    .eq('autorizado', true);
-
-                if (error || !colabs || colabs.length === 0) {
-                    setStatus('unauthorized');
-                } else {
-                    setStatus('authorized');
-                }
-            } catch (error) {
-                console.error('Error checking authorization:', error);
-                setStatus('unauthorized');
-            }
-        };
-
-        checkAuth();
-    }, []);
+    const { status } = useAuthorization();
 
     if (status === 'loading') {
         return (

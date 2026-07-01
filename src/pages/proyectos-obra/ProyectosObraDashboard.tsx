@@ -4,7 +4,13 @@ import {
   ResponsiveContainer, BarChart, Bar, XAxis, YAxis, Tooltip, Legend,
   PieChart, Pie, Cell
 } from 'recharts';
-import { getDashboardStats, formatMonedaCRC, formatFechaCR } from '../../lib/proyectosObraService';
+import {
+  getDashboardStats,
+  formatMonedaCRC,
+  formatFechaCR,
+  formatProgressPercent,
+  normalizeProgressFraction
+} from '../../lib/proyectosObraService';
 import {
   ArrowLeft, RefreshCw, AlertTriangle, TrendingUp, DollarSign, Briefcase,
   Clock, Activity, Filter, Layers
@@ -57,7 +63,7 @@ export default function ProyectosObraDashboard() {
     let totalEjecutado = 0;
 
     proyectosFiltrados.forEach((p: any) => {
-      const avance = Number(p.avance_poa ?? p.cumplimiento_poa ?? 0);
+      const avance = normalizeProgressFraction(p.avance_poa ?? p.cumplimiento_poa ?? 0);
       sumaAvance += avance;
 
       const estadoStr = (p.estado || '').toLowerCase();
@@ -112,7 +118,7 @@ export default function ProyectosObraDashboard() {
       }
       const item = profMap.get(respKey)!;
       item.total++;
-      const avance = Number(p.avance_poa ?? p.cumplimiento_poa ?? 0);
+      const avance = normalizeProgressFraction(p.avance_poa ?? p.cumplimiento_poa ?? 0);
       item.sumaAvance += avance;
       if (avance < 0.30) item.riesgo++;
     });
@@ -188,7 +194,7 @@ export default function ProyectosObraDashboard() {
       }
       const item = fasesMap.get(nombreFase)!;
       item.count++;
-      item.sumaAvance += Number(p.avance_poa ?? 0);
+      item.sumaAvance += normalizeProgressFraction(p.avance_poa ?? 0);
     });
 
     return Array.from(fasesMap.entries()).map(([fase, datos]) => ({
@@ -204,7 +210,7 @@ export default function ProyectosObraDashboard() {
     
     // Filter projects where progress is low (less than 30%)
     const filtrados = proyectosFiltrados.filter((p: any) => {
-      const avance = Number(p.avance_poa ?? p.cumplimiento_poa ?? 0);
+      const avance = normalizeProgressFraction(p.avance_poa ?? p.cumplimiento_poa ?? 0);
       return avance < 0.30;
     });
 
@@ -218,7 +224,7 @@ export default function ProyectosObraDashboard() {
         id: p.id,
         nombre: p.nombre_proyecto,
         responsable: respNombre,
-        avance: Math.round(Number(p.avance_poa ?? 0) * 100),
+        avance: formatProgressPercent(p.avance_poa ?? 0),
         observacion: seg?.observaciones || p.observaciones_meta_poa || 'Sin observaciones registradas',
         fechaUltimoRegistro: formatFechaCR(seg?.fecha_corte || seg?.creado_en)
       };

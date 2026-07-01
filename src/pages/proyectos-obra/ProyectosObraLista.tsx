@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { Link } from 'react-router-dom';
 import { ProyectoObraConDetalles } from '../../types/proyectosObra';
 import { getProyectosObra, getAniosProyectos } from '../../lib/proyectosObraService';
@@ -22,20 +22,12 @@ export default function ProyectosObraLista() {
   // Listas para dropdowns de filtros
   const [anios, setAnios] = useState<number[]>([]);
 
-  useEffect(() => {
-    cargarCatalogos();
-  }, []);
-
-  useEffect(() => {
-    cargarProyectos();
-  }, [pagina, filtroAnio]);
-
   const cargarCatalogos = async () => {
     const ans = await getAniosProyectos();
     setAnios(ans);
   };
 
-  const cargarProyectos = async () => {
+  const cargarProyectos = useCallback(async () => {
     setLoading(true);
     try {
       const res = await getProyectosObra(
@@ -53,12 +45,22 @@ export default function ProyectosObraLista() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [filtroAnio, filtroNombre, pagina]);
+
+  useEffect(() => {
+    cargarCatalogos();
+  }, []);
+
+  useEffect(() => {
+    cargarProyectos();
+  }, [cargarProyectos]);
 
   const handleBuscar = (e: React.FormEvent) => {
     e.preventDefault();
     setPagina(1);
-    cargarProyectos();
+    if (pagina === 1) {
+      cargarProyectos();
+    }
   };
 
   const handleLimpiarFiltros = () => {

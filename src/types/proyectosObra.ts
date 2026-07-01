@@ -24,7 +24,7 @@ export interface ProyectoObra {
   estado: string;
   anio: number;
   cumplimiento_poa?: number | null;
-  avance_poa?: number | null; // porcentaje o valor 0-1 o 0-100 según BD
+  avance_poa?: number | null; // escala normalizada 0-1
   observaciones_meta_poa?: string | null;
   activo: boolean;
 }
@@ -71,7 +71,7 @@ export interface FaseProyecto {
   fecha_fin_plan?: string | null;
   fecha_inicio_real?: string | null;
   fecha_fin_real?: string | null;
-  porcentaje_avance: number; // 0 a 1
+  porcentaje_avance: number; // escala normalizada 0-1
   entregables?: string | null;
   completada: boolean;
 }
@@ -80,7 +80,7 @@ export interface SeguimientoProyecto {
   id: string | number;
   proyecto_id: string | number;
   fecha_corte: string;
-  avance_registrado: number; // 0 a 1
+  avance_registrado: number; // escala normalizada 0-1
   observaciones?: string | null;
   etapa?: string | null;
   registrado_por?: string | null;
