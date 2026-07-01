@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 
 import { getProyectoObraPorId, actualizarProyectoObra, getColaboradores } from '../../lib/proyectosObraService';
@@ -30,13 +30,7 @@ export default function ProyectoObraEditar() {
   const [anio, setAnio] = useState<number>(new Date().getFullYear());
   const [observacionesMetaPoa, setObservacionesMetaPoa] = useState<string>('');
 
-  useEffect(() => {
-    if (id) {
-      cargarProyecto();
-    }
-  }, [id]);
-
-  const cargarProyecto = async () => {
+  const cargarProyecto = useCallback(async () => {
     if (!id) return;
     setLoading(true);
     try {
@@ -74,7 +68,13 @@ export default function ProyectoObraEditar() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [id, navigate]);
+
+  useEffect(() => {
+    if (id) {
+      cargarProyecto();
+    }
+  }, [id, cargarProyecto]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();

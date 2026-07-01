@@ -30,6 +30,21 @@ export const formatFechaCR = (fechaStr: string | null | undefined): string => {
   }
 };
 
+export const normalizeProgressFraction = (value: number | string | null | undefined): number => {
+  if (value === null || value === undefined || value === '') return 0;
+  const numeric = typeof value === 'string'
+    ? Number(value.replace('%', '').trim())
+    : Number(value);
+
+  if (!Number.isFinite(numeric)) return 0;
+  const fraction = numeric > 1 ? numeric / 100 : numeric;
+  return Math.min(Math.max(fraction, 0), 1);
+};
+
+export const formatProgressPercent = (value: number | string | null | undefined): number => {
+  return Math.round(normalizeProgressFraction(value) * 100);
+};
+
 /**
  * Obtener lista paginada de proyectos con filtros
  */
@@ -72,7 +87,7 @@ export async function getProyectosObra(
     // Obtener identificaciones/alias únicos de colaboradores para traer sus nombres o alias
     const valoresResp = Array.from(new Set(data.map(p => p.profesional_responsable).filter(Boolean)));
     
-    let colabMap: Record<string, string> = {};
+    const colabMap: Record<string, string> = {};
     if (valoresResp.length > 0) {
       const { data: colabs } = await supabase
         .from('colaboradores_06')
@@ -201,13 +216,17 @@ export async function actualizarFaseProyecto(
 ) {
   try {
     // 1. Actualizar el campo en la tabla fase_proyecto
-    let updatePayload: Record<string, any> = {
-      [campo_modificado]: valor_nuevo
+    const valorParaActualizar = campo_modificado === 'porcentaje_avance'
+      ? normalizeProgressFraction(valor_nuevo)
+      : valor_nuevo;
+
+    const updatePayload: Record<string, any> = {
+      [campo_modificado]: valorParaActualizar
     };
 
     // Si se modifica el porcentaje de avance, actualizar completada si es 1 (100%)
     if (campo_modificado === 'porcentaje_avance') {
-      const p = Number(valor_nuevo);
+      const p = normalizeProgressFraction(valor_nuevo);
       if (p >= 1) {
         updatePayload.completada = true;
       }
@@ -249,25 +268,11 @@ export async function actualizarFaseProyecto(
  */
 export async function registrarSeguimiento(seguimiento: Omit<SeguimientoProyecto, 'id' | 'creado_en'>) {
   try {
-    const { data, error } = await supabase
-      .from('seguimiento_proyecto')
-      .insert([seguimiento])
-      .select()
-      .single();
+    const { data, error } = await supabase.rpc('registrar_seguimiento_proyecto', {
+      p_seguimiento: seguimiento
+    });
 
     if (error) throw error;
-
-    // Actualizar avance_poa en la tabla proyecto_obra
-    const { error: errUpdate } = await supabase
-      .from('proyecto_obra')
-      .update({
-        avance_poa: seguimiento.avance_registrado
-      })
-      .eq('id', seguimiento.proyecto_id);
-
-    if (errUpdate) {
-      console.error('Error actualizando avance_poa en proyecto_obra:', errUpdate);
-    }
 
     return data;
   } catch (err) {
@@ -365,33 +370,15 @@ export async function getColaboradores() {
  */
 export async function crearProyectoObra(proyectoData: Partial<ProyectoObra>, presupuestoAsignado: number = 0) {
   try {
-    const { data: proyecto, error: errProyecto } = await supabase
-      .from('proyecto_obra')
-      .insert([{
+    const { data: proyecto, error } = await supabase.rpc('crear_proyecto_obra_con_presupuesto', {
+      p_proyecto: {
         ...proyectoData,
         activo: proyectoData.activo ?? true
-      }])
-      .select()
-      .single();
+      },
+      p_presupuesto_asignado: Number(presupuestoAsignado) || 0
+    });
 
-    if (errProyecto || !proyecto) throw errProyecto || new Error('Error creando proyecto');
-
-    // Si se proporciona presupuesto inicial, insertarlo en presupuesto_proyecto
-    if (presupuestoAsignado > 0) {
-      const { data: user } = await supabase.auth.getUser();
-      await supabase.from('presupuesto_proyecto').insert([{
-        proyecto_id: proyecto.id,
-        version: 1,
-        descripcion_modificacion: 'Presupuesto inicial asignado al crear el proyecto',
-        presupuesto_asignado: presupuestoAsignado,
-        presupuesto_adjudicado: 0,
-        presupuesto_ejecutado: 0,
-        presupuesto_comprometido: 0,
-        presupuesto_reserva: 0,
-        es_vigente: true,
-        registrado_por: user.user?.email || 'Sistema'
-      }]);
-    }
+    if (error || !proyecto) throw error || new Error('Error creando proyecto');
 
     return proyecto;
   } catch (err) {

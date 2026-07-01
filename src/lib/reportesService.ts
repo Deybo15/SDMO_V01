@@ -2,7 +2,7 @@ import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
 import * as XLSX from 'xlsx';
 import { ProyectoObraConDetalles } from '../types/proyectosObra';
-import { formatMonedaCRC, formatFechaCR } from './proyectosObraService';
+import { formatMonedaCRC, formatFechaCR, formatProgressPercent, normalizeProgressFraction } from './proyectosObraService';
 import { supabase } from './supabase';
 
 /**
@@ -84,7 +84,7 @@ export function generarReporteProyectoPDF(proyecto: ProyectoObraConDetalles) {
         { content: 'Estado:', styles: { fontStyle: 'bold' } }, proyecto.estado || 'Activo'
       ],
       [
-        { content: 'Avance POA:', styles: { fontStyle: 'bold' } }, `${Math.round((proyecto.avance_poa ?? 0) * 100)}%`,
+        { content: 'Avance POA:', styles: { fontStyle: 'bold' } }, `${formatProgressPercent(proyecto.avance_poa)}%`,
         { content: 'Tipo Ejecución:', styles: { fontStyle: 'bold' } }, proyecto.tipo_ejecucion || '-'
       ],
       [
@@ -194,7 +194,7 @@ export function generarReporteProyectoPDF(proyecto: ProyectoObraConDetalles) {
     formatFechaCR(f.fecha_fin_plan),
     formatFechaCR(f.fecha_inicio_real),
     formatFechaCR(f.fecha_fin_real),
-    `${Math.round(f.porcentaje_avance * 100)}%`,
+    `${formatProgressPercent(f.porcentaje_avance)}%`,
     f.completada ? 'Sí' : 'No'
   ]);
 
@@ -215,7 +215,7 @@ export function generarReporteProyectoPDF(proyecto: ProyectoObraConDetalles) {
   // SECCIÓN 5: BITÁCORA DE SEGUIMIENTO
   const seguimientosBody = (proyecto.seguimientos || []).map(s => [
     formatFechaCR(s.fecha_corte),
-    `${Math.round(s.avance_registrado * 100)}%`,
+    `${formatProgressPercent(s.avance_registrado)}%`,
     s.etapa || '-',
     s.observaciones || '-',
     s.registrado_por || '-'
@@ -257,7 +257,7 @@ export function generarReporteProyectoExcel(proyecto: ProyectoObraConDetalles) {
     ['Profesional Responsable', proyecto.nombre_responsable || proyecto.profesional_responsable || '-'],
     ['Estado', proyecto.estado || 'Activo'],
     ['Año', proyecto.anio],
-    ['Avance POA', `${Math.round((proyecto.avance_poa ?? 0) * 100)}%`],
+    ['Avance POA', `${formatProgressPercent(proyecto.avance_poa)}%`],
     ['Tipo Ejecución', proyecto.tipo_ejecucion || '-'],
     ['Tipo Contrato', proyecto.tipo_contrato || '-'],
     ['POA Origen', proyecto.poa_origen || '-'],
@@ -324,7 +324,7 @@ export function generarReporteProyectoExcel(proyecto: ProyectoObraConDetalles) {
     formatFechaCR(f.fecha_fin_plan),
     formatFechaCR(f.fecha_inicio_real),
     formatFechaCR(f.fecha_fin_real),
-    `${Math.round(f.porcentaje_avance * 100)}%`,
+    `${formatProgressPercent(f.porcentaje_avance)}%`,
     f.completada ? 'Sí' : 'No'
   ]);
   const wsFases = XLSX.utils.aoa_to_sheet([...fasesHeader, ...fasesRows]);
@@ -335,7 +335,7 @@ export function generarReporteProyectoExcel(proyecto: ProyectoObraConDetalles) {
   const seguimientoRows = (proyecto.seguimientos || []).map(s => [
     s.id,
     formatFechaCR(s.fecha_corte),
-    `${Math.round(s.avance_registrado * 100)}%`,
+    `${formatProgressPercent(s.avance_registrado)}%`,
     s.etapa || '-',
     s.observaciones || '-',
     s.registrado_por || '-'
@@ -459,7 +459,7 @@ export async function generarInformeGeneralExcel() {
       const libre = pres ? Number(pres.presupuesto_libre ?? (asignado - ejecutado - comprometido)) : (asignado - ejecutado - comprometido);
 
       // Avance físico como decimal (ej. 0.95)
-      const avanceDecimal = seg ? Number(seg.avance_registrado) : Number(p.avance_poa ?? 0);
+      const avanceDecimal = normalizeProgressFraction(seg ? seg.avance_registrado : p.avance_poa);
 
       return [
         p.prioridad || '-',

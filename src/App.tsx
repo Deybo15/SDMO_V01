@@ -1,3 +1,4 @@
+import { lazy, Suspense, type ReactNode } from 'react';
 import { Routes, Route } from 'react-router-dom';
 import Layout from './components/Layout';
 import MaintenanceDashboard from './pages/MaintenanceDashboard';
@@ -53,12 +54,24 @@ import RetirosPorArticulo from './pages/RetirosPorArticulo';
 import GestionCambios from './pages/GestionCambios';
 import CambiosOrdenTrabajo from './pages/CambiosOrdenTrabajo';
 import ConsultarMaterialesSolicitud from './pages/ConsultarMaterialesSolicitud';
-import ProyectosObraLista from './pages/proyectos-obra/ProyectosObraLista';
-import ProyectoObraDetalle from './pages/proyectos-obra/ProyectoObraDetalle';
-import ProyectosObraDashboard from './pages/proyectos-obra/ProyectosObraDashboard';
-import ProyectoObraFormulario from './pages/proyectos-obra/ProyectoObraFormulario';
-import ProyectoObraEditar from './pages/proyectos-obra/ProyectoObraEditar';
-import ProyectosObraMapa from './pages/proyectos-obra/ProyectosObraMapa';
+const ProyectosObraLista = lazy(() => import('./pages/proyectos-obra/ProyectosObraLista'));
+const ProyectoObraDetalle = lazy(() => import('./pages/proyectos-obra/ProyectoObraDetalle'));
+const ProyectosObraDashboard = lazy(() => import('./pages/proyectos-obra/ProyectosObraDashboard'));
+const ProyectoObraFormulario = lazy(() => import('./pages/proyectos-obra/ProyectoObraFormulario'));
+const ProyectoObraEditar = lazy(() => import('./pages/proyectos-obra/ProyectoObraEditar'));
+const ProyectosObraMapa = lazy(() => import('./pages/proyectos-obra/ProyectosObraMapa'));
+
+const PageLoader = () => (
+    <div className="h-screen w-full flex items-center justify-center bg-slate-950">
+        <p className="text-sm text-slate-400">Cargando...</p>
+    </div>
+);
+
+const LazyPage = ({ children }: { children: ReactNode }) => (
+    <Suspense fallback={<PageLoader />}>
+        {children}
+    </Suspense>
+);
 
 function App() {
     return (
@@ -115,6 +128,8 @@ function App() {
                             <Route path="/activos/accesorios" element={<AccesoriosActivos />} />
                             <Route path="/gestion-interna/auditoria" element={<AuditHistory />} />
                             <Route path="/gestion-cambios/orden-trabajo" element={<CambiosOrdenTrabajo />} />
+                            <Route path="/proyectos-obra/nuevo" element={<LazyPage><ProyectoObraFormulario /></LazyPage>} />
+                            <Route path="/proyectos-obra/:id/editar" element={<LazyPage><ProyectoObraEditar /></LazyPage>} />
                         </Route>
 
                         {/* Navigation / Container Pages */}
@@ -130,12 +145,10 @@ function App() {
                         <Route path="/activos/inventario" element={<InventarioActivos />} />
 
                         {/* Proyectos de Obra */}
-                        <Route path="/proyectos-obra" element={<ProyectosObraLista />} />
-                        <Route path="/proyectos-obra/dashboard" element={<ProyectosObraDashboard />} />
-                        <Route path="/proyectos-obra/mapa" element={<ProyectosObraMapa />} />
-                        <Route path="/proyectos-obra/nuevo" element={<ProyectoObraFormulario />} />
-                        <Route path="/proyectos-obra/:id/editar" element={<ProyectoObraEditar />} />
-                        <Route path="/proyectos-obra/:id" element={<ProyectoObraDetalle />} />
+                        <Route path="/proyectos-obra" element={<LazyPage><ProyectosObraLista /></LazyPage>} />
+                        <Route path="/proyectos-obra/dashboard" element={<LazyPage><ProyectosObraDashboard /></LazyPage>} />
+                        <Route path="/proyectos-obra/mapa" element={<LazyPage><ProyectosObraMapa /></LazyPage>} />
+                        <Route path="/proyectos-obra/:id" element={<LazyPage><ProyectoObraDetalle /></LazyPage>} />
                     </Route>
                 </Route>
             </Routes>

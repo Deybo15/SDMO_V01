@@ -1,4 +1,5 @@
 import React from 'react';
+import { formatProgressPercent } from '../../lib/proyectosObraService';
 
 interface PoaProgressBarProps {
   percentage: number | null | undefined;
@@ -6,12 +7,7 @@ interface PoaProgressBarProps {
 }
 
 export const PoaProgressBar: React.FC<PoaProgressBarProps> = ({ percentage, showLabel = true }) => {
-  let rawValue = percentage ?? 0;
-  // Si el porcentaje viene en escala 0-1, convertir a 0-100
-  if (rawValue > 0 && rawValue <= 1) {
-    rawValue = rawValue * 100;
-  }
-  const clampedValue = Math.min(Math.max(Math.round(rawValue), 0), 100);
+  const clampedValue = formatProgressPercent(percentage);
 
   // Gradiente dinámico según el avance
   const getGradient = (val: number) => {

@@ -1,11 +1,20 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
 import { ProyectoObraConDetalles } from '../../types/proyectosObra';
-import { getProyectoObraPorId, registrarSeguimiento, actualizarFaseProyecto, formatMonedaCRC, formatFechaCR } from '../../lib/proyectosObraService';
+import {
+  getProyectoObraPorId,
+  registrarSeguimiento,
+  actualizarFaseProyecto,
+  formatMonedaCRC,
+  formatFechaCR,
+  formatProgressPercent,
+  normalizeProgressFraction
+} from '../../lib/proyectosObraService';
 import { generarReporteProyectoPDF, generarReporteProyectoExcel } from '../../lib/reportesService';
 
 import { PoaProgressBar } from '../../components/proyectos/PoaProgressBar';
 import { supabase } from '../../lib/supabase';
+import { useAuthorization } from '../../hooks/useAuthorization';
 import { 
   ArrowLeft, Building2, User, FileText, DollarSign, Briefcase, 
   Clock, Activity, Plus, CheckCircle2, AlertCircle, Calendar, Send, Edit3, History, Save, X, FileSpreadsheet, Download
@@ -14,6 +23,7 @@ import {
 export default function ProyectoObraDetalle() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
+  const { authorized: puedeEditar } = useAuthorization();
 
   const [proyecto, setProyecto] = useState<ProyectoObraConDetalles | null>(null);
   const [loading, setLoading] = useState<boolean>(true);
@@ -35,14 +45,15 @@ export default function ProyectoObraDetalle() {
   const [guardandoFase, setGuardandoFase] = useState<boolean>(false);
 
   const handleIniciarEdicionFase = (fase: any) => {
+    if (!puedeEditar) return;
     setFaseEnEdicion(fase.id);
     setEditFechaInicioReal(fase.fecha_inicio_real || '');
     setEditFechaFinReal(fase.fecha_fin_real || '');
-    setEditPorcentajeAvance(fase.porcentaje_avance || 0);
+    setEditPorcentajeAvance(formatProgressPercent(fase.porcentaje_avance));
   };
 
   const handleGuardarEdicionFase = async (fase: any) => {
-    if (!proyecto || !id) return;
+    if (!proyecto || !id || !puedeEditar) return;
     setGuardandoFase(true);
     try {
       const { data: { user } } = await supabase.auth.getUser();
@@ -79,16 +90,16 @@ export default function ProyectoObraDetalle() {
       }
 
       // 3. Comparar porcentaje_avance
-      const numAvance = Number(editPorcentajeAvance);
-      const numAvanceAnterior = Number(fase.porcentaje_avance);
+      const numAvance = normalizeProgressFraction(editPorcentajeAvance);
+      const numAvanceAnterior = normalizeProgressFraction(fase.porcentaje_avance);
       if (numAvance !== numAvanceAnterior) {
         await actualizarFaseProyecto(
           proyecto.id,
           fase.id,
           fase.fase,
           'porcentaje_avance',
-          `${Math.round(numAvanceAnterior * 100)}%`,
-          `${Math.round(numAvance * 100)}%`,
+          `${formatProgressPercent(numAvanceAnterior)}%`,
+          `${formatProgressPercent(numAvance)}%`,
           modificadoPor
         );
       }
@@ -103,13 +114,7 @@ export default function ProyectoObraDetalle() {
     }
   };
 
-  useEffect(() => {
-    if (id) {
-      cargarDetalle();
-    }
-  }, [id]);
-
-  const cargarDetalle = async () => {
+  const cargarDetalle = useCallback(async () => {
     if (!id) return;
     setLoading(true);
     const data = await getProyectoObraPorId(id);
@@ -119,13 +124,19 @@ export default function ProyectoObraDetalle() {
     }
     setProyecto(data);
 
-    setNuevoAvance(data.avance_poa ?? 0);
+    setNuevoAvance(formatProgressPercent(data.avance_poa ?? 0));
     setLoading(false);
-  };
+  }, [id, navigate]);
+
+  useEffect(() => {
+    if (id) {
+      cargarDetalle();
+    }
+  }, [id, cargarDetalle]);
 
   const handleGuardarSeguimiento = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!proyecto || !id) return;
+    if (!proyecto || !id || !puedeEditar) return;
 
     setGuardandoSeguimiento(true);
     try {
@@ -135,7 +146,7 @@ export default function ProyectoObraDetalle() {
       await registrarSeguimiento({
         proyecto_id: id,
         fecha_corte: new Date().toISOString().split('T')[0],
-        avance_registrado: Number(nuevoAvance),
+        avance_registrado: normalizeProgressFraction(nuevoAvance),
         observaciones: nuevasObservaciones,
         etapa: nuevaEtapa,
         registrado_por: registradoPor
@@ -226,13 +237,15 @@ export default function ProyectoObraDetalle() {
               <span>Excel</span>
             </button>
 
-            <Link
-              to={`/proyectos-obra/${proyecto.id}/editar`}
-              className="flex items-center justify-center gap-2 px-4 py-2.5 bg-[#0071E3] hover:bg-[#0071E3]/80 text-white rounded-xl text-xs font-semibold transition-all shadow-lg shadow-[#0071E3]/20 shrink-0"
-            >
-              <Edit3 className="w-4 h-4" />
-              <span>Editar Proyecto</span>
-            </Link>
+            {puedeEditar && (
+              <Link
+                to={`/proyectos-obra/${proyecto.id}/editar`}
+                className="flex items-center justify-center gap-2 px-4 py-2.5 bg-[#0071E3] hover:bg-[#0071E3]/80 text-white rounded-xl text-xs font-semibold transition-all shadow-lg shadow-[#0071E3]/20 shrink-0"
+              >
+                <Edit3 className="w-4 h-4" />
+                <span>Editar Proyecto</span>
+              </Link>
+            )}
 
             <div className="w-full md:w-56 bg-[#09090b] p-3 rounded-xl border border-[#27272a] space-y-1.5">
               <PoaProgressBar percentage={proyecto.avance_poa ?? proyecto.cumplimiento_poa ?? 0} />
@@ -456,9 +469,10 @@ export default function ProyectoObraDetalle() {
                         </div>
                         <div className="flex items-center gap-3">
                           <span className="text-xs font-mono font-bold px-2.5 py-1 rounded bg-[#27272a] text-white">
-                            Avance: {Math.round(fase.porcentaje_avance * 100)}%
+                            Avance: {formatProgressPercent(fase.porcentaje_avance)}%
                           </span>
                           {!enEdicion ? (
+                            puedeEditar && (
                             <button
                               onClick={() => handleIniciarEdicionFase(fase)}
                               className="flex items-center gap-1.5 px-3 py-1 bg-[#27272a] hover:bg-[#3f3f46] text-white text-xs font-semibold rounded-lg transition-all"
@@ -466,6 +480,7 @@ export default function ProyectoObraDetalle() {
                               <Edit3 className="w-3.5 h-3.5 text-[#0071E3]" />
                               <span>Editar</span>
                             </button>
+                            )
                           ) : (
                             <div className="flex items-center gap-2">
                               <button
@@ -527,17 +542,17 @@ export default function ProyectoObraDetalle() {
                             />
                           </div>
                           <div>
-                            <label className="block text-[#a1a1aa] font-semibold mb-1">Porcentaje de Avance (0 a 1)</label>
+                            <label className="block text-[#a1a1aa] font-semibold mb-1">Porcentaje de Avance (%)</label>
                             <input
                               type="number"
-                              step="0.01"
+                              step="1"
                               min="0"
-                              max="1"
+                              max="100"
                               value={editPorcentajeAvance}
                               onChange={(e) => setEditPorcentajeAvance(parseFloat(e.target.value) || 0)}
                               className="w-full px-3 py-2 bg-[#09090b] border border-[#27272a] rounded-lg text-white focus:outline-none focus:border-[#0071E3]"
                             />
-                            <span className="text-[10px] text-[#71717a] mt-0.5 block">Ej. 0.50 = 50%</span>
+                            <span className="text-[10px] text-[#71717a] mt-0.5 block">Ej. 75 = 75%</span>
                           </div>
                         </div>
                       )}
@@ -603,13 +618,15 @@ export default function ProyectoObraDetalle() {
                 <h3 className="text-lg font-bold text-white">Bitácora de Seguimiento</h3>
                 <p className="text-xs text-[#71717a]">Registro histórico append-only ordenado descendentemente por fecha corte</p>
               </div>
-              <button
-                onClick={() => setMostrarModalSeguimiento(true)}
-                className="flex items-center gap-2 px-4 py-2 bg-[#0071E3] hover:bg-[#0071E3]/80 text-white rounded-xl text-sm font-semibold transition-all shadow-lg shadow-[#0071E3]/20"
-              >
-                <Plus className="w-4 h-4" />
-                <span>Nuevo Seguimiento</span>
-              </button>
+              {puedeEditar && (
+                <button
+                  onClick={() => setMostrarModalSeguimiento(true)}
+                  className="flex items-center gap-2 px-4 py-2 bg-[#0071E3] hover:bg-[#0071E3]/80 text-white rounded-xl text-sm font-semibold transition-all shadow-lg shadow-[#0071E3]/20"
+                >
+                  <Plus className="w-4 h-4" />
+                  <span>Nuevo Seguimiento</span>
+                </button>
+              )}
             </div>
 
             {proyecto.seguimientos && proyecto.seguimientos.length > 0 ? (
@@ -625,7 +642,7 @@ export default function ProyectoObraDetalle() {
                         </span>
                       </div>
                       <span className="text-xs font-bold font-mono text-emerald-400 bg-emerald-500/10 px-2.5 py-1 rounded border border-emerald-500/20">
-                        {Math.round(seg.avance_registrado * 100)}% Avance
+                        {formatProgressPercent(seg.avance_registrado)}% Avance
                       </span>
                     </div>
 
@@ -663,18 +680,18 @@ export default function ProyectoObraDetalle() {
 
 
               <div>
-                <label className="block text-xs font-semibold text-[#a1a1aa] uppercase mb-1">Porcentaje de Avance (0 a 1)</label>
+                <label className="block text-xs font-semibold text-[#a1a1aa] uppercase mb-1">Porcentaje de Avance (%)</label>
                 <input
                   type="number"
-                  step="0.01"
+                  step="1"
                   min="0"
-                  max="1"
+                  max="100"
                   value={nuevoAvance}
                   onChange={(e) => setNuevoAvance(parseFloat(e.target.value))}
                   className="w-full px-3 py-2 bg-[#09090b] border border-[#27272a] rounded-xl text-sm text-white focus:outline-none focus:border-[#0071E3]"
                   required
                 />
-                <span className="text-[11px] text-[#71717a] mt-0.5 block">Ejemplo: 0.75 equivale al 75%</span>
+                <span className="text-[11px] text-[#71717a] mt-0.5 block">Ejemplo: 75 equivale al 75%</span>
               </div>
 
               <div>
