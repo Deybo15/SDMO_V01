@@ -237,7 +237,7 @@ export default function ProyectoObraFormulario() {
               >
                 <option value="">--Seleccionar--</option>
                 {colaboradores.map((c) => (
-                  <option key={c.identificacion || c.alias} value={c.alias || c.colaborador}>
+                  <option key={c.identificacion || c.alias} value={c.identificacion || c.alias || c.colaborador}>
                     {c.alias || c.colaborador}
                   </option>
                 ))}

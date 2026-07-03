@@ -75,7 +75,11 @@ export default function ProyectoObraEditar() {
       setPrioridad(proyecto.prioridad ?? '');
       setJustificacion(proyecto.justificacion || '');
       setGerencia(proyecto.gerencia || '');
-      setProfesionalResponsable(proyecto.profesional_responsable || '');
+      const responsableGuardado = proyecto.profesional_responsable || '';
+      const colaboradorResponsable = colabs.find((c: any) =>
+        [c.identificacion, c.alias, c.colaborador].filter(Boolean).includes(responsableGuardado)
+      );
+      setProfesionalResponsable(colaboradorResponsable?.identificacion || responsableGuardado);
       setTipoContrato(proyecto.tipo_contrato || '');
       setTipoEjecucion(proyecto.tipo_ejecucion || '');
       setPoaOrigen(proyecto.poa_origen || '');
@@ -300,7 +304,7 @@ export default function ProyectoObraEditar() {
               >
                 <option value="">--Seleccionar--</option>
                 {colaboradores.map((c) => (
-                  <option key={c.identificacion || c.alias} value={c.alias || c.colaborador}>
+                  <option key={c.identificacion || c.alias} value={c.identificacion || c.alias || c.colaborador}>
                     {c.alias || c.colaborador}
                   </option>
                 ))}
