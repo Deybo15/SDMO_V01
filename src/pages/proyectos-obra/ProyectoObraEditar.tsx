@@ -1,7 +1,13 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 
-import { getProyectoObraPorId, actualizarProyectoObra, getColaboradores } from '../../lib/proyectosObraService';
+import {
+  getProyectoObraPorId,
+  actualizarProyectoObra,
+  actualizarCodigoPresupuestario,
+  guardarContratoObra,
+  getColaboradores
+} from '../../lib/proyectosObraService';
 import { ArrowLeft, Save, Building2, User, Layers, FileText, DollarSign } from 'lucide-react';
 
 export default function ProyectoObraEditar() {
@@ -37,6 +43,13 @@ export default function ProyectoObraEditar() {
   const [requiereContratacion, setRequiereContratacion] = useState<boolean>(false);
   const [anio, setAnio] = useState<number>(new Date().getFullYear());
   const [observacionesMetaPoa, setObservacionesMetaPoa] = useState<string>('');
+  const [codigoPresupuestario, setCodigoPresupuestario] = useState<string>('');
+  const [numeroSolicitudContratacion, setNumeroSolicitudContratacion] = useState<string>('');
+  const [numeroProcedimientoSicop, setNumeroProcedimientoSicop] = useState<string>('');
+  const [numeroContratoSicop, setNumeroContratoSicop] = useState<string>('');
+  const [numeroOrdenCompra, setNumeroOrdenCompra] = useState<string>('');
+  const [empresaAdjudicada, setEmpresaAdjudicada] = useState<string>('');
+  const [estadoContratacion, setEstadoContratacion] = useState<string>('');
 
   const cargarProyecto = useCallback(async () => {
     if (!id) return;
@@ -79,6 +92,13 @@ export default function ProyectoObraEditar() {
       setRequiereContratacion(Boolean(proyecto.requiere_contratacion));
       setAnio(proyecto.anio || new Date().getFullYear());
       setObservacionesMetaPoa(proyecto.observaciones_meta_poa || '');
+      setCodigoPresupuestario(proyecto.presupuesto_vigente?.codigo_presupuestario || '');
+      setNumeroSolicitudContratacion(proyecto.contrato?.numero_solicitud_contratacion || '');
+      setNumeroProcedimientoSicop(proyecto.contrato?.numero_procedimiento_sicop || '');
+      setNumeroContratoSicop(proyecto.contrato?.numero_contrato_sicop || '');
+      setNumeroOrdenCompra(proyecto.contrato?.numero_orden_compra || '');
+      setEmpresaAdjudicada(proyecto.contrato?.empresa_adjudicada || proyecto.contrato?.contratista || '');
+      setEstadoContratacion(proyecto.contrato?.estado_contratacion || '');
     } catch (err) {
       console.error('Error al cargar proyecto para edición:', err);
     } finally {
@@ -130,6 +150,19 @@ export default function ProyectoObraEditar() {
         anio: Number(anio),
         observaciones_meta_poa: observacionesMetaPoa.trim()
       });
+
+      await Promise.all([
+        actualizarCodigoPresupuestario(id, codigoPresupuestario),
+        guardarContratoObra(id, {
+          numero_solicitud_contratacion: numeroSolicitudContratacion,
+          numero_procedimiento_sicop: numeroProcedimientoSicop,
+          numero_contrato_sicop: numeroContratoSicop,
+          numero_orden_compra: numeroOrdenCompra,
+          empresa_adjudicada: empresaAdjudicada,
+          contratista: empresaAdjudicada,
+          estado_contratacion: estadoContratacion
+        })
+      ]);
 
       navigate(`/proyectos-obra/${id}`);
     } catch (err: any) {
@@ -480,6 +513,76 @@ export default function ProyectoObraEditar() {
                 type="number"
                 value={anio}
                 onChange={(e) => setAnio(parseInt(e.target.value) || new Date().getFullYear())}
+                className="w-full px-4 py-2.5 bg-[#09090b] border border-[#27272a] rounded-xl text-sm text-white focus:outline-none focus:border-[#0071E3] transition-all"
+              />
+            </div>
+
+            <div>
+              <label className="block text-xs font-semibold text-[#a1a1aa] uppercase mb-1.5">Codigo Presupuestario</label>
+              <input
+                type="text"
+                value={codigoPresupuestario}
+                onChange={(e) => setCodigoPresupuestario(e.target.value)}
+                className="w-full px-4 py-2.5 bg-[#09090b] border border-[#27272a] rounded-xl text-sm text-white focus:outline-none focus:border-[#0071E3] transition-all"
+              />
+            </div>
+
+            <div>
+              <label className="block text-xs font-semibold text-[#a1a1aa] uppercase mb-1.5">Solicitud Contratacion</label>
+              <input
+                type="text"
+                value={numeroSolicitudContratacion}
+                onChange={(e) => setNumeroSolicitudContratacion(e.target.value)}
+                className="w-full px-4 py-2.5 bg-[#09090b] border border-[#27272a] rounded-xl text-sm text-white focus:outline-none focus:border-[#0071E3] transition-all"
+              />
+            </div>
+
+            <div>
+              <label className="block text-xs font-semibold text-[#a1a1aa] uppercase mb-1.5">Procedimiento SICOP</label>
+              <input
+                type="text"
+                value={numeroProcedimientoSicop}
+                onChange={(e) => setNumeroProcedimientoSicop(e.target.value)}
+                className="w-full px-4 py-2.5 bg-[#09090b] border border-[#27272a] rounded-xl text-sm text-white focus:outline-none focus:border-[#0071E3] transition-all"
+              />
+            </div>
+
+            <div>
+              <label className="block text-xs font-semibold text-[#a1a1aa] uppercase mb-1.5">Contrato SICOP</label>
+              <input
+                type="text"
+                value={numeroContratoSicop}
+                onChange={(e) => setNumeroContratoSicop(e.target.value)}
+                className="w-full px-4 py-2.5 bg-[#09090b] border border-[#27272a] rounded-xl text-sm text-white focus:outline-none focus:border-[#0071E3] transition-all"
+              />
+            </div>
+
+            <div>
+              <label className="block text-xs font-semibold text-[#a1a1aa] uppercase mb-1.5">Orden de Compra</label>
+              <input
+                type="text"
+                value={numeroOrdenCompra}
+                onChange={(e) => setNumeroOrdenCompra(e.target.value)}
+                className="w-full px-4 py-2.5 bg-[#09090b] border border-[#27272a] rounded-xl text-sm text-white focus:outline-none focus:border-[#0071E3] transition-all"
+              />
+            </div>
+
+            <div>
+              <label className="block text-xs font-semibold text-[#a1a1aa] uppercase mb-1.5">Empresa Adjudicada</label>
+              <input
+                type="text"
+                value={empresaAdjudicada}
+                onChange={(e) => setEmpresaAdjudicada(e.target.value)}
+                className="w-full px-4 py-2.5 bg-[#09090b] border border-[#27272a] rounded-xl text-sm text-white focus:outline-none focus:border-[#0071E3] transition-all"
+              />
+            </div>
+
+            <div>
+              <label className="block text-xs font-semibold text-[#a1a1aa] uppercase mb-1.5">Estado Contratacion</label>
+              <input
+                type="text"
+                value={estadoContratacion}
+                onChange={(e) => setEstadoContratacion(e.target.value)}
                 className="w-full px-4 py-2.5 bg-[#09090b] border border-[#27272a] rounded-xl text-sm text-white focus:outline-none focus:border-[#0071E3] transition-all"
               />
             </div>

@@ -175,7 +175,7 @@ export async function getProyectoObraPorId(id: string | number): Promise<Proyect
     // Consultas paralelas de tablas secundarias
     const [resPresupuestos, resContrato, resFases, resSeguimientos, resHistorialFases, resColab] = await Promise.all([
       supabase.from('presupuesto_proyecto').select('*').eq('proyecto_id', id),
-      supabase.from('contrato_obra').select('*').eq('proyecto_id', id).maybeSingle(),
+      supabase.from('contrato_obra').select('*').eq('proyecto_id', id).limit(1),
       supabase.from('fase_proyecto').select('*').eq('proyecto_id', id).order('id', { ascending: true }),
       supabase.from('seguimiento_proyecto').select('*').eq('proyecto_id', id).order('fecha_corte', { ascending: false }),
       supabase.from('historial_fase_proyecto').select('*').eq('proyecto_id', id).order('creado_en', { ascending: false }),
@@ -191,7 +191,7 @@ export async function getProyectoObraPorId(id: string | number): Promise<Proyect
       ...proyecto,
       nombre_responsable: resColab.data?.alias || resColab.data?.colaborador || proyecto.profesional_responsable || 'No asignado',
       presupuesto_vigente: presupuestoVigente,
-      contrato: resContrato.data || null,
+      contrato: Array.isArray(resContrato.data) ? resContrato.data[0] || null : resContrato.data || null,
       fases: resFases.data || [],
       seguimientos: resSeguimientos.data || [],
       historial_fases: resHistorialFases.data || []
@@ -406,6 +406,114 @@ export async function actualizarProyectoObra(id: string | number, proyectoData: 
     return data;
   } catch (err) {
     console.error('Error actualizando proyecto de obra:', err);
+    throw err;
+  }
+}
+
+export async function actualizarCodigoPresupuestario(
+  proyectoId: string | number,
+  codigoPresupuestario: string | null | undefined
+) {
+  try {
+    const codigo = codigoPresupuestario?.trim() || null;
+    const { data: presupuestos, error: errConsulta } = await supabase
+      .from('presupuesto_proyecto')
+      .select('id')
+      .eq('proyecto_id', proyectoId)
+      .order('es_vigente', { ascending: false })
+      .order('version', { ascending: false })
+      .limit(1);
+
+    if (errConsulta) throw errConsulta;
+
+    const presupuestoId = presupuestos?.[0]?.id;
+    if (presupuestoId) {
+      const { data, error } = await supabase
+        .from('presupuesto_proyecto')
+        .update({ codigo_presupuestario: codigo })
+        .eq('id', presupuestoId)
+        .select()
+        .single();
+
+      if (error) throw error;
+      return data;
+    }
+
+    if (!codigo) return null;
+
+    const { data, error } = await supabase
+      .from('presupuesto_proyecto')
+      .insert([{
+        proyecto_id: proyectoId,
+        version: 1,
+        descripcion_modificacion: 'Registro inicial de codigo presupuestario',
+        presupuesto_asignado: 0,
+        presupuesto_adjudicado: 0,
+        presupuesto_reserva: 0,
+        codigo_presupuestario: codigo,
+        es_vigente: true
+      }])
+      .select()
+      .single();
+
+    if (error) throw error;
+    return data;
+  } catch (err) {
+    console.error('Error actualizando codigo presupuestario:', err);
+    throw err;
+  }
+}
+
+export async function guardarContratoObra(
+  proyectoId: string | number,
+  contratoData: Partial<ContratoObra>
+) {
+  try {
+    const payload: Partial<ContratoObra> = {
+      numero_solicitud_contratacion: contratoData.numero_solicitud_contratacion?.trim() || null,
+      numero_procedimiento_sicop: contratoData.numero_procedimiento_sicop?.trim() || null,
+      numero_contrato_sicop: contratoData.numero_contrato_sicop?.trim() || null,
+      numero_orden_compra: contratoData.numero_orden_compra?.trim() || null,
+      empresa_adjudicada: contratoData.empresa_adjudicada?.trim() || null,
+      contratista: contratoData.contratista?.trim() || null,
+      estado_contratacion: contratoData.estado_contratacion?.trim() || null
+    };
+
+    const { data: contratos, error: errConsulta } = await supabase
+      .from('contrato_obra')
+      .select('id')
+      .eq('proyecto_id', proyectoId)
+      .limit(1);
+
+    if (errConsulta) throw errConsulta;
+
+    const contratoId = contratos?.[0]?.id;
+    const tieneDatos = Object.values(payload).some(value => value !== null && value !== undefined && String(value).trim() !== '');
+
+    if (contratoId) {
+      const { data, error } = await supabase
+        .from('contrato_obra')
+        .update(payload)
+        .eq('id', contratoId)
+        .select()
+        .single();
+
+      if (error) throw error;
+      return data;
+    }
+
+    if (!tieneDatos) return null;
+
+    const { data, error } = await supabase
+      .from('contrato_obra')
+      .insert([{ ...payload, proyecto_id: proyectoId }])
+      .select()
+      .single();
+
+    if (error) throw error;
+    return data;
+  } catch (err) {
+    console.error('Error guardando contrato de obra:', err);
     throw err;
   }
 }
