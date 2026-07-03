@@ -8,7 +8,33 @@ import {
   guardarContratoObra,
   getColaboradores
 } from '../../lib/proyectosObraService';
+import {
+  CANTON_OPTIONS,
+  CatalogOption,
+  ESTADO_CONTRATACION_OPTIONS,
+  ESTADO_PROYECTO_OPTIONS,
+  GERENCIA_OPTIONS,
+  LINEA_ESTRATEGICA_OPTIONS,
+  ORIGEN_PRESUPUESTO_OPTIONS,
+  PRIORIDAD_OPTIONS,
+  TIPO_CONTRATO_OPTIONS,
+  TIPO_EJECUCION_OPTIONS,
+  TIPO_PROYECTO_OPTIONS,
+  hasCatalogOption,
+  normalizeCatalogValue
+} from '../../lib/proyectosObraCatalogos';
 import { ArrowLeft, Save, Building2, User, Layers, FileText, DollarSign } from 'lucide-react';
+
+const renderCatalogOptions = (options: CatalogOption[], currentValue: string) => (
+  <>
+    {currentValue && !hasCatalogOption(currentValue, options) && (
+      <option value={currentValue}>{currentValue.replace(/_/g, ' ')}</option>
+    )}
+    {options.map((option) => (
+      <option key={option.value} value={option.value}>{option.label}</option>
+    ))}
+  </>
+);
 
 export default function ProyectoObraEditar() {
   const { id } = useParams<{ id: string }>();
@@ -71,28 +97,28 @@ export default function ProyectoObraEditar() {
       setNombreProyecto(proyecto.nombre_proyecto || '');
       setCodigoMeta(proyecto.codigo_meta || '');
       setDescripcionGeneral(proyecto.descripcion_general || '');
-      setTipoProyecto(proyecto.tipo_proyecto || '');
+      setTipoProyecto(normalizeCatalogValue(proyecto.tipo_proyecto, TIPO_PROYECTO_OPTIONS));
       setPrioridad(proyecto.prioridad ?? '');
       setJustificacion(proyecto.justificacion || '');
-      setGerencia(proyecto.gerencia || '');
+      setGerencia(normalizeCatalogValue(proyecto.gerencia, GERENCIA_OPTIONS));
       const responsableGuardado = proyecto.profesional_responsable || '';
       const colaboradorResponsable = colabs.find((c: any) =>
         [c.identificacion, c.alias, c.colaborador].filter(Boolean).includes(responsableGuardado)
       );
       setProfesionalResponsable(colaboradorResponsable?.identificacion || responsableGuardado);
-      setTipoContrato(proyecto.tipo_contrato || '');
-      setTipoEjecucion(proyecto.tipo_ejecucion || '');
+      setTipoContrato(normalizeCatalogValue(proyecto.tipo_contrato, TIPO_CONTRATO_OPTIONS));
+      setTipoEjecucion(normalizeCatalogValue(proyecto.tipo_ejecucion, TIPO_EJECUCION_OPTIONS));
       setPoaOrigen(proyecto.poa_origen || '');
-      setOrigenPresupuesto(proyecto.origen_presupuesto || '');
-      setLineaEstrategica(proyecto.linea_estrategica || '');
+      setOrigenPresupuesto(normalizeCatalogValue(proyecto.origen_presupuesto, ORIGEN_PRESUPUESTO_OPTIONS));
+      setLineaEstrategica(normalizeCatalogValue(proyecto.linea_estrategica, LINEA_ESTRATEGICA_OPTIONS));
       setPrograma(proyecto.programa || '');
-      setCanton(proyecto.canton || 'San José');
+      setCanton(normalizeCatalogValue(proyecto.canton || 'San José', CANTON_OPTIONS));
       setDistrito(proyecto.distrito || '');
       setDireccionExacta(proyecto.direccion_exacta || '');
       setBarrioComunidad(proyecto.barrio_comunidad || '');
       setFechaSolicitud(proyecto.fecha_solicitud || '');
 
-      setEstado(proyecto.estado || 'Activo');
+      setEstado(normalizeCatalogValue(proyecto.estado || 'Activo', ESTADO_PROYECTO_OPTIONS));
       setRequiereContratacion(Boolean(proyecto.requiere_contratacion));
       setAnio(proyecto.anio || new Date().getFullYear());
       setObservacionesMetaPoa(proyecto.observaciones_meta_poa || '');
@@ -102,7 +128,7 @@ export default function ProyectoObraEditar() {
       setNumeroContratoSicop(proyecto.contrato?.numero_contrato_sicop || '');
       setNumeroOrdenCompra(proyecto.contrato?.numero_orden_compra || '');
       setEmpresaAdjudicada(proyecto.contrato?.empresa_adjudicada || proyecto.contrato?.contratista || '');
-      setEstadoContratacion(proyecto.contrato?.estado_contratacion || '');
+      setEstadoContratacion(normalizeCatalogValue(proyecto.contrato?.estado_contratacion, ESTADO_CONTRATACION_OPTIONS));
     } catch (err) {
       console.error('Error al cargar proyecto para edición:', err);
     } finally {
@@ -122,6 +148,11 @@ export default function ProyectoObraEditar() {
 
     if (!nombreProyecto.trim()) {
       alert('El nombre del proyecto es obligatorio.');
+      return;
+    }
+
+    if (anio < 2000 || anio > 2100) {
+      alert('El año del proyecto debe estar entre 2000 y 2100.');
       return;
     }
 
@@ -254,9 +285,9 @@ export default function ProyectoObraEditar() {
                 className="w-full px-4 py-2.5 bg-[#09090b] border border-[#27272a] rounded-xl text-sm text-white focus:outline-none focus:border-[#0071E3] transition-all cursor-pointer"
               >
                 <option value="">--Seleccionar--</option>
-                <option value="1">Alta</option>
-                <option value="2">Media</option>
-                <option value="3">Baja</option>
+                {PRIORIDAD_OPTIONS.map((option) => (
+                  <option key={option.value} value={option.value}>{option.label}</option>
+                ))}
               </select>
             </div>
 
@@ -289,7 +320,7 @@ export default function ProyectoObraEditar() {
                 className="w-full px-4 py-2.5 bg-[#09090b] border border-[#27272a] rounded-xl text-sm text-white focus:outline-none focus:border-[#0071E3] transition-all cursor-pointer"
               >
                 <option value="">--Seleccionar--</option>
-                <option value="Provisión de Servicios">Provisión de Servicios</option>
+                {renderCatalogOptions(GERENCIA_OPTIONS, gerencia)}
               </select>
             </div>
 
@@ -329,12 +360,7 @@ export default function ProyectoObraEditar() {
                 className="w-full px-4 py-2.5 bg-[#09090b] border border-[#27272a] rounded-xl text-sm text-white focus:outline-none focus:border-[#0071E3] transition-all cursor-pointer"
               >
                 <option value="">--Seleccionar--</option>
-                <option value="Mantenimiento">Mantenimiento</option>
-                <option value="Obra nueva">Obra nueva</option>
-                <option value="Espacio publico">Espacio publico</option>
-                <option value="Instalacion municipal">Instalacion municipal</option>
-                <option value="Emergencia">Emergencia</option>
-                <option value="Mejora urbana">Mejora urbana</option>
+                {renderCatalogOptions(TIPO_PROYECTO_OPTIONS, tipoProyecto)}
               </select>
             </div>
 
@@ -347,9 +373,7 @@ export default function ProyectoObraEditar() {
                 className="w-full px-4 py-2.5 bg-[#09090b] border border-[#27272a] rounded-xl text-sm text-white focus:outline-none focus:border-[#0071E3] transition-all cursor-pointer"
               >
                 <option value="">--Seleccionar--</option>
-                <option value="Obra Pública">Obra Pública</option>
-                <option value="Servicio">Servicio</option>
-                <option value="Insumos">Insumos</option>
+                {renderCatalogOptions(TIPO_CONTRATO_OPTIONS, tipoContrato)}
               </select>
             </div>
 
@@ -362,9 +386,7 @@ export default function ProyectoObraEditar() {
                 className="w-full px-4 py-2.5 bg-[#09090b] border border-[#27272a] rounded-xl text-sm text-white focus:outline-none focus:border-[#0071E3] transition-all cursor-pointer"
               >
                 <option value="">--Seleccionar--</option>
-                <option value="Contrato">Contrato</option>
-                <option value="Administración">Administración</option>
-                <option value="Mixto">Mixto</option>
+                {renderCatalogOptions(TIPO_EJECUCION_OPTIONS, tipoEjecucion)}
               </select>
             </div>
 
@@ -387,9 +409,7 @@ export default function ProyectoObraEditar() {
                 className="w-full px-4 py-2.5 bg-[#09090b] border border-[#27272a] rounded-xl text-sm text-white focus:outline-none focus:border-[#0071E3] transition-all cursor-pointer"
               >
                 <option value="">--Seleccionar--</option>
-                <option value="Ordinario">Ordinario</option>
-                <option value="Extraordinario">Extraordinario</option>
-                <option value="Fondo de emergencias">Fondo de emergencias</option>
+                {renderCatalogOptions(ORIGEN_PRESUPUESTO_OPTIONS, origenPresupuesto)}
               </select>
             </div>
 
@@ -402,11 +422,7 @@ export default function ProyectoObraEditar() {
                 className="w-full px-4 py-2.5 bg-[#09090b] border border-[#27272a] rounded-xl text-sm text-white focus:outline-none focus:border-[#0071E3] transition-all cursor-pointer"
               >
                 <option value="">--Seleccionar--</option>
-                <option value="Planificación_urbana_y_movilidad_sostenible">Planificación urbana y movilidad sostenible</option>
-                <option value="Resiliencia_y_sostenibilidad_ambiental">Resiliencia y sostenibilidad ambiental</option>
-                <option value="Equilibrio_y_Derecho_a_la_Ciudad">Equilibrio y Derecho a la Ciudad</option>
-                <option value="Gestión_Operativa_y_Administrativa_Ordinaria">Gestión Operativa y Administrativa Ordinaria</option>
-                <option value="Competitividad_e_Innovación">Competitividad e Innovación</option>
+                {renderCatalogOptions(LINEA_ESTRATEGICA_OPTIONS, lineaEstrategica)}
               </select>
             </div>
 
@@ -439,7 +455,7 @@ export default function ProyectoObraEditar() {
                 className="w-full px-4 py-2.5 bg-[#09090b] border border-[#27272a] rounded-xl text-sm text-white focus:outline-none focus:border-[#0071E3] transition-all cursor-pointer"
               >
                 <option value="">--Seleccionar--</option>
-                <option value="San José">San José</option>
+                {renderCatalogOptions(CANTON_OPTIONS, canton)}
               </select>
             </div>
 
@@ -494,10 +510,7 @@ export default function ProyectoObraEditar() {
                 className="w-full px-4 py-2.5 bg-[#09090b] border border-[#27272a] rounded-xl text-sm text-white focus:outline-none focus:border-[#0071E3] transition-all cursor-pointer"
               >
                 <option value="">--Seleccionar--</option>
-                <option value="Activo">Activo</option>
-                <option value="Adjudicado">Adjudicado</option>
-                <option value="Finalizado">Finalizado</option>
-                <option value="Suspendido">Suspendido</option>
+                {renderCatalogOptions(ESTADO_PROYECTO_OPTIONS, estado)}
               </select>
             </div>
 
@@ -583,12 +596,14 @@ export default function ProyectoObraEditar() {
 
             <div>
               <label className="block text-xs font-semibold text-[#a1a1aa] uppercase mb-1.5">Estado Contratacion</label>
-              <input
-                type="text"
+              <select
                 value={estadoContratacion}
                 onChange={(e) => setEstadoContratacion(e.target.value)}
-                className="w-full px-4 py-2.5 bg-[#09090b] border border-[#27272a] rounded-xl text-sm text-white focus:outline-none focus:border-[#0071E3] transition-all"
-              />
+                className="w-full px-4 py-2.5 bg-[#09090b] border border-[#27272a] rounded-xl text-sm text-white focus:outline-none focus:border-[#0071E3] transition-all cursor-pointer"
+              >
+                <option value="">--Seleccionar--</option>
+                {renderCatalogOptions(ESTADO_CONTRATACION_OPTIONS, estadoContratacion)}
+              </select>
             </div>
 
             <div className="md:col-span-3">

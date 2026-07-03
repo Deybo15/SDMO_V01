@@ -11,6 +11,16 @@ import {
   normalizeProgressFraction
 } from '../../lib/proyectosObraService';
 import { generarReporteProyectoPDF, generarReporteProyectoExcel } from '../../lib/reportesService';
+import {
+  ESTADO_CONTRATACION_OPTIONS,
+  ESTADO_PROYECTO_OPTIONS,
+  LINEA_ESTRATEGICA_OPTIONS,
+  ORIGEN_PRESUPUESTO_OPTIONS,
+  TIPO_CONTRATO_OPTIONS,
+  TIPO_EJECUCION_OPTIONS,
+  TIPO_PROYECTO_OPTIONS,
+  getCatalogLabel
+} from '../../lib/proyectosObraCatalogos';
 
 import { PoaProgressBar } from '../../components/proyectos/PoaProgressBar';
 import { supabase } from '../../lib/supabase';
@@ -214,7 +224,7 @@ export default function ProyectoObraDetalle() {
               </span>
 
               <span className="text-xs font-semibold px-2.5 py-1 rounded-full bg-[#27272a] text-white">
-                {proyecto.estado || 'Activo'}
+                {getCatalogLabel(proyecto.estado || 'Activo', ESTADO_PROYECTO_OPTIONS, 'Activo')}
               </span>
             </div>
             <h1 className="text-2xl md:text-3xl font-black text-white">{proyecto.nombre_proyecto}</h1>
@@ -293,7 +303,7 @@ export default function ProyectoObraDetalle() {
               <div className="grid grid-cols-2 gap-4 text-sm">
                 <div>
                   <p className="text-xs text-[#71717a] font-semibold uppercase">Tipo de Proyecto</p>
-                  <p className="font-medium text-white mt-1">{proyecto.tipo_proyecto || '-'}</p>
+                  <p className="font-medium text-white mt-1">{getCatalogLabel(proyecto.tipo_proyecto, TIPO_PROYECTO_OPTIONS)}</p>
                 </div>
                 <div>
                   <p className="text-xs text-[#71717a] font-semibold uppercase">Prioridad</p>
@@ -301,11 +311,11 @@ export default function ProyectoObraDetalle() {
                 </div>
                 <div>
                   <p className="text-xs text-[#71717a] font-semibold uppercase">Tipo de Contrato</p>
-                  <p className="font-medium text-white mt-1">{proyecto.tipo_contrato || '-'}</p>
+                  <p className="font-medium text-white mt-1">{getCatalogLabel(proyecto.tipo_contrato, TIPO_CONTRATO_OPTIONS)}</p>
                 </div>
                 <div>
                   <p className="text-xs text-[#71717a] font-semibold uppercase">Tipo de Ejecución</p>
-                  <p className="font-medium text-white mt-1">{proyecto.tipo_ejecucion || '-'}</p>
+                  <p className="font-medium text-white mt-1">{getCatalogLabel(proyecto.tipo_ejecucion, TIPO_EJECUCION_OPTIONS)}</p>
                 </div>
                 <div>
                   <p className="text-xs text-[#71717a] font-semibold uppercase">POA Origen</p>
@@ -313,11 +323,11 @@ export default function ProyectoObraDetalle() {
                 </div>
                 <div>
                   <p className="text-xs text-[#71717a] font-semibold uppercase">Origen Presupuesto</p>
-                  <p className="font-medium text-white mt-1">{proyecto.origen_presupuesto || '-'}</p>
+                  <p className="font-medium text-white mt-1">{getCatalogLabel(proyecto.origen_presupuesto, ORIGEN_PRESUPUESTO_OPTIONS)}</p>
                 </div>
                 <div>
                   <p className="text-xs text-[#71717a] font-semibold uppercase">Línea Estratégica</p>
-                  <p className="font-medium text-white mt-1">{proyecto.linea_estrategica || '-'}</p>
+                  <p className="font-medium text-white mt-1">{getCatalogLabel(proyecto.linea_estrategica, LINEA_ESTRATEGICA_OPTIONS)}</p>
                 </div>
                 <div>
                   <p className="text-xs text-[#71717a] font-semibold uppercase">Programa</p>
@@ -469,7 +479,7 @@ export default function ProyectoObraDetalle() {
                 </div>
                 <div className="bg-[#09090b] p-4 rounded-xl border border-[#27272a]">
                   <p className="text-xs text-[#71717a] font-semibold uppercase">Estado de Contratación</p>
-                  <p className="font-bold text-[#0071E3] mt-1">{cont.estado_contratacion || '-'}</p>
+                  <p className="font-bold text-[#0071E3] mt-1">{getCatalogLabel(cont.estado_contratacion, ESTADO_CONTRATACION_OPTIONS)}</p>
                 </div>
               </div>
             ) : (

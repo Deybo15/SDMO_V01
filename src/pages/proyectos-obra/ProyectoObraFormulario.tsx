@@ -2,6 +2,18 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 
 import { crearProyectoObra, getDependenciasProyectos, getColaboradores, guardarContratoObra } from '../../lib/proyectosObraService';
+import {
+  CANTON_OPTIONS,
+  ESTADO_CONTRATACION_OPTIONS,
+  ESTADO_PROYECTO_OPTIONS,
+  GERENCIA_OPTIONS,
+  LINEA_ESTRATEGICA_OPTIONS,
+  ORIGEN_PRESUPUESTO_OPTIONS,
+  PRIORIDAD_OPTIONS,
+  TIPO_CONTRATO_OPTIONS,
+  TIPO_EJECUCION_OPTIONS,
+  TIPO_PROYECTO_OPTIONS
+} from '../../lib/proyectosObraCatalogos';
 import { ArrowLeft, Save, Building2, User, Layers, DollarSign, FileText, Calendar } from 'lucide-react';
 
 export default function ProyectoObraFormulario() {
@@ -57,6 +69,16 @@ export default function ProyectoObraFormulario() {
     e.preventDefault();
     if (!nombreProyecto.trim()) {
       alert('El nombre del proyecto es obligatorio.');
+      return;
+    }
+
+    if (anio < 2000 || anio > 2100) {
+      alert('El año del proyecto debe estar entre 2000 y 2100.');
+      return;
+    }
+
+    if (presupuestoAsignado < 0) {
+      alert('El presupuesto asignado inicial no puede ser negativo.');
       return;
     }
 
@@ -185,9 +207,9 @@ export default function ProyectoObraFormulario() {
                 className="w-full px-4 py-2.5 bg-[#09090b] border border-[#27272a] rounded-xl text-sm text-white focus:outline-none focus:border-[#0071E3] transition-all cursor-pointer"
               >
                 <option value="">--Seleccionar--</option>
-                <option value="1">Alta</option>
-                <option value="2">Media</option>
-                <option value="3">Baja</option>
+                {PRIORIDAD_OPTIONS.map((option) => (
+                  <option key={option.value} value={option.value}>{option.label}</option>
+                ))}
               </select>
             </div>
 
@@ -222,7 +244,9 @@ export default function ProyectoObraFormulario() {
                 className="w-full px-4 py-2.5 bg-[#09090b] border border-[#27272a] rounded-xl text-sm text-white focus:outline-none focus:border-[#0071E3] transition-all cursor-pointer"
               >
                 <option value="">--Seleccionar--</option>
-                <option value="Provisión de Servicios">Provisión de Servicios</option>
+                {GERENCIA_OPTIONS.map((option) => (
+                  <option key={option.value} value={option.value}>{option.label}</option>
+                ))}
               </select>
             </div>
 
@@ -262,12 +286,9 @@ export default function ProyectoObraFormulario() {
                 className="w-full px-4 py-2.5 bg-[#09090b] border border-[#27272a] rounded-xl text-sm text-white focus:outline-none focus:border-[#0071E3] transition-all cursor-pointer"
               >
                 <option value="">--Seleccionar--</option>
-                <option value="Mantenimiento">Mantenimiento</option>
-                <option value="Obra nueva">Obra nueva</option>
-                <option value="Espacio publico">Espacio publico</option>
-                <option value="Instalacion municipal">Instalacion municipal</option>
-                <option value="Emergencia">Emergencia</option>
-                <option value="Mejora urbana">Mejora urbana</option>
+                {TIPO_PROYECTO_OPTIONS.map((option) => (
+                  <option key={option.value} value={option.value}>{option.label}</option>
+                ))}
               </select>
             </div>
 
@@ -280,9 +301,9 @@ export default function ProyectoObraFormulario() {
                 className="w-full px-4 py-2.5 bg-[#09090b] border border-[#27272a] rounded-xl text-sm text-white focus:outline-none focus:border-[#0071E3] transition-all cursor-pointer"
               >
                 <option value="">--Seleccionar--</option>
-                <option value="Obra Pública">Obra Pública</option>
-                <option value="Servicio">Servicio</option>
-                <option value="Insumos">Insumos</option>
+                {TIPO_CONTRATO_OPTIONS.map((option) => (
+                  <option key={option.value} value={option.value}>{option.label}</option>
+                ))}
               </select>
             </div>
 
@@ -295,9 +316,9 @@ export default function ProyectoObraFormulario() {
                 className="w-full px-4 py-2.5 bg-[#09090b] border border-[#27272a] rounded-xl text-sm text-white focus:outline-none focus:border-[#0071E3] transition-all cursor-pointer"
               >
                 <option value="">--Seleccionar--</option>
-                <option value="Contrato">Contrato</option>
-                <option value="Administración">Administración</option>
-                <option value="Mixto">Mixto</option>
+                {TIPO_EJECUCION_OPTIONS.map((option) => (
+                  <option key={option.value} value={option.value}>{option.label}</option>
+                ))}
               </select>
             </div>
 
@@ -321,9 +342,9 @@ export default function ProyectoObraFormulario() {
                 className="w-full px-4 py-2.5 bg-[#09090b] border border-[#27272a] rounded-xl text-sm text-white focus:outline-none focus:border-[#0071E3] transition-all cursor-pointer"
               >
                 <option value="">--Seleccionar--</option>
-                <option value="Ordinario">Ordinario</option>
-                <option value="Extraordinario">Extraordinario</option>
-                <option value="Fondo de emergencias">Fondo de emergencias</option>
+                {ORIGEN_PRESUPUESTO_OPTIONS.map((option) => (
+                  <option key={option.value} value={option.value}>{option.label}</option>
+                ))}
               </select>
             </div>
 
@@ -336,11 +357,9 @@ export default function ProyectoObraFormulario() {
                 className="w-full px-4 py-2.5 bg-[#09090b] border border-[#27272a] rounded-xl text-sm text-white focus:outline-none focus:border-[#0071E3] transition-all cursor-pointer"
               >
                 <option value="">--Seleccionar--</option>
-                <option value="Planificación_urbana_y_movilidad_sostenible">Planificación urbana y movilidad sostenible</option>
-                <option value="Resiliencia_y_sostenibilidad_ambiental">Resiliencia y sostenibilidad ambiental</option>
-                <option value="Equilibrio_y_Derecho_a_la_Ciudad">Equilibrio y Derecho a la Ciudad</option>
-                <option value="Gestión_Operativa_y_Administrativa_Ordinaria">Gestión Operativa y Administrativa Ordinaria</option>
-                <option value="Competitividad_e_Innovación">Competitividad e Innovación</option>
+                {LINEA_ESTRATEGICA_OPTIONS.map((option) => (
+                  <option key={option.value} value={option.value}>{option.label}</option>
+                ))}
               </select>
             </div>
 
@@ -374,7 +393,9 @@ export default function ProyectoObraFormulario() {
                 className="w-full px-4 py-2.5 bg-[#09090b] border border-[#27272a] rounded-xl text-sm text-white focus:outline-none focus:border-[#0071E3] transition-all cursor-pointer"
               >
                 <option value="">--Seleccionar--</option>
-                <option value="San José">San José</option>
+                {CANTON_OPTIONS.map((option) => (
+                  <option key={option.value} value={option.value}>{option.label}</option>
+                ))}
               </select>
             </div>
 
@@ -430,10 +451,9 @@ export default function ProyectoObraFormulario() {
                 className="w-full px-4 py-2.5 bg-[#09090b] border border-[#27272a] rounded-xl text-sm text-white focus:outline-none focus:border-[#0071E3] transition-all cursor-pointer"
               >
                 <option value="">--Seleccionar--</option>
-                <option value="Activo">Activo</option>
-                <option value="Adjudicado">Adjudicado</option>
-                <option value="Finalizado">Finalizado</option>
-                <option value="Suspendido">Suspendido</option>
+                {ESTADO_PROYECTO_OPTIONS.map((option) => (
+                  <option key={option.value} value={option.value}>{option.label}</option>
+                ))}
               </select>
             </div>
 
@@ -540,13 +560,16 @@ export default function ProyectoObraFormulario() {
 
             <div>
               <label className="block text-xs font-semibold text-[#a1a1aa] uppercase mb-1.5">Estado Contratacion</label>
-              <input
-                type="text"
-                placeholder="Ej. En tramite, Adjudicado..."
+              <select
                 value={estadoContratacion}
                 onChange={(e) => setEstadoContratacion(e.target.value)}
-                className="w-full px-4 py-2.5 bg-[#09090b] border border-[#27272a] rounded-xl text-sm text-white focus:outline-none focus:border-[#0071E3] transition-all"
-              />
+                className="w-full px-4 py-2.5 bg-[#09090b] border border-[#27272a] rounded-xl text-sm text-white focus:outline-none focus:border-[#0071E3] transition-all cursor-pointer"
+              >
+                <option value="">--Seleccionar--</option>
+                {ESTADO_CONTRATACION_OPTIONS.map((option) => (
+                  <option key={option.value} value={option.value}>{option.label}</option>
+                ))}
+              </select>
             </div>
 
             <div className="md:col-span-3">

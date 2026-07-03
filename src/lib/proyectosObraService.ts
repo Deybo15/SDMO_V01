@@ -449,6 +449,8 @@ export async function actualizarCodigoPresupuestario(
         descripcion_modificacion: 'Registro inicial de codigo presupuestario',
         presupuesto_asignado: 0,
         presupuesto_adjudicado: 0,
+        presupuesto_ejecutado: 0,
+        presupuesto_comprometido: 0,
         presupuesto_reserva: 0,
         codigo_presupuestario: codigo,
         es_vigente: true
