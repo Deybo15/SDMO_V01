@@ -244,7 +244,6 @@ export async function actualizarFaseProyecto(
       .from('historial_fase_proyecto')
       .insert([{
         proyecto_id,
-        fase_id,
         fase,
         campo_modificado,
         valor_anterior: valor_anterior !== null && valor_anterior !== undefined ? String(valor_anterior) : '',
@@ -368,7 +367,11 @@ export async function getColaboradores() {
 /**
  * Crear un nuevo proyecto de obra con presupuesto inicial opcional
  */
-export async function crearProyectoObra(proyectoData: Partial<ProyectoObra>, presupuestoAsignado: number = 0) {
+type CrearProyectoObraPayload = Partial<ProyectoObra> & {
+  codigo_presupuestario?: string | null;
+};
+
+export async function crearProyectoObra(proyectoData: CrearProyectoObraPayload, presupuestoAsignado: number = 0) {
   try {
     const { data: proyecto, error } = await supabase.rpc('crear_proyecto_obra_con_presupuesto', {
       p_proyecto: {

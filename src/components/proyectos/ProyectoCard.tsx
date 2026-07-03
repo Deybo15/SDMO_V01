@@ -68,7 +68,7 @@ export const ProyectoCard: React.FC<ProyectoCardProps> = ({ proyecto }) => {
         </div>
 
         {/* Barra de Avance POA */}
-        <PoaProgressBar percentage={proyecto.avance_poa ?? proyecto.cumplimiento_poa ?? 0} />
+        <PoaProgressBar percentage={proyecto.avance_poa ?? 0} />
       </div>
     </Link>
   );

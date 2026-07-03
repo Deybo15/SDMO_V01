@@ -113,7 +113,7 @@ export function generarReporteProyectoPDF(proyecto: ProyectoObraConDetalles) {
   const adjudicado = pres ? Number(pres.presupuesto_adjudicado || 0) : 0;
   const ejecutado = pres ? Number(pres.presupuesto_ejecutado || 0) : 0;
   const comprometido = pres ? Number(pres.presupuesto_comprometido || 0) : 0;
-  const libre = pres ? Number(pres.presupuesto_libre ?? (asignado - ejecutado - comprometido)) : (asignado - ejecutado - comprometido);
+  const libre = pres ? Number(pres.presupuesto_libre ?? (asignado - adjudicado - Number(pres.presupuesto_reserva || 0))) : asignado;
 
   autoTable(doc, {
     startY: currentY,
@@ -276,7 +276,7 @@ export function generarReporteProyectoExcel(proyecto: ProyectoObraConDetalles) {
   const adjudicado = pres ? Number(pres.presupuesto_adjudicado || 0) : 0;
   const ejecutado = pres ? Number(pres.presupuesto_ejecutado || 0) : 0;
   const comprometido = pres ? Number(pres.presupuesto_comprometido || 0) : 0;
-  const libre = pres ? Number(pres.presupuesto_libre ?? (asignado - ejecutado - comprometido)) : (asignado - ejecutado - comprometido);
+  const libre = pres ? Number(pres.presupuesto_libre ?? (asignado - adjudicado - Number(pres.presupuesto_reserva || 0))) : asignado;
 
   const presupuestoData = [
     ['CONCEPTO PRESUPUESTARIO', 'MONTO (CRC)', 'INFORMACIÓN ADICIONAL'],
@@ -456,7 +456,7 @@ export async function generarInformeGeneralExcel() {
       const ejecutado = pres ? Number(pres.presupuesto_ejecutado || 0) : 0;
       const reserva = pres ? Number(pres.presupuesto_reserva || 0) : 0;
       const comprometido = pres ? Number(pres.presupuesto_comprometido || 0) : 0;
-      const libre = pres ? Number(pres.presupuesto_libre ?? (asignado - ejecutado - comprometido)) : (asignado - ejecutado - comprometido);
+      const libre = pres ? Number(pres.presupuesto_libre ?? (asignado - adjudicado - reserva)) : asignado;
 
       // Avance físico como decimal (ej. 0.95)
       const avanceDecimal = normalizeProgressFraction(seg ? seg.avance_registrado : p.avance_poa);

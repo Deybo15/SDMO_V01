@@ -63,7 +63,7 @@ export default function ProyectosObraDashboard() {
     let totalEjecutado = 0;
 
     proyectosFiltrados.forEach((p: any) => {
-      const avance = normalizeProgressFraction(p.avance_poa ?? p.cumplimiento_poa ?? 0);
+      const avance = normalizeProgressFraction(p.avance_poa ?? 0);
       sumaAvance += avance;
 
       const estadoStr = (p.estado || '').toLowerCase();
@@ -118,7 +118,7 @@ export default function ProyectosObraDashboard() {
       }
       const item = profMap.get(respKey)!;
       item.total++;
-      const avance = normalizeProgressFraction(p.avance_poa ?? p.cumplimiento_poa ?? 0);
+      const avance = normalizeProgressFraction(p.avance_poa ?? 0);
       item.sumaAvance += avance;
       if (avance < 0.30) item.riesgo++;
     });
@@ -210,7 +210,7 @@ export default function ProyectosObraDashboard() {
     
     // Filter projects where progress is low (less than 30%)
     const filtrados = proyectosFiltrados.filter((p: any) => {
-      const avance = normalizeProgressFraction(p.avance_poa ?? p.cumplimiento_poa ?? 0);
+      const avance = normalizeProgressFraction(p.avance_poa ?? 0);
       return avance < 0.30;
     });
 
