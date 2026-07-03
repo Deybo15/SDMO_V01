@@ -186,6 +186,13 @@ export default function ProyectoObraDetalle() {
 
   const pres = proyecto.presupuesto_vigente;
   const cont = proyecto.contrato;
+  const prioridadLabel = proyecto.prioridad === 1
+    ? 'Alta'
+    : proyecto.prioridad === 2
+      ? 'Media'
+      : proyecto.prioridad === 3
+        ? 'Baja'
+        : '-';
 
   return (
     <div className="min-h-screen bg-[#09090b] text-[#f4f4f5] p-4 md:p-8 space-y-6">
@@ -248,7 +255,7 @@ export default function ProyectoObraDetalle() {
             )}
 
             <div className="w-full md:w-56 bg-[#09090b] p-3 rounded-xl border border-[#27272a] space-y-1.5">
-              <PoaProgressBar percentage={proyecto.avance_poa ?? proyecto.cumplimiento_poa ?? 0} />
+              <PoaProgressBar percentage={proyecto.avance_poa ?? 0} />
             </div>
           </div>
         </div>
@@ -285,6 +292,14 @@ export default function ProyectoObraDetalle() {
               <h3 className="text-lg font-bold text-white border-b border-[#27272a] pb-2">Información de la Meta / Proyecto</h3>
               <div className="grid grid-cols-2 gap-4 text-sm">
                 <div>
+                  <p className="text-xs text-[#71717a] font-semibold uppercase">Tipo de Proyecto</p>
+                  <p className="font-medium text-white mt-1">{proyecto.tipo_proyecto || '-'}</p>
+                </div>
+                <div>
+                  <p className="text-xs text-[#71717a] font-semibold uppercase">Prioridad</p>
+                  <p className="font-medium text-white mt-1">{prioridadLabel}</p>
+                </div>
+                <div>
                   <p className="text-xs text-[#71717a] font-semibold uppercase">Tipo de Contrato</p>
                   <p className="font-medium text-white mt-1">{proyecto.tipo_contrato || '-'}</p>
                 </div>
@@ -308,7 +323,27 @@ export default function ProyectoObraDetalle() {
                   <p className="text-xs text-[#71717a] font-semibold uppercase">Programa</p>
                   <p className="font-medium text-white mt-1">{proyecto.programa || '-'}</p>
                 </div>
+                <div>
+                  <p className="text-xs text-[#71717a] font-semibold uppercase">Fecha Solicitud</p>
+                  <p className="font-medium text-white mt-1">{formatFechaCR(proyecto.fecha_solicitud)}</p>
+                </div>
+                <div>
+                  <p className="text-xs text-[#71717a] font-semibold uppercase">Requiere Contratacion</p>
+                  <p className="font-medium text-white mt-1">{proyecto.requiere_contratacion ? 'Si' : 'No'}</p>
+                </div>
               </div>
+              {proyecto.descripcion_general && (
+                <div className="p-4 bg-[#09090b] rounded-xl border border-[#27272a]">
+                  <p className="text-xs text-[#71717a] font-semibold uppercase mb-1">Descripcion General</p>
+                  <p className="text-sm text-[#a1a1aa] leading-relaxed">{proyecto.descripcion_general}</p>
+                </div>
+              )}
+              {proyecto.justificacion && (
+                <div className="p-4 bg-[#09090b] rounded-xl border border-[#27272a]">
+                  <p className="text-xs text-[#71717a] font-semibold uppercase mb-1">Justificacion</p>
+                  <p className="text-sm text-[#a1a1aa] leading-relaxed">{proyecto.justificacion}</p>
+                </div>
+              )}
             </div>
 
             <div className="space-y-6">
@@ -329,6 +364,14 @@ export default function ProyectoObraDetalle() {
                 <div>
                   <p className="text-xs text-[#71717a] font-semibold uppercase">Distrito</p>
                   <p className="font-medium text-white mt-1">{proyecto.distrito || '-'}</p>
+                </div>
+                <div>
+                  <p className="text-xs text-[#71717a] font-semibold uppercase">Barrio / Comunidad</p>
+                  <p className="font-medium text-white mt-1">{proyecto.barrio_comunidad || '-'}</p>
+                </div>
+                <div className="col-span-2">
+                  <p className="text-xs text-[#71717a] font-semibold uppercase">Direccion Exacta</p>
+                  <p className="font-medium text-white mt-1">{proyecto.direccion_exacta || '-'}</p>
                 </div>
               </div>
               {proyecto.observaciones_meta_poa && (
@@ -376,6 +419,11 @@ export default function ProyectoObraDetalle() {
                   <p className="text-xl font-black text-orange-400 font-mono mt-2">{formatMonedaCRC(pres.presupuesto_reserva)}</p>
                 </div>
 
+                <div className="bg-[#09090b] p-5 rounded-xl border border-[#27272a]">
+                  <p className="text-xs text-[#71717a] font-semibold uppercase">Codigo Presupuestario</p>
+                  <p className="text-lg font-black text-white font-mono mt-2">{pres.codigo_presupuestario || '-'}</p>
+                </div>
+
                 {/* Presupuesto Libre: Columna GENERADA por Supabase */}
                 <div className="bg-[#09090b] p-5 rounded-xl border border-teal-500/30 bg-teal-500/5">
                   <p className="text-xs text-teal-400 font-semibold uppercase flex items-center justify-between">
@@ -383,7 +431,7 @@ export default function ProyectoObraDetalle() {
                     <span className="text-[10px] bg-teal-500/20 px-2 py-0.5 rounded text-teal-300">Generado en BD</span>
                   </p>
                   <p className="text-xl font-black text-teal-300 font-mono mt-2">
-                    {formatMonedaCRC(pres.presupuesto_libre ?? (pres.presupuesto_asignado - pres.presupuesto_ejecutado - pres.presupuesto_comprometido))}
+                    {formatMonedaCRC(pres.presupuesto_libre ?? (pres.presupuesto_asignado - pres.presupuesto_adjudicado - pres.presupuesto_reserva))}
                   </p>
                 </div>
               </div>

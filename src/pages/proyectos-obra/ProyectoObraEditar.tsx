@@ -15,6 +15,10 @@ export default function ProyectoObraEditar() {
   // Estado del formulario
   const [nombreProyecto, setNombreProyecto] = useState<string>('');
   const [codigoMeta, setCodigoMeta] = useState<string>('');
+  const [descripcionGeneral, setDescripcionGeneral] = useState<string>('');
+  const [tipoProyecto, setTipoProyecto] = useState<string>('');
+  const [prioridad, setPrioridad] = useState<number | ''>('');
+  const [justificacion, setJustificacion] = useState<string>('');
   const [gerencia, setGerencia] = useState<string>('');
   const [profesionalResponsable, setProfesionalResponsable] = useState<string>('');
   const [tipoContrato, setTipoContrato] = useState<string>('');
@@ -25,8 +29,12 @@ export default function ProyectoObraEditar() {
   const [programa, setPrograma] = useState<string>('');
   const [canton, setCanton] = useState<string>('San José');
   const [distrito, setDistrito] = useState<string>('');
+  const [direccionExacta, setDireccionExacta] = useState<string>('');
+  const [barrioComunidad, setBarrioComunidad] = useState<string>('');
+  const [fechaSolicitud, setFechaSolicitud] = useState<string>('');
 
   const [estado, setEstado] = useState<string>('Activo');
+  const [requiereContratacion, setRequiereContratacion] = useState<boolean>(false);
   const [anio, setAnio] = useState<number>(new Date().getFullYear());
   const [observacionesMetaPoa, setObservacionesMetaPoa] = useState<string>('');
 
@@ -49,6 +57,10 @@ export default function ProyectoObraEditar() {
 
       setNombreProyecto(proyecto.nombre_proyecto || '');
       setCodigoMeta(proyecto.codigo_meta || '');
+      setDescripcionGeneral(proyecto.descripcion_general || '');
+      setTipoProyecto(proyecto.tipo_proyecto || '');
+      setPrioridad(proyecto.prioridad ?? '');
+      setJustificacion(proyecto.justificacion || '');
       setGerencia(proyecto.gerencia || '');
       setProfesionalResponsable(proyecto.profesional_responsable || '');
       setTipoContrato(proyecto.tipo_contrato || '');
@@ -59,8 +71,12 @@ export default function ProyectoObraEditar() {
       setPrograma(proyecto.programa || '');
       setCanton(proyecto.canton || 'San José');
       setDistrito(proyecto.distrito || '');
+      setDireccionExacta(proyecto.direccion_exacta || '');
+      setBarrioComunidad(proyecto.barrio_comunidad || '');
+      setFechaSolicitud(proyecto.fecha_solicitud || '');
 
       setEstado(proyecto.estado || 'Activo');
+      setRequiereContratacion(Boolean(proyecto.requiere_contratacion));
       setAnio(proyecto.anio || new Date().getFullYear());
       setObservacionesMetaPoa(proyecto.observaciones_meta_poa || '');
     } catch (err) {
@@ -90,6 +106,10 @@ export default function ProyectoObraEditar() {
       await actualizarProyectoObra(id, {
         nombre_proyecto: nombreProyecto.trim(),
         codigo_meta: codigoMeta.trim(),
+        descripcion_general: descripcionGeneral.trim(),
+        tipo_proyecto: tipoProyecto.trim(),
+        prioridad: prioridad === '' ? null : Number(prioridad),
+        justificacion: justificacion.trim(),
         gerencia: gerencia.trim(),
         dependencia: 'Desarrollo y Mantenimiento de Obras',
         profesional_responsable: profesionalResponsable,
@@ -101,6 +121,10 @@ export default function ProyectoObraEditar() {
         programa: programa.trim(),
         canton: canton.trim(),
         distrito: distrito.trim(),
+        direccion_exacta: direccionExacta.trim(),
+        barrio_comunidad: barrioComunidad.trim(),
+        fecha_solicitud: fechaSolicitud || null,
+        requiere_contratacion: requiereContratacion,
 
         estado: estado.trim(),
         anio: Number(anio),
@@ -185,6 +209,40 @@ export default function ProyectoObraEditar() {
               />
             </div>
 
+            <div>
+              <label className="block text-xs font-semibold text-[#a1a1aa] uppercase mb-1.5">Prioridad</label>
+              <select
+                value={prioridad}
+                onChange={(e) => setPrioridad(e.target.value ? Number(e.target.value) : '')}
+                className="w-full px-4 py-2.5 bg-[#09090b] border border-[#27272a] rounded-xl text-sm text-white focus:outline-none focus:border-[#0071E3] transition-all cursor-pointer"
+              >
+                <option value="">--Seleccionar--</option>
+                <option value="1">Alta</option>
+                <option value="2">Media</option>
+                <option value="3">Baja</option>
+              </select>
+            </div>
+
+            <div className="md:col-span-2">
+              <label className="block text-xs font-semibold text-[#a1a1aa] uppercase mb-1.5">Descripcion General</label>
+              <textarea
+                rows={3}
+                value={descripcionGeneral}
+                onChange={(e) => setDescripcionGeneral(e.target.value)}
+                className="w-full px-4 py-2.5 bg-[#09090b] border border-[#27272a] rounded-xl text-sm text-white focus:outline-none focus:border-[#0071E3] transition-all"
+              />
+            </div>
+
+            <div className="md:col-span-2">
+              <label className="block text-xs font-semibold text-[#a1a1aa] uppercase mb-1.5">Justificacion</label>
+              <textarea
+                rows={3}
+                value={justificacion}
+                onChange={(e) => setJustificacion(e.target.value)}
+                className="w-full px-4 py-2.5 bg-[#09090b] border border-[#27272a] rounded-xl text-sm text-white focus:outline-none focus:border-[#0071E3] transition-all"
+              />
+            </div>
+
             {/* Gerencia Dropdown */}
             <div>
               <label className="block text-xs font-semibold text-[#a1a1aa] uppercase mb-1.5">Gerencia</label>
@@ -226,6 +284,23 @@ export default function ProyectoObraEditar() {
           </h3>
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            <div>
+              <label className="block text-xs font-semibold text-[#a1a1aa] uppercase mb-1.5">Tipo de Proyecto</label>
+              <select
+                value={tipoProyecto}
+                onChange={(e) => setTipoProyecto(e.target.value)}
+                className="w-full px-4 py-2.5 bg-[#09090b] border border-[#27272a] rounded-xl text-sm text-white focus:outline-none focus:border-[#0071E3] transition-all cursor-pointer"
+              >
+                <option value="">--Seleccionar--</option>
+                <option value="Mantenimiento">Mantenimiento</option>
+                <option value="Obra nueva">Obra nueva</option>
+                <option value="Espacio publico">Espacio publico</option>
+                <option value="Instalacion municipal">Instalacion municipal</option>
+                <option value="Emergencia">Emergencia</option>
+                <option value="Mejora urbana">Mejora urbana</option>
+              </select>
+            </div>
+
             {/* Tipo de Contrato */}
             <div>
               <label className="block text-xs font-semibold text-[#a1a1aa] uppercase mb-1.5">Tipo de Contrato</label>
@@ -341,6 +416,36 @@ export default function ProyectoObraEditar() {
               />
             </div>
 
+            <div>
+              <label className="block text-xs font-semibold text-[#a1a1aa] uppercase mb-1.5">Barrio / Comunidad</label>
+              <input
+                type="text"
+                value={barrioComunidad}
+                onChange={(e) => setBarrioComunidad(e.target.value)}
+                className="w-full px-4 py-2.5 bg-[#09090b] border border-[#27272a] rounded-xl text-sm text-white focus:outline-none focus:border-[#0071E3] transition-all"
+              />
+            </div>
+
+            <div className="md:col-span-2">
+              <label className="block text-xs font-semibold text-[#a1a1aa] uppercase mb-1.5">Direccion Exacta</label>
+              <input
+                type="text"
+                value={direccionExacta}
+                onChange={(e) => setDireccionExacta(e.target.value)}
+                className="w-full px-4 py-2.5 bg-[#09090b] border border-[#27272a] rounded-xl text-sm text-white focus:outline-none focus:border-[#0071E3] transition-all"
+              />
+            </div>
+
+            <div>
+              <label className="block text-xs font-semibold text-[#a1a1aa] uppercase mb-1.5">Fecha de Solicitud</label>
+              <input
+                type="date"
+                value={fechaSolicitud}
+                onChange={(e) => setFechaSolicitud(e.target.value)}
+                className="w-full px-4 py-2.5 bg-[#09090b] border border-[#27272a] rounded-xl text-sm text-white focus:outline-none focus:border-[#0071E3] transition-all"
+              />
+            </div>
+
 
 
             {/* Estado */}
@@ -358,6 +463,16 @@ export default function ProyectoObraEditar() {
                 <option value="Suspendido">Suspendido</option>
               </select>
             </div>
+
+            <label className="flex items-center gap-3 px-4 py-3 bg-[#09090b] border border-[#27272a] rounded-xl text-sm text-white cursor-pointer">
+              <input
+                type="checkbox"
+                checked={requiereContratacion}
+                onChange={(e) => setRequiereContratacion(e.target.checked)}
+                className="w-4 h-4 accent-[#0071E3]"
+              />
+              <span className="font-semibold">Requiere contratacion</span>
+            </label>
 
             <div>
               <label className="block text-xs font-semibold text-[#a1a1aa] uppercase mb-1.5">Año</label>

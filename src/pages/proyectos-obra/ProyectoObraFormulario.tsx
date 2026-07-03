@@ -13,6 +13,10 @@ export default function ProyectoObraFormulario() {
   // Estado del formulario (inicializados en vacíos para mostrar "--Seleccionar--")
   const [nombreProyecto, setNombreProyecto] = useState<string>('');
   const [codigoMeta, setCodigoMeta] = useState<string>('');
+  const [descripcionGeneral, setDescripcionGeneral] = useState<string>('');
+  const [tipoProyecto, setTipoProyecto] = useState<string>('');
+  const [prioridad, setPrioridad] = useState<number | ''>('');
+  const [justificacion, setJustificacion] = useState<string>('');
   const [gerencia, setGerencia] = useState<string>('');
   const [profesionalResponsable, setProfesionalResponsable] = useState<string>('');
   const [tipoContrato, setTipoContrato] = useState<string>('');
@@ -23,11 +27,16 @@ export default function ProyectoObraFormulario() {
   const [programa, setPrograma] = useState<string>('');
   const [canton, setCanton] = useState<string>('');
   const [distrito, setDistrito] = useState<string>('');
+  const [direccionExacta, setDireccionExacta] = useState<string>('');
+  const [barrioComunidad, setBarrioComunidad] = useState<string>('');
+  const [fechaSolicitud, setFechaSolicitud] = useState<string>('');
 
   const [estado, setEstado] = useState<string>('');
+  const [requiereContratacion, setRequiereContratacion] = useState<boolean>(false);
   const [anio, setAnio] = useState<number>(new Date().getFullYear());
   const [observacionesMetaPoa, setObservacionesMetaPoa] = useState<string>('');
   const [presupuestoAsignado, setPresupuestoAsignado] = useState<number>(0);
+  const [codigoPresupuestario, setCodigoPresupuestario] = useState<string>('');
 
   useEffect(() => {
     cargarCatalogos();
@@ -51,6 +60,10 @@ export default function ProyectoObraFormulario() {
         {
           nombre_proyecto: nombreProyecto.trim(),
           codigo_meta: codigoMeta.trim(),
+          descripcion_general: descripcionGeneral.trim(),
+          tipo_proyecto: tipoProyecto.trim(),
+          prioridad: prioridad === '' ? null : Number(prioridad),
+          justificacion: justificacion.trim(),
           gerencia: gerencia.trim(),
           dependencia: 'Desarrollo y Mantenimiento de Obras',
           profesional_responsable: profesionalResponsable,
@@ -62,10 +75,15 @@ export default function ProyectoObraFormulario() {
           programa: programa.trim(),
           canton: canton.trim(),
           distrito: distrito.trim(),
+          direccion_exacta: direccionExacta.trim(),
+          barrio_comunidad: barrioComunidad.trim(),
+          fecha_solicitud: fechaSolicitud || null,
+          requiere_contratacion: requiereContratacion,
 
           estado: estado.trim(),
           anio: Number(anio),
           observaciones_meta_poa: observacionesMetaPoa.trim(),
+          codigo_presupuestario: codigoPresupuestario.trim(),
           activo: true
         },
         Number(presupuestoAsignado)
@@ -140,6 +158,42 @@ export default function ProyectoObraFormulario() {
               />
             </div>
 
+            <div>
+              <label className="block text-xs font-semibold text-[#a1a1aa] uppercase mb-1.5">Prioridad</label>
+              <select
+                value={prioridad}
+                onChange={(e) => setPrioridad(e.target.value ? Number(e.target.value) : '')}
+                className="w-full px-4 py-2.5 bg-[#09090b] border border-[#27272a] rounded-xl text-sm text-white focus:outline-none focus:border-[#0071E3] transition-all cursor-pointer"
+              >
+                <option value="">--Seleccionar--</option>
+                <option value="1">Alta</option>
+                <option value="2">Media</option>
+                <option value="3">Baja</option>
+              </select>
+            </div>
+
+            <div className="md:col-span-2">
+              <label className="block text-xs font-semibold text-[#a1a1aa] uppercase mb-1.5">Descripcion General</label>
+              <textarea
+                rows={3}
+                placeholder="Resumen breve del alcance del proyecto..."
+                value={descripcionGeneral}
+                onChange={(e) => setDescripcionGeneral(e.target.value)}
+                className="w-full px-4 py-2.5 bg-[#09090b] border border-[#27272a] rounded-xl text-sm text-white focus:outline-none focus:border-[#0071E3] transition-all"
+              />
+            </div>
+
+            <div className="md:col-span-2">
+              <label className="block text-xs font-semibold text-[#a1a1aa] uppercase mb-1.5">Justificacion</label>
+              <textarea
+                rows={3}
+                placeholder="Motivo tecnico o administrativo que respalda el proyecto..."
+                value={justificacion}
+                onChange={(e) => setJustificacion(e.target.value)}
+                className="w-full px-4 py-2.5 bg-[#09090b] border border-[#27272a] rounded-xl text-sm text-white focus:outline-none focus:border-[#0071E3] transition-all"
+              />
+            </div>
+
             {/* Gerencia Dropdown */}
             <div>
               <label className="block text-xs font-semibold text-[#a1a1aa] uppercase mb-1.5">Gerencia</label>
@@ -181,6 +235,23 @@ export default function ProyectoObraFormulario() {
           </h3>
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            <div>
+              <label className="block text-xs font-semibold text-[#a1a1aa] uppercase mb-1.5">Tipo de Proyecto</label>
+              <select
+                value={tipoProyecto}
+                onChange={(e) => setTipoProyecto(e.target.value)}
+                className="w-full px-4 py-2.5 bg-[#09090b] border border-[#27272a] rounded-xl text-sm text-white focus:outline-none focus:border-[#0071E3] transition-all cursor-pointer"
+              >
+                <option value="">--Seleccionar--</option>
+                <option value="Mantenimiento">Mantenimiento</option>
+                <option value="Obra nueva">Obra nueva</option>
+                <option value="Espacio publico">Espacio publico</option>
+                <option value="Instalacion municipal">Instalacion municipal</option>
+                <option value="Emergencia">Emergencia</option>
+                <option value="Mejora urbana">Mejora urbana</option>
+              </select>
+            </div>
+
             {/* Tipo de Contrato Dropdown */}
             <div>
               <label className="block text-xs font-semibold text-[#a1a1aa] uppercase mb-1.5">Tipo de Contrato</label>
@@ -299,7 +370,37 @@ export default function ProyectoObraFormulario() {
               />
             </div>
 
+            <div>
+              <label className="block text-xs font-semibold text-[#a1a1aa] uppercase mb-1.5">Barrio / Comunidad</label>
+              <input
+                type="text"
+                placeholder="Ej. Barrio Lujan, Cristo Rey..."
+                value={barrioComunidad}
+                onChange={(e) => setBarrioComunidad(e.target.value)}
+                className="w-full px-4 py-2.5 bg-[#09090b] border border-[#27272a] rounded-xl text-sm text-white focus:outline-none focus:border-[#0071E3] transition-all"
+              />
+            </div>
 
+            <div className="md:col-span-2">
+              <label className="block text-xs font-semibold text-[#a1a1aa] uppercase mb-1.5">Direccion Exacta</label>
+              <input
+                type="text"
+                placeholder="Detalle de ubicacion o referencia del sitio"
+                value={direccionExacta}
+                onChange={(e) => setDireccionExacta(e.target.value)}
+                className="w-full px-4 py-2.5 bg-[#09090b] border border-[#27272a] rounded-xl text-sm text-white focus:outline-none focus:border-[#0071E3] transition-all"
+              />
+            </div>
+
+            <div>
+              <label className="block text-xs font-semibold text-[#a1a1aa] uppercase mb-1.5">Fecha de Solicitud</label>
+              <input
+                type="date"
+                value={fechaSolicitud}
+                onChange={(e) => setFechaSolicitud(e.target.value)}
+                className="w-full px-4 py-2.5 bg-[#09090b] border border-[#27272a] rounded-xl text-sm text-white focus:outline-none focus:border-[#0071E3] transition-all"
+              />
+            </div>
 
             {/* Estado Dropdown */}
             <div>
@@ -327,6 +428,16 @@ export default function ProyectoObraFormulario() {
               />
             </div>
 
+            <label className="flex items-center gap-3 px-4 py-3 bg-[#09090b] border border-[#27272a] rounded-xl text-sm text-white cursor-pointer">
+              <input
+                type="checkbox"
+                checked={requiereContratacion}
+                onChange={(e) => setRequiereContratacion(e.target.checked)}
+                className="w-4 h-4 accent-[#0071E3]"
+              />
+              <span className="font-semibold">Requiere contratacion</span>
+            </label>
+
             <div>
               <label className="block text-xs font-semibold text-[#a1a1aa] uppercase mb-1.5">
                 Presupuesto Asignado Inicial (₡)
@@ -339,6 +450,17 @@ export default function ProyectoObraFormulario() {
                 value={presupuestoAsignado}
                 onChange={(e) => setPresupuestoAsignado(parseFloat(e.target.value) || 0)}
                 className="w-full px-4 py-2.5 bg-[#09090b] border border-[#27272a] rounded-xl text-sm text-emerald-400 font-mono font-bold focus:outline-none focus:border-emerald-500 transition-all"
+              />
+            </div>
+
+            <div>
+              <label className="block text-xs font-semibold text-[#a1a1aa] uppercase mb-1.5">Codigo Presupuestario</label>
+              <input
+                type="text"
+                placeholder="Partida o codigo presupuestario"
+                value={codigoPresupuestario}
+                onChange={(e) => setCodigoPresupuestario(e.target.value)}
+                className="w-full px-4 py-2.5 bg-[#09090b] border border-[#27272a] rounded-xl text-sm text-white focus:outline-none focus:border-[#0071E3] transition-all"
               />
             </div>
 
