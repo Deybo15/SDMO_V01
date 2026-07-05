@@ -97,6 +97,28 @@ export const ESTADO_CONTRATACION_OPTIONS: CatalogOption[] = [
   { value: 'Finalizado', label: 'Finalizado' }
 ];
 
+export const FASE_PROYECTO_OPTIONS: CatalogOption[] = [
+  {
+    value: 'Inicio_y_Estudios_Preliminares',
+    label: 'Inicio y estudios preliminares'
+  },
+  {
+    value: 'Planeación_y_Diseños',
+    label: 'Planeación y diseños',
+    aliases: ['Planeacion_y_Disenos']
+  },
+  {
+    value: 'Ejecución_y_Construcción',
+    label: 'Ejecución y construcción',
+    aliases: ['Ejecucion_y_Construccion']
+  },
+  {
+    value: 'Recepción_y_Cierre',
+    label: 'Recepción y cierre',
+    aliases: ['Recepcion_y_Cierre']
+  }
+];
+
 export function normalizeCatalogValue(
   value: string | null | undefined,
   options: CatalogOption[]
@@ -126,4 +148,10 @@ export function hasCatalogOption(value: string | null | undefined, options: Cata
   if (!value) return true;
   const normalized = normalizeCatalogValue(value, options);
   return options.some((option) => option.value === normalized);
+}
+
+export function getFaseProyectoOrder(value: string | null | undefined): number {
+  const normalized = normalizeCatalogValue(value, FASE_PROYECTO_OPTIONS);
+  const index = FASE_PROYECTO_OPTIONS.findIndex((option) => option.value === normalized);
+  return index === -1 ? 99 : index;
 }

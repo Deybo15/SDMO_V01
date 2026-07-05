@@ -19,7 +19,9 @@ import {
   TIPO_CONTRATO_OPTIONS,
   TIPO_EJECUCION_OPTIONS,
   TIPO_PROYECTO_OPTIONS,
-  getCatalogLabel
+  FASE_PROYECTO_OPTIONS,
+  getCatalogLabel,
+  getFaseProyectoOrder
 } from '../../lib/proyectosObraCatalogos';
 
 import { PoaProgressBar } from '../../components/proyectos/PoaProgressBar';
@@ -42,6 +44,7 @@ export default function ProyectoObraDetalle() {
   // Formulario para nuevo seguimiento (APPEND-ONLY)
   const [mostrarModalSeguimiento, setMostrarModalSeguimiento] = useState<boolean>(false);
   const [nuevoAvance, setNuevoAvance] = useState<number>(0);
+  const [fechaCorteSeguimiento, setFechaCorteSeguimiento] = useState<string>(new Date().toISOString().split('T')[0]);
 
   const [nuevasObservaciones, setNuevasObservaciones] = useState<string>('');
   const [nuevaEtapa, setNuevaEtapa] = useState<string>('');
@@ -62,8 +65,28 @@ export default function ProyectoObraDetalle() {
     setEditPorcentajeAvance(formatProgressPercent(fase.porcentaje_avance));
   };
 
+  const handleAbrirSeguimiento = () => {
+    if (!proyecto || !puedeEditar) return;
+    setNuevoAvance(formatProgressPercent(proyecto.avance_poa ?? 0));
+    setFechaCorteSeguimiento(new Date().toISOString().split('T')[0]);
+    setNuevasObservaciones('');
+    setNuevaEtapa('');
+    setMostrarModalSeguimiento(true);
+  };
+
   const handleGuardarEdicionFase = async (fase: any) => {
     if (!proyecto || !id || !puedeEditar) return;
+
+    if (!Number.isFinite(editPorcentajeAvance) || editPorcentajeAvance < 0 || editPorcentajeAvance > 100) {
+      alert('El porcentaje de avance de la fase debe estar entre 0 y 100.');
+      return;
+    }
+
+    if (editFechaInicioReal && editFechaFinReal && editFechaInicioReal > editFechaFinReal) {
+      alert('La fecha de inicio real no puede ser posterior a la fecha de fin real.');
+      return;
+    }
+
     setGuardandoFase(true);
     try {
       const { data: { user } } = await supabase.auth.getUser();
@@ -148,6 +171,21 @@ export default function ProyectoObraDetalle() {
     e.preventDefault();
     if (!proyecto || !id || !puedeEditar) return;
 
+    if (!fechaCorteSeguimiento) {
+      alert('La fecha de corte es obligatoria.');
+      return;
+    }
+
+    if (!Number.isFinite(nuevoAvance) || nuevoAvance < 0 || nuevoAvance > 100) {
+      alert('El porcentaje de avance del seguimiento debe estar entre 0 y 100.');
+      return;
+    }
+
+    if (!nuevaEtapa.trim() && !nuevasObservaciones.trim()) {
+      alert('Ingrese una etapa u observación para documentar el seguimiento.');
+      return;
+    }
+
     setGuardandoSeguimiento(true);
     try {
       const { data: { user } } = await supabase.auth.getUser();
@@ -155,16 +193,17 @@ export default function ProyectoObraDetalle() {
 
       await registrarSeguimiento({
         proyecto_id: id,
-        fecha_corte: new Date().toISOString().split('T')[0],
+        fecha_corte: fechaCorteSeguimiento,
         avance_registrado: normalizeProgressFraction(nuevoAvance),
-        observaciones: nuevasObservaciones,
-        etapa: nuevaEtapa,
+        observaciones: nuevasObservaciones.trim(),
+        etapa: nuevaEtapa.trim(),
         registrado_por: registradoPor
       });
 
       setMostrarModalSeguimiento(false);
       setNuevasObservaciones('');
       setNuevaEtapa('');
+      setFechaCorteSeguimiento(new Date().toISOString().split('T')[0]);
       await cargarDetalle();
     } catch (err) {
       console.error('Error guardando seguimiento:', err);
@@ -498,16 +537,8 @@ export default function ProyectoObraDetalle() {
             {proyecto.fases && proyecto.fases.length > 0 ? (
               <div className="space-y-4">
                 {(() => {
-                  const ordenFases = [
-                    'Inicio_y_Estudios_Preliminares',
-                    'Planeación_y_Diseños',
-                    'Ejecución_y_Construcción',
-                    'Recepción_y_Cierre'
-                  ];
                   const fasesOrdenadas = [...proyecto.fases].sort((a, b) => {
-                    const idxA = ordenFases.indexOf(a.fase);
-                    const idxB = ordenFases.indexOf(b.fase);
-                    return (idxA === -1 ? 99 : idxA) - (idxB === -1 ? 99 : idxB);
+                    return getFaseProyectoOrder(a.fase) - getFaseProyectoOrder(b.fase);
                   });
 
                   return fasesOrdenadas.map((fase) => {
@@ -522,7 +553,7 @@ export default function ProyectoObraDetalle() {
                             <Clock className="w-5 h-5 text-amber-400" />
                           )}
                           <h4 className="font-bold text-white text-base">
-                            {fase.fase.replace(/_/g, ' ')}
+                            {getCatalogLabel(fase.fase, FASE_PROYECTO_OPTIONS)}
                           </h4>
                         </div>
                         <div className="flex items-center gap-3">
@@ -647,7 +678,7 @@ export default function ProyectoObraDetalle() {
                       {proyecto.historial_fases.map((h: any) => (
                         <tr key={h.id || Math.random()} className="hover:bg-[#18181b]/50 transition-colors">
                           <td className="px-4 py-3 font-semibold text-[#0071E3]">
-                            {h.fase?.replace(/_/g, ' ')}
+                            {getCatalogLabel(h.fase, FASE_PROYECTO_OPTIONS)}
                           </td>
                           <td className="px-4 py-3 font-mono text-[#a1a1aa]">{h.campo_modificado}</td>
                           <td className="px-4 py-3 font-mono text-rose-400">{formatFechaCR(h.valor_anterior) || h.valor_anterior || '-'}</td>
@@ -678,7 +709,7 @@ export default function ProyectoObraDetalle() {
               </div>
               {puedeEditar && (
                 <button
-                  onClick={() => setMostrarModalSeguimiento(true)}
+                  onClick={handleAbrirSeguimiento}
                   className="flex items-center gap-2 px-4 py-2 bg-[#0071E3] hover:bg-[#0071E3]/80 text-white rounded-xl text-sm font-semibold transition-all shadow-lg shadow-[#0071E3]/20"
                 >
                   <Plus className="w-4 h-4" />
@@ -736,6 +767,17 @@ export default function ProyectoObraDetalle() {
 
             <form onSubmit={handleGuardarSeguimiento} className="space-y-4">
 
+
+              <div>
+                <label className="block text-xs font-semibold text-[#a1a1aa] uppercase mb-1">Fecha de Corte</label>
+                <input
+                  type="date"
+                  value={fechaCorteSeguimiento}
+                  onChange={(e) => setFechaCorteSeguimiento(e.target.value)}
+                  className="w-full px-3 py-2 bg-[#09090b] border border-[#27272a] rounded-xl text-sm text-white focus:outline-none focus:border-[#0071E3]"
+                  required
+                />
+              </div>
 
               <div>
                 <label className="block text-xs font-semibold text-[#a1a1aa] uppercase mb-1">Porcentaje de Avance (%)</label>

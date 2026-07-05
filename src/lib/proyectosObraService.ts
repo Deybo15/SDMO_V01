@@ -227,9 +227,7 @@ export async function actualizarFaseProyecto(
     // Si se modifica el porcentaje de avance, actualizar completada si es 1 (100%)
     if (campo_modificado === 'porcentaje_avance') {
       const p = normalizeProgressFraction(valor_nuevo);
-      if (p >= 1) {
-        updatePayload.completada = true;
-      }
+      updatePayload.completada = p >= 1;
     }
 
     const { error: errFase } = await supabase
