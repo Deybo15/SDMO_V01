@@ -4,6 +4,12 @@ import * as XLSX from 'xlsx';
 import { ProyectoObraConDetalles } from '../types/proyectosObra';
 import { formatMonedaCRC, formatFechaCR, formatProgressPercent, normalizeProgressFraction } from './proyectosObraService';
 import { supabase } from './supabase';
+import {
+  FASE_PROYECTO_OPTIONS,
+  getCatalogLabel,
+  getFaseProyectoOrder,
+  normalizeCatalogValue
+} from './proyectosObraCatalogos';
 
 /**
  * Formateador de moneda específico para celdas de PDF (reemplaza cualquier ₡ por CRC para evitar incompatibilidad en PDF standard fonts)
@@ -176,20 +182,12 @@ export function generarReporteProyectoPDF(proyecto: ProyectoObraConDetalles) {
   currentY = (doc as any).lastAutoTable.finalY + 8;
 
   // SECCIÓN 4: FASES DEL PROYECTO
-  const ordenFases = [
-    'Inicio_y_Estudios_Preliminares',
-    'Planeación_y_Diseños',
-    'Ejecución_y_Construcción',
-    'Recepción_y_Cierre'
-  ];
   const fasesOrdenadas = [...(proyecto.fases || [])].sort((a, b) => {
-    const idxA = ordenFases.indexOf(a.fase);
-    const idxB = ordenFases.indexOf(b.fase);
-    return (idxA === -1 ? 99 : idxA) - (idxB === -1 ? 99 : idxB);
+    return getFaseProyectoOrder(a.fase) - getFaseProyectoOrder(b.fase);
   });
 
   const fasesBody = fasesOrdenadas.map(f => [
-    f.fase.replace(/_/g, ' '),
+    getCatalogLabel(f.fase, FASE_PROYECTO_OPTIONS),
     formatFechaCR(f.fecha_inicio_plan),
     formatFechaCR(f.fecha_fin_plan),
     formatFechaCR(f.fecha_inicio_real),
@@ -305,21 +303,13 @@ export function generarReporteProyectoExcel(proyecto: ProyectoObraConDetalles) {
   XLSX.utils.book_append_sheet(wb, wsContrato, 'Contrato');
 
   // 4. HOJA: Fases
-  const ordenFases = [
-    'Inicio_y_Estudios_Preliminares',
-    'Planeación_y_Diseños',
-    'Ejecución_y_Construcción',
-    'Recepción_y_Cierre'
-  ];
   const fasesOrdenadas = [...(proyecto.fases || [])].sort((a, b) => {
-    const idxA = ordenFases.indexOf(a.fase);
-    const idxB = ordenFases.indexOf(b.fase);
-    return (idxA === -1 ? 99 : idxA) - (idxB === -1 ? 99 : idxB);
+    return getFaseProyectoOrder(a.fase) - getFaseProyectoOrder(b.fase);
   });
 
   const fasesHeader = [['Fase', 'Fecha Inicio Plan', 'Fecha Fin Plan', 'Fecha Inicio Real', 'Fecha Fin Real', 'Porcentaje Avance', 'Completada']];
   const fasesRows = fasesOrdenadas.map(f => [
-    f.fase.replace(/_/g, ' '),
+    getCatalogLabel(f.fase, FASE_PROYECTO_OPTIONS),
     formatFechaCR(f.fecha_inicio_plan),
     formatFechaCR(f.fecha_fin_plan),
     formatFechaCR(f.fecha_inicio_real),
@@ -440,15 +430,16 @@ export async function generarInformeGeneralExcel() {
         ? (colabsMap.get(String(p.profesional_responsable).trim()) || p.profesional_responsable)
         : '-';
 
-      // Fases específicas
-      const faseEstudios = fases.find(f => f.fase === 'Inicio_y_Estudios_Preliminares');
-      const faseContratacion = fases.find(f => f.fase === 'Planeación_y_Diseños');
-      const faseObras = fases.find(f => f.fase === 'Ejecución_y_Construcción');
+      // Fases especificas
+      const fasePorValor = (valor: string) => fases.find(f => normalizeCatalogValue(f.fase, FASE_PROYECTO_OPTIONS) === valor);
+      const faseEstudios = fasePorValor('Inicio_y_Estudios_Preliminares');
+      const faseContratacion = fasePorValor('Planeación_y_Diseños');
+      const faseObras = fasePorValor('Ejecución_y_Construcción');
 
-      // Determinación de la Fase Actual
-      const ordenLógico = ['Inicio_y_Estudios_Preliminares', 'Planeación_y_Diseños', 'Ejecución_y_Construcción', 'Recepción_y_Cierre'];
-      const faseEnProgreso = fases.find(f => !f.completada) || fases[fases.length - 1];
-      const faseNombreStr = faseEnProgreso ? faseEnProgreso.fase.replace(/_/g, ' ') : '-';
+      // Determinacion de la Fase Actual
+      const fasesOrdenadas = [...fases].sort((a, b) => getFaseProyectoOrder(a.fase) - getFaseProyectoOrder(b.fase));
+      const faseEnProgreso = fasesOrdenadas.find(f => !f.completada) || fasesOrdenadas[fasesOrdenadas.length - 1];
+      const faseNombreStr = faseEnProgreso ? getCatalogLabel(faseEnProgreso.fase, FASE_PROYECTO_OPTIONS) : '-';
 
       // Montos en formato numérico puro
       const asignado = pres ? Number(pres.presupuesto_asignado || 0) : 0;

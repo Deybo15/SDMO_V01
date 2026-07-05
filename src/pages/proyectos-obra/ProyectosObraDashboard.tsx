@@ -15,6 +15,11 @@ import {
   ArrowLeft, RefreshCw, AlertTriangle, TrendingUp, DollarSign, Briefcase,
   Clock, Activity, Filter, Layers
 } from 'lucide-react';
+import {
+  FASE_PROYECTO_OPTIONS,
+  getCatalogLabel,
+  getFaseProyectoOrder
+} from '../../lib/proyectosObraCatalogos';
 
 export default function ProyectosObraDashboard() {
   const navigate = useNavigate();
@@ -181,13 +186,15 @@ export default function ProyectosObraDashboard() {
   // 4. Proyectos por Fase Activa
   const fasesActivasData = useMemo(() => {
     const fasesMap = new Map<string, { count: number; sumaAvance: number }>();
-    const nombresFases = ['Inicio y Estudios Preliminares', 'Planeación y Diseños', 'Ejecución y Construcción', 'Recepción y Cierre'];
-    nombresFases.forEach(f => fasesMap.set(f, { count: 0, sumaAvance: 0 }));
+    FASE_PROYECTO_OPTIONS.forEach(f => fasesMap.set(f.label, { count: 0, sumaAvance: 0 }));
 
     proyectosFiltrados.forEach((p: any) => {
       const fasesProj = rawStats?.fasesMap?.get(p.id) || [];
-      const faseEnProgreso = fasesProj.find((f: any) => !f.completada) || fasesProj[fasesProj.length - 1];
-      const nombreFase = faseEnProgreso ? faseEnProgreso.fase.replace(/_/g, ' ') : 'Inicio y Estudios Preliminares';
+      const fasesOrdenadas = [...fasesProj].sort((a: any, b: any) => getFaseProyectoOrder(a.fase) - getFaseProyectoOrder(b.fase));
+      const faseEnProgreso = fasesOrdenadas.find((f: any) => !f.completada) || fasesOrdenadas[fasesOrdenadas.length - 1];
+      const nombreFase = faseEnProgreso
+        ? getCatalogLabel(faseEnProgreso.fase, FASE_PROYECTO_OPTIONS)
+        : FASE_PROYECTO_OPTIONS[0].label;
       
       if (!fasesMap.has(nombreFase)) {
         fasesMap.set(nombreFase, { count: 0, sumaAvance: 0 });
