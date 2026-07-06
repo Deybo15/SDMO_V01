@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
-import { ProyectoDocumento, ProyectoObraConDetalles } from '../../types/proyectosObra';
+import { ProyectoDocumento, ProyectoHito, ProyectoObraConDetalles, ProyectoPermiso } from '../../types/proyectosObra';
 import {
   getProyectoObraPorId,
   registrarSeguimiento,
@@ -8,6 +8,11 @@ import {
   subirDocumentoProyecto,
   eliminarDocumentoProyecto,
   crearUrlDocumentoProyecto,
+  crearHitoProyecto,
+  crearPermisoProyecto,
+  actualizarHitoProyecto,
+  eliminarHitoProyecto,
+  eliminarPermisoProyecto,
   formatMonedaCRC,
   formatFechaCR,
   formatProgressPercent,
@@ -23,6 +28,9 @@ import {
   TIPO_EJECUCION_OPTIONS,
   TIPO_PROYECTO_OPTIONS,
   TIPO_DOCUMENTO_PROYECTO_OPTIONS,
+  TIPO_PERMISO_PROYECTO_OPTIONS,
+  ESTADO_PERMISO_PROYECTO_OPTIONS,
+  ESTADO_HITO_PROYECTO_OPTIONS,
   FASE_PROYECTO_OPTIONS,
   getCatalogLabel,
   getFaseProyectoOrder
@@ -34,7 +42,7 @@ import { useAuthorization } from '../../hooks/useAuthorization';
 import { 
   ArrowLeft, Building2, User, FileText, DollarSign, Briefcase, 
   Clock, Activity, Plus, CheckCircle2, AlertCircle, Calendar, Send, Edit3, History, Save, X, FileSpreadsheet, Download,
-  Upload, Trash2, ExternalLink
+  Upload, Trash2, ExternalLink, ShieldCheck, Flag
 } from 'lucide-react';
 
 export default function ProyectoObraDetalle() {
@@ -44,7 +52,7 @@ export default function ProyectoObraDetalle() {
 
   const [proyecto, setProyecto] = useState<ProyectoObraConDetalles | null>(null);
   const [loading, setLoading] = useState<boolean>(true);
-  const [tabActiva, setTabActiva] = useState<'general' | 'presupuesto' | 'contrato' | 'documentos' | 'fases' | 'seguimiento'>('general');
+  const [tabActiva, setTabActiva] = useState<'general' | 'presupuesto' | 'contrato' | 'planificacion' | 'documentos' | 'fases' | 'seguimiento'>('general');
 
   // Formulario para nuevo seguimiento (APPEND-ONLY)
   const [mostrarModalSeguimiento, setMostrarModalSeguimiento] = useState<boolean>(false);
@@ -65,6 +73,21 @@ export default function ProyectoObraDetalle() {
   const [tipoDocumento, setTipoDocumento] = useState<string>('Solicitud inicial');
   const [descripcionDocumento, setDescripcionDocumento] = useState<string>('');
   const [subiendoDocumento, setSubiendoDocumento] = useState<boolean>(false);
+  const [tipoPermiso, setTipoPermiso] = useState<string>('CFIA');
+  const [entidadPermiso, setEntidadPermiso] = useState<string>('');
+  const [estadoPermiso, setEstadoPermiso] = useState<string>('Pendiente');
+  const [referenciaPermiso, setReferenciaPermiso] = useState<string>('');
+  const [fechaSolicitudPermiso, setFechaSolicitudPermiso] = useState<string>('');
+  const [fechaAprobacionPermiso, setFechaAprobacionPermiso] = useState<string>('');
+  const [fechaVencimientoPermiso, setFechaVencimientoPermiso] = useState<string>('');
+  const [observacionesPermiso, setObservacionesPermiso] = useState<string>('');
+  const [guardandoPermiso, setGuardandoPermiso] = useState<boolean>(false);
+  const [nombreHito, setNombreHito] = useState<string>('');
+  const [descripcionHito, setDescripcionHito] = useState<string>('');
+  const [fechaPlanHito, setFechaPlanHito] = useState<string>('');
+  const [estadoHito, setEstadoHito] = useState<string>('Pendiente');
+  const [porcentajeHito, setPorcentajeHito] = useState<number>(0);
+  const [guardandoHito, setGuardandoHito] = useState<boolean>(false);
 
   const handleIniciarEdicionFase = (fase: any) => {
     if (!puedeEditar) return;
@@ -278,6 +301,138 @@ export default function ProyectoObraDetalle() {
     }
   };
 
+  const handleCrearPermiso = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!proyecto || !id || !puedeEditar) return;
+
+    if (!entidadPermiso.trim()) {
+      alert('Ingrese la entidad emisora del permiso.');
+      return;
+    }
+
+    setGuardandoPermiso(true);
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      const usuario = user?.email || 'Usuario SDMO';
+
+      await crearPermisoProyecto({
+        proyecto_id: id,
+        tipo_permiso: tipoPermiso,
+        entidad_emisora: entidadPermiso,
+        estado: estadoPermiso,
+        numero_referencia: referenciaPermiso,
+        fecha_solicitud: fechaSolicitudPermiso || null,
+        fecha_aprobacion: fechaAprobacionPermiso || null,
+        fecha_vencimiento: fechaVencimientoPermiso || null,
+        responsable: usuario,
+        observaciones: observacionesPermiso,
+        creado_por: usuario
+      });
+
+      setEntidadPermiso('');
+      setReferenciaPermiso('');
+      setFechaSolicitudPermiso('');
+      setFechaAprobacionPermiso('');
+      setFechaVencimientoPermiso('');
+      setObservacionesPermiso('');
+      await cargarDetalle();
+    } catch (err: any) {
+      console.error('Error creando permiso:', err);
+      alert('No se pudo crear el permiso: ' + (err.message || err));
+    } finally {
+      setGuardandoPermiso(false);
+    }
+  };
+
+  const handleEliminarPermiso = async (permiso: ProyectoPermiso) => {
+    if (!puedeEditar) return;
+    const confirmado = window.confirm(`Eliminar el permiso "${permiso.tipo_permiso}"?`);
+    if (!confirmado) return;
+
+    try {
+      await eliminarPermisoProyecto(permiso.id);
+      await cargarDetalle();
+    } catch (err: any) {
+      console.error('Error eliminando permiso:', err);
+      alert('No se pudo eliminar el permiso: ' + (err.message || err));
+    }
+  };
+
+  const handleCrearHito = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!proyecto || !id || !puedeEditar) return;
+
+    if (!nombreHito.trim()) {
+      alert('Ingrese el nombre del hito.');
+      return;
+    }
+
+    if (!Number.isFinite(porcentajeHito) || porcentajeHito < 0 || porcentajeHito > 100) {
+      alert('El avance del hito debe estar entre 0 y 100.');
+      return;
+    }
+
+    setGuardandoHito(true);
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      const usuario = user?.email || 'Usuario SDMO';
+
+      await crearHitoProyecto({
+        proyecto_id: id,
+        nombre: nombreHito,
+        descripcion: descripcionHito,
+        fecha_plan: fechaPlanHito || null,
+        fecha_real: estadoHito === 'Completado' ? new Date().toISOString().split('T')[0] : null,
+        estado: estadoHito,
+        porcentaje_avance: normalizeProgressFraction(porcentajeHito),
+        responsable: usuario,
+        creado_por: usuario
+      });
+
+      setNombreHito('');
+      setDescripcionHito('');
+      setFechaPlanHito('');
+      setEstadoHito('Pendiente');
+      setPorcentajeHito(0);
+      await cargarDetalle();
+    } catch (err: any) {
+      console.error('Error creando hito:', err);
+      alert('No se pudo crear el hito: ' + (err.message || err));
+    } finally {
+      setGuardandoHito(false);
+    }
+  };
+
+  const handleCompletarHito = async (hito: ProyectoHito) => {
+    if (!puedeEditar) return;
+
+    try {
+      await actualizarHitoProyecto(hito.id, {
+        estado: 'Completado',
+        porcentaje_avance: 1,
+        fecha_real: hito.fecha_real || new Date().toISOString().split('T')[0]
+      });
+      await cargarDetalle();
+    } catch (err: any) {
+      console.error('Error completando hito:', err);
+      alert('No se pudo completar el hito: ' + (err.message || err));
+    }
+  };
+
+  const handleEliminarHito = async (hito: ProyectoHito) => {
+    if (!puedeEditar) return;
+    const confirmado = window.confirm(`Eliminar el hito "${hito.nombre}"?`);
+    if (!confirmado) return;
+
+    try {
+      await eliminarHitoProyecto(hito.id);
+      await cargarDetalle();
+    } catch (err: any) {
+      console.error('Error eliminando hito:', err);
+      alert('No se pudo eliminar el hito: ' + (err.message || err));
+    }
+  };
+
   if (loading) {
     return (
       <div className="min-h-screen bg-[#09090b] flex items-center justify-center text-white">
@@ -295,6 +450,7 @@ export default function ProyectoObraDetalle() {
     { id: 'general', label: 'General', icon: Building2 },
     { id: 'presupuesto', label: 'Presupuesto', icon: DollarSign },
     { id: 'contrato', label: 'Contrato', icon: Briefcase },
+    { id: 'planificacion', label: 'Planificacion', icon: Flag },
     { id: 'documentos', label: 'Documentos', icon: FileText },
     { id: 'fases', label: 'Fases', icon: Clock },
     { id: 'seguimiento', label: 'Seguimiento', icon: Activity },
@@ -591,6 +747,186 @@ export default function ProyectoObraDetalle() {
             ) : (
               <p className="text-sm text-[#71717a] py-8 text-center">No hay contrato ni solicitud SICOP vinculada aún.</p>
             )}
+          </div>
+        )}
+
+        {/* 4. PLANIFICACION */}
+        {tabActiva === 'planificacion' && (
+          <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
+            <div className="space-y-5">
+              <div className="border-b border-[#27272a] pb-3">
+                <h3 className="text-lg font-bold text-white flex items-center gap-2">
+                  <ShieldCheck className="w-5 h-5 text-[#0071E3]" />
+                  <span>Permisos externos</span>
+                </h3>
+                <p className="text-xs text-[#71717a]">Control por entidad, estado, fechas y referencia.</p>
+              </div>
+
+              {puedeEditar && (
+                <form onSubmit={handleCrearPermiso} className="bg-[#09090b] border border-[#27272a] rounded-xl p-4 space-y-3">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                    <div>
+                      <label className="block text-xs font-semibold text-[#a1a1aa] uppercase mb-1">Tipo</label>
+                      <select value={tipoPermiso} onChange={(e) => setTipoPermiso(e.target.value)} className="w-full px-3 py-2 bg-[#18181b] border border-[#27272a] rounded-lg text-sm text-white focus:outline-none focus:border-[#0071E3]">
+                        {TIPO_PERMISO_PROYECTO_OPTIONS.map((option) => <option key={option.value} value={option.value}>{option.label}</option>)}
+                      </select>
+                    </div>
+                    <div>
+                      <label className="block text-xs font-semibold text-[#a1a1aa] uppercase mb-1">Estado</label>
+                      <select value={estadoPermiso} onChange={(e) => setEstadoPermiso(e.target.value)} className="w-full px-3 py-2 bg-[#18181b] border border-[#27272a] rounded-lg text-sm text-white focus:outline-none focus:border-[#0071E3]">
+                        {ESTADO_PERMISO_PROYECTO_OPTIONS.map((option) => <option key={option.value} value={option.value}>{option.label}</option>)}
+                      </select>
+                    </div>
+                    <div>
+                      <label className="block text-xs font-semibold text-[#a1a1aa] uppercase mb-1">Entidad emisora</label>
+                      <input type="text" value={entidadPermiso} onChange={(e) => setEntidadPermiso(e.target.value)} placeholder="Ej. CFIA, SETENA, MOPT" className="w-full px-3 py-2 bg-[#18181b] border border-[#27272a] rounded-lg text-sm text-white focus:outline-none focus:border-[#0071E3]" />
+                    </div>
+                    <div>
+                      <label className="block text-xs font-semibold text-[#a1a1aa] uppercase mb-1">Referencia</label>
+                      <input type="text" value={referenciaPermiso} onChange={(e) => setReferenciaPermiso(e.target.value)} placeholder="Oficio, expediente o tramite" className="w-full px-3 py-2 bg-[#18181b] border border-[#27272a] rounded-lg text-sm text-white focus:outline-none focus:border-[#0071E3]" />
+                    </div>
+                    <div>
+                      <label className="block text-xs font-semibold text-[#a1a1aa] uppercase mb-1">Solicitud</label>
+                      <input type="date" value={fechaSolicitudPermiso} onChange={(e) => setFechaSolicitudPermiso(e.target.value)} className="w-full px-3 py-2 bg-[#18181b] border border-[#27272a] rounded-lg text-sm text-white focus:outline-none focus:border-[#0071E3]" />
+                    </div>
+                    <div>
+                      <label className="block text-xs font-semibold text-[#a1a1aa] uppercase mb-1">Aprobacion</label>
+                      <input type="date" value={fechaAprobacionPermiso} onChange={(e) => setFechaAprobacionPermiso(e.target.value)} className="w-full px-3 py-2 bg-[#18181b] border border-[#27272a] rounded-lg text-sm text-white focus:outline-none focus:border-[#0071E3]" />
+                    </div>
+                  </div>
+                  <div>
+                    <label className="block text-xs font-semibold text-[#a1a1aa] uppercase mb-1">Vencimiento</label>
+                    <input type="date" value={fechaVencimientoPermiso} onChange={(e) => setFechaVencimientoPermiso(e.target.value)} className="w-full px-3 py-2 bg-[#18181b] border border-[#27272a] rounded-lg text-sm text-white focus:outline-none focus:border-[#0071E3]" />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-semibold text-[#a1a1aa] uppercase mb-1">Observaciones</label>
+                    <textarea rows={2} value={observacionesPermiso} onChange={(e) => setObservacionesPermiso(e.target.value)} placeholder="Notas sobre requisitos, pendientes o condicionantes" className="w-full px-3 py-2 bg-[#18181b] border border-[#27272a] rounded-lg text-sm text-white focus:outline-none focus:border-[#0071E3]" />
+                  </div>
+                  <button type="submit" disabled={guardandoPermiso} className="flex items-center justify-center gap-2 w-full px-4 py-2 bg-[#0071E3] hover:bg-[#0071E3]/80 text-white rounded-lg text-sm font-semibold transition-all disabled:opacity-50">
+                    <Plus className="w-4 h-4" />
+                    <span>{guardandoPermiso ? 'Guardando...' : 'Agregar permiso'}</span>
+                  </button>
+                </form>
+              )}
+
+              {proyecto.permisos && proyecto.permisos.length > 0 ? (
+                <div className="space-y-3">
+                  {proyecto.permisos.map((permiso) => (
+                    <div key={permiso.id} className="bg-[#09090b] border border-[#27272a] rounded-xl p-4 space-y-3">
+                      <div className="flex items-start justify-between gap-3">
+                        <div>
+                          <p className="text-xs font-semibold uppercase text-[#0071E3]">{getCatalogLabel(permiso.tipo_permiso, TIPO_PERMISO_PROYECTO_OPTIONS)}</p>
+                          <h4 className="font-bold text-white text-sm mt-1">{permiso.entidad_emisora}</h4>
+                        </div>
+                        <span className="text-xs font-semibold px-2.5 py-1 rounded-full bg-[#27272a] text-white">{getCatalogLabel(permiso.estado, ESTADO_PERMISO_PROYECTO_OPTIONS)}</span>
+                      </div>
+                      <div className="grid grid-cols-2 md:grid-cols-4 gap-3 text-xs">
+                        <div><span className="block text-[#71717a]">Referencia</span><span className="font-mono text-white">{permiso.numero_referencia || '-'}</span></div>
+                        <div><span className="block text-[#71717a]">Solicitud</span><span className="font-mono text-white">{formatFechaCR(permiso.fecha_solicitud)}</span></div>
+                        <div><span className="block text-[#71717a]">Aprobacion</span><span className="font-mono text-white">{formatFechaCR(permiso.fecha_aprobacion)}</span></div>
+                        <div><span className="block text-[#71717a]">Vence</span><span className="font-mono text-white">{formatFechaCR(permiso.fecha_vencimiento)}</span></div>
+                      </div>
+                      {permiso.observaciones && <p className="text-xs text-[#a1a1aa] bg-[#18181b] border border-[#27272a] rounded-lg p-2">{permiso.observaciones}</p>}
+                      {puedeEditar && (
+                        <div className="flex justify-end pt-2 border-t border-[#27272a]">
+                          <button type="button" onClick={() => handleEliminarPermiso(permiso)} className="flex items-center gap-1.5 px-3 py-1.5 bg-rose-500/10 hover:bg-rose-500/20 text-rose-300 text-xs font-semibold rounded-lg transition-all border border-rose-500/20">
+                            <Trash2 className="w-3.5 h-3.5" />
+                            <span>Eliminar</span>
+                          </button>
+                        </div>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <p className="text-sm text-[#71717a] py-8 text-center bg-[#09090b] rounded-xl border border-[#27272a]">No hay permisos externos registrados.</p>
+              )}
+            </div>
+
+            <div className="space-y-5">
+              <div className="border-b border-[#27272a] pb-3">
+                <h3 className="text-lg font-bold text-white flex items-center gap-2">
+                  <Flag className="w-5 h-5 text-amber-400" />
+                  <span>Hitos del proyecto</span>
+                </h3>
+                <p className="text-xs text-[#71717a]">Eventos clave mas granulares que las fases.</p>
+              </div>
+
+              {puedeEditar && (
+                <form onSubmit={handleCrearHito} className="bg-[#09090b] border border-[#27272a] rounded-xl p-4 space-y-3">
+                  <div>
+                    <label className="block text-xs font-semibold text-[#a1a1aa] uppercase mb-1">Nombre</label>
+                    <input type="text" value={nombreHito} onChange={(e) => setNombreHito(e.target.value)} placeholder="Ej. Aprobacion de planos, inicio de obra" className="w-full px-3 py-2 bg-[#18181b] border border-[#27272a] rounded-lg text-sm text-white focus:outline-none focus:border-[#0071E3]" />
+                  </div>
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+                    <div>
+                      <label className="block text-xs font-semibold text-[#a1a1aa] uppercase mb-1">Fecha plan</label>
+                      <input type="date" value={fechaPlanHito} onChange={(e) => setFechaPlanHito(e.target.value)} className="w-full px-3 py-2 bg-[#18181b] border border-[#27272a] rounded-lg text-sm text-white focus:outline-none focus:border-[#0071E3]" />
+                    </div>
+                    <div>
+                      <label className="block text-xs font-semibold text-[#a1a1aa] uppercase mb-1">Estado</label>
+                      <select value={estadoHito} onChange={(e) => setEstadoHito(e.target.value)} className="w-full px-3 py-2 bg-[#18181b] border border-[#27272a] rounded-lg text-sm text-white focus:outline-none focus:border-[#0071E3]">
+                        {ESTADO_HITO_PROYECTO_OPTIONS.map((option) => <option key={option.value} value={option.value}>{option.label}</option>)}
+                      </select>
+                    </div>
+                    <div>
+                      <label className="block text-xs font-semibold text-[#a1a1aa] uppercase mb-1">Avance %</label>
+                      <input type="number" min="0" max="100" step="1" value={porcentajeHito} onChange={(e) => setPorcentajeHito(parseFloat(e.target.value) || 0)} className="w-full px-3 py-2 bg-[#18181b] border border-[#27272a] rounded-lg text-sm text-white focus:outline-none focus:border-[#0071E3]" />
+                    </div>
+                  </div>
+                  <div>
+                    <label className="block text-xs font-semibold text-[#a1a1aa] uppercase mb-1">Descripcion</label>
+                    <textarea rows={2} value={descripcionHito} onChange={(e) => setDescripcionHito(e.target.value)} placeholder="Resultado esperado o condicion de cumplimiento" className="w-full px-3 py-2 bg-[#18181b] border border-[#27272a] rounded-lg text-sm text-white focus:outline-none focus:border-[#0071E3]" />
+                  </div>
+                  <button type="submit" disabled={guardandoHito} className="flex items-center justify-center gap-2 w-full px-4 py-2 bg-[#0071E3] hover:bg-[#0071E3]/80 text-white rounded-lg text-sm font-semibold transition-all disabled:opacity-50">
+                    <Plus className="w-4 h-4" />
+                    <span>{guardandoHito ? 'Guardando...' : 'Agregar hito'}</span>
+                  </button>
+                </form>
+              )}
+
+              {proyecto.hitos && proyecto.hitos.length > 0 ? (
+                <div className="space-y-3">
+                  {proyecto.hitos.map((hito) => (
+                    <div key={hito.id} className="bg-[#09090b] border border-[#27272a] rounded-xl p-4 space-y-3">
+                      <div className="flex items-start justify-between gap-3">
+                        <div className="min-w-0">
+                          <h4 className="font-bold text-white text-sm">{hito.nombre}</h4>
+                          <p className="text-xs text-[#71717a] mt-1">Plan: {formatFechaCR(hito.fecha_plan)} | Real: {formatFechaCR(hito.fecha_real)}</p>
+                        </div>
+                        <span className="text-xs font-semibold px-2.5 py-1 rounded-full bg-[#27272a] text-white">{getCatalogLabel(hito.estado, ESTADO_HITO_PROYECTO_OPTIONS)}</span>
+                      </div>
+                      <div className="space-y-1">
+                        <div className="flex items-center justify-between text-xs">
+                          <span className="text-[#71717a]">Avance</span>
+                          <span className="font-mono text-white">{formatProgressPercent(hito.porcentaje_avance)}%</span>
+                        </div>
+                        <div className="h-2 rounded-full bg-[#27272a] overflow-hidden">
+                          <div className="h-full bg-amber-400" style={{ width: `${formatProgressPercent(hito.porcentaje_avance)}%` }} />
+                        </div>
+                      </div>
+                      {hito.descripcion && <p className="text-xs text-[#a1a1aa] bg-[#18181b] border border-[#27272a] rounded-lg p-2">{hito.descripcion}</p>}
+                      {puedeEditar && (
+                        <div className="flex justify-end gap-2 pt-2 border-t border-[#27272a]">
+                          {hito.estado !== 'Completado' && (
+                            <button type="button" onClick={() => handleCompletarHito(hito)} className="flex items-center gap-1.5 px-3 py-1.5 bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-300 text-xs font-semibold rounded-lg transition-all border border-emerald-500/20">
+                              <CheckCircle2 className="w-3.5 h-3.5" />
+                              <span>Completar</span>
+                            </button>
+                          )}
+                          <button type="button" onClick={() => handleEliminarHito(hito)} className="flex items-center gap-1.5 px-3 py-1.5 bg-rose-500/10 hover:bg-rose-500/20 text-rose-300 text-xs font-semibold rounded-lg transition-all border border-rose-500/20">
+                            <Trash2 className="w-3.5 h-3.5" />
+                            <span>Eliminar</span>
+                          </button>
+                        </div>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <p className="text-sm text-[#71717a] py-8 text-center bg-[#09090b] rounded-xl border border-[#27272a]">No hay hitos registrados.</p>
+              )}
+            </div>
           </div>
         )}
 

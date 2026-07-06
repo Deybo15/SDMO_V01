@@ -96,6 +96,38 @@ export interface ProyectoDocumento {
   actualizado_en?: string | null;
 }
 
+export interface ProyectoPermiso {
+  id: string;
+  proyecto_id: string | number;
+  tipo_permiso: string;
+  entidad_emisora: string;
+  estado: string;
+  numero_referencia?: string | null;
+  fecha_solicitud?: string | null;
+  fecha_aprobacion?: string | null;
+  fecha_vencimiento?: string | null;
+  responsable?: string | null;
+  observaciones?: string | null;
+  creado_por?: string | null;
+  creado_en?: string | null;
+  actualizado_en?: string | null;
+}
+
+export interface ProyectoHito {
+  id: string;
+  proyecto_id: string | number;
+  nombre: string;
+  descripcion?: string | null;
+  fecha_plan?: string | null;
+  fecha_real?: string | null;
+  estado: string;
+  porcentaje_avance: number;
+  responsable?: string | null;
+  creado_por?: string | null;
+  creado_en?: string | null;
+  actualizado_en?: string | null;
+}
+
 export interface FaseProyecto {
   id: string | number;
   proyecto_id: string | number;
@@ -140,6 +172,8 @@ export interface ProyectoObraConDetalles extends ProyectoObra {
   presupuesto_vigente?: PresupuestoProyecto | null;
   contrato?: ContratoObra | null;
   documentos?: ProyectoDocumento[];
+  permisos?: ProyectoPermiso[];
+  hitos?: ProyectoHito[];
   fases?: FaseProyecto[];
   seguimientos?: SeguimientoProyecto[];
   historial_fases?: HistorialFaseProyecto[];

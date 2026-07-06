@@ -4,6 +4,8 @@ import {
   PresupuestoProyecto,
   ContratoObra,
   ProyectoDocumento,
+  ProyectoHito,
+  ProyectoPermiso,
   FaseProyecto,
   SeguimientoProyecto,
   ProyectoObraConDetalles,
@@ -191,13 +193,15 @@ export async function getProyectoObraPorId(id: string | number): Promise<Proyect
     if (errProyecto || !proyecto) throw errProyecto || new Error('Proyecto no encontrado');
 
     // Consultas paralelas de tablas secundarias
-    const [resPresupuestos, resContrato, resFases, resSeguimientos, resHistorialFases, resDocumentos, resColab] = await Promise.all([
+    const [resPresupuestos, resContrato, resFases, resSeguimientos, resHistorialFases, resDocumentos, resPermisos, resHitos, resColab] = await Promise.all([
       supabase.from('presupuesto_proyecto').select('*').eq('proyecto_id', id),
       supabase.from('contrato_obra').select('*').eq('proyecto_id', id).limit(1),
       supabase.from('fase_proyecto').select('*').eq('proyecto_id', id).order('id', { ascending: true }),
       supabase.from('seguimiento_proyecto').select('*').eq('proyecto_id', id).order('fecha_corte', { ascending: false }),
       supabase.from('historial_fase_proyecto').select('*').eq('proyecto_id', id).order('creado_en', { ascending: false }),
       supabase.from('proyecto_documento').select('*').eq('proyecto_id', id).order('creado_en', { ascending: false }),
+      supabase.from('proyecto_permiso').select('*').eq('proyecto_id', id).order('creado_en', { ascending: false }),
+      supabase.from('proyecto_hito').select('*').eq('proyecto_id', id).order('fecha_plan', { ascending: true, nullsFirst: false }).order('creado_en', { ascending: true }),
       proyecto.profesional_responsable 
         ? supabase.from('colaboradores_06').select('colaborador, alias').or(`identificacion.eq.${proyecto.profesional_responsable},alias.eq.${proyecto.profesional_responsable}`).maybeSingle()
         : Promise.resolve({ data: null, error: null })
@@ -212,6 +216,8 @@ export async function getProyectoObraPorId(id: string | number): Promise<Proyect
       presupuesto_vigente: presupuestoVigente,
       contrato: Array.isArray(resContrato.data) ? resContrato.data[0] || null : resContrato.data || null,
       documentos: resDocumentos.data || [],
+      permisos: resPermisos.data || [],
+      hitos: resHitos.data || [],
       fases: resFases.data || [],
       seguimientos: resSeguimientos.data || [],
       historial_fases: resHistorialFases.data || []
@@ -627,6 +633,117 @@ export async function eliminarDocumentoProyecto(documento: ProyectoDocumento) {
     return true;
   } catch (err) {
     console.error('Error eliminando documento del proyecto:', err);
+    throw err;
+  }
+}
+
+export async function crearPermisoProyecto(
+  permiso: Omit<ProyectoPermiso, 'id' | 'creado_en' | 'actualizado_en'>
+): Promise<ProyectoPermiso> {
+  try {
+    const payload = {
+      ...permiso,
+      tipo_permiso: permiso.tipo_permiso.trim(),
+      entidad_emisora: permiso.entidad_emisora.trim(),
+      estado: permiso.estado.trim(),
+      numero_referencia: permiso.numero_referencia?.trim() || null,
+      responsable: permiso.responsable?.trim() || null,
+      observaciones: permiso.observaciones?.trim() || null
+    };
+
+    const { data, error } = await supabase
+      .from('proyecto_permiso')
+      .insert([payload])
+      .select()
+      .single();
+
+    if (error) throw error;
+    return data;
+  } catch (err) {
+    console.error('Error creando permiso del proyecto:', err);
+    throw err;
+  }
+}
+
+export async function eliminarPermisoProyecto(permisoId: string): Promise<boolean> {
+  try {
+    const { error } = await supabase
+      .from('proyecto_permiso')
+      .delete()
+      .eq('id', permisoId);
+
+    if (error) throw error;
+    return true;
+  } catch (err) {
+    console.error('Error eliminando permiso del proyecto:', err);
+    throw err;
+  }
+}
+
+export async function crearHitoProyecto(
+  hito: Omit<ProyectoHito, 'id' | 'creado_en' | 'actualizado_en'>
+): Promise<ProyectoHito> {
+  try {
+    const payload = {
+      ...hito,
+      nombre: hito.nombre.trim(),
+      descripcion: hito.descripcion?.trim() || null,
+      responsable: hito.responsable?.trim() || null,
+      porcentaje_avance: normalizeProgressFraction(hito.porcentaje_avance)
+    };
+
+    const { data, error } = await supabase
+      .from('proyecto_hito')
+      .insert([payload])
+      .select()
+      .single();
+
+    if (error) throw error;
+    return data;
+  } catch (err) {
+    console.error('Error creando hito del proyecto:', err);
+    throw err;
+  }
+}
+
+export async function actualizarHitoProyecto(
+  hitoId: string,
+  hito: Partial<ProyectoHito>
+): Promise<ProyectoHito> {
+  try {
+    const payload: Partial<ProyectoHito> = {
+      ...hito,
+      porcentaje_avance: hito.porcentaje_avance !== undefined
+        ? normalizeProgressFraction(hito.porcentaje_avance)
+        : undefined
+    };
+
+    const { data, error } = await supabase
+      .from('proyecto_hito')
+      .update(payload)
+      .eq('id', hitoId)
+      .select()
+      .single();
+
+    if (error) throw error;
+    return data;
+  } catch (err) {
+    console.error('Error actualizando hito del proyecto:', err);
+    throw err;
+  }
+}
+
+export async function eliminarHitoProyecto(hitoId: string): Promise<boolean> {
+  try {
+    const { error } = await supabase
+      .from('proyecto_hito')
+      .delete()
+      .eq('id', hitoId);
+
+    if (error) throw error;
+    return true;
+  } catch (err) {
+    console.error('Error eliminando hito del proyecto:', err);
     throw err;
   }
 }

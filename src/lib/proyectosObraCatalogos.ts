@@ -137,6 +137,33 @@ export const TIPO_DOCUMENTO_PROYECTO_OPTIONS: CatalogOption[] = [
   { value: 'Otro', label: 'Otro' }
 ];
 
+export const TIPO_PERMISO_PROYECTO_OPTIONS: CatalogOption[] = [
+  { value: 'CFIA', label: 'CFIA' },
+  { value: 'Uso de suelo', label: 'Uso de suelo' },
+  { value: 'Ambiental', label: 'Ambiental' },
+  { value: 'Transito / vialidad', label: 'Transito / vialidad' },
+  { value: 'Servicios publicos', label: 'Servicios publicos' },
+  { value: 'Institucional', label: 'Institucional' },
+  { value: 'Otro', label: 'Otro' }
+];
+
+export const ESTADO_PERMISO_PROYECTO_OPTIONS: CatalogOption[] = [
+  { value: 'Pendiente', label: 'Pendiente' },
+  { value: 'En tramite', label: 'En tramite' },
+  { value: 'Aprobado', label: 'Aprobado' },
+  { value: 'Rechazado', label: 'Rechazado' },
+  { value: 'Vencido', label: 'Vencido' },
+  { value: 'No requerido', label: 'No requerido' }
+];
+
+export const ESTADO_HITO_PROYECTO_OPTIONS: CatalogOption[] = [
+  { value: 'Pendiente', label: 'Pendiente' },
+  { value: 'En proceso', label: 'En proceso' },
+  { value: 'Completado', label: 'Completado' },
+  { value: 'Atrasado', label: 'Atrasado' },
+  { value: 'Cancelado', label: 'Cancelado' }
+];
+
 export function normalizeCatalogValue(
   value: string | null | undefined,
   options: CatalogOption[]
