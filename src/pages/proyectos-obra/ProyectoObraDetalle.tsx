@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
-import { ProyectoDocumento, ProyectoHito, ProyectoObraConDetalles, ProyectoPermiso } from '../../types/proyectosObra';
+import { ContratoGarantia, ProyectoDocumento, ProyectoDonacion, ProyectoHito, ProyectoObraConDetalles, ProyectoPermiso } from '../../types/proyectosObra';
 import {
   getProyectoObraPorId,
   registrarSeguimiento,
@@ -13,6 +13,10 @@ import {
   actualizarHitoProyecto,
   eliminarHitoProyecto,
   eliminarPermisoProyecto,
+  crearDonacionProyecto,
+  eliminarDonacionProyecto,
+  crearGarantiaContrato,
+  eliminarGarantiaContrato,
   formatMonedaCRC,
   formatFechaCR,
   formatProgressPercent,
@@ -31,6 +35,10 @@ import {
   TIPO_PERMISO_PROYECTO_OPTIONS,
   ESTADO_PERMISO_PROYECTO_OPTIONS,
   ESTADO_HITO_PROYECTO_OPTIONS,
+  TIPO_DONACION_PROYECTO_OPTIONS,
+  ESTADO_DONACION_PROYECTO_OPTIONS,
+  TIPO_GARANTIA_CONTRATO_OPTIONS,
+  ESTADO_GARANTIA_CONTRATO_OPTIONS,
   FASE_PROYECTO_OPTIONS,
   getCatalogLabel,
   getFaseProyectoOrder
@@ -42,7 +50,7 @@ import { useAuthorization } from '../../hooks/useAuthorization';
 import { 
   ArrowLeft, Building2, User, FileText, DollarSign, Briefcase, 
   Clock, Activity, Plus, CheckCircle2, AlertCircle, Calendar, Send, Edit3, History, Save, X, FileSpreadsheet, Download,
-  Upload, Trash2, ExternalLink, ShieldCheck, Flag
+  Upload, Trash2, ExternalLink, ShieldCheck, Flag, Gift
 } from 'lucide-react';
 
 export default function ProyectoObraDetalle() {
@@ -88,6 +96,23 @@ export default function ProyectoObraDetalle() {
   const [estadoHito, setEstadoHito] = useState<string>('Pendiente');
   const [porcentajeHito, setPorcentajeHito] = useState<number>(0);
   const [guardandoHito, setGuardandoHito] = useState<boolean>(false);
+  const [tipoDonacion, setTipoDonacion] = useState<string>('Materiales');
+  const [donante, setDonante] = useState<string>('');
+  const [descripcionDonacion, setDescripcionDonacion] = useState<string>('');
+  const [valorDonacion, setValorDonacion] = useState<number>(0);
+  const [fechaRecepcionDonacion, setFechaRecepcionDonacion] = useState<string>('');
+  const [estadoDonacion, setEstadoDonacion] = useState<string>('Registrada');
+  const [observacionesDonacion, setObservacionesDonacion] = useState<string>('');
+  const [guardandoDonacion, setGuardandoDonacion] = useState<boolean>(false);
+  const [tipoGarantia, setTipoGarantia] = useState<string>('Cumplimiento');
+  const [entidadGarantia, setEntidadGarantia] = useState<string>('');
+  const [referenciaGarantia, setReferenciaGarantia] = useState<string>('');
+  const [montoGarantia, setMontoGarantia] = useState<number>(0);
+  const [fechaEmisionGarantia, setFechaEmisionGarantia] = useState<string>('');
+  const [fechaVencimientoGarantia, setFechaVencimientoGarantia] = useState<string>('');
+  const [estadoGarantia, setEstadoGarantia] = useState<string>('Vigente');
+  const [observacionesGarantia, setObservacionesGarantia] = useState<string>('');
+  const [guardandoGarantia, setGuardandoGarantia] = useState<boolean>(false);
 
   const handleIniciarEdicionFase = (fase: any) => {
     if (!puedeEditar) return;
@@ -433,6 +458,123 @@ export default function ProyectoObraDetalle() {
     }
   };
 
+  const handleCrearDonacion = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!proyecto || !id || !puedeEditar) return;
+
+    if (!donante.trim()) {
+      alert('Ingrese el nombre del donante.');
+      return;
+    }
+
+    if (!Number.isFinite(valorDonacion) || valorDonacion < 0) {
+      alert('El valor estimado no puede ser negativo.');
+      return;
+    }
+
+    setGuardandoDonacion(true);
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      const usuario = user?.email || 'Usuario SDMO';
+
+      await crearDonacionProyecto({
+        proyecto_id: id,
+        tipo_donacion: tipoDonacion,
+        donante,
+        descripcion: descripcionDonacion,
+        valor_estimado: valorDonacion,
+        fecha_recepcion: fechaRecepcionDonacion || null,
+        estado: estadoDonacion,
+        responsable: usuario,
+        observaciones: observacionesDonacion,
+        creado_por: usuario
+      });
+
+      setDonante('');
+      setDescripcionDonacion('');
+      setValorDonacion(0);
+      setFechaRecepcionDonacion('');
+      setEstadoDonacion('Registrada');
+      setObservacionesDonacion('');
+      await cargarDetalle();
+    } catch (err: any) {
+      console.error('Error creando donacion:', err);
+      alert('No se pudo crear la donacion: ' + (err.message || err));
+    } finally {
+      setGuardandoDonacion(false);
+    }
+  };
+
+  const handleEliminarDonacion = async (donacion: ProyectoDonacion) => {
+    if (!puedeEditar) return;
+    const confirmado = window.confirm(`Eliminar la donacion de "${donacion.donante}"?`);
+    if (!confirmado) return;
+
+    try {
+      await eliminarDonacionProyecto(donacion.id);
+      await cargarDetalle();
+    } catch (err: any) {
+      console.error('Error eliminando donacion:', err);
+      alert('No se pudo eliminar la donacion: ' + (err.message || err));
+    }
+  };
+
+  const handleCrearGarantia = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!proyecto || !id || !puedeEditar) return;
+
+    if (!Number.isFinite(montoGarantia) || montoGarantia < 0) {
+      alert('El monto de la garantia no puede ser negativo.');
+      return;
+    }
+
+    setGuardandoGarantia(true);
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      await crearGarantiaContrato({
+        proyecto_id: id,
+        contrato_id: proyecto.contrato?.id || null,
+        tipo_garantia: tipoGarantia,
+        entidad_emisora: entidadGarantia,
+        numero_referencia: referenciaGarantia,
+        monto: montoGarantia,
+        fecha_emision: fechaEmisionGarantia || null,
+        fecha_vencimiento: fechaVencimientoGarantia || null,
+        estado: estadoGarantia,
+        observaciones: observacionesGarantia,
+        creado_por: user?.email || 'Usuario SDMO'
+      });
+
+      setEntidadGarantia('');
+      setReferenciaGarantia('');
+      setMontoGarantia(0);
+      setFechaEmisionGarantia('');
+      setFechaVencimientoGarantia('');
+      setEstadoGarantia('Vigente');
+      setObservacionesGarantia('');
+      await cargarDetalle();
+    } catch (err: any) {
+      console.error('Error creando garantia:', err);
+      alert('No se pudo crear la garantia: ' + (err.message || err));
+    } finally {
+      setGuardandoGarantia(false);
+    }
+  };
+
+  const handleEliminarGarantia = async (garantia: ContratoGarantia) => {
+    if (!puedeEditar) return;
+    const confirmado = window.confirm(`Eliminar la garantia "${garantia.tipo_garantia}"?`);
+    if (!confirmado) return;
+
+    try {
+      await eliminarGarantiaContrato(garantia.id);
+      await cargarDetalle();
+    } catch (err: any) {
+      console.error('Error eliminando garantia:', err);
+      alert('No se pudo eliminar la garantia: ' + (err.message || err));
+    }
+  };
+
   if (loading) {
     return (
       <div className="min-h-screen bg-[#09090b] flex items-center justify-center text-white">
@@ -713,6 +855,91 @@ export default function ProyectoObraDetalle() {
           </div>
         )}
 
+            {tabActiva === 'presupuesto' && (
+              <div className="pt-6 border-t border-[#27272a] space-y-5">
+                <div className="flex flex-col lg:flex-row lg:items-start justify-between gap-6">
+                  <div>
+                    <h3 className="text-lg font-bold text-white flex items-center gap-2">
+                      <Gift className="w-5 h-5 text-emerald-400" />
+                      <span>Donaciones asociadas</span>
+                    </h3>
+                    <p className="text-xs text-[#71717a]">Aportes de materiales, mobiliario, servicios u otros recursos no presupuestarios.</p>
+                    <p className="text-sm font-bold text-emerald-300 mt-2">
+                      Valor estimado total: {formatMonedaCRC((proyecto.donaciones || []).reduce((total, d) => total + (Number(d.valor_estimado) || 0), 0))}
+                    </p>
+                  </div>
+
+                  {puedeEditar && (
+                    <form onSubmit={handleCrearDonacion} className="w-full lg:max-w-xl bg-[#09090b] border border-[#27272a] rounded-xl p-4 space-y-3">
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                        <div>
+                          <label className="block text-xs font-semibold text-[#a1a1aa] uppercase mb-1">Tipo</label>
+                          <select value={tipoDonacion} onChange={(e) => setTipoDonacion(e.target.value)} className="w-full px-3 py-2 bg-[#18181b] border border-[#27272a] rounded-lg text-sm text-white focus:outline-none focus:border-[#0071E3]">
+                            {TIPO_DONACION_PROYECTO_OPTIONS.map((option) => <option key={option.value} value={option.value}>{option.label}</option>)}
+                          </select>
+                        </div>
+                        <div>
+                          <label className="block text-xs font-semibold text-[#a1a1aa] uppercase mb-1">Estado</label>
+                          <select value={estadoDonacion} onChange={(e) => setEstadoDonacion(e.target.value)} className="w-full px-3 py-2 bg-[#18181b] border border-[#27272a] rounded-lg text-sm text-white focus:outline-none focus:border-[#0071E3]">
+                            {ESTADO_DONACION_PROYECTO_OPTIONS.map((option) => <option key={option.value} value={option.value}>{option.label}</option>)}
+                          </select>
+                        </div>
+                        <div>
+                          <label className="block text-xs font-semibold text-[#a1a1aa] uppercase mb-1">Donante</label>
+                          <input type="text" value={donante} onChange={(e) => setDonante(e.target.value)} placeholder="Persona, empresa o institucion" className="w-full px-3 py-2 bg-[#18181b] border border-[#27272a] rounded-lg text-sm text-white focus:outline-none focus:border-[#0071E3]" />
+                        </div>
+                        <div>
+                          <label className="block text-xs font-semibold text-[#a1a1aa] uppercase mb-1">Valor estimado</label>
+                          <input type="number" min="0" step="1" value={valorDonacion} onChange={(e) => setValorDonacion(parseFloat(e.target.value) || 0)} className="w-full px-3 py-2 bg-[#18181b] border border-[#27272a] rounded-lg text-sm text-white focus:outline-none focus:border-[#0071E3]" />
+                        </div>
+                        <div className="md:col-span-2">
+                          <label className="block text-xs font-semibold text-[#a1a1aa] uppercase mb-1">Fecha recepcion</label>
+                          <input type="date" value={fechaRecepcionDonacion} onChange={(e) => setFechaRecepcionDonacion(e.target.value)} className="w-full px-3 py-2 bg-[#18181b] border border-[#27272a] rounded-lg text-sm text-white focus:outline-none focus:border-[#0071E3]" />
+                        </div>
+                      </div>
+                      <div>
+                        <label className="block text-xs font-semibold text-[#a1a1aa] uppercase mb-1">Descripcion</label>
+                        <input type="text" value={descripcionDonacion} onChange={(e) => setDescripcionDonacion(e.target.value)} placeholder="Detalle breve del aporte" className="w-full px-3 py-2 bg-[#18181b] border border-[#27272a] rounded-lg text-sm text-white focus:outline-none focus:border-[#0071E3]" />
+                      </div>
+                      <button type="submit" disabled={guardandoDonacion} className="flex items-center justify-center gap-2 w-full px-4 py-2 bg-[#0071E3] hover:bg-[#0071E3]/80 text-white rounded-lg text-sm font-semibold transition-all disabled:opacity-50">
+                        <Plus className="w-4 h-4" />
+                        <span>{guardandoDonacion ? 'Guardando...' : 'Agregar donacion'}</span>
+                      </button>
+                    </form>
+                  )}
+                </div>
+
+                {proyecto.donaciones && proyecto.donaciones.length > 0 ? (
+                  <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
+                    {proyecto.donaciones.map((donacion) => (
+                      <div key={donacion.id} className="bg-[#09090b] border border-[#27272a] rounded-xl p-4 space-y-3">
+                        <div className="flex items-start justify-between gap-3">
+                          <div className="min-w-0">
+                            <p className="text-xs font-semibold uppercase text-emerald-400">{getCatalogLabel(donacion.tipo_donacion, TIPO_DONACION_PROYECTO_OPTIONS)}</p>
+                            <h4 className="font-bold text-white text-sm truncate mt-1">{donacion.donante}</h4>
+                          </div>
+                          <span className="text-xs font-semibold px-2.5 py-1 rounded-full bg-[#27272a] text-white">{getCatalogLabel(donacion.estado, ESTADO_DONACION_PROYECTO_OPTIONS)}</span>
+                        </div>
+                        <p className="text-lg font-black text-emerald-300 font-mono">{formatMonedaCRC(donacion.valor_estimado)}</p>
+                        <p className="text-xs text-[#71717a]">Recepcion: {formatFechaCR(donacion.fecha_recepcion)}</p>
+                        {donacion.descripcion && <p className="text-xs text-[#a1a1aa] bg-[#18181b] border border-[#27272a] rounded-lg p-2">{donacion.descripcion}</p>}
+                        {puedeEditar && (
+                          <div className="flex justify-end pt-2 border-t border-[#27272a]">
+                            <button type="button" onClick={() => handleEliminarDonacion(donacion)} className="flex items-center gap-1.5 px-3 py-1.5 bg-rose-500/10 hover:bg-rose-500/20 text-rose-300 text-xs font-semibold rounded-lg transition-all border border-rose-500/20">
+                              <Trash2 className="w-3.5 h-3.5" />
+                              <span>Eliminar</span>
+                            </button>
+                          </div>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <p className="text-sm text-[#71717a] py-8 text-center bg-[#09090b] rounded-xl border border-[#27272a]">No hay donaciones asociadas a este proyecto.</p>
+                )}
+              </div>
+            )}
+
         {/* 3. CONTRATO */}
         {tabActiva === 'contrato' && (
           <div className="space-y-6">
@@ -749,6 +976,99 @@ export default function ProyectoObraDetalle() {
             )}
           </div>
         )}
+
+            {tabActiva === 'contrato' && (
+              <div className="pt-6 border-t border-[#27272a] space-y-5">
+                <div className="flex flex-col lg:flex-row lg:items-start justify-between gap-6">
+                  <div>
+                    <h3 className="text-lg font-bold text-white flex items-center gap-2">
+                      <ShieldCheck className="w-5 h-5 text-emerald-400" />
+                      <span>Garantias contractuales</span>
+                    </h3>
+                    <p className="text-xs text-[#71717a]">Control de montos, emisores, referencias y vencimientos.</p>
+                  </div>
+
+                  {puedeEditar && (
+                    <form onSubmit={handleCrearGarantia} className="w-full lg:max-w-xl bg-[#09090b] border border-[#27272a] rounded-xl p-4 space-y-3">
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                        <div>
+                          <label className="block text-xs font-semibold text-[#a1a1aa] uppercase mb-1">Tipo</label>
+                          <select value={tipoGarantia} onChange={(e) => setTipoGarantia(e.target.value)} className="w-full px-3 py-2 bg-[#18181b] border border-[#27272a] rounded-lg text-sm text-white focus:outline-none focus:border-[#0071E3]">
+                            {TIPO_GARANTIA_CONTRATO_OPTIONS.map((option) => <option key={option.value} value={option.value}>{option.label}</option>)}
+                          </select>
+                        </div>
+                        <div>
+                          <label className="block text-xs font-semibold text-[#a1a1aa] uppercase mb-1">Estado</label>
+                          <select value={estadoGarantia} onChange={(e) => setEstadoGarantia(e.target.value)} className="w-full px-3 py-2 bg-[#18181b] border border-[#27272a] rounded-lg text-sm text-white focus:outline-none focus:border-[#0071E3]">
+                            {ESTADO_GARANTIA_CONTRATO_OPTIONS.map((option) => <option key={option.value} value={option.value}>{option.label}</option>)}
+                          </select>
+                        </div>
+                        <div>
+                          <label className="block text-xs font-semibold text-[#a1a1aa] uppercase mb-1">Entidad emisora</label>
+                          <input type="text" value={entidadGarantia} onChange={(e) => setEntidadGarantia(e.target.value)} placeholder="Banco, aseguradora o entidad" className="w-full px-3 py-2 bg-[#18181b] border border-[#27272a] rounded-lg text-sm text-white focus:outline-none focus:border-[#0071E3]" />
+                        </div>
+                        <div>
+                          <label className="block text-xs font-semibold text-[#a1a1aa] uppercase mb-1">Referencia</label>
+                          <input type="text" value={referenciaGarantia} onChange={(e) => setReferenciaGarantia(e.target.value)} placeholder="Poliza, certificado o consecutivo" className="w-full px-3 py-2 bg-[#18181b] border border-[#27272a] rounded-lg text-sm text-white focus:outline-none focus:border-[#0071E3]" />
+                        </div>
+                        <div>
+                          <label className="block text-xs font-semibold text-[#a1a1aa] uppercase mb-1">Monto</label>
+                          <input type="number" min="0" step="1" value={montoGarantia} onChange={(e) => setMontoGarantia(parseFloat(e.target.value) || 0)} className="w-full px-3 py-2 bg-[#18181b] border border-[#27272a] rounded-lg text-sm text-white focus:outline-none focus:border-[#0071E3]" />
+                        </div>
+                        <div>
+                          <label className="block text-xs font-semibold text-[#a1a1aa] uppercase mb-1">Emision</label>
+                          <input type="date" value={fechaEmisionGarantia} onChange={(e) => setFechaEmisionGarantia(e.target.value)} className="w-full px-3 py-2 bg-[#18181b] border border-[#27272a] rounded-lg text-sm text-white focus:outline-none focus:border-[#0071E3]" />
+                        </div>
+                        <div className="md:col-span-2">
+                          <label className="block text-xs font-semibold text-[#a1a1aa] uppercase mb-1">Vencimiento</label>
+                          <input type="date" value={fechaVencimientoGarantia} onChange={(e) => setFechaVencimientoGarantia(e.target.value)} className="w-full px-3 py-2 bg-[#18181b] border border-[#27272a] rounded-lg text-sm text-white focus:outline-none focus:border-[#0071E3]" />
+                        </div>
+                      </div>
+                      <div>
+                        <label className="block text-xs font-semibold text-[#a1a1aa] uppercase mb-1">Observaciones</label>
+                        <textarea rows={2} value={observacionesGarantia} onChange={(e) => setObservacionesGarantia(e.target.value)} className="w-full px-3 py-2 bg-[#18181b] border border-[#27272a] rounded-lg text-sm text-white focus:outline-none focus:border-[#0071E3]" />
+                      </div>
+                      <button type="submit" disabled={guardandoGarantia} className="flex items-center justify-center gap-2 w-full px-4 py-2 bg-[#0071E3] hover:bg-[#0071E3]/80 text-white rounded-lg text-sm font-semibold transition-all disabled:opacity-50">
+                        <Plus className="w-4 h-4" />
+                        <span>{guardandoGarantia ? 'Guardando...' : 'Agregar garantia'}</span>
+                      </button>
+                    </form>
+                  )}
+                </div>
+
+                {proyecto.garantias && proyecto.garantias.length > 0 ? (
+                  <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
+                    {proyecto.garantias.map((garantia) => (
+                      <div key={garantia.id} className="bg-[#09090b] border border-[#27272a] rounded-xl p-4 space-y-3">
+                        <div className="flex items-start justify-between gap-3">
+                          <div className="min-w-0">
+                            <p className="text-xs font-semibold uppercase text-emerald-400">{getCatalogLabel(garantia.tipo_garantia, TIPO_GARANTIA_CONTRATO_OPTIONS)}</p>
+                            <h4 className="font-bold text-white text-sm truncate mt-1">{garantia.entidad_emisora || 'Entidad no indicada'}</h4>
+                          </div>
+                          <span className="text-xs font-semibold px-2.5 py-1 rounded-full bg-[#27272a] text-white">{getCatalogLabel(garantia.estado, ESTADO_GARANTIA_CONTRATO_OPTIONS)}</span>
+                        </div>
+                        <p className="text-lg font-black text-emerald-300 font-mono">{formatMonedaCRC(garantia.monto)}</p>
+                        <div className="grid grid-cols-2 gap-3 text-xs">
+                          <div><span className="block text-[#71717a]">Referencia</span><span className="font-mono text-white">{garantia.numero_referencia || '-'}</span></div>
+                          <div><span className="block text-[#71717a]">Vence</span><span className="font-mono text-white">{formatFechaCR(garantia.fecha_vencimiento)}</span></div>
+                        </div>
+                        {garantia.observaciones && <p className="text-xs text-[#a1a1aa] bg-[#18181b] border border-[#27272a] rounded-lg p-2">{garantia.observaciones}</p>}
+                        {puedeEditar && (
+                          <div className="flex justify-end pt-2 border-t border-[#27272a]">
+                            <button type="button" onClick={() => handleEliminarGarantia(garantia)} className="flex items-center gap-1.5 px-3 py-1.5 bg-rose-500/10 hover:bg-rose-500/20 text-rose-300 text-xs font-semibold rounded-lg transition-all border border-rose-500/20">
+                              <Trash2 className="w-3.5 h-3.5" />
+                              <span>Eliminar</span>
+                            </button>
+                          </div>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <p className="text-sm text-[#71717a] py-8 text-center bg-[#09090b] rounded-xl border border-[#27272a]">No hay garantias contractuales registradas.</p>
+                )}
+              </div>
+            )}
 
         {/* 4. PLANIFICACION */}
         {tabActiva === 'planificacion' && (

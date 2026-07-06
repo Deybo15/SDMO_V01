@@ -128,6 +128,39 @@ export interface ProyectoHito {
   actualizado_en?: string | null;
 }
 
+export interface ProyectoDonacion {
+  id: string;
+  proyecto_id: string | number;
+  tipo_donacion: string;
+  donante: string;
+  descripcion?: string | null;
+  valor_estimado: number;
+  fecha_recepcion?: string | null;
+  estado: string;
+  responsable?: string | null;
+  observaciones?: string | null;
+  creado_por?: string | null;
+  creado_en?: string | null;
+  actualizado_en?: string | null;
+}
+
+export interface ContratoGarantia {
+  id: string;
+  proyecto_id: string | number;
+  contrato_id?: string | number | null;
+  tipo_garantia: string;
+  entidad_emisora?: string | null;
+  numero_referencia?: string | null;
+  monto: number;
+  fecha_emision?: string | null;
+  fecha_vencimiento?: string | null;
+  estado: string;
+  observaciones?: string | null;
+  creado_por?: string | null;
+  creado_en?: string | null;
+  actualizado_en?: string | null;
+}
+
 export interface FaseProyecto {
   id: string | number;
   proyecto_id: string | number;
@@ -174,6 +207,8 @@ export interface ProyectoObraConDetalles extends ProyectoObra {
   documentos?: ProyectoDocumento[];
   permisos?: ProyectoPermiso[];
   hitos?: ProyectoHito[];
+  donaciones?: ProyectoDonacion[];
+  garantias?: ContratoGarantia[];
   fases?: FaseProyecto[];
   seguimientos?: SeguimientoProyecto[];
   historial_fases?: HistorialFaseProyecto[];

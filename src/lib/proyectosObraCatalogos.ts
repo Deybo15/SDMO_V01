@@ -164,6 +164,40 @@ export const ESTADO_HITO_PROYECTO_OPTIONS: CatalogOption[] = [
   { value: 'Cancelado', label: 'Cancelado' }
 ];
 
+export const TIPO_DONACION_PROYECTO_OPTIONS: CatalogOption[] = [
+  { value: 'Materiales', label: 'Materiales' },
+  { value: 'Mobiliario', label: 'Mobiliario' },
+  { value: 'Luminarias', label: 'Luminarias' },
+  { value: 'Jardineria', label: 'Jardineria' },
+  { value: 'Mano de obra', label: 'Mano de obra' },
+  { value: 'Servicios', label: 'Servicios' },
+  { value: 'Otro', label: 'Otro' }
+];
+
+export const ESTADO_DONACION_PROYECTO_OPTIONS: CatalogOption[] = [
+  { value: 'Registrada', label: 'Registrada' },
+  { value: 'Recibida', label: 'Recibida' },
+  { value: 'Aplicada', label: 'Aplicada' },
+  { value: 'Pendiente', label: 'Pendiente' },
+  { value: 'Cancelada', label: 'Cancelada' }
+];
+
+export const TIPO_GARANTIA_CONTRATO_OPTIONS: CatalogOption[] = [
+  { value: 'Participacion', label: 'Participacion' },
+  { value: 'Cumplimiento', label: 'Cumplimiento' },
+  { value: 'Calidad', label: 'Calidad' },
+  { value: 'Anticipo', label: 'Anticipo' },
+  { value: 'Otro', label: 'Otro' }
+];
+
+export const ESTADO_GARANTIA_CONTRATO_OPTIONS: CatalogOption[] = [
+  { value: 'Vigente', label: 'Vigente' },
+  { value: 'Por vencer', label: 'Por vencer' },
+  { value: 'Vencida', label: 'Vencida' },
+  { value: 'Liberada', label: 'Liberada' },
+  { value: 'Ejecutada', label: 'Ejecutada' }
+];
+
 export function normalizeCatalogValue(
   value: string | null | undefined,
   options: CatalogOption[]

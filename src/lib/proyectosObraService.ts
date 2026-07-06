@@ -3,7 +3,9 @@ import {
   ProyectoObra,
   PresupuestoProyecto,
   ContratoObra,
+  ContratoGarantia,
   ProyectoDocumento,
+  ProyectoDonacion,
   ProyectoHito,
   ProyectoPermiso,
   FaseProyecto,
@@ -193,7 +195,7 @@ export async function getProyectoObraPorId(id: string | number): Promise<Proyect
     if (errProyecto || !proyecto) throw errProyecto || new Error('Proyecto no encontrado');
 
     // Consultas paralelas de tablas secundarias
-    const [resPresupuestos, resContrato, resFases, resSeguimientos, resHistorialFases, resDocumentos, resPermisos, resHitos, resColab] = await Promise.all([
+    const [resPresupuestos, resContrato, resFases, resSeguimientos, resHistorialFases, resDocumentos, resPermisos, resHitos, resDonaciones, resGarantias, resColab] = await Promise.all([
       supabase.from('presupuesto_proyecto').select('*').eq('proyecto_id', id),
       supabase.from('contrato_obra').select('*').eq('proyecto_id', id).limit(1),
       supabase.from('fase_proyecto').select('*').eq('proyecto_id', id).order('id', { ascending: true }),
@@ -202,6 +204,8 @@ export async function getProyectoObraPorId(id: string | number): Promise<Proyect
       supabase.from('proyecto_documento').select('*').eq('proyecto_id', id).order('creado_en', { ascending: false }),
       supabase.from('proyecto_permiso').select('*').eq('proyecto_id', id).order('creado_en', { ascending: false }),
       supabase.from('proyecto_hito').select('*').eq('proyecto_id', id).order('fecha_plan', { ascending: true, nullsFirst: false }).order('creado_en', { ascending: true }),
+      supabase.from('proyecto_donacion').select('*').eq('proyecto_id', id).order('creado_en', { ascending: false }),
+      supabase.from('contrato_garantia').select('*').eq('proyecto_id', id).order('fecha_vencimiento', { ascending: true, nullsFirst: false }).order('creado_en', { ascending: true }),
       proyecto.profesional_responsable 
         ? supabase.from('colaboradores_06').select('colaborador, alias').or(`identificacion.eq.${proyecto.profesional_responsable},alias.eq.${proyecto.profesional_responsable}`).maybeSingle()
         : Promise.resolve({ data: null, error: null })
@@ -218,6 +222,8 @@ export async function getProyectoObraPorId(id: string | number): Promise<Proyect
       documentos: resDocumentos.data || [],
       permisos: resPermisos.data || [],
       hitos: resHitos.data || [],
+      donaciones: resDonaciones.data || [],
+      garantias: resGarantias.data || [],
       fases: resFases.data || [],
       seguimientos: resSeguimientos.data || [],
       historial_fases: resHistorialFases.data || []
@@ -744,6 +750,91 @@ export async function eliminarHitoProyecto(hitoId: string): Promise<boolean> {
     return true;
   } catch (err) {
     console.error('Error eliminando hito del proyecto:', err);
+    throw err;
+  }
+}
+
+export async function crearDonacionProyecto(
+  donacion: Omit<ProyectoDonacion, 'id' | 'creado_en' | 'actualizado_en'>
+): Promise<ProyectoDonacion> {
+  try {
+    const payload = {
+      ...donacion,
+      tipo_donacion: donacion.tipo_donacion.trim(),
+      donante: donacion.donante.trim(),
+      descripcion: donacion.descripcion?.trim() || null,
+      responsable: donacion.responsable?.trim() || null,
+      observaciones: donacion.observaciones?.trim() || null,
+      valor_estimado: Number(donacion.valor_estimado) || 0
+    };
+
+    const { data, error } = await supabase
+      .from('proyecto_donacion')
+      .insert([payload])
+      .select()
+      .single();
+
+    if (error) throw error;
+    return data;
+  } catch (err) {
+    console.error('Error creando donacion del proyecto:', err);
+    throw err;
+  }
+}
+
+export async function eliminarDonacionProyecto(donacionId: string): Promise<boolean> {
+  try {
+    const { error } = await supabase
+      .from('proyecto_donacion')
+      .delete()
+      .eq('id', donacionId);
+
+    if (error) throw error;
+    return true;
+  } catch (err) {
+    console.error('Error eliminando donacion del proyecto:', err);
+    throw err;
+  }
+}
+
+export async function crearGarantiaContrato(
+  garantia: Omit<ContratoGarantia, 'id' | 'creado_en' | 'actualizado_en'>
+): Promise<ContratoGarantia> {
+  try {
+    const payload = {
+      ...garantia,
+      tipo_garantia: garantia.tipo_garantia.trim(),
+      entidad_emisora: garantia.entidad_emisora?.trim() || null,
+      numero_referencia: garantia.numero_referencia?.trim() || null,
+      observaciones: garantia.observaciones?.trim() || null,
+      monto: Number(garantia.monto) || 0
+    };
+
+    const { data, error } = await supabase
+      .from('contrato_garantia')
+      .insert([payload])
+      .select()
+      .single();
+
+    if (error) throw error;
+    return data;
+  } catch (err) {
+    console.error('Error creando garantia contractual:', err);
+    throw err;
+  }
+}
+
+export async function eliminarGarantiaContrato(garantiaId: string): Promise<boolean> {
+  try {
+    const { error } = await supabase
+      .from('contrato_garantia')
+      .delete()
+      .eq('id', garantiaId);
+
+    if (error) throw error;
+    return true;
+  } catch (err) {
+    console.error('Error eliminando garantia contractual:', err);
     throw err;
   }
 }
