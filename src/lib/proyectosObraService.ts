@@ -3,11 +3,29 @@ import {
   ProyectoObra,
   PresupuestoProyecto,
   ContratoObra,
+  ProyectoDocumento,
   FaseProyecto,
   SeguimientoProyecto,
   ProyectoObraConDetalles,
   FiltrosProyectoObra
 } from '../types/proyectosObra';
+
+const PROYECTOS_DOCUMENTOS_BUCKET = 'proyectos-documentos';
+
+const sanitizeStorageName = (name: string): string => {
+  const parts = name.split('.');
+  const ext = parts.length > 1 ? parts.pop() : '';
+  const base = parts.join('.') || name;
+  const cleanBase = base
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .replace(/[^a-zA-Z0-9-_]+/g, '-')
+    .replace(/-+/g, '-')
+    .replace(/^-|-$/g, '')
+    .slice(0, 80) || 'documento';
+  const cleanExt = ext?.replace(/[^a-zA-Z0-9]/g, '').toLowerCase();
+  return cleanExt ? `${cleanBase}.${cleanExt}` : cleanBase;
+};
 
 // Utilidades de formateo
 export const formatMonedaCRC = (monto: number | null | undefined): string => {
@@ -173,12 +191,13 @@ export async function getProyectoObraPorId(id: string | number): Promise<Proyect
     if (errProyecto || !proyecto) throw errProyecto || new Error('Proyecto no encontrado');
 
     // Consultas paralelas de tablas secundarias
-    const [resPresupuestos, resContrato, resFases, resSeguimientos, resHistorialFases, resColab] = await Promise.all([
+    const [resPresupuestos, resContrato, resFases, resSeguimientos, resHistorialFases, resDocumentos, resColab] = await Promise.all([
       supabase.from('presupuesto_proyecto').select('*').eq('proyecto_id', id),
       supabase.from('contrato_obra').select('*').eq('proyecto_id', id).limit(1),
       supabase.from('fase_proyecto').select('*').eq('proyecto_id', id).order('id', { ascending: true }),
       supabase.from('seguimiento_proyecto').select('*').eq('proyecto_id', id).order('fecha_corte', { ascending: false }),
       supabase.from('historial_fase_proyecto').select('*').eq('proyecto_id', id).order('creado_en', { ascending: false }),
+      supabase.from('proyecto_documento').select('*').eq('proyecto_id', id).order('creado_en', { ascending: false }),
       proyecto.profesional_responsable 
         ? supabase.from('colaboradores_06').select('colaborador, alias').or(`identificacion.eq.${proyecto.profesional_responsable},alias.eq.${proyecto.profesional_responsable}`).maybeSingle()
         : Promise.resolve({ data: null, error: null })
@@ -192,6 +211,7 @@ export async function getProyectoObraPorId(id: string | number): Promise<Proyect
       nombre_responsable: resColab.data?.alias || resColab.data?.colaborador || proyecto.profesional_responsable || 'No asignado',
       presupuesto_vigente: presupuestoVigente,
       contrato: Array.isArray(resContrato.data) ? resContrato.data[0] || null : resContrato.data || null,
+      documentos: resDocumentos.data || [],
       fases: resFases.data || [],
       seguimientos: resSeguimientos.data || [],
       historial_fases: resHistorialFases.data || []
@@ -514,6 +534,99 @@ export async function guardarContratoObra(
     return data;
   } catch (err) {
     console.error('Error guardando contrato de obra:', err);
+    throw err;
+  }
+}
+
+export async function getDocumentosProyecto(proyectoId: string | number): Promise<ProyectoDocumento[]> {
+  try {
+    const { data, error } = await supabase
+      .from('proyecto_documento')
+      .select('*')
+      .eq('proyecto_id', proyectoId)
+      .order('creado_en', { ascending: false });
+
+    if (error) throw error;
+    return data || [];
+  } catch (err) {
+    console.error('Error obteniendo documentos del proyecto:', err);
+    throw err;
+  }
+}
+
+export async function crearUrlDocumentoProyecto(rutaStorage: string): Promise<string> {
+  const { data, error } = await supabase.storage
+    .from(PROYECTOS_DOCUMENTOS_BUCKET)
+    .createSignedUrl(rutaStorage, 60 * 10);
+
+  if (error || !data?.signedUrl) throw error || new Error('No se pudo generar URL del documento');
+  return data.signedUrl;
+}
+
+export async function subirDocumentoProyecto(
+  proyectoId: string | number,
+  file: File,
+  tipoDocumento: string,
+  descripcion: string,
+  subidoPor: string
+): Promise<ProyectoDocumento> {
+  try {
+    const cleanName = sanitizeStorageName(file.name);
+    const filePath = `proyectos/${proyectoId}/${Date.now()}-${cleanName}`;
+
+    const { error: uploadError } = await supabase.storage
+      .from(PROYECTOS_DOCUMENTOS_BUCKET)
+      .upload(filePath, file, {
+        contentType: file.type || undefined,
+        upsert: false
+      });
+
+    if (uploadError) throw uploadError;
+
+    const { data, error } = await supabase
+      .from('proyecto_documento')
+      .insert([{
+        proyecto_id: proyectoId,
+        tipo_documento: tipoDocumento,
+        nombre_archivo: file.name,
+        ruta_storage: filePath,
+        mime_type: file.type || null,
+        tamano_bytes: file.size,
+        descripcion: descripcion.trim() || null,
+        subido_por: subidoPor
+      }])
+      .select()
+      .single();
+
+    if (error) {
+      await supabase.storage.from(PROYECTOS_DOCUMENTOS_BUCKET).remove([filePath]);
+      throw error;
+    }
+
+    return data;
+  } catch (err) {
+    console.error('Error subiendo documento del proyecto:', err);
+    throw err;
+  }
+}
+
+export async function eliminarDocumentoProyecto(documento: ProyectoDocumento) {
+  try {
+    const { error: storageError } = await supabase.storage
+      .from(PROYECTOS_DOCUMENTOS_BUCKET)
+      .remove([documento.ruta_storage]);
+
+    if (storageError) throw storageError;
+
+    const { error } = await supabase
+      .from('proyecto_documento')
+      .delete()
+      .eq('id', documento.id);
+
+    if (error) throw error;
+    return true;
+  } catch (err) {
+    console.error('Error eliminando documento del proyecto:', err);
     throw err;
   }
 }

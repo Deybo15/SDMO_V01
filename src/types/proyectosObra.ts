@@ -82,6 +82,20 @@ export interface ContratoObra {
   actualizado_en?: string | null;
 }
 
+export interface ProyectoDocumento {
+  id: string;
+  proyecto_id: string | number;
+  tipo_documento: string;
+  nombre_archivo: string;
+  ruta_storage: string;
+  mime_type?: string | null;
+  tamano_bytes?: number | null;
+  descripcion?: string | null;
+  subido_por?: string | null;
+  creado_en?: string | null;
+  actualizado_en?: string | null;
+}
+
 export interface FaseProyecto {
   id: string | number;
   proyecto_id: string | number;
@@ -125,6 +139,7 @@ export interface ProyectoObraConDetalles extends ProyectoObra {
   nombre_responsable?: string;
   presupuesto_vigente?: PresupuestoProyecto | null;
   contrato?: ContratoObra | null;
+  documentos?: ProyectoDocumento[];
   fases?: FaseProyecto[];
   seguimientos?: SeguimientoProyecto[];
   historial_fases?: HistorialFaseProyecto[];

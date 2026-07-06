@@ -119,6 +119,24 @@ export const FASE_PROYECTO_OPTIONS: CatalogOption[] = [
   }
 ];
 
+export const TIPO_DOCUMENTO_PROYECTO_OPTIONS: CatalogOption[] = [
+  { value: 'Solicitud inicial', label: 'Solicitud inicial' },
+  { value: 'Fotografías iniciales', label: 'Fotografías iniciales', aliases: ['Fotografias iniciales'] },
+  { value: 'Fotografías de avance', label: 'Fotografías de avance', aliases: ['Fotografias de avance'] },
+  { value: 'Fotografías finales', label: 'Fotografías finales', aliases: ['Fotografias finales'] },
+  { value: 'Planos', label: 'Planos' },
+  { value: 'Presupuesto', label: 'Presupuesto' },
+  { value: 'Cronograma', label: 'Cronograma' },
+  { value: 'Decisión inicial', label: 'Decisión inicial', aliases: ['Decision inicial'] },
+  { value: 'Cartel / pliego', label: 'Cartel / pliego' },
+  { value: 'Orden de compra', label: 'Orden de compra' },
+  { value: 'Orden de inicio', label: 'Orden de inicio' },
+  { value: 'Informe de inspección', label: 'Informe de inspección', aliases: ['Informe de inspeccion'] },
+  { value: 'Acta de recepción', label: 'Acta de recepción', aliases: ['Acta de recepcion'] },
+  { value: 'Cierre del proyecto', label: 'Cierre del proyecto' },
+  { value: 'Otro', label: 'Otro' }
+];
+
 export function normalizeCatalogValue(
   value: string | null | undefined,
   options: CatalogOption[]
