@@ -199,6 +199,27 @@ export interface HistorialFaseProyecto {
   creado_en?: string | null;
 }
 
+export interface HistorialEstadoProyecto {
+  id?: string;
+  proyecto_id: string | number;
+  estado_anterior?: string | null;
+  estado_nuevo: string;
+  motivo?: string | null;
+  modificado_por?: string | null;
+  creado_en?: string | null;
+}
+
+export interface HistorialProyecto {
+  id?: string;
+  proyecto_id: string | number;
+  entidad: string;
+  campo_modificado: string;
+  valor_anterior?: string | null;
+  valor_nuevo?: string | null;
+  modificado_por?: string | null;
+  creado_en?: string | null;
+}
+
 // Interfaces compuestas para vistas UI
 export interface ProyectoObraConDetalles extends ProyectoObra {
   nombre_responsable?: string;
@@ -212,6 +233,8 @@ export interface ProyectoObraConDetalles extends ProyectoObra {
   fases?: FaseProyecto[];
   seguimientos?: SeguimientoProyecto[];
   historial_fases?: HistorialFaseProyecto[];
+  historial_estados?: HistorialEstadoProyecto[];
+  historial_proyecto?: HistorialProyecto[];
 }
 
 export interface FiltrosProyectoObra {

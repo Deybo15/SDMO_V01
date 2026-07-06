@@ -1598,6 +1598,67 @@ export default function ProyectoObraDetalle() {
         )}
       </div>
 
+      {tabActiva === 'seguimiento' && proyecto && (
+        <div className="bg-[#18181b] p-6 rounded-2xl border border-[#27272a] space-y-4">
+          <h4 className="text-base font-bold text-white flex items-center gap-2">
+            <History className="w-4 h-4 text-[#0071E3]" />
+            <span>Auditoria general del proyecto</span>
+          </h4>
+
+          {proyecto.historial_estados && proyecto.historial_estados.length > 0 && (
+            <div className="space-y-3">
+              <p className="text-xs font-semibold uppercase text-[#71717a]">Cambios de estado</p>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                {proyecto.historial_estados.slice(0, 4).map((historial) => (
+                  <div key={historial.id || `${historial.estado_nuevo}-${historial.creado_en}`} className="bg-[#09090b] border border-[#27272a] rounded-xl p-4 space-y-2">
+                    <div className="flex items-center justify-between gap-3">
+                      <span className="text-xs text-[#71717a]">{formatFechaCR(historial.creado_en)}</span>
+                      <span className="text-xs font-semibold text-[#a1a1aa]">{historial.modificado_por || 'Sistema'}</span>
+                    </div>
+                    <p className="text-sm text-white">
+                      <span className="text-[#71717a]">{historial.estado_anterior || 'Sin definir'}</span>
+                      <span className="mx-2 text-[#0071E3]">→</span>
+                      <strong>{historial.estado_nuevo}</strong>
+                    </p>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {proyecto.historial_proyecto && proyecto.historial_proyecto.length > 0 ? (
+            <div className="overflow-x-auto rounded-xl border border-[#27272a] bg-[#09090b]">
+              <table className="w-full text-left text-xs">
+                <thead className="bg-[#18181b] text-[#71717a] uppercase font-semibold border-b border-[#27272a]">
+                  <tr>
+                    <th className="px-4 py-3">Campo</th>
+                    <th className="px-4 py-3">Valor anterior</th>
+                    <th className="px-4 py-3">Valor nuevo</th>
+                    <th className="px-4 py-3">Fecha</th>
+                    <th className="px-4 py-3">Usuario</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-[#27272a]/50 text-[#f4f4f5]">
+                  {proyecto.historial_proyecto.slice(0, 12).map((historial) => (
+                    <tr key={historial.id || `${historial.campo_modificado}-${historial.creado_en}`} className="hover:bg-[#18181b]/50 transition-colors">
+                      <td className="px-4 py-3 font-mono text-[#a1a1aa]">{historial.campo_modificado}</td>
+                      <td className="px-4 py-3 text-rose-300">{historial.valor_anterior || '-'}</td>
+                      <td className="px-4 py-3 text-emerald-300">{historial.valor_nuevo || '-'}</td>
+                      <td className="px-4 py-3 text-[#71717a] font-mono">{formatFechaCR(historial.creado_en)}</td>
+                      <td className="px-4 py-3 text-[#a1a1aa]">{historial.modificado_por || 'Sistema'}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          ) : (
+            <p className="text-xs text-[#71717a] py-4 text-center bg-[#09090b] rounded-xl border border-[#27272a]">
+              No hay cambios generales auditados para este proyecto.
+            </p>
+          )}
+        </div>
+      )}
+
       {/* Modal para Nuevo Seguimiento (Append-Only) */}
       {mostrarModalSeguimiento && (
         <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4">

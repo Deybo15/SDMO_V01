@@ -16,6 +16,39 @@ import {
 
 const PROYECTOS_DOCUMENTOS_BUCKET = 'proyectos-documentos';
 
+const AUDITED_PROJECT_FIELDS: Array<keyof ProyectoObra> = [
+  'nombre_proyecto',
+  'codigo_meta',
+  'descripcion_general',
+  'tipo_proyecto',
+  'prioridad',
+  'justificacion',
+  'dependencia',
+  'profesional_responsable',
+  'tipo_contrato',
+  'tipo_ejecucion',
+  'poa_origen',
+  'origen_presupuesto',
+  'linea_estrategica',
+  'programa',
+  'canton',
+  'distrito',
+  'direccion_exacta',
+  'barrio_comunidad',
+  'estado',
+  'fecha_solicitud',
+  'requiere_contratacion',
+  'anio',
+  'observaciones_meta_poa',
+  'activo'
+];
+
+const toAuditValue = (value: unknown): string => {
+  if (value === null || value === undefined || value === '') return 'Sin definir';
+  if (typeof value === 'boolean') return value ? 'Si' : 'No';
+  return String(value);
+};
+
 const sanitizeStorageName = (name: string): string => {
   const parts = name.split('.');
   const ext = parts.length > 1 ? parts.pop() : '';
@@ -195,12 +228,14 @@ export async function getProyectoObraPorId(id: string | number): Promise<Proyect
     if (errProyecto || !proyecto) throw errProyecto || new Error('Proyecto no encontrado');
 
     // Consultas paralelas de tablas secundarias
-    const [resPresupuestos, resContrato, resFases, resSeguimientos, resHistorialFases, resDocumentos, resPermisos, resHitos, resDonaciones, resGarantias, resColab] = await Promise.all([
+    const [resPresupuestos, resContrato, resFases, resSeguimientos, resHistorialFases, resHistorialEstados, resHistorialProyecto, resDocumentos, resPermisos, resHitos, resDonaciones, resGarantias, resColab] = await Promise.all([
       supabase.from('presupuesto_proyecto').select('*').eq('proyecto_id', id),
       supabase.from('contrato_obra').select('*').eq('proyecto_id', id).limit(1),
       supabase.from('fase_proyecto').select('*').eq('proyecto_id', id).order('id', { ascending: true }),
       supabase.from('seguimiento_proyecto').select('*').eq('proyecto_id', id).order('fecha_corte', { ascending: false }),
       supabase.from('historial_fase_proyecto').select('*').eq('proyecto_id', id).order('creado_en', { ascending: false }),
+      supabase.from('historial_estado_proyecto').select('*').eq('proyecto_id', id).order('creado_en', { ascending: false }),
+      supabase.from('historial_proyecto').select('*').eq('proyecto_id', id).order('creado_en', { ascending: false }).limit(50),
       supabase.from('proyecto_documento').select('*').eq('proyecto_id', id).order('creado_en', { ascending: false }),
       supabase.from('proyecto_permiso').select('*').eq('proyecto_id', id).order('creado_en', { ascending: false }),
       supabase.from('proyecto_hito').select('*').eq('proyecto_id', id).order('fecha_plan', { ascending: true, nullsFirst: false }).order('creado_en', { ascending: true }),
@@ -226,7 +261,9 @@ export async function getProyectoObraPorId(id: string | number): Promise<Proyect
       garantias: resGarantias.data || [],
       fases: resFases.data || [],
       seguimientos: resSeguimientos.data || [],
-      historial_fases: resHistorialFases.data || []
+      historial_fases: resHistorialFases.data || [],
+      historial_estados: resHistorialEstados.data || [],
+      historial_proyecto: resHistorialProyecto.data || []
     };
   } catch (err) {
     console.error('Error cargando detalle del proyecto:', err);
@@ -425,6 +462,14 @@ export async function crearProyectoObra(proyectoData: CrearProyectoObraPayload, 
  */
 export async function actualizarProyectoObra(id: string | number, proyectoData: Partial<ProyectoObra>) {
   try {
+    const { data: proyectoActual, error: errActual } = await supabase
+      .from('proyecto_obra')
+      .select(AUDITED_PROJECT_FIELDS.join(','))
+      .eq('id', id)
+      .single();
+
+    if (errActual) throw errActual;
+
     const { data, error } = await supabase
       .from('proyecto_obra')
       .update(proyectoData)
@@ -489,6 +534,56 @@ export async function actualizarCodigoPresupuestario(
       .single();
 
     if (error) throw error;
+
+    const { data: { user } } = await supabase.auth.getUser();
+    const modificadoPor = user?.email || 'Usuario SDMO';
+    const cambios = AUDITED_PROJECT_FIELDS
+      .filter((field) => Object.prototype.hasOwnProperty.call(proyectoData, field))
+      .map((field) => {
+        const anterior = (proyectoActual as any)?.[field];
+        const nuevo = (data as any)?.[field];
+        return {
+          field,
+          anterior,
+          nuevo
+        };
+      })
+      .filter(({ anterior, nuevo }) => toAuditValue(anterior) !== toAuditValue(nuevo));
+
+    if (cambios.length > 0) {
+      const { error: errHistorial } = await supabase
+        .from('historial_proyecto')
+        .insert(cambios.map(({ field, anterior, nuevo }) => ({
+          proyecto_id: id,
+          entidad: 'proyecto_obra',
+          campo_modificado: field,
+          valor_anterior: toAuditValue(anterior),
+          valor_nuevo: toAuditValue(nuevo),
+          modificado_por: modificadoPor
+        })));
+
+      if (errHistorial) {
+        console.error('Error registrando historial de proyecto:', errHistorial);
+      }
+
+      const cambioEstado = cambios.find(({ field }) => field === 'estado');
+      if (cambioEstado) {
+        const { error: errEstado } = await supabase
+          .from('historial_estado_proyecto')
+          .insert([{
+            proyecto_id: id,
+            estado_anterior: toAuditValue(cambioEstado.anterior),
+            estado_nuevo: toAuditValue(cambioEstado.nuevo),
+            motivo: 'Actualizacion desde ficha editable',
+            modificado_por: modificadoPor
+          }]);
+
+        if (errEstado) {
+          console.error('Error registrando historial de estado:', errEstado);
+        }
+      }
+    }
+
     return data;
   } catch (err) {
     console.error('Error actualizando codigo presupuestario:', err);
