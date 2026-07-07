@@ -13,7 +13,7 @@ import {
 } from '../../lib/proyectosObraService';
 import {
   ArrowLeft, RefreshCw, AlertTriangle, TrendingUp, DollarSign, Briefcase,
-  Clock, Activity, Filter, Layers
+  Clock, Activity, Filter, Layers, FileText, Flag, ShieldCheck, Gift
 } from 'lucide-react';
 import {
   FASE_PROYECTO_OPTIONS,
@@ -28,6 +28,13 @@ export default function ProyectosObraDashboard() {
 
   // Filtros interactivos
   const [filtroAnio, setFiltroAnio] = useState<string>('TODOS');
+
+  const today = useMemo(() => new Date().toISOString().split('T')[0], []);
+  const next30Days = useMemo(() => {
+    const date = new Date();
+    date.setDate(date.getDate() + 30);
+    return date.toISOString().split('T')[0];
+  }, []);
 
 
   useEffect(() => {
@@ -238,6 +245,133 @@ export default function ProyectosObraDashboard() {
     });
   }, [proyectosFiltrados, rawStats]);
 
+  const indicadoresGestion = useMemo(() => {
+    const ids = new Set(proyectosFiltrados.map((p: any) => p.id));
+    const permisos = (rawStats?.permisos || []).filter((p: any) => ids.has(p.proyecto_id));
+    const hitos = (rawStats?.hitos || []).filter((h: any) => ids.has(h.proyecto_id));
+    const garantias = (rawStats?.garantias || []).filter((g: any) => ids.has(g.proyecto_id));
+    const documentos = (rawStats?.documentos || []).filter((d: any) => ids.has(d.proyecto_id));
+    const donaciones = (rawStats?.donaciones || []).filter((d: any) => ids.has(d.proyecto_id));
+
+    const permisosPendientes = permisos.filter((p: any) => {
+      const estado = String(p.estado || '').toLowerCase();
+      return estado.includes('pendiente') || estado.includes('tramite') || estado.includes('trámite');
+    }).length;
+
+    const permisosVencidos = permisos.filter((p: any) => {
+      const estado = String(p.estado || '').toLowerCase();
+      return estado.includes('vencido') || (!!p.fecha_vencimiento && p.fecha_vencimiento < today);
+    }).length;
+
+    const hitosAtrasados = hitos.filter((h: any) => {
+      const estado = String(h.estado || '').toLowerCase();
+      return !estado.includes('completado') && !!h.fecha_plan && h.fecha_plan < today;
+    }).length;
+
+    const garantiasPorVencer = garantias.filter((g: any) => {
+      const estado = String(g.estado || '').toLowerCase();
+      return !estado.includes('liberada') && !estado.includes('ejecutada') && !!g.fecha_vencimiento && g.fecha_vencimiento >= today && g.fecha_vencimiento <= next30Days;
+    }).length;
+
+    const garantiasVencidas = garantias.filter((g: any) => {
+      const estado = String(g.estado || '').toLowerCase();
+      return estado.includes('vencida') || (!!g.fecha_vencimiento && g.fecha_vencimiento < today);
+    }).length;
+
+    const valorDonaciones = donaciones.reduce((total: number, d: any) => total + (Number(d.valor_estimado) || 0), 0);
+
+    return {
+      permisosPendientes,
+      permisosVencidos,
+      hitosAtrasados,
+      garantiasPorVencer,
+      garantiasVencidas,
+      documentosTotal: documentos.length,
+      valorDonaciones
+    };
+  }, [proyectosFiltrados, rawStats, next30Days, today]);
+
+  const alertasOperativas = useMemo(() => {
+    const proyectosMap = new Map(proyectosFiltrados.map((p: any) => [p.id, p]));
+    const alertas: Array<{ id: string; proyectoId: string | number; proyecto: string; tipo: string; detalle: string; fecha: string; severidad: 'alta' | 'media' }> = [];
+
+    (rawStats?.permisos || []).forEach((permiso: any) => {
+      const proyecto = proyectosMap.get(permiso.proyecto_id);
+      if (!proyecto) return;
+      const estado = String(permiso.estado || '').toLowerCase();
+      if (estado.includes('vencido') || (!!permiso.fecha_vencimiento && permiso.fecha_vencimiento < today)) {
+        alertas.push({
+          id: `permiso-${permiso.id}`,
+          proyectoId: proyecto.id,
+          proyecto: proyecto.nombre_proyecto,
+          tipo: 'Permiso vencido',
+          detalle: `${permiso.tipo_permiso || 'Permiso'} - ${permiso.entidad_emisora || 'Entidad no indicada'}`,
+          fecha: formatFechaCR(permiso.fecha_vencimiento),
+          severidad: 'alta'
+        });
+      } else if (estado.includes('pendiente') || estado.includes('tramite') || estado.includes('trámite')) {
+        alertas.push({
+          id: `permiso-${permiso.id}`,
+          proyectoId: proyecto.id,
+          proyecto: proyecto.nombre_proyecto,
+          tipo: 'Permiso pendiente',
+          detalle: `${permiso.tipo_permiso || 'Permiso'} - ${permiso.entidad_emisora || 'Entidad no indicada'}`,
+          fecha: formatFechaCR(permiso.fecha_solicitud || permiso.creado_en),
+          severidad: 'media'
+        });
+      }
+    });
+
+    (rawStats?.hitos || []).forEach((hito: any) => {
+      const proyecto = proyectosMap.get(hito.proyecto_id);
+      if (!proyecto || !hito.fecha_plan || hito.fecha_plan >= today) return;
+      const estado = String(hito.estado || '').toLowerCase();
+      if (estado.includes('completado')) return;
+      alertas.push({
+        id: `hito-${hito.id}`,
+        proyectoId: proyecto.id,
+        proyecto: proyecto.nombre_proyecto,
+        tipo: 'Hito atrasado',
+        detalle: hito.nombre || 'Hito sin nombre',
+        fecha: formatFechaCR(hito.fecha_plan),
+        severidad: 'alta'
+      });
+    });
+
+    (rawStats?.garantias || []).forEach((garantia: any) => {
+      const proyecto = proyectosMap.get(garantia.proyecto_id);
+      if (!proyecto || !garantia.fecha_vencimiento) return;
+      const estado = String(garantia.estado || '').toLowerCase();
+      if (estado.includes('liberada') || estado.includes('ejecutada')) return;
+      if (garantia.fecha_vencimiento < today || estado.includes('vencida')) {
+        alertas.push({
+          id: `garantia-${garantia.id}`,
+          proyectoId: proyecto.id,
+          proyecto: proyecto.nombre_proyecto,
+          tipo: 'Garantia vencida',
+          detalle: `${garantia.tipo_garantia || 'Garantia'} - ${garantia.entidad_emisora || 'Entidad no indicada'}`,
+          fecha: formatFechaCR(garantia.fecha_vencimiento),
+          severidad: 'alta'
+        });
+      } else if (garantia.fecha_vencimiento <= next30Days) {
+        alertas.push({
+          id: `garantia-${garantia.id}`,
+          proyectoId: proyecto.id,
+          proyecto: proyecto.nombre_proyecto,
+          tipo: 'Garantia por vencer',
+          detalle: `${garantia.tipo_garantia || 'Garantia'} - ${garantia.entidad_emisora || 'Entidad no indicada'}`,
+          fecha: formatFechaCR(garantia.fecha_vencimiento),
+          severidad: 'media'
+        });
+      }
+    });
+
+    return alertas.sort((a, b) => {
+      const prioridad = a.severidad === b.severidad ? 0 : a.severidad === 'alta' ? -1 : 1;
+      return prioridad || a.fecha.localeCompare(b.fecha);
+    }).slice(0, 12);
+  }, [proyectosFiltrados, rawStats, next30Days, today]);
+
   if (loading) {
     return (
       <div className="min-h-screen bg-[#09090b] flex items-center justify-center text-white">
@@ -402,6 +536,67 @@ export default function ProyectosObraDashboard() {
         </div>
       </div>
 
+      <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-5 gap-5">
+        <div className="bg-[#18181b] p-5 rounded-2xl border border-[#27272a] shadow-xl space-y-2">
+          <div className="flex justify-between items-center text-[#a1a1aa]">
+            <span className="text-xs font-semibold uppercase tracking-wider">Permisos</span>
+            <ShieldCheck className="w-5 h-5 text-[#0071E3]" />
+          </div>
+          <div className="flex items-baseline gap-2">
+            <span className="text-2xl font-black text-white font-mono">{indicadoresGestion.permisosPendientes}</span>
+            <span className="text-xs text-[#a1a1aa]">pendientes</span>
+          </div>
+          <p className="text-xs text-rose-300 font-semibold">{indicadoresGestion.permisosVencidos} vencidos</p>
+        </div>
+
+        <div className="bg-[#18181b] p-5 rounded-2xl border border-[#27272a] shadow-xl space-y-2">
+          <div className="flex justify-between items-center text-[#a1a1aa]">
+            <span className="text-xs font-semibold uppercase tracking-wider">Hitos</span>
+            <Flag className="w-5 h-5 text-amber-400" />
+          </div>
+          <div className="flex items-baseline gap-2">
+            <span className="text-2xl font-black text-amber-300 font-mono">{indicadoresGestion.hitosAtrasados}</span>
+            <span className="text-xs text-[#a1a1aa]">atrasados</span>
+          </div>
+          <p className="text-xs text-[#71717a]">Segun fecha plan</p>
+        </div>
+
+        <div className="bg-[#18181b] p-5 rounded-2xl border border-[#27272a] shadow-xl space-y-2">
+          <div className="flex justify-between items-center text-[#a1a1aa]">
+            <span className="text-xs font-semibold uppercase tracking-wider">Garantias</span>
+            <ShieldCheck className="w-5 h-5 text-emerald-400" />
+          </div>
+          <div className="flex items-baseline gap-2">
+            <span className="text-2xl font-black text-white font-mono">{indicadoresGestion.garantiasPorVencer}</span>
+            <span className="text-xs text-[#a1a1aa]">por vencer</span>
+          </div>
+          <p className="text-xs text-rose-300 font-semibold">{indicadoresGestion.garantiasVencidas} vencidas</p>
+        </div>
+
+        <div className="bg-[#18181b] p-5 rounded-2xl border border-[#27272a] shadow-xl space-y-2">
+          <div className="flex justify-between items-center text-[#a1a1aa]">
+            <span className="text-xs font-semibold uppercase tracking-wider">Documentos</span>
+            <FileText className="w-5 h-5 text-blue-400" />
+          </div>
+          <div className="flex items-baseline gap-2">
+            <span className="text-2xl font-black text-white font-mono">{indicadoresGestion.documentosTotal}</span>
+            <span className="text-xs text-[#a1a1aa]">adjuntos</span>
+          </div>
+          <p className="text-xs text-[#71717a]">En proyectos filtrados</p>
+        </div>
+
+        <div className="bg-[#18181b] p-5 rounded-2xl border border-[#27272a] shadow-xl space-y-2">
+          <div className="flex justify-between items-center text-[#a1a1aa]">
+            <span className="text-xs font-semibold uppercase tracking-wider">Donaciones</span>
+            <Gift className="w-5 h-5 text-emerald-400" />
+          </div>
+          <div className="flex items-baseline gap-2">
+            <span className="text-xl font-black text-emerald-300 font-mono">{formatMonedaCRC(indicadoresGestion.valorDonaciones)}</span>
+          </div>
+          <p className="text-xs text-[#71717a]">Valor estimado</p>
+        </div>
+      </div>
+
       {/* FILA 2 — GRÁFICOS PRINCIPALES DE CARGA Y PRESUPUESTO POR PROFESIONAL (2 COLUMNAS) */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* Gráfico 1: Carga por Profesional (Barras Horizontales) */}
@@ -518,6 +713,63 @@ export default function ProyectosObraDashboard() {
             </BarChart>
           </ResponsiveContainer>
         </div>
+      </div>
+
+      <div className="bg-[#18181b] p-6 rounded-2xl border border-[#27272a] shadow-xl space-y-4">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-[#27272a] pb-4">
+          <div>
+            <h3 className="text-lg font-bold text-white flex items-center gap-2">
+              <Activity className="w-5 h-5 text-amber-400" />
+              <span>Alertas Operativas</span>
+            </h3>
+            <p className="text-xs text-[#a1a1aa]">
+              Permisos pendientes o vencidos, hitos atrasados y garantias por vencer.
+            </p>
+          </div>
+        </div>
+
+        {alertasOperativas.length > 0 ? (
+          <div className="overflow-x-auto rounded-xl border border-[#27272a] bg-[#09090b]">
+            <table className="w-full text-left text-xs">
+              <thead className="bg-[#18181b] text-[#71717a] uppercase font-semibold border-b border-[#27272a]">
+                <tr>
+                  <th className="px-4 py-3">Severidad</th>
+                  <th className="px-4 py-3">Tipo</th>
+                  <th className="px-4 py-3">Proyecto</th>
+                  <th className="px-4 py-3">Detalle</th>
+                  <th className="px-4 py-3">Fecha</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-[#27272a]/50 text-[#f4f4f5]">
+                {alertasOperativas.map((alerta) => (
+                  <tr
+                    key={alerta.id}
+                    onClick={() => navigate(`/proyectos-obra/${alerta.proyectoId}`)}
+                    className="hover:bg-[#18181b]/80 transition-colors cursor-pointer group"
+                  >
+                    <td className="px-4 py-3.5 whitespace-nowrap">
+                      <span className={`px-2.5 py-1 rounded-full text-[11px] font-bold border ${
+                        alerta.severidad === 'alta'
+                          ? 'bg-rose-500/10 text-rose-300 border-rose-500/20'
+                          : 'bg-amber-500/10 text-amber-300 border-amber-500/20'
+                      }`}>
+                        {alerta.severidad === 'alta' ? 'Alta' : 'Media'}
+                      </span>
+                    </td>
+                    <td className="px-4 py-3.5 font-semibold text-white whitespace-nowrap">{alerta.tipo}</td>
+                    <td className="px-4 py-3.5 font-bold text-white group-hover:text-[#0071E3] transition-colors max-w-xs truncate">{alerta.proyecto}</td>
+                    <td className="px-4 py-3.5 text-[#a1a1aa] max-w-md truncate" title={alerta.detalle}>{alerta.detalle}</td>
+                    <td className="px-4 py-3.5 text-[#71717a] font-mono whitespace-nowrap">{alerta.fecha}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        ) : (
+          <p className="text-xs text-[#71717a] py-8 text-center bg-[#09090b] rounded-xl border border-[#27272a]">
+            No hay alertas operativas para el filtro actual.
+          </p>
+        )}
       </div>
 
       {/* FILA 4 — TABLA DE ALERTAS (PROYECTOS QUE REQUIEREN ATENCIÓN) */}

@@ -352,11 +352,27 @@ export async function registrarSeguimiento(seguimiento: Omit<SeguimientoProyecto
  */
 export async function getDashboardStats() {
   try {
-    const [resProyectos, resPresupuestos, resFases, resSeguimientos, resColabs] = await Promise.all([
+    const [
+      resProyectos,
+      resPresupuestos,
+      resFases,
+      resSeguimientos,
+      resDocumentos,
+      resPermisos,
+      resHitos,
+      resDonaciones,
+      resGarantias,
+      resColabs
+    ] = await Promise.all([
       supabase.from('proyecto_obra').select('*'),
       supabase.from('presupuesto_proyecto').select('*').eq('es_vigente', true),
       supabase.from('fase_proyecto').select('*'),
       supabase.from('seguimiento_proyecto').select('*').order('fecha_corte', { ascending: false }),
+      supabase.from('proyecto_documento').select('id, proyecto_id, tipo_documento, creado_en'),
+      supabase.from('proyecto_permiso').select('*'),
+      supabase.from('proyecto_hito').select('*'),
+      supabase.from('proyecto_donacion').select('*'),
+      supabase.from('contrato_garantia').select('*'),
       supabase.from('colaboradores_06').select('identificacion, colaborador, alias')
     ]);
 
@@ -364,6 +380,11 @@ export async function getDashboardStats() {
     const presupuestos = resPresupuestos.data || [];
     const fases = resFases.data || [];
     const seguimientos = resSeguimientos.data || [];
+    const documentos = resDocumentos.data || [];
+    const permisos = resPermisos.data || [];
+    const hitos = resHitos.data || [];
+    const donaciones = resDonaciones.data || [];
+    const garantias = resGarantias.data || [];
     const colaboradores = resColabs.data || [];
 
     // Mapa de colaboradores (identificacion o alias -> alias/nombre)
@@ -394,16 +415,56 @@ export async function getDashboardStats() {
       fasesMap.get(f.proyecto_id)!.push(f);
     });
 
+    const documentosMap = new Map<string | number, any[]>();
+    documentos.forEach((d: any) => {
+      if (!documentosMap.has(d.proyecto_id)) documentosMap.set(d.proyecto_id, []);
+      documentosMap.get(d.proyecto_id)!.push(d);
+    });
+
+    const permisosMap = new Map<string | number, any[]>();
+    permisos.forEach((p: any) => {
+      if (!permisosMap.has(p.proyecto_id)) permisosMap.set(p.proyecto_id, []);
+      permisosMap.get(p.proyecto_id)!.push(p);
+    });
+
+    const hitosMap = new Map<string | number, any[]>();
+    hitos.forEach((h: any) => {
+      if (!hitosMap.has(h.proyecto_id)) hitosMap.set(h.proyecto_id, []);
+      hitosMap.get(h.proyecto_id)!.push(h);
+    });
+
+    const donacionesMap = new Map<string | number, any[]>();
+    donaciones.forEach((d: any) => {
+      if (!donacionesMap.has(d.proyecto_id)) donacionesMap.set(d.proyecto_id, []);
+      donacionesMap.get(d.proyecto_id)!.push(d);
+    });
+
+    const garantiasMap = new Map<string | number, any[]>();
+    garantias.forEach((g: any) => {
+      if (!garantiasMap.has(g.proyecto_id)) garantiasMap.set(g.proyecto_id, []);
+      garantiasMap.get(g.proyecto_id)!.push(g);
+    });
+
     return {
       proyectos,
       presupuestos,
       fases,
       seguimientos,
+      documentos,
+      permisos,
+      hitos,
+      donaciones,
+      garantias,
       colaboradores,
       colabMap,
       ultimosSeguimientosMap,
       presupuestosMap,
-      fasesMap
+      fasesMap,
+      documentosMap,
+      permisosMap,
+      hitosMap,
+      donacionesMap,
+      garantiasMap
     };
   } catch (err) {
     console.error('Error obteniendo métricas del dashboard:', err);
