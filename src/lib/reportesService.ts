@@ -5,10 +5,18 @@ import { ProyectoObraConDetalles } from '../types/proyectosObra';
 import { formatMonedaCRC, formatFechaCR, formatProgressPercent, normalizeProgressFraction } from './proyectosObraService';
 import { supabase } from './supabase';
 import {
+  ESTADO_DONACION_PROYECTO_OPTIONS,
+  ESTADO_GARANTIA_CONTRATO_OPTIONS,
+  ESTADO_HITO_PROYECTO_OPTIONS,
+  ESTADO_PERMISO_PROYECTO_OPTIONS,
   FASE_PROYECTO_OPTIONS,
   getCatalogLabel,
   getFaseProyectoOrder,
-  normalizeCatalogValue
+  normalizeCatalogValue,
+  TIPO_DOCUMENTO_PROYECTO_OPTIONS,
+  TIPO_DONACION_PROYECTO_OPTIONS,
+  TIPO_GARANTIA_CONTRATO_OPTIONS,
+  TIPO_PERMISO_PROYECTO_OPTIONS
 } from './proyectosObraCatalogos';
 
 /**
@@ -19,6 +27,89 @@ export const formatMonedaPDF = (monto: number | null | undefined): string => {
   const dects = Math.round(monto);
   const numStr = dects.toLocaleString('es-CR').replace(/₡/g, '').trim();
   return 'CRC ' + numStr;
+};
+
+const normalizarTexto = (value: string | null | undefined): string => (value || '').trim().toLowerCase();
+
+const parseDateOnly = (value: string | null | undefined): Date | null => {
+  if (!value) return null;
+  const [year, month, day] = value.split('T')[0].split('-').map(Number);
+  if (!year || !month || !day) return null;
+  return new Date(year, month - 1, day);
+};
+
+const isPastDate = (value: string | null | undefined): boolean => {
+  const date = parseDateOnly(value);
+  if (!date) return false;
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  return date < today;
+};
+
+const isWithinNextDays = (value: string | null | undefined, days: number): boolean => {
+  const date = parseDateOnly(value);
+  if (!date) return false;
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  const limit = new Date(today);
+  limit.setDate(limit.getDate() + days);
+  return date >= today && date <= limit;
+};
+
+const isPermisoPendiente = (estado: string | null | undefined): boolean => {
+  const normalized = normalizarTexto(estado);
+  return normalized === 'pendiente' || normalized === 'en tramite' || normalized === 'en trámite';
+};
+
+const isPermisoVencido = (permiso: { estado?: string | null; fecha_vencimiento?: string | null }): boolean => {
+  return normalizarTexto(permiso.estado) === 'vencido' || isPastDate(permiso.fecha_vencimiento);
+};
+
+const isHitoAtrasado = (hito: { estado?: string | null; fecha_plan?: string | null }): boolean => {
+  return normalizarTexto(hito.estado) === 'atrasado' || (normalizarTexto(hito.estado) !== 'completado' && isPastDate(hito.fecha_plan));
+};
+
+const isGarantiaVencida = (garantia: { estado?: string | null; fecha_vencimiento?: string | null }): boolean => {
+  return normalizarTexto(garantia.estado) === 'vencida' || isPastDate(garantia.fecha_vencimiento);
+};
+
+const isGarantiaPorVencer = (garantia: { estado?: string | null; fecha_vencimiento?: string | null }): boolean => {
+  return normalizarTexto(garantia.estado) === 'por vencer' || isWithinNextDays(garantia.fecha_vencimiento, 30);
+};
+
+const getProyectoAlertas = (proyecto: ProyectoObraConDetalles) => {
+  const alertas: Array<[string, string, string, string]> = [];
+
+  (proyecto.permisos || []).forEach(permiso => {
+    const tipo = getCatalogLabel(permiso.tipo_permiso, TIPO_PERMISO_PROYECTO_OPTIONS);
+    if (isPermisoVencido(permiso)) {
+      alertas.push(['Permiso vencido', tipo, formatFechaCR(permiso.fecha_vencimiento), 'Alta']);
+    } else if (isPermisoPendiente(permiso.estado)) {
+      alertas.push(['Permiso pendiente', tipo, formatFechaCR(permiso.fecha_solicitud), 'Media']);
+    }
+  });
+
+  (proyecto.hitos || []).forEach(hito => {
+    if (isHitoAtrasado(hito)) {
+      alertas.push(['Hito atrasado', hito.nombre || '-', formatFechaCR(hito.fecha_plan), 'Alta']);
+    }
+  });
+
+  (proyecto.garantias || []).forEach(garantia => {
+    const tipo = getCatalogLabel(garantia.tipo_garantia, TIPO_GARANTIA_CONTRATO_OPTIONS);
+    if (isGarantiaVencida(garantia)) {
+      alertas.push(['Garantia vencida', tipo, formatFechaCR(garantia.fecha_vencimiento), 'Alta']);
+    } else if (isGarantiaPorVencer(garantia)) {
+      alertas.push(['Garantia por vencer', tipo, formatFechaCR(garantia.fecha_vencimiento), 'Media']);
+    }
+  });
+
+  return alertas;
+};
+
+const appendExcelSheet = (wb: XLSX.WorkBook, name: string, headers: string[], rows: any[][]) => {
+  const ws = XLSX.utils.aoa_to_sheet([headers, ...(rows.length > 0 ? rows : [['Sin registros']])]);
+  XLSX.utils.book_append_sheet(wb, ws, name);
 };
 
 /**
@@ -234,6 +325,152 @@ export function generarReporteProyectoPDF(proyecto: ProyectoObraConDetalles) {
     }
   });
 
+  currentY = (doc as any).lastAutoTable.finalY + 8;
+
+  const alertasBody = getProyectoAlertas(proyecto);
+  autoTable(doc, {
+    startY: currentY,
+    head: [
+      [{ content: 'ALERTAS EJECUTIVAS DEL PROYECTO', colSpan: 4, styles: { fillColor: secondaryColor, textColor: 255, fontStyle: 'bold' } }],
+      ['Tipo', 'Detalle', 'Fecha', 'Severidad']
+    ],
+    body: alertasBody.length > 0 ? alertasBody : [['Sin alertas activas', '', '', '']],
+    theme: 'striped',
+    styles: { fontSize: 7.5, cellPadding: 2 },
+    headStyles: { fillColor: [51, 65, 85], textColor: 255, fontStyle: 'bold' }
+  });
+
+  currentY = (doc as any).lastAutoTable.finalY + 8;
+
+  const documentosBody = (proyecto.documentos || []).map(d => [
+    getCatalogLabel(d.tipo_documento, TIPO_DOCUMENTO_PROYECTO_OPTIONS),
+    d.nombre_archivo || '-',
+    formatFechaCR(d.creado_en),
+    d.descripcion || '-'
+  ]);
+  autoTable(doc, {
+    startY: currentY,
+    head: [
+      [{ content: 'DOCUMENTOS ADJUNTOS', colSpan: 4, styles: { fillColor: primaryColor, textColor: 255, fontStyle: 'bold' } }],
+      ['Tipo', 'Archivo', 'Fecha carga', 'Descripcion']
+    ],
+    body: documentosBody.length > 0 ? documentosBody : [['Sin documentos adjuntos', '', '', '']],
+    theme: 'striped',
+    styles: { fontSize: 7.2, cellPadding: 2 },
+    headStyles: { fillColor: [51, 65, 85], textColor: 255, fontStyle: 'bold' },
+    columnStyles: { 1: { cellWidth: 55 }, 3: { cellWidth: 65 } }
+  });
+
+  currentY = (doc as any).lastAutoTable.finalY + 8;
+
+  const permisosBody = (proyecto.permisos || []).map(p => [
+    getCatalogLabel(p.tipo_permiso, TIPO_PERMISO_PROYECTO_OPTIONS),
+    p.entidad_emisora || '-',
+    getCatalogLabel(p.estado, ESTADO_PERMISO_PROYECTO_OPTIONS),
+    formatFechaCR(p.fecha_solicitud),
+    formatFechaCR(p.fecha_aprobacion),
+    formatFechaCR(p.fecha_vencimiento)
+  ]);
+  autoTable(doc, {
+    startY: currentY,
+    head: [
+      [{ content: 'PERMISOS EXTERNOS', colSpan: 6, styles: { fillColor: secondaryColor, textColor: 255, fontStyle: 'bold' } }],
+      ['Tipo', 'Entidad', 'Estado', 'Solicitud', 'Aprobacion', 'Vence']
+    ],
+    body: permisosBody.length > 0 ? permisosBody : [['Sin permisos registrados', '', '', '', '', '']],
+    theme: 'striped',
+    styles: { fontSize: 7.2, cellPadding: 2 },
+    headStyles: { fillColor: [51, 65, 85], textColor: 255, fontStyle: 'bold' }
+  });
+
+  currentY = (doc as any).lastAutoTable.finalY + 8;
+
+  const hitosBody = (proyecto.hitos || []).map(h => [
+    h.nombre || '-',
+    getCatalogLabel(h.estado, ESTADO_HITO_PROYECTO_OPTIONS),
+    formatFechaCR(h.fecha_plan),
+    formatFechaCR(h.fecha_real),
+    `${formatProgressPercent(h.porcentaje_avance)}%`,
+    h.responsable || '-'
+  ]);
+  autoTable(doc, {
+    startY: currentY,
+    head: [
+      [{ content: 'HITOS DEL PROYECTO', colSpan: 6, styles: { fillColor: primaryColor, textColor: 255, fontStyle: 'bold' } }],
+      ['Hito', 'Estado', 'Fecha plan', 'Fecha real', 'Avance', 'Responsable']
+    ],
+    body: hitosBody.length > 0 ? hitosBody : [['Sin hitos registrados', '', '', '', '', '']],
+    theme: 'striped',
+    styles: { fontSize: 7.2, cellPadding: 2 },
+    headStyles: { fillColor: [51, 65, 85], textColor: 255, fontStyle: 'bold' },
+    columnStyles: { 0: { cellWidth: 45 } }
+  });
+
+  currentY = (doc as any).lastAutoTable.finalY + 8;
+
+  const donacionesBody = (proyecto.donaciones || []).map(d => [
+    getCatalogLabel(d.tipo_donacion, TIPO_DONACION_PROYECTO_OPTIONS),
+    d.donante || '-',
+    formatMonedaPDF(Number(d.valor_estimado || 0)),
+    formatFechaCR(d.fecha_recepcion),
+    getCatalogLabel(d.estado, ESTADO_DONACION_PROYECTO_OPTIONS)
+  ]);
+  autoTable(doc, {
+    startY: currentY,
+    head: [
+      [{ content: 'DONACIONES Y APORTES', colSpan: 5, styles: { fillColor: secondaryColor, textColor: 255, fontStyle: 'bold' } }],
+      ['Tipo', 'Donante', 'Valor', 'Fecha recepcion', 'Estado']
+    ],
+    body: donacionesBody.length > 0 ? donacionesBody : [['Sin donaciones registradas', '', '', '', '']],
+    theme: 'striped',
+    styles: { fontSize: 7.2, cellPadding: 2 },
+    headStyles: { fillColor: [51, 65, 85], textColor: 255, fontStyle: 'bold' }
+  });
+
+  currentY = (doc as any).lastAutoTable.finalY + 8;
+
+  const garantiasBody = (proyecto.garantias || []).map(g => [
+    getCatalogLabel(g.tipo_garantia, TIPO_GARANTIA_CONTRATO_OPTIONS),
+    g.entidad_emisora || '-',
+    g.numero_referencia || '-',
+    formatMonedaPDF(Number(g.monto || 0)),
+    formatFechaCR(g.fecha_vencimiento),
+    getCatalogLabel(g.estado, ESTADO_GARANTIA_CONTRATO_OPTIONS)
+  ]);
+  autoTable(doc, {
+    startY: currentY,
+    head: [
+      [{ content: 'GARANTIAS CONTRACTUALES', colSpan: 6, styles: { fillColor: primaryColor, textColor: 255, fontStyle: 'bold' } }],
+      ['Tipo', 'Entidad', 'Referencia', 'Monto', 'Vence', 'Estado']
+    ],
+    body: garantiasBody.length > 0 ? garantiasBody : [['Sin garantias registradas', '', '', '', '', '']],
+    theme: 'striped',
+    styles: { fontSize: 7.2, cellPadding: 2 },
+    headStyles: { fillColor: [51, 65, 85], textColor: 255, fontStyle: 'bold' }
+  });
+
+  currentY = (doc as any).lastAutoTable.finalY + 8;
+
+  const auditoriaBody = (proyecto.historial_proyecto || []).slice(0, 12).map(h => [
+    h.entidad || '-',
+    h.campo_modificado || '-',
+    h.valor_anterior || '-',
+    h.valor_nuevo || '-',
+    formatFechaCR(h.creado_en)
+  ]);
+  autoTable(doc, {
+    startY: currentY,
+    head: [
+      [{ content: 'AUDITORIA GENERAL DEL PROYECTO', colSpan: 5, styles: { fillColor: secondaryColor, textColor: 255, fontStyle: 'bold' } }],
+      ['Entidad', 'Campo', 'Valor anterior', 'Valor nuevo', 'Fecha']
+    ],
+    body: auditoriaBody.length > 0 ? auditoriaBody : [['Sin registros de auditoria general', '', '', '', '']],
+    theme: 'striped',
+    styles: { fontSize: 6.8, cellPadding: 2 },
+    headStyles: { fillColor: [51, 65, 85], textColor: 255, fontStyle: 'bold' },
+    columnStyles: { 2: { cellWidth: 45 }, 3: { cellWidth: 45 } }
+  });
+
   // Descargar PDF
   doc.save(`Reporte_Proyecto_${proyecto.codigo_meta || proyecto.id}.pdf`);
 }
@@ -333,6 +570,100 @@ export function generarReporteProyectoExcel(proyecto: ProyectoObraConDetalles) {
   const wsSeguimiento = XLSX.utils.aoa_to_sheet([...seguimientoHeader, ...seguimientoRows]);
   XLSX.utils.book_append_sheet(wb, wsSeguimiento, 'Seguimiento');
 
+  appendExcelSheet(wb, 'Alertas', ['Tipo', 'Detalle', 'Fecha', 'Severidad'], getProyectoAlertas(proyecto));
+
+  appendExcelSheet(
+    wb,
+    'Documentos',
+    ['Tipo documento', 'Nombre archivo', 'Ruta storage', 'Fecha carga', 'Subido por', 'Descripcion'],
+    (proyecto.documentos || []).map(d => [
+      getCatalogLabel(d.tipo_documento, TIPO_DOCUMENTO_PROYECTO_OPTIONS),
+      d.nombre_archivo || '-',
+      d.ruta_storage || '-',
+      formatFechaCR(d.creado_en),
+      d.subido_por || '-',
+      d.descripcion || '-'
+    ])
+  );
+
+  appendExcelSheet(
+    wb,
+    'Permisos',
+    ['Tipo permiso', 'Entidad emisora', 'Estado', 'Referencia', 'Solicitud', 'Aprobacion', 'Vencimiento', 'Responsable', 'Observaciones'],
+    (proyecto.permisos || []).map(p => [
+      getCatalogLabel(p.tipo_permiso, TIPO_PERMISO_PROYECTO_OPTIONS),
+      p.entidad_emisora || '-',
+      getCatalogLabel(p.estado, ESTADO_PERMISO_PROYECTO_OPTIONS),
+      p.numero_referencia || '-',
+      formatFechaCR(p.fecha_solicitud),
+      formatFechaCR(p.fecha_aprobacion),
+      formatFechaCR(p.fecha_vencimiento),
+      p.responsable || '-',
+      p.observaciones || '-'
+    ])
+  );
+
+  appendExcelSheet(
+    wb,
+    'Hitos',
+    ['Nombre', 'Descripcion', 'Estado', 'Fecha plan', 'Fecha real', 'Avance', 'Responsable'],
+    (proyecto.hitos || []).map(h => [
+      h.nombre || '-',
+      h.descripcion || '-',
+      getCatalogLabel(h.estado, ESTADO_HITO_PROYECTO_OPTIONS),
+      formatFechaCR(h.fecha_plan),
+      formatFechaCR(h.fecha_real),
+      `${formatProgressPercent(h.porcentaje_avance)}%`,
+      h.responsable || '-'
+    ])
+  );
+
+  appendExcelSheet(
+    wb,
+    'Donaciones',
+    ['Tipo donacion', 'Donante', 'Descripcion', 'Valor estimado', 'Fecha recepcion', 'Estado', 'Responsable', 'Observaciones'],
+    (proyecto.donaciones || []).map(d => [
+      getCatalogLabel(d.tipo_donacion, TIPO_DONACION_PROYECTO_OPTIONS),
+      d.donante || '-',
+      d.descripcion || '-',
+      Number(d.valor_estimado || 0),
+      formatFechaCR(d.fecha_recepcion),
+      getCatalogLabel(d.estado, ESTADO_DONACION_PROYECTO_OPTIONS),
+      d.responsable || '-',
+      d.observaciones || '-'
+    ])
+  );
+
+  appendExcelSheet(
+    wb,
+    'Garantias',
+    ['Tipo garantia', 'Entidad emisora', 'Referencia', 'Monto', 'Emision', 'Vencimiento', 'Estado', 'Observaciones'],
+    (proyecto.garantias || []).map(g => [
+      getCatalogLabel(g.tipo_garantia, TIPO_GARANTIA_CONTRATO_OPTIONS),
+      g.entidad_emisora || '-',
+      g.numero_referencia || '-',
+      Number(g.monto || 0),
+      formatFechaCR(g.fecha_emision),
+      formatFechaCR(g.fecha_vencimiento),
+      getCatalogLabel(g.estado, ESTADO_GARANTIA_CONTRATO_OPTIONS),
+      g.observaciones || '-'
+    ])
+  );
+
+  appendExcelSheet(
+    wb,
+    'Auditoria',
+    ['Entidad', 'Campo modificado', 'Valor anterior', 'Valor nuevo', 'Modificado por', 'Fecha'],
+    (proyecto.historial_proyecto || []).map(h => [
+      h.entidad || '-',
+      h.campo_modificado || '-',
+      h.valor_anterior || '-',
+      h.valor_nuevo || '-',
+      h.modificado_por || '-',
+      formatFechaCR(h.creado_en)
+    ])
+  );
+
   // Descargar Excel
   XLSX.writeFile(wb, `Reporte_Proyecto_${proyecto.codigo_meta || proyecto.id}.xlsx`);
 }
@@ -351,12 +682,28 @@ export async function generarInformeGeneralExcel() {
     if (errProyectos || !proyectos) throw errProyectos || new Error('Error al consultar proyectos');
 
     // 2. Consultar tablas secundarias en paralelo
-    const [resPresupuestos, resContratos, resFases, resSeguimientos, resColabs] = await Promise.all([
+    const [
+      resPresupuestos,
+      resContratos,
+      resFases,
+      resSeguimientos,
+      resColabs,
+      resDocumentos,
+      resPermisos,
+      resHitos,
+      resDonaciones,
+      resGarantias
+    ] = await Promise.all([
       supabase.from('presupuesto_proyecto').select('*').eq('es_vigente', true),
       supabase.from('contrato_obra').select('*'),
       supabase.from('fase_proyecto').select('*'),
       supabase.from('seguimiento_proyecto').select('*').order('fecha_corte', { ascending: false }),
-      supabase.from('colaboradores_06').select('identificacion, colaborador, alias')
+      supabase.from('colaboradores_06').select('identificacion, colaborador, alias'),
+      supabase.from('proyecto_documento').select('id, proyecto_id'),
+      supabase.from('proyecto_permiso').select('id, proyecto_id, estado, fecha_vencimiento'),
+      supabase.from('proyecto_hito').select('id, proyecto_id, estado, fecha_plan'),
+      supabase.from('proyecto_donacion').select('id, proyecto_id, valor_estimado, estado'),
+      supabase.from('contrato_garantia').select('id, proyecto_id, estado, fecha_vencimiento')
     ]);
 
     const presupuestosMap = new Map<string | number, any>();
@@ -376,6 +723,36 @@ export async function generarInformeGeneralExcel() {
       if (!seguimientosMap.has(s.proyecto_id)) {
         seguimientosMap.set(s.proyecto_id, s);
       }
+    });
+
+    const documentosMap = new Map<string | number, any[]>();
+    (resDocumentos.data || []).forEach(d => {
+      if (!documentosMap.has(d.proyecto_id)) documentosMap.set(d.proyecto_id, []);
+      documentosMap.get(d.proyecto_id)!.push(d);
+    });
+
+    const permisosMap = new Map<string | number, any[]>();
+    (resPermisos.data || []).forEach(p => {
+      if (!permisosMap.has(p.proyecto_id)) permisosMap.set(p.proyecto_id, []);
+      permisosMap.get(p.proyecto_id)!.push(p);
+    });
+
+    const hitosMap = new Map<string | number, any[]>();
+    (resHitos.data || []).forEach(h => {
+      if (!hitosMap.has(h.proyecto_id)) hitosMap.set(h.proyecto_id, []);
+      hitosMap.get(h.proyecto_id)!.push(h);
+    });
+
+    const donacionesMap = new Map<string | number, any[]>();
+    (resDonaciones.data || []).forEach(d => {
+      if (!donacionesMap.has(d.proyecto_id)) donacionesMap.set(d.proyecto_id, []);
+      donacionesMap.get(d.proyecto_id)!.push(d);
+    });
+
+    const garantiasMap = new Map<string | number, any[]>();
+    (resGarantias.data || []).forEach(g => {
+      if (!garantiasMap.has(g.proyecto_id)) garantiasMap.set(g.proyecto_id, []);
+      garantiasMap.get(g.proyecto_id)!.push(g);
     });
 
     const colabsMap = new Map<string, string>();
@@ -416,7 +793,14 @@ export async function generarInformeGeneralExcel() {
       'Línea Estratégica',
       'Programa',
       'Estado',
-      'Observaciones más recientes'
+      'Observaciones más recientes',
+      'Documentos adjuntos',
+      'Permisos pendientes',
+      'Permisos vencidos',
+      'Hitos atrasados',
+      'Garantias por vencer',
+      'Garantias vencidas',
+      'Valor donaciones'
     ];
 
     // 4. Mapear filas
@@ -425,6 +809,11 @@ export async function generarInformeGeneralExcel() {
       const cont = contratosMap.get(p.id);
       const fases = fasesMap.get(p.id) || [];
       const seg = seguimientosMap.get(p.id);
+      const documentos = documentosMap.get(p.id) || [];
+      const permisos = permisosMap.get(p.id) || [];
+      const hitos = hitosMap.get(p.id) || [];
+      const donaciones = donacionesMap.get(p.id) || [];
+      const garantias = garantiasMap.get(p.id) || [];
 
       const respNombre = p.profesional_responsable 
         ? (colabsMap.get(String(p.profesional_responsable).trim()) || p.profesional_responsable)
@@ -451,6 +840,12 @@ export async function generarInformeGeneralExcel() {
 
       // Avance físico como decimal (ej. 0.95)
       const avanceDecimal = normalizeProgressFraction(seg ? seg.avance_registrado : p.avance_poa);
+      const permisosPendientes = permisos.filter(permiso => isPermisoPendiente(permiso.estado)).length;
+      const permisosVencidos = permisos.filter(permiso => isPermisoVencido(permiso)).length;
+      const hitosAtrasados = hitos.filter(hito => isHitoAtrasado(hito)).length;
+      const garantiasPorVencer = garantias.filter(garantia => !isGarantiaVencida(garantia) && isGarantiaPorVencer(garantia)).length;
+      const garantiasVencidas = garantias.filter(garantia => isGarantiaVencida(garantia)).length;
+      const valorDonaciones = donaciones.reduce((total, donacion) => total + Number(donacion.valor_estimado || 0), 0);
 
       return [
         p.prioridad || '-',
@@ -483,7 +878,14 @@ export async function generarInformeGeneralExcel() {
         (p.linea_estrategica || '-').replace(/_/g, ' '),
         p.programa || '-',
         p.estado || '-',
-        seg?.observaciones || p.observaciones_meta_poa || '-'
+        seg?.observaciones || p.observaciones_meta_poa || '-',
+        documentos.length,
+        permisosPendientes,
+        permisosVencidos,
+        hitosAtrasados,
+        garantiasPorVencer,
+        garantiasVencidas,
+        valorDonaciones
       ];
     });
 
