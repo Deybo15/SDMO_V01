@@ -36,7 +36,9 @@ export const useTransactionManager = ({
     useEffect(() => {
         const initialize = async () => {
             try {
-                // 1. Get current user
+                // 1. Get current user (getSession reads the cached session locally,
+                // avoiding the network round-trip that getUser() requires — that
+                // round-trip was the cause of intermittent "Usuario no identificado")
                 const { data: { session } } = await supabase.auth.getSession();
                 const userEmail = session?.user?.email;
 
@@ -57,12 +59,17 @@ export const useTransactionManager = ({
                         todos: mappedData
                     });
 
-                    // 3. Auto-populate based on email
+                    // 3. Auto-populate based on email.
+                    // IMPORTANT: `autorizado` must be part of the same find() predicate,
+                    // not checked afterward — correo_colaborador is not guaranteed unique
+                    // (data-entry duplicates exist), so stopping at the first email match
+                    // regardless of `autorizado` can land on the wrong row and silently
+                    // skip a real match later in the array.
                     if (userEmail) {
                         const matched = mappedData.find(c =>
-                            c.correo_colaborador?.toLowerCase() === userEmail.toLowerCase()
+                            c.correo_colaborador?.toLowerCase() === userEmail.toLowerCase() && c.autorizado
                         );
-                        if (matched && matched.autorizado) {
+                        if (matched) {
                             setAutorizaId(matched.identificacion);
                         }
                     }
