@@ -37,8 +37,8 @@ export const useTransactionManager = ({
         const initialize = async () => {
             try {
                 // 1. Get current user
-                const { data: { user } } = await supabase.auth.getUser();
-                const userEmail = user?.email;
+                const { data: { session } } = await supabase.auth.getSession();
+                const userEmail = session?.user?.email;
 
                 // 2. Fetch collaborators
                 const { data } = await supabase
