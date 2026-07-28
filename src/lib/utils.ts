@@ -17,3 +17,17 @@ export function formatCurrency(amount: number, currency: 'CRC' | 'USD') {
         maximumFractionDigits: 2,
     }).format(amount);
 }
+
+export function formatDateOnly(
+  value: string | null | undefined
+): string {
+  if (!value) return "—";
+
+  const dateOnly = value.slice(0, 10);
+  const [year, month, day] = dateOnly.split("-");
+
+  if (!year || !month || !day || year.length !== 4) return "—";
+
+  return `${day}/${month}/${year}`;
+}
+

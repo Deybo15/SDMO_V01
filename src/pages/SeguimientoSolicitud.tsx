@@ -22,7 +22,7 @@ import {
 } from 'lucide-react';
 import { PageHeader } from '../components/ui/PageHeader';
 import { format, subMonths, startOfMonth, endOfMonth } from 'date-fns';
-import { cn } from '../lib/utils';
+import { cn, formatDateOnly } from '../lib/utils';
 
 // Interfaces
 interface SolicitudSTI {
@@ -311,12 +311,12 @@ export default function SeguimientoSolicitud() {
                 const segObj = Array.isArray(s.seguimiento_solicitud) ? s.seguimiento_solicitud[0] : s.seguimiento_solicitud;
                 return {
                     'N° SOLICITUD': s.numero_solicitud,
-                    'FECHA REGISTRO': new Date(s.fecha_solicitud).toLocaleDateString(),
+                    'FECHA REGISTRO': formatDateOnly(s.fecha_solicitud),
                     'DESCRIPCIÓN STI': s.descripcion_solicitud,
                     'SUPERVISOR RESPONSABLE': s.supervisor_asignado ? (colabsMap.get(s.supervisor_asignado) || s.supervisor_asignado) : 'NO ASIGNADO',
                     'ESTADO STI': segObj?.estado_actual || 'ACTIVA',
-                    'INICIO LABORES': segObj?.fecha_inicio ? new Date(segObj.fecha_inicio).toLocaleDateString() : 'SIN FECHA',
-                    'CIERRE LABORES': segObj?.fecha_finalizacion ? new Date(segObj.fecha_finalizacion).toLocaleDateString() : 'SIN FECHA'
+                    'INICIO LABORES': segObj?.fecha_inicio ? formatDateOnly(segObj.fecha_inicio) : 'SIN FECHA',
+                    'CIERRE LABORES': segObj?.fecha_finalizacion ? formatDateOnly(segObj.fecha_finalizacion) : 'SIN FECHA'
                 };
             });
 
@@ -444,7 +444,7 @@ export default function SeguimientoSolicitud() {
                                 {loading ? <TableSkeleton /> : solicitudes.map(sol => (
                                     <tr key={sol.numero_solicitud} className="hover:bg-white/5 transition-all group">
                                         <td className="px-6 py-7 font-black text-[#0071E3] text-lg">#{sol.numero_solicitud}</td>
-                                        <td className="px-6 py-7 text-sm font-bold text-[#86868B]">{new Date(sol.fecha_solicitud).toLocaleDateString()}</td>
+                                        <td className="px-6 py-7 text-sm font-bold text-[#86868B]">{formatDateOnly(sol.fecha_solicitud)}</td>
                                         <td className="px-6 py-7 italic font-medium text-[#F5F5F7] relative cursor-default" onMouseEnter={e => setHoveredDescription({ id: sol.numero_solicitud, text: sol.descripcion_solicitud, x: e.clientX, y: e.clientY })} onMouseLeave={() => setHoveredDescription(null)}>
                                             <div className="truncate max-w-[300px]">
                                                 {sol.descripcion_solicitud}
@@ -524,7 +524,7 @@ export default function SeguimientoSolicitud() {
                             <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
                                 <div className="bg-[#1D1D1F] border border-[#333333] p-7 rounded-[8px] shadow-xl">
                                     <p className="text-[10px] font-black text-[#86868B] uppercase tracking-widest mb-2">Fecha Reporte</p>
-                                    <p className="text-2xl font-black text-[#F5F5F7]">{new Date(selectedSolicitud.fecha_solicitud).toLocaleDateString()}</p>
+                                    <p className="text-2xl font-black text-[#F5F5F7]">{formatDateOnly(selectedSolicitud.fecha_solicitud)}</p>
                                 </div>
                                 <div className="bg-[#1D1D1F] border border-[#333333] p-7 rounded-[8px] shadow-xl flex flex-col justify-center">
                                     <p className="text-[10px] font-black text-[#86868B] uppercase tracking-widest mb-3">Estado Actual</p>
@@ -573,7 +573,7 @@ export default function SeguimientoSolicitud() {
                                                 <div key={i} className="bg-[#1D1D1F] border border-[#333333] rounded-[8px] p-8 hover:border-[#0071E3]/30 transition-all shadow-xl">
                                                     <div className="flex items-center gap-3 mb-4">
                                                         <Clock className="w-4 h-4 text-[#0071E3]" />
-                                                        <p className="text-[10px] font-black text-[#0071E3] uppercase tracking-widest">{new Date(reg.fecha_registro).toLocaleDateString()}</p>
+                                                        <p className="text-[10px] font-black text-[#0071E3] uppercase tracking-widest">{formatDateOnly(reg.fecha_registro)}</p>
                                                     </div>
                                                     <p className="text-[#F5F5F7] text-[15px] leading-relaxed italic font-bold">"{reg.registro_seguimiento}"</p>
                                                 </div>
@@ -601,7 +601,7 @@ export default function SeguimientoSolicitud() {
                                                         <tr key={i} className="hover:bg-white/5 transition-colors group">
                                                             <td className="px-10 py-5 text-[11px] font-black text-[#424245] group-hover:text-[#0071E3] transition-colors">#{art.id_salida}</td>
                                                             <td className="px-10 py-5">
-                                                                <p className="text-[10px] font-black text-[#86868B] uppercase tracking-tighter">{new Date(art.fecha_salida).toLocaleDateString('es-ES')}</p>
+                                                                <p className="text-[10px] font-black text-[#86868B] uppercase tracking-tighter">{formatDateOnly(art.fecha_salida)}</p>
                                                             </td>
                                                             <td className="px-10 py-5 text-[#F5F5F7]">
                                                                 <p className="font-black text-sm tracking-tight">{art.nombre_articulo}</p>

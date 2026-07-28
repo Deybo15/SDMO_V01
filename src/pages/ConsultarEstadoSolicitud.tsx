@@ -20,7 +20,7 @@ import {
 } from 'lucide-react';
 import { useQuery } from '@tanstack/react-query';
 import { PageHeader } from '../components/ui/PageHeader';
-import { cn } from '../lib/utils';
+import { cn, formatDateOnly } from '../lib/utils';
 
 // Pagination size
 const PAGE_SIZE = 20;
@@ -563,7 +563,7 @@ export default function ConsultarEstadoSolicitud() {
                                             )}
                                         >
                                             <div className="px-6 py-4 font-mono text-[11px] font-black text-[#0071E3] tracking-tighter">#{row.numero_solicitud}</div>
-                                            <div className="px-6 py-4 text-[10px] font-bold text-[#86868B]">{row.fecha_solicitud ? new Date(row.fecha_solicitud).toLocaleDateString('es-ES') : ''}</div>
+                                            <div className="px-6 py-4 text-[10px] font-bold text-[#86868B]">{formatDateOnly(row.fecha_solicitud)}</div>
                                             <div className="px-6 py-4 text-[11px] italic text-[#F5F5F7] font-medium leading-relaxed italic" title={row.descripcion_solicitud}>{row.descripcion_solicitud}</div>
                                             <div className="px-6 py-4 text-[11px] font-black text-[#F5F5F7] uppercase tracking-tight" title={row.profesional_responsable}>{row.profesional_responsable}</div>
                                             <div className="px-6 py-4 text-[10px] font-bold text-[#86868B] uppercase" title={row.instalacion_municipal}>{row.instalacion_municipal}</div>

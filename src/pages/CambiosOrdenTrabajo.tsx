@@ -18,6 +18,7 @@ import {
     AlertCircle
 } from 'lucide-react';
 import { PageHeader } from '../components/ui/PageHeader';
+import { formatDateOnly } from '../lib/utils';
 import { cn } from '../lib/utils';
 import SearchModal from '../components/SearchModal';
 
@@ -323,7 +324,7 @@ export default function CambiosOrdenTrabajo() {
                                                 {s.numero_solicitud}
                                             </td>
                                             <td className="px-8 py-6 text-sm text-[#86868B] font-medium text-center">
-                                                {new Date(s.fecha_solicitud).toLocaleDateString()}
+                                                {formatDateOnly(s.fecha_solicitud)}
                                             </td>
                                             <td className="px-8 py-6 text-sm text-[#F5F5F7] font-bold">
                                                 {s.cliente_nombre || 'N/A'}

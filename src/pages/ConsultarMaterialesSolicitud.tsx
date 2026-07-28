@@ -6,7 +6,7 @@ import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
 import { useQuery } from '@tanstack/react-query';
 import { PageHeader } from '../components/ui/PageHeader';
-import { cn } from '../lib/utils';
+import { cn, formatDateOnly } from '../lib/utils';
 import {
     ArrowLeft,
     FileSpreadsheet,
@@ -664,7 +664,7 @@ export default function ConsultarMaterialesSolicitud() {
 
                     const baseData = {
                         'N° Solicitud': solNum,
-                        'Fecha Solicitud': req.fecha_solicitud ? new Date(req.fecha_solicitud).toLocaleDateString('es-ES') : '',
+                        'Fecha Solicitud': formatDateOnly(req.fecha_solicitud),
                         'Descripción Solicitud': req.descripcion_solicitud || '',
                         'Cliente': req.nombre_cliente || '',
                         'Dependencia': req.dependencia_cliente || '',
@@ -752,7 +752,7 @@ export default function ConsultarMaterialesSolicitud() {
                     const baseVal = bases[solNum] || 'N/A';
                     const instVal = req.instalacion_municipal || '';
 
-                    const dateStr = req.fecha_solicitud ? new Date(req.fecha_solicitud).toLocaleDateString('es-ES') : '';
+                    const dateStr = formatDateOnly(req.fecha_solicitud);
                     const client = req.nombre_cliente || '';
                     const status = req.estado_actual || '';
 
@@ -955,7 +955,7 @@ export default function ConsultarMaterialesSolicitud() {
                                                     )}
                                                 >
                                                     <div className="px-6 py-4 font-mono text-[11px] font-black text-[#0071E3] tracking-tighter">#{row.numero_solicitud}</div>
-                                                    <div className="px-6 py-4 text-[10px] font-bold text-[#86868B]">{row.fecha_solicitud ? new Date(row.fecha_solicitud).toLocaleDateString('es-ES') : ''}</div>
+                                                    <div className="px-6 py-4 text-[10px] font-bold text-[#86868B]">{formatDateOnly(row.fecha_solicitud)}</div>
                                                     <div className="px-6 py-4 text-[11px] italic text-[#F5F5F7] font-medium leading-relaxed truncate" title={row.descripcion_solicitud}>{row.descripcion_solicitud}</div>
                                                     <div className="px-6 py-4 text-[11px] font-black text-[#F5F5F7] uppercase tracking-tight" title={row.profesional_responsable}>{row.profesional_responsable}</div>
                                                     <div className="px-6 py-4 text-[10px] font-bold text-[#86868B] uppercase" title={row.instalacion_municipal}>{row.instalacion_municipal}</div>

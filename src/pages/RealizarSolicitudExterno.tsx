@@ -4,6 +4,7 @@ import { useNavigate } from 'react-router-dom';
 import * as XLSX from 'xlsx';
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
+import { formatDateOnly } from '../lib/utils';
 import {
     Table,
     ArrowLeft,
@@ -100,7 +101,7 @@ export default function RealizarSolicitudExterno() {
         const ws = XLSX.utils.json_to_sheet(solicitudes.map(s => ({
             'Número de Solicitud': s.numero_solicitud,
             'Descripción': s.descripcion_solicitud,
-            'Fecha': new Date(s.fecha_solicitud).toLocaleDateString('es-CR')
+            'Fecha': formatDateOnly(s.fecha_solicitud)
         })));
         const wb = XLSX.utils.book_new();
         XLSX.utils.book_append_sheet(wb, ws, 'Solicitudes');
@@ -114,7 +115,7 @@ export default function RealizarSolicitudExterno() {
         const tableData = solicitudes.map(s => [
             s.numero_solicitud,
             s.descripcion_solicitud,
-            new Date(s.fecha_solicitud).toLocaleDateString('es-CR')
+            formatDateOnly(s.fecha_solicitud)
         ]);
 
         autoTable(doc, {
@@ -307,7 +308,7 @@ export default function RealizarSolicitudExterno() {
                                                 {solicitud.descripcion_solicitud}
                                             </td>
                                             <td className="py-4 px-6 text-center text-[#e2e8f0]">
-                                                {solicitud.fecha_solicitud ? new Date(solicitud.fecha_solicitud).toLocaleDateString('es-CR') : 'Sin fecha'}
+                                                {formatDateOnly(solicitud.fecha_solicitud)}
                                             </td>
                                             <td className="py-4 px-6 text-center">
                                                 <button

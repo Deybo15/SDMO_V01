@@ -2,7 +2,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '../lib/supabase';
 import { useNavigate } from 'react-router-dom';
 import * as XLSX from 'xlsx';
-import { cn } from '../lib/utils';
+import { cn, formatDateOnly } from '../lib/utils';
 import {
     CheckCircle,
     XCircle,
@@ -563,7 +563,7 @@ export default function SeguimientoSolicitudExterno() {
         try {
             const dataToExport = filteredSolicitudes.map(s => ({
                 'N° Solicitud': s.numero_solicitud,
-                'Fecha': s.fecha_solicitud ? new Date(s.fecha_solicitud).toLocaleDateString('es-CR') : 'N/A',
+                'Fecha': s.fecha_solicitud ? formatDateOnly(s.fecha_solicitud) : 'N/A',
                 'Descripción': s.descripcion_solicitud || 'Sin descripción',
                 'Dirección Exacta': s.direccion_exacta || 'N/A',
                 'Barrio': s.barrio || 'N/A',
@@ -738,7 +738,7 @@ export default function SeguimientoSolicitudExterno() {
                                                 <td className="px-6 py-7">
                                                     <div className="flex items-center gap-2 text-sm font-bold text-[#86868B]">
                                                         <Calendar className="w-4 h-4" />
-                                                        {new Date(sol.fecha_solicitud).toLocaleDateString("es-CR", { day: '2-digit', month: '2-digit', year: 'numeric' })}
+                                                        {formatDateOnly(sol.fecha_solicitud)}
                                                     </div>
                                                 </td>
                                                 <td className="px-6 py-7 italic font-medium text-[#F5F5F7] relative cursor-default" onMouseEnter={e => setHoveredDescription({ id: sol.numero_solicitud, text: sol.descripcion_solicitud, x: e.clientX, y: e.clientY })} onMouseLeave={() => setHoveredDescription(null)}>
@@ -854,7 +854,7 @@ export default function SeguimientoSolicitudExterno() {
                                                     <div className="h-12 flex items-center px-4 bg-[#1D1D1F] border border-[#333333] rounded-[8px]">
                                                         <Calendar className="w-4 h-4 text-[#0071E3] mr-3" />
                                                         <p className="text-sm font-bold text-[#F5F5F7]">
-                                                            {new Date(selectedSolicitud.fecha_solicitud).toLocaleDateString('es-ES', { day: '2-digit', month: 'long', year: 'numeric' })}
+                                                            {formatDateOnly(selectedSolicitud.fecha_solicitud)}
                                                         </p>
                                                     </div>
                                                 </div>
@@ -957,7 +957,7 @@ export default function SeguimientoSolicitudExterno() {
                                                                     <span className="text-sm font-bold text-[#F5F5F7] ml-1">{art.id_salida}</span>
                                                                 </td>
                                                                 <td className="px-6 py-5 text-sm font-medium text-[#86868B]">
-                                                                    {new Date(art.fecha_salida).toLocaleDateString()}
+                                                                    {formatDateOnly(art.fecha_salida)}
                                                                 </td>
                                                                 <td className="px-6 py-5">
                                                                     <div className="flex flex-col">
@@ -1048,7 +1048,7 @@ export default function SeguimientoSolicitudExterno() {
                                                             <Calendar className="w-5 h-5 text-[#0071E3]" />
                                                         </div>
                                                         <span className="text-[10px] font-black text-[#F5F5F7] tracking-[0.2em] uppercase">
-                                                            {new Date(reg.fecha_registro).toLocaleDateString('es-ES', { day: '2-digit', month: 'long', year: 'numeric' })}
+                                                            {formatDateOnly(reg.fecha_registro)}
                                                         </span>
                                                     </div>
                                                 </div>

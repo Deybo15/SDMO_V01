@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { supabase } from '../lib/supabase';
 import { Package, ClipboardList, Users, ArrowUpRight, AlertTriangle, PlusCircle, Search, FileText } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
+import { formatDateOnly } from '../lib/utils';
 
 export default function Dashboard() {
     const navigate = useNavigate();
@@ -241,7 +242,7 @@ export default function Dashboard() {
                                     recentMovements.map((mov) => (
                                         <tr key={mov.id_salida} className="border-b border-slate-700/50 hover:bg-slate-700/30 transition-colors">
                                             <td className="py-3 px-2 text-slate-300">
-                                                {new Date(mov.fecha_salida).toLocaleDateString()}
+                                                {formatDateOnly(mov.fecha_salida)}
                                             </td>
                                             <td className="py-3 px-2 text-blue-400 font-mono">
                                                 #{mov.numero_solicitud}

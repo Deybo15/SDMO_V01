@@ -17,6 +17,7 @@ import {
     UserCircle
 } from 'lucide-react';
 import { PageHeader } from '../components/ui/PageHeader';
+import { formatDateOnly } from '../lib/utils';
 
 interface ActivoDetalle {
     numero_activo: number;
@@ -264,7 +265,7 @@ export default function ConsultaActivos() {
                                                             {activo.fecha_accion && (
                                                                 <div className="flex items-center gap-1.5 text-xs text-gray-500 font-medium">
                                                                     <Clock className="w-3 h-3" />
-                                                                    {new Date(activo.fecha_accion).toLocaleDateString()}
+                                                                    {formatDateOnly(activo.fecha_accion)}
                                                                 </div>
                                                             )}
                                                         </div>

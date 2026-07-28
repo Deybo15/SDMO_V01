@@ -8,7 +8,7 @@ import {
 } from 'lucide-react';
 import * as XLSX from 'xlsx';
 import { PageHeader } from '../components/ui/PageHeader';
-import { cn } from '../lib/utils';
+import { cn, formatDateOnly } from '../lib/utils';
 
 // Types
 interface Colaborador {
@@ -272,7 +272,7 @@ export default function InformeColaboradores() {
                 [headers.supervisor]: row.supervisor ? 'SÍ' : 'NO',
                 [headers.operador_de_equipo]: row.operador_de_equipo ? 'SÍ' : 'NO',
                 [headers.profesional_responsable]: row.profesional_responsable ? 'SÍ' : 'NO',
-                [headers.fecha_ingreso]: row.fecha_ingreso ? new Date(row.fecha_ingreso).toLocaleDateString('es-ES') : '-',
+                [headers.fecha_ingreso]: formatDateOnly(row.fecha_ingreso),
                 [headers.jefatura_directa]: jefaturaMap.get(row.jefatura_directa) || row.jefatura_directa || '-',
                 [headers.condicion_laboral]: row.condicion_laboral || '-'
             }));
@@ -512,7 +512,7 @@ export default function InformeColaboradores() {
         articulos.forEach(it => {
             html += `<tr>
                 <td class="text">${it.id_salida}</td>
-                <td>${new Date(it.fecha_salida).toLocaleDateString('es-ES')}</td>
+                <td>${formatDateOnly(it.fecha_salida)}</td>
                 <td>${it.tipo_solicitud}</td>
                 <td class="text">${it.articulo}</td>
                 <td>${it.nombre_articulo}</td>
@@ -916,7 +916,7 @@ export default function InformeColaboradores() {
                                                 {articulos.map((item, idx) => (
                                                     <tr key={`${item.id_salida}-${idx}`} className="hover:bg-white/[0.04] transition-colors group/modal-row animate-in fade-in slide-in-from-top-1 duration-300">
                                                         <td className="p-4 text-[#86868B] font-bold whitespace-nowrap text-xs">
-                                                            {new Date(item.fecha_salida).toLocaleDateString('es-ES')}
+                                                            {formatDateOnly(item.fecha_salida)}
                                                         </td>
                                                         <td className="p-4">
                                                             <span className="inline-flex px-2 py-1 rounded-[4px] bg-[#1D1D1F] text-[#86868B] text-[9px] font-black uppercase border border-[#333333]">

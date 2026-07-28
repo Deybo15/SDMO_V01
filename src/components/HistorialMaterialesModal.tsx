@@ -10,7 +10,7 @@ import {
     ClipboardList,
     TrendingDown
 } from 'lucide-react';
-import { cn } from '../lib/utils';
+import { cn, formatDateOnly } from '../lib/utils';
 
 interface Material {
     id_salida: number;
@@ -162,7 +162,7 @@ const HistorialMaterialesModal: React.FC<HistorialMaterialesModalProps> = ({ isO
                                                 </span>
                                             </td>
                                             <td className="px-6 py-4 text-xs font-bold text-white/70">
-                                                {new Date(m.fecha).toLocaleDateString('es-ES', { day: '2-digit', month: '2-digit', year: 'numeric' })}
+                                                {formatDateOnly(m.fecha)}
                                             </td>
                                             <td className="px-6 py-4">
                                                 <p className="text-xs font-black text-white uppercase leading-relaxed max-w-xs">{m.descripcion}</p>
