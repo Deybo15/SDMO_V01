@@ -68,13 +68,13 @@ export default function Layout() {
     return (
         <div className="flex h-screen bg-[#000000] text-[#F5F5F7] overflow-hidden font-sans">
             {/* Mobile Header */}
-            <div className="md:hidden fixed top-0 left-0 right-0 h-16 bg-[#121212] border-b border-[#333333] flex items-center justify-between px-6 z-50">
+            <div className="md:hidden fixed top-0 left-0 right-0 h-16 bg-[#0A0A0A] border-b border-[#2A2A2D] flex items-center justify-between px-5 z-50">
                 <div className="flex items-center gap-3 min-w-0">
-                    <div className="w-10 h-8 rounded-[4px] bg-[#0071E3] flex items-center justify-center shadow-lg shadow-[#0071E3]/20 shrink-0">
-                        <span className="text-white font-black text-[9px] tracking-tight italic">SDMO</span>
+                    <div className="w-10 h-9 rounded-[6px] bg-[#111111] border border-[#3A3A3D] flex items-center justify-center shrink-0">
+                        <span className="text-[#F5F5F5] font-bold text-[9px] tracking-tight">SDMO</span>
                     </div>
-                    <span className="text-white font-black text-[11px] leading-tight tracking-tight uppercase max-w-48">
-                        Desarrollo y Mantenimiento de Obras
+                    <span className="text-[#F5F5F5] font-semibold text-[10px] leading-tight tracking-[0.04em] uppercase max-w-52">
+                        SecciÃ³n Desarrollo y Mantenimiento de Obras
                     </span>
                 </div>
                 <button
@@ -95,25 +95,26 @@ export default function Layout() {
 
             {/* Sidebar (Desktop & Mobile Drawer) */}
             <aside className={cn(
-                "fixed inset-y-0 left-0 z-[70] bg-[#121212] border-r border-[#333333] transition-[width,transform] duration-300 cubic-bezier(0.4, 0, 0.2, 1) md:translate-x-0 md:static md:flex md:flex-col group/sidebar",
+                "fixed inset-y-0 left-0 z-[70] bg-[#0A0A0A] border-r border-[#2A2A2D] transition-[width,transform] duration-300 cubic-bezier(0.4, 0, 0.2, 1) md:translate-x-0 md:static md:flex md:flex-col group/sidebar",
                 mobileMenuOpen ? "translate-x-0 w-72" : "-translate-x-full w-72 md:w-24 md:hover:w-72"
             )}>
                 {/* Header / Logo */}
-                <div className="p-8 hidden md:block overflow-hidden relative">
+                <div className="px-[22px] py-7 hidden md:block overflow-hidden relative">
                     <div className="flex items-center gap-4">
-                        <div className="w-12 h-12 rounded-[4px] bg-[#0071E3] flex items-center justify-center shadow-2xl shadow-[#0071E3]/20 shrink-0">
-                            <span className="text-white font-black text-[11px] tracking-tight italic">SDMO</span>
+                        <div className="w-[50px] h-[50px] rounded-[7px] bg-[#111111] border border-[#3A3A3D] flex items-center justify-center shrink-0">
+                            <span className="text-[#F5F5F5] font-bold text-[11px] tracking-tight">SDMO</span>
                         </div>
                         <div className="flex flex-col opacity-0 scale-95 group-hover/sidebar:opacity-100 group-hover/sidebar:scale-100 transition-all duration-300 overflow-hidden">
-                            <h1 className="w-40 text-[12px] font-black text-white tracking-tight leading-[1.15] uppercase">
-                                Desarrollo y Mantenimiento de Obras
+                            <h1 className="w-40 text-[11px] font-semibold text-[#F5F5F5] tracking-[0.04em] leading-[1.25] uppercase">
+                                SecciÃ³n Desarrollo y Mantenimiento de Obras
                             </h1>
                         </div>
                     </div>
+                    <div className="mt-7 h-px bg-[#2A2A2D] opacity-0 group-hover/sidebar:opacity-100 transition-opacity duration-300" />
                 </div>
 
                 {/* Navigation */}
-                <nav className="flex-1 px-4 py-6 space-y-2 overflow-y-auto overflow-x-hidden scrollbar-none">
+                <nav className="flex-1 px-3 py-3 space-y-1.5 overflow-y-auto overflow-x-hidden scrollbar-none">
                     {navItems.map((item) => {
                         const matchingItems = navItems.filter(navItem =>
                             navItem.path === '/'
@@ -128,21 +129,21 @@ export default function Layout() {
                                 key={item.path}
                                 to={item.path}
                                 className={cn(
-                                    "group/item flex items-center gap-5 px-5 py-4 text-[11px] font-black uppercase tracking-widest rounded-[8px] transition-all duration-200 relative overflow-hidden outline-none border",
+                                    "group/item flex items-center gap-5 px-[22px] py-3.5 text-[10px] font-semibold uppercase tracking-[0.12em] rounded-[9px] transition-all duration-200 relative overflow-hidden outline-none border",
                                     isActive
-                                        ? "bg-[#0071E3] text-white border-[#0071E3]/20 shadow-lg shadow-[#0071E3]/20"
-                                        : "text-[#86868B] hover:text-white hover:bg-white/5 border-transparent"
+                                        ? "bg-[#1B1B1D] text-[#F5F5F5] border-[#2A2A2D] before:absolute before:left-0 before:top-2.5 before:bottom-2.5 before:w-0.5 before:rounded-full before:bg-white"
+                                        : "text-[#909096] hover:text-[#F5F5F5] hover:bg-[#141414] border-transparent"
                                 )}
                             >
                                 <item.icon
                                     className={cn(
-                                        "w-5 h-5 shrink-0 transition-transform duration-200",
-                                        isActive ? "text-white scale-110" : "text-[#86868B] group-hover/item:text-white"
+                                        "w-5 h-5 shrink-0 transition-colors duration-200",
+                                        isActive ? "text-[#F5F5F5]" : "text-[#77777D] group-hover/item:text-[#D4D4D6]"
                                     )}
                                 />
                                 <span className={cn(
                                     "transition-all duration-300 whitespace-nowrap overflow-hidden transform",
-                                    "opacity-0 scale-95 group-hover/sidebar:opacity-100 group-hover/sidebar:scale-100"
+                                    "opacity-100 scale-100 md:opacity-0 md:scale-95 md:group-hover/sidebar:opacity-100 md:group-hover/sidebar:scale-100"
                                 )}>
                                     {item.label}
                                 </span>
@@ -152,17 +153,17 @@ export default function Layout() {
                 </nav>
 
                 {/* User Profile & Logout */}
-                <div className="p-4 border-t border-[#333333] bg-black/20 overflow-hidden">
-                    <div className="bg-[#1D1D1F] px-4 py-5 rounded-[8px] border border-[#333333] transition-all duration-300">
-                        <div className="flex items-center gap-4 mb-0 md:group-hover/sidebar:mb-6">
-                            <div className="w-10 h-10 rounded-[4px] bg-black/40 flex items-center justify-center border border-[#333333] shrink-0">
-                                <UserCircle2 className="w-6 h-6 text-[#86868B]" />
+                <div className="px-3 py-4 border-t border-[#2A2A2D] bg-[#0A0A0A] overflow-hidden">
+                    <div className="px-[10px] transition-all duration-300">
+                        <div className="flex items-center gap-4 mb-0 md:group-hover/sidebar:mb-4">
+                            <div className="w-12 h-12 rounded-full bg-[#111111] flex items-center justify-center border border-[#3A3A3D] shrink-0">
+                                <UserCircle2 className="w-6 h-6 text-[#909096]" />
                             </div>
-                            <div className="flex flex-col opacity-0 scale-95 group-hover/sidebar:opacity-100 group-hover/sidebar:scale-100 transition-all duration-300 whitespace-nowrap overflow-hidden">
-                                <p className="text-[12px] font-black text-white truncate tracking-tight uppercase">
+                            <div className="flex flex-col opacity-100 scale-100 md:opacity-0 md:scale-95 md:group-hover/sidebar:opacity-100 md:group-hover/sidebar:scale-100 transition-all duration-300 whitespace-nowrap overflow-hidden">
+                                <p className="text-[12px] font-bold text-[#F5F5F5] truncate tracking-[0.04em] uppercase">
                                     {userName || 'Cargando...'}
                                 </p>
-                                <p className="text-[9px] text-[#86868B] truncate font-black tracking-widest uppercase">
+                                <p className="text-[9px] text-[#909096] truncate font-medium tracking-[0.1em] uppercase mt-1">
                                     {userEmail || 'Iniciando sesión...'}
                                 </p>
                             </div>
@@ -171,7 +172,7 @@ export default function Layout() {
                         <button
                             onClick={handleLogout}
                             className={cn(
-                                "flex items-center justify-center gap-3 w-full mt-2 md:mt-0 px-4 py-3 text-[9px] font-black uppercase tracking-[0.2em] text-[#86868B] hover:text-rose-500 hover:bg-rose-500/10 rounded-[8px] border border-transparent hover:border-rose-500/20 transition-all duration-200 overflow-hidden",
+                                "flex items-center justify-start gap-3 w-full mt-2 md:mt-0 px-3 py-3 text-[9px] font-semibold uppercase tracking-[0.18em] text-[#909096] hover:text-white hover:bg-[#141414] rounded-[8px] border-t border-[#2A2A2D] transition-all duration-200 overflow-hidden",
                                 "md:h-0 md:opacity-0 md:group-hover/sidebar:h-12 md:group-hover/sidebar:opacity-100 md:group-hover/sidebar:mt-2"
                             )}
                         >
