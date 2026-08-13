@@ -48,37 +48,33 @@ export const PageHeader = ({
     }
 
     return (
-        <div className="relative overflow-hidden bg-[#000000] border-b border-[#333333] mb-8">
-            <div className="max-w-[1600px] mx-auto px-4 md:px-8 py-10">
-                <div className="flex flex-col md:flex-row md:items-end justify-between gap-8">
-                    <div className="flex items-start md:items-center gap-6">
+        <div className="relative bg-[#000000] mb-8">
+            <div className="max-w-[1600px] mx-auto px-4 md:px-8 py-8">
+                <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-[#27272a] pb-6">
+                    <div className="flex items-start sm:items-center gap-3 min-w-0">
                         <button
                             onClick={() => backRoute ? navigate(backRoute) : navigate(-1)}
-                            className="w-14 h-14 bg-transparent border border-[#F5F5F7]/30 rounded-[8px] flex items-center justify-center text-[#F5F5F7] hover:bg-[#F5F5F7]/10 transition-all shadow-xl active:scale-95"
+                            className="w-10 h-10 rounded-lg bg-[#27272a] hover:bg-[#3f3f46] border border-[#3f3f46]/50 flex items-center justify-center text-[#a1a1aa] hover:text-white transition-all shrink-0 active:scale-95"
+                            aria-label="Regresar"
                         >
-                            <ChevronLeft className="w-6 h-6" />
+                            <ChevronLeft className="w-5 h-5" />
                         </button>
 
-                        <div className="space-y-2">
-                            <div className="flex items-center gap-3">
-                                {Icon && <div className="w-10 h-10 rounded-[6px] bg-[#0071E3] flex items-center justify-center shadow-2xl shadow-[#0071E3]/20">
-                                    <Icon className="w-5 h-5 text-white" />
-                                </div>}
-                                <span className="text-[10px] font-black text-[#0071E3] uppercase tracking-[0.4em] drop-shadow-sm">
-                                    {subtitle}
-                                </span>
+                        {Icon && (
+                            <div className="p-2 rounded-lg bg-[#0071E3]/10 text-[#0071E3] border border-[#0071E3]/20 shrink-0">
+                                <Icon className="w-6 h-6" />
                             </div>
-                            <h1 className="text-4xl md:text-5xl font-black text-[#F5F5F7] tracking-tighter leading-none italic uppercase font-heading">
+                        )}
+
+                        <div className="min-w-0">
+                            <h1 className="text-2xl md:text-3xl font-black tracking-tight text-white leading-tight">
                                 {title}
                             </h1>
+                            <p className="text-sm text-[#a1a1aa] mt-1">{subtitle}</p>
                         </div>
                     </div>
 
-                    {rightElement && (
-                        <div className="flex items-center gap-4">
-                            {rightElement}
-                        </div>
-                    )}
+                    {rightElement && <div className="flex items-center gap-4">{rightElement}</div>}
                 </div>
             </div>
         </div>
