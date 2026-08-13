@@ -69,11 +69,13 @@ export default function Layout() {
         <div className="flex h-screen bg-[#000000] text-[#F5F5F7] overflow-hidden font-sans">
             {/* Mobile Header */}
             <div className="md:hidden fixed top-0 left-0 right-0 h-16 bg-[#121212] border-b border-[#333333] flex items-center justify-between px-6 z-50">
-                <div className="flex items-center gap-3">
-                    <div className="w-8 h-8 rounded-[4px] bg-[#0071E3] flex items-center justify-center shadow-lg shadow-[#0071E3]/20">
-                        <span className="text-white font-black text-sm italic">S</span>
+                <div className="flex items-center gap-3 min-w-0">
+                    <div className="w-10 h-8 rounded-[4px] bg-[#0071E3] flex items-center justify-center shadow-lg shadow-[#0071E3]/20 shrink-0">
+                        <span className="text-white font-black text-[9px] tracking-tight italic">SDMO</span>
                     </div>
-                    <span className="text-white font-black text-lg tracking-tighter uppercase italic">SDMO</span>
+                    <span className="text-white font-black text-[11px] leading-tight tracking-tight uppercase max-w-48">
+                        Desarrollo y Mantenimiento de Obras
+                    </span>
                 </div>
                 <button
                     onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
@@ -98,13 +100,13 @@ export default function Layout() {
             )}>
                 {/* Header / Logo */}
                 <div className="p-8 hidden md:block overflow-hidden relative">
-                    <div className="flex items-center gap-5">
+                    <div className="flex items-center gap-4">
                         <div className="w-12 h-12 rounded-[4px] bg-[#0071E3] flex items-center justify-center shadow-2xl shadow-[#0071E3]/20 shrink-0">
-                            <span className="text-white font-black text-2xl italic">S</span>
+                            <span className="text-white font-black text-[11px] tracking-tight italic">SDMO</span>
                         </div>
-                        <div className="flex flex-col opacity-0 scale-95 group-hover/sidebar:opacity-100 group-hover/sidebar:scale-100 transition-all duration-300 whitespace-nowrap overflow-hidden">
-                            <h1 className="text-2xl font-black text-white tracking-tighter leading-none uppercase italic">
-                                SDMO
+                        <div className="flex flex-col opacity-0 scale-95 group-hover/sidebar:opacity-100 group-hover/sidebar:scale-100 transition-all duration-300 overflow-hidden">
+                            <h1 className="w-40 text-[12px] font-black text-white tracking-tight leading-[1.15] uppercase">
+                                Desarrollo y Mantenimiento de Obras
                             </h1>
                         </div>
                     </div>
