@@ -74,7 +74,7 @@ export default function Layout() {
                         <span className="text-[#F5F5F5] font-bold text-[9px] tracking-tight">SDMO</span>
                     </div>
                     <span className="text-[#F5F5F5] font-semibold text-[10px] leading-tight tracking-[0.04em] uppercase max-w-52">
-                        SecciÃ³n Desarrollo y Mantenimiento de Obras
+                        {'SECCI\u00D3N DESARROLLO Y MANTENIMIENTO DE OBRAS'}
                     </span>
                 </div>
                 <button
@@ -106,7 +106,7 @@ export default function Layout() {
                         </div>
                         <div className="flex flex-col opacity-0 scale-95 group-hover/sidebar:opacity-100 group-hover/sidebar:scale-100 transition-all duration-300 overflow-hidden">
                             <h1 className="w-40 text-[11px] font-semibold text-[#F5F5F5] tracking-[0.04em] leading-[1.25] uppercase">
-                                SecciÃ³n Desarrollo y Mantenimiento de Obras
+                                {'SECCI\u00D3N DESARROLLO Y MANTENIMIENTO DE OBRAS'}
                             </h1>
                         </div>
                     </div>
