@@ -250,6 +250,10 @@ export default function IngresarArticulo() {
         setDetalles(newDetalles);
     };
 
+    const handleQuantityWheel = (event: React.WheelEvent<HTMLInputElement>) => {
+        event.currentTarget.blur();
+    };
+
     const handleSelectArticle = (articulo: any) => {
         if (currentDetailIndex !== null) {
             handleDetailChange(currentDetailIndex, 'articulo', articulo);
@@ -562,6 +566,7 @@ export default function IngresarArticulo() {
                                                         type="number"
                                                         value={row.cantidad}
                                                         onChange={(e) => handleDetailChange(index, 'cantidad', e.target.value)}
+                                                        onWheel={handleQuantityWheel}
                                                         className="w-full bg-black/20 border border-[#424245] rounded-[8px] p-4 text-[#F5F5F7] text-2xl font-bold focus:border-[#0071E3] outline-none transition-all text-center tabular-nums"
                                                         placeholder="0"
                                                     />
