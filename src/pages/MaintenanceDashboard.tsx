@@ -490,11 +490,17 @@ export default function MaintenanceDashboard() {
     return (
         <div className="min-h-screen bg-[#000000] text-[#F5F5F7] font-sans selection:bg-[#0071E3]/30">
             <div className="animate-fade-in-up">
-                <PageHeader
-                    title="Panel de Control (STI) - V2.2"
-                    icon={Activity}
-                    themeColor="blue"
-                />
+                <div className="max-w-7xl mx-auto px-4 md:px-8 pt-8">
+                    <div className="border-b border-[#27272a] pb-6">
+                        <PageHeader
+                            title="Panel de Control (STI) - V2.2"
+                            icon={Activity}
+                            themeColor="blue"
+                            subtitle="Resumen general de operaciones del Sistema de Desarrollo y Mantenimiento de Obras (SDMO)"
+                            compact
+                        />
+                    </div>
+                </div>
 
                 <div className="max-w-7xl mx-auto px-8 pt-8 flex flex-col gap-10">
                     {/* Filters Row */}
