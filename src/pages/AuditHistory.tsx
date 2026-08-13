@@ -62,12 +62,14 @@ export default function AuditHistory() {
     return (
         <div className="min-h-screen bg-[#000000] p-8 text-[#F5F5F7]">
             <div className="max-w-7xl mx-auto space-y-8 animate-fade-in-up">
-                <div className="flex flex-col md:flex-row md:items-end justify-between gap-8">
+                <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-[#27272a] pb-6">
                     <div className="space-y-4">
                         <PageHeader
                             title="Historial de Auditoría"
                             icon={History}
                             themeColor="blue"
+                            subtitle="Registro y trazabilidad de operaciones realizadas en el sistema"
+                            compact
                         />
                         <div className="flex items-center gap-3 px-4 py-2 bg-[#1D1D1F] border border-[#333333] rounded-[8px] w-fit">
                             <span className="w-2 h-2 rounded-full bg-[#0071E3] animate-pulse" />

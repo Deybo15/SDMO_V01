@@ -215,11 +215,17 @@ export default function ProyeccionCompras() {
     return (
         <div className="min-h-screen bg-[#000000] text-[#F5F5F7] font-sans selection:bg-[#0071E3]/30">
             <div className="animate-fade-in-up">
-                <PageHeader
-                    title="Proyección de Compras Anual"
-                    icon={Calculator}
-                    themeColor="blue"
-                />
+                <div className="max-w-[1600px] mx-auto px-4 md:px-8 pt-8">
+                    <div className="border-b border-[#27272a] pb-6">
+                        <PageHeader
+                            title="Proyección de Compras Anual"
+                            icon={Calculator}
+                            themeColor="blue"
+                            subtitle="Planificación anual de necesidades y presupuesto de inventario"
+                            compact
+                        />
+                    </div>
+                </div>
 
                 <div className="max-w-7xl mx-auto px-8 pt-8 space-y-10">
                     {/* Header Controls Row */}

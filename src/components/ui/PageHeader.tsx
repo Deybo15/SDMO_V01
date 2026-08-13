@@ -11,6 +11,7 @@ interface PageHeaderProps {
     backRoute?: string;
     subtitle?: string;
     rightElement?: React.ReactNode;
+    compact?: boolean;
 }
 
 export const PageHeader = ({
@@ -19,9 +20,32 @@ export const PageHeader = ({
     themeColor = 'blue',
     backRoute,
     subtitle = "Gabinete de Gestión Operativa",
-    rightElement
+    rightElement,
+    compact = false
 }: PageHeaderProps) => {
     const navigate = useNavigate();
+
+    if (compact) {
+        return (
+            <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 flex-1 min-w-0">
+                <div>
+                    <div className="flex items-center gap-3 mb-1">
+                        {Icon && (
+                            <div className="p-2 rounded-lg bg-[#0071E3]/10 text-[#0071E3] border border-[#0071E3]/20 shrink-0">
+                                <Icon className="w-6 h-6" />
+                            </div>
+                        )}
+                        <h1 className="text-2xl md:text-3xl font-black tracking-tight text-white">
+                            {title}
+                        </h1>
+                    </div>
+                    <p className="text-sm text-[#a1a1aa]">{subtitle}</p>
+                </div>
+
+                {rightElement && <div className="flex items-center gap-4">{rightElement}</div>}
+            </div>
+        );
+    }
 
     return (
         <div className="relative overflow-hidden bg-[#000000] border-b border-[#333333] mb-8">

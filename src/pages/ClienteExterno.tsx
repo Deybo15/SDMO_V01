@@ -37,11 +37,13 @@ export default function ClienteExterno() {
     return (
         <div className="min-h-screen bg-[#000000] p-8 text-[#F5F5F7]">
             <div className="max-w-7xl mx-auto space-y-12 animate-fade-in-up">
-                <div className="flex flex-col md:flex-row md:items-end justify-between gap-8">
+                <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-[#27272a] pb-6">
                     <PageHeader
                         title="Cliente Externo"
                         icon={Globe}
                         themeColor="blue"
+                        subtitle="Gestión de solicitudes y entregas para clientes externos"
+                        compact
                     />
                     <button
                         onClick={() => navigate('/')}

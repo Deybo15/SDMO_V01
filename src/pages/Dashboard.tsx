@@ -1,8 +1,9 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '../lib/supabase';
-import { Package, ClipboardList, Users, ArrowUpRight, AlertTriangle, PlusCircle, Search, FileText } from 'lucide-react';
+import { Package, ClipboardList, Users, ArrowUpRight, AlertTriangle, PlusCircle, Search, FileText, LayoutDashboard } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { formatDateOnly } from '../lib/utils';
+import { PageHeader } from '../components/ui/PageHeader';
 
 export default function Dashboard() {
     const navigate = useNavigate();
@@ -125,12 +126,14 @@ export default function Dashboard() {
     ];
 
     return (
-        <div className="p-6 space-y-8 animate-fade-in">
-            <div className="sticky top-0 z-30 flex items-center justify-between py-4 -mx-6 px-6 bg-slate-900/90 backdrop-blur-md border-b border-slate-800 mb-6">
-                <div>
-                    <h2 className="text-3xl font-bold text-white font-heading">Panel de Control</h2>
-                    <p className="text-slate-400 mt-1 text-sm">Resumen general de operaciones</p>
-                </div>
+        <div className="p-6 md:p-8 space-y-8 animate-fade-in">
+            <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-[#27272a] pb-6">
+                <PageHeader
+                    title="Panel de Control"
+                    icon={LayoutDashboard}
+                    subtitle="Resumen general de operaciones del Sistema de Desarrollo y Mantenimiento de Obras (SDMO)"
+                    compact
+                />
                 <div className="text-sm text-slate-400 font-medium bg-slate-800/50 px-3 py-1 rounded-full border border-slate-700">
                     {new Date().toLocaleDateString('es-ES', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}
                 </div>
