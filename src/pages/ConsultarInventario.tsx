@@ -38,6 +38,7 @@ interface MarcaItem {
 }
 
 export default function ConsultarInventario() {
+    const navigate = useNavigate();
     const [loading, setLoading] = useState(false);
     const [data, setData] = useState<InventoryItem[]>([]);
     const [search, setSearch] = useState('');
@@ -229,6 +230,15 @@ export default function ConsultarInventario() {
                         {/* Modal-style Header */}
                         <div className="pb-4 border-b border-[#27272a] flex flex-col md:flex-row justify-between md:items-center gap-4 shrink-0">
                             <div className="flex items-center gap-3">
+                                <button
+                                    type="button"
+                                    onClick={() => navigate('/articulos')}
+                                    className="w-12 h-12 shrink-0 bg-[#111112] border border-[#52525b] rounded-lg text-[#a1a1aa] hover:bg-[#18181b] hover:text-white hover:border-[#71717a] transition-colors flex items-center justify-center"
+                                    aria-label="Regresar a Gestión de artículos"
+                                    title="Regresar"
+                                >
+                                    <ChevronLeft className="w-5 h-5" />
+                                </button>
                                 <div className="p-3 bg-[#111112] border border-[#71717a] rounded-lg text-[#e4e4e7]">
                                     <LayoutGrid className="w-7 h-7" />
                                 </div>
