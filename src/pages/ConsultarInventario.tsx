@@ -11,10 +11,7 @@ import {
     ChevronLeft,
     ChevronRight,
     Filter,
-    Activity,
-    Maximize2,
     Image as ImageIcon,
-    PlusCircle
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import SmartImage from '../components/SmartImage';
@@ -22,7 +19,6 @@ import * as XLSX from 'xlsx';
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
 import { cn } from '../lib/utils';
-import { PageHeader } from '../components/ui/PageHeader';
 
 // Define types for our data
 interface InventoryItem {
@@ -49,16 +45,6 @@ export default function ConsultarInventario() {
     const [totalItems, setTotalItems] = useState(0);
     const [error, setError] = useState<string | null>(null);
     const [selectedImage, setSelectedImage] = useState<{ src: string, alt: string, stock?: number, unidad?: string, codigo?: string, marca?: string } | null>(null);
-    const [isMobile, setIsMobile] = useState(window.innerWidth < 768);
-
-    const themeColor = 'teal';
-
-    useEffect(() => {
-        const handleResize = () => setIsMobile(window.innerWidth < 768);
-        window.addEventListener('resize', handleResize);
-        return () => window.removeEventListener('resize', handleResize);
-    }, []);
-
     const itemsPerPage = 48; // Grid optimized number (divisible by 2, 3, 4)
     const VIEW = 'inventario_con_datos';
 
@@ -234,34 +220,33 @@ export default function ConsultarInventario() {
     const totalPages = Math.ceil(totalItems / itemsPerPage);
 
     return (
-        <div className="min-h-screen bg-[#000000] text-[#F5F5F7] font-sans selection:bg-teal-500/30">
+        <div className="min-h-screen bg-black text-[#f4f4f5] font-sans selection:bg-white/20">
             <div className="animate-fade-in-up">
-                <div className="max-w-6xl mx-auto px-6 py-4 flex flex-col min-h-screen">
+                <div className="max-w-[1600px] mx-auto px-4 md:px-8 py-6 flex flex-col min-h-screen">
                     {/* Unified Premium Container */}
-                    <div className="bg-[#0f111a]/95 border border-white/10 rounded-[2.5rem] shadow-[0_0_80px_rgba(0,0,0,0.8)] overflow-hidden flex flex-col relative group flex-1 my-4">
-                        <div className="absolute top-0 left-0 w-full h-[1px] bg-gradient-to-r from-transparent via-teal-500/40 to-transparent z-20" />
+                    <div className="bg-black overflow-hidden flex flex-col relative group flex-1">
 
                         {/* Modal-style Header */}
-                        <div className="px-10 py-8 border-b border-white/10 flex flex-col md:flex-row justify-between items-center bg-black/40 gap-6 shrink-0">
-                            <div className="flex items-center gap-6">
-                                <div className="p-4 bg-teal-500/10 border border-teal-500/20 rounded-3xl group-hover:scale-110 transition-transform duration-500">
-                                    <LayoutGrid className="w-10 h-10 text-teal-400" />
+                        <div className="pb-4 border-b border-[#27272a] flex flex-col md:flex-row justify-between md:items-center gap-4 shrink-0">
+                            <div className="flex items-center gap-3">
+                                <div className="p-3 bg-[#111112] border border-[#71717a] rounded-lg text-[#e4e4e7]">
+                                    <LayoutGrid className="w-7 h-7" />
                                 </div>
                                 <div>
-                                    <h3 className="text-4xl font-black text-white italic tracking-tight uppercase leading-none">
-                                        BUSCADOR
+                                    <h3 className="text-2xl md:text-[30px] font-black text-white tracking-tight leading-none">
+                                        Consulta de inventario
                                     </h3>
-                                    <p className="text-[10px] font-black uppercase tracking-[0.3em] text-gray-500 mt-3 ml-1 opacity-70">
-                                        Gestión de inventario en tiempo real · SDMO Premium
+                                    <p className="text-sm text-[#a1a1aa] mt-1">
+                                        Búsqueda y disponibilidad de artículos
                                     </p>
                                 </div>
                             </div>
 
-                            <div className="flex gap-4 w-full md:w-auto shrink-0">
+                            <div className="flex gap-3 w-full md:w-auto shrink-0">
                                 <button
                                     onClick={handleExportExcel}
                                     disabled={loading}
-                                    className="flex-1 md:flex-none px-10 py-4 bg-teal-600/10 border border-teal-500/20 text-teal-400 rounded-2xl font-black text-[10px] uppercase tracking-[0.2em] hover:bg-teal-600/20 hover:text-teal-300 active:scale-95 transition-all flex items-center justify-center gap-3 disabled:opacity-20 shadow-2xl shadow-teal-500/10"
+                                    className="flex-1 md:flex-none px-5 py-3 bg-[#e4e4e7] border border-white text-black rounded-lg font-semibold text-sm hover:bg-white transition-colors flex items-center justify-center gap-2 disabled:opacity-20"
                                 >
                                     <Download className="w-5 h-5" />
                                     EXCEL
@@ -269,7 +254,7 @@ export default function ConsultarInventario() {
                                 <button
                                     onClick={handleExportPDF}
                                     disabled={loading}
-                                    className="flex-1 md:flex-none px-10 py-4 bg-white/5 border border-white/10 text-gray-400 rounded-2xl font-black text-[10px] uppercase tracking-[0.2em] hover:text-white hover:bg-white/10 active:scale-95 transition-all flex items-center justify-center gap-3 disabled:opacity-20"
+                                    className="flex-1 md:flex-none px-5 py-3 bg-[#111112] border border-[#52525b] text-white rounded-lg font-semibold text-sm hover:bg-[#18181b] transition-colors flex items-center justify-center gap-2 disabled:opacity-20"
                                 >
                                     <FileText className="w-5 h-5" />
                                     PDF
@@ -278,9 +263,9 @@ export default function ConsultarInventario() {
                         </div>
 
                         {/* Modal-style Search Bar Row */}
-                        <div className="px-10 py-8 bg-black/20 shrink-0 border-b border-white/5">
+                        <div className="py-4 shrink-0">
                             <div className="relative group/search">
-                                <Search className="absolute left-8 top-1/2 -translate-y-1/2 w-7 h-7 text-gray-600 group-focus-within/search:text-teal-400 transition-all duration-500" />
+                                <Search className="absolute left-5 top-1/2 -translate-y-1/2 w-5 h-5 text-[#71717a] group-focus-within/search:text-white transition-colors" />
                                 <input
                                     type="text"
                                     placeholder="Buscar por código o nombre del artículo..."
@@ -289,13 +274,18 @@ export default function ConsultarInventario() {
                                         setSearch(e.target.value);
                                         setPage(1);
                                     }}
-                                    className="w-full bg-black/40 border-2 border-white/5 rounded-3xl py-6 pl-20 pr-10 text-white text-xl font-medium outline-none focus:border-teal-500/40 focus:ring-8 focus:ring-teal-500/5 transition-all placeholder:text-gray-700/50"
+                                    className="w-full bg-[#0d0d0e] border border-[#3f3f46] rounded-lg py-4 pl-14 pr-6 text-white text-sm font-medium outline-none focus:border-[#a1a1aa] transition-colors placeholder:text-[#71717a]"
                                 />
                             </div>
                         </div>
 
                         {/* Unified Grid Area */}
-                        <div className="flex-1 p-4 md:p-8 custom-scrollbar-premium relative bg-black/5 overflow-y-auto">
+                        <div className="flex-1 custom-scrollbar-premium relative overflow-y-auto">
+                            {!loading && !error && data.length > 0 && (
+                                <div className="mb-4 text-sm text-[#a1a1aa]">
+                                    <span className="font-semibold text-white">{totalItems.toLocaleString('es-CR')}</span> artículos registrados
+                                </div>
+                            )}
                             {loading && data.length === 0 ? (
                                 <div className="flex flex-col items-center justify-center h-full gap-8">
                                     <div className="relative">
@@ -333,7 +323,7 @@ export default function ConsultarInventario() {
                                     </div>
                                 </div>
                             ) : (
-                                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-8 pb-10">
+                                <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4 pb-6">
                                     {data.map((item) => (
                                         <div
                                             key={item.codigo_articulo}
@@ -346,17 +336,21 @@ export default function ConsultarInventario() {
                                                 marca: item.marca
                                             })}
                                             className={cn(
-                                                "group relative bg-[#1D1D1F]/40 border border-white/5 rounded-[2rem] p-6 hover:bg-white/[0.08] hover:border-teal-500/40 transition-all duration-500 cursor-pointer flex flex-col h-full shadow-2xl hover:shadow-teal-500/20",
-                                                item.cantidad_disponible === 0 && "opacity-60"
+                                                "group relative grid grid-cols-[minmax(112px,42%)_1fr] grid-rows-[1fr_auto] gap-x-4 gap-y-3 bg-[#0d0d0e] border border-[#3f3f46] rounded-xl p-4 hover:bg-[#111112] hover:border-[#71717a] transition-colors cursor-pointer min-h-[220px]",
+                                                item.cantidad_disponible === 0 && "opacity-70"
                                             )}
                                         >
                                             {/* Article Image Container */}
-                                            <div className="relative aspect-square rounded-[1.5rem] overflow-hidden mb-6 bg-white/[0.02] border border-white/5 shadow-inner group-hover:scale-[1.02] transition-transform duration-700">
+                                            <div className={cn(
+                                                "relative row-span-2 self-start rounded-lg overflow-hidden bg-[#151517] border border-[#3f3f46]",
+                                                !item.imagen_url && "aspect-square"
+                                            )}>
                                                 {item.imagen_url ? (
                                                     <SmartImage
                                                         src={item.imagen_url}
                                                         alt={item.nombre_articulo}
-                                                        className="w-full h-full object-cover group-hover:scale-125 transition-transform duration-1000 ease-out"
+                                                        containerClassName="w-full"
+                                                        className="w-full !h-auto !object-contain p-2 group-hover:scale-[1.02] transition-transform duration-300"
                                                     />
                                                 ) : (
                                                     <div className="w-full h-full flex items-center justify-center opacity-20">
@@ -365,27 +359,24 @@ export default function ConsultarInventario() {
                                                 )}
 
                                                 {/* Float Badge */}
-                                                <div className="absolute top-4 right-4 px-4 py-1.5 bg-black/80 backdrop-blur-md rounded-xl text-[10px] font-black text-teal-400 border border-teal-500/30 uppercase tracking-[0.1em] shadow-2xl">
+                                                <div className="absolute top-3 right-3 px-2.5 py-1 bg-black/85 rounded-md text-[9px] font-semibold text-[#d4d4d8] border border-[#52525b] uppercase tracking-wider">
                                                     {item.unidad || 'UND'}
                                                 </div>
 
-                                                <div className="absolute inset-0 bg-black/20 opacity-0 group-hover:opacity-100 flex items-center justify-center transition-all duration-500">
-                                                    <Maximize2 className="w-10 h-10 text-white scale-75 group-hover:scale-100 transition-transform duration-500" />
-                                                </div>
                                             </div>
 
                                             {/* Article Info */}
-                                            <div className="flex-1 flex flex-col space-y-4">
+                                            <div className="min-w-0 flex flex-col gap-3">
                                                 <div className="space-y-2">
-                                                    <h4 className="font-black text-white group-hover:text-teal-400 transition-colors leading-tight uppercase italic text-[13px] tracking-tighter">
+                                                    <h4 className="font-semibold text-white leading-snug text-[13px] line-clamp-4">
                                                         {item.nombre_articulo}
                                                     </h4>
                                                     <div className="flex items-center gap-3">
-                                                        <span className="text-[12px] font-mono font-black text-white/90 tracking-tighter uppercase px-2 py-0.5 bg-black/40 rounded-md border border-white/5">
+                                                        <span className="max-w-full truncate text-[10px] font-mono font-semibold text-[#d4d4d8] px-2 py-1 bg-[#18181b] rounded border border-[#3f3f46]">
                                                             {item.codigo_articulo}
                                                         </span>
                                                         {item.marca && (
-                                                            <span className="text-[9px] uppercase font-black text-gray-500 tracking-widest opacity-80 italic">
+                                                            <span className="text-[9px] uppercase font-medium text-[#71717a] tracking-wider truncate">
                                                                 {item.marca}
                                                             </span>
                                                         )}
@@ -393,27 +384,27 @@ export default function ConsultarInventario() {
                                                 </div>
 
                                                 {/* Price Reveal */}
-                                                <div className="text-[10px] text-gray-600 font-bold uppercase tracking-widest flex justify-between items-center border-t border-white/5 pt-4">
-                                                    <span>VALOR UNITARIO</span>
-                                                    <span className="text-[#F5F5F7] opacity-60 font-mono">
+                                                <div className="text-[9px] text-[#71717a] font-medium uppercase tracking-wider flex flex-col gap-1 border-t border-[#27272a] pt-3">
+                                                    <span>Valor unitario</span>
+                                                    <span className="text-[#d4d4d8] font-mono text-[11px]">
                                                         {Number(item.precio_unitario).toLocaleString('es-CR', { style: 'currency', currency: 'CRC' })}
                                                     </span>
                                                 </div>
                                             </div>
 
                                             {/* Stock Reveal Footer */}
-                                            <div className="mt-6 flex items-center justify-between">
+                                            <div className="flex items-end justify-between self-end">
                                                 <div className="flex flex-col">
-                                                    <span className="text-[9px] text-gray-600 uppercase font-black tracking-widest mb-1 italic opacity-60">Stock Real</span>
+                                                    <span className="text-[9px] text-[#71717a] font-medium tracking-wider mb-1">Stock disponible</span>
                                                     <span className={cn(
-                                                        "text-3xl font-black italic leading-none tracking-tighter",
-                                                        item.cantidad_disponible > 0 ? "text-teal-400" : "text-red-500/50"
+                                                        "text-2xl font-semibold leading-none tabular-nums",
+                                                        item.cantidad_disponible > 0 ? "text-white" : "text-[#71717a]"
                                                     )}>
                                                         {item.cantidad_disponible}
                                                     </span>
                                                 </div>
-                                                <div className="w-14 h-14 rounded-2xl bg-teal-500/10 border border-teal-500/20 flex items-center justify-center group-hover:bg-teal-400 group-hover:text-black transition-all duration-700 shadow-inner group-hover:shadow-[0_0_20px_rgba(20,184,166,0.3)]">
-                                                    <PlusCircle className="w-8 h-8" />
+                                                <div className="w-9 h-9 rounded-lg bg-[#151517] border border-[#52525b] flex items-center justify-center text-[#d4d4d8] group-hover:border-[#a1a1aa] group-hover:text-white transition-colors">
+                                                    <ChevronRight className="w-5 h-5" />
                                                 </div>
                                             </div>
                                         </div>
@@ -423,22 +414,22 @@ export default function ConsultarInventario() {
                         </div>
 
                         {/* Pagination Footer (Inside the container) */}
-                        <div className="border-t border-white/10 p-8 flex flex-col md:flex-row items-center justify-between gap-8 bg-black/60 shrink-0">
+                        <div className="border-t border-[#27272a] py-5 flex flex-col md:flex-row items-center justify-between gap-4 bg-black shrink-0">
                             <button
                                 onClick={() => setPage((p: number) => Math.max(1, p - 1))}
                                 disabled={page === 1 || loading}
-                                className="w-full md:w-auto flex items-center justify-center gap-4 px-12 py-5 text-[11px] font-black text-[#F5F5F7] bg-white/[0.03] rounded-2xl hover:border-teal-500 hover:bg-white/5 hover:-translate-y-1 hover:shadow-[0_0_30px_rgba(20,184,166,0.15)] border border-white/10 transition-all duration-500 disabled:opacity-10 disabled:pointer-events-none uppercase tracking-[0.2em] active:scale-95 group shadow-2xl"
+                                className="w-full md:w-auto flex items-center justify-center gap-2 px-5 py-3 text-sm font-semibold text-white bg-[#111112] rounded-lg hover:border-[#a1a1aa] hover:bg-[#18181b] border border-[#3f3f46] transition-colors disabled:opacity-20 disabled:pointer-events-none"
                             >
-                                <ChevronLeft className="w-6 h-6 group-hover:-translate-x-2 transition-transform text-teal-500" />
-                                ANTERIOR
+                                <ChevronLeft className="w-5 h-5" />
+                                Anterior
                             </button>
 
-                            <div className="flex items-center gap-16">
+                            <div className="flex items-center gap-8">
                                 <div className="text-center group-hover/footer:scale-110 transition-transform">
-                                    <span className="text-[9px] font-black text-[#86868B] uppercase tracking-[0.3em] block mb-3 opacity-60">PÁGINA</span>
+                                    <span className="text-[9px] font-semibold text-[#71717a] uppercase tracking-[0.18em] block mb-2">Página</span>
                                     <div className="flex items-center gap-6">
                                         <div className="flex items-baseline gap-1">
-                                            <span className="text-4xl font-black text-teal-400 italic leading-none tracking-tighter">{page}</span>
+                                            <span className="text-2xl font-semibold text-white leading-none">{page}</span>
                                             <span className="text-gray-700 font-bold text-xl">/</span>
                                             <span className="text-2xl font-black text-gray-600 leading-none">{totalPages || 1}</span>
                                         </div>
@@ -446,18 +437,18 @@ export default function ConsultarInventario() {
                                 </div>
                                 <div className="h-12 w-[1px] bg-white/10 hidden md:block" />
                                 <div className="text-center hidden sm:block">
-                                    <span className="text-[9px] font-black text-[#86868B] uppercase tracking-[0.3em] block mb-3 opacity-60">CATÁLOGO TOTAL</span>
-                                    <span className="text-2xl font-black text-[#F5F5F7] tracking-tighter italic">{totalItems.toLocaleString()}</span>
+                                    <span className="text-[9px] font-semibold text-[#71717a] uppercase tracking-[0.18em] block mb-2">Catálogo total</span>
+                                    <span className="text-lg font-semibold text-white">{totalItems.toLocaleString()}</span>
                                 </div>
                             </div>
 
                             <button
                                 onClick={() => setPage((p: number) => Math.min(totalPages, p + 1))}
                                 disabled={page === totalPages || loading}
-                                className="w-full md:w-auto flex items-center justify-center gap-4 px-12 py-5 text-[11px] font-black text-[#F5F5F7] bg-white/[0.03] rounded-2xl hover:border-teal-500 hover:bg-white/5 hover:-translate-y-1 hover:shadow-[0_0_30px_rgba(20,184,166,0.15)] border border-white/10 transition-all duration-500 disabled:opacity-10 disabled:pointer-events-none uppercase tracking-[0.2em] active:scale-95 group shadow-2xl"
+                                className="w-full md:w-auto flex items-center justify-center gap-2 px-5 py-3 text-sm font-semibold text-white bg-[#111112] rounded-lg hover:border-[#a1a1aa] hover:bg-[#18181b] border border-[#3f3f46] transition-colors disabled:opacity-20 disabled:pointer-events-none"
                             >
-                                SIGUIENTE
-                                <ChevronRight className="w-6 h-6 group-hover:translate-x-2 transition-transform text-teal-500" />
+                                Siguiente
+                                <ChevronRight className="w-5 h-5" />
                             </button>
                         </div>
                     </div>
@@ -467,60 +458,79 @@ export default function ConsultarInventario() {
             {/* Image Modal */}
             {selectedImage && (
                 <div
-                    className="fixed inset-0 z-[200] flex items-center justify-center bg-black/98 backdrop-blur-3xl p-6 animate-in fade-in duration-500"
+                    className="fixed inset-0 z-[200] flex items-center justify-center bg-black/85 backdrop-blur-md p-4 md:p-8 animate-in fade-in duration-200"
                     onClick={() => setSelectedImage(null)}
                 >
                     <div
-                        className="relative max-w-4xl w-full bg-[#0f111a] rounded-[2.5rem] overflow-hidden border border-white/10 shadow-[0_0_120px_rgba(0,0,0,0.9)] flex flex-col max-h-[90vh]"
+                        className="relative max-w-5xl w-full max-h-[90vh] overflow-y-auto bg-[#0b0b0c] rounded-2xl border border-[#3f3f46] shadow-2xl"
                         onClick={e => e.stopPropagation()}
                     >
-                        <button
-                            onClick={() => setSelectedImage(null)}
-                            className="absolute top-6 right-6 z-10 w-12 h-12 flex items-center justify-center rounded-full bg-black/40 hover:bg-teal-500/20 text-white transition-all border border-white/10 group shadow-2xl"
-                        >
-                            <X className="w-6 h-6 group-hover:rotate-90 transition-transform duration-500" />
-                        </button>
-
-                        <div className="p-8 flex items-center justify-center min-h-[300px] bg-black/20 overflow-hidden">
-                            <img
-                                src={selectedImage.src}
-                                alt={selectedImage.alt}
-                                className="max-w-full max-h-[40vh] object-contain rounded-2xl shadow-[0_0_80px_rgba(0,0,0,0.5)] border border-white/5 hover:scale-[1.02] transition-transform duration-700"
-                            />
+                        <div className="flex items-center justify-between gap-4 px-6 py-5 border-b border-[#27272a]">
+                            <div>
+                                <p className="text-[10px] font-semibold uppercase tracking-[0.22em] text-[#71717a]">Inventario</p>
+                                <h2 className="mt-1 text-lg font-semibold text-[#f4f4f5]">Detalle del artículo</h2>
+                            </div>
+                            <button
+                                onClick={() => setSelectedImage(null)}
+                                aria-label="Cerrar detalle"
+                                className="w-10 h-10 flex items-center justify-center rounded-lg bg-[#111112] hover:bg-[#1c1c1f] text-[#d4d4d8] border border-[#3f3f46] transition-colors"
+                            >
+                                <X className="w-5 h-5" />
+                            </button>
                         </div>
 
-                        <div className="p-8 border-t border-white/10 bg-black/60 overflow-y-auto">
-                            <div className="flex flex-col md:flex-row md:items-center justify-between gap-8">
-                                <div className="space-y-4 flex-1">
-                                    <div className="flex items-center gap-3">
-                                        <span className="text-teal-400 font-black text-[9px] uppercase tracking-[0.3em] bg-teal-500/10 px-4 py-1.5 rounded-xl border border-teal-500/20 shadow-inner">
-                                            Identificación
-                                        </span>
-                                        {selectedImage.marca && (
-                                            <span className="text-gray-500 font-black text-[9px] uppercase tracking-[0.3em] bg-black/40 px-4 py-1.5 rounded-xl border border-white/5 italic">
-                                                MARCA: {selectedImage.marca}
-                                            </span>
-                                        )}
-                                    </div>
-                                    <h3 className="text-3xl font-black text-white tracking-tighter uppercase italic leading-tight">{selectedImage.alt}</h3>
+                        <div className="grid md:grid-cols-[minmax(280px,0.9fr)_minmax(0,1.1fr)]">
+                            <div className="p-6 md:p-8 bg-[#0f0f10] border-b md:border-b-0 md:border-r border-[#27272a] flex items-center justify-center">
+                                <div className="w-full min-h-[280px] max-h-[520px] rounded-xl bg-[#18181b] border border-[#3f3f46] p-5 flex items-center justify-center overflow-hidden">
+                                    <img
+                                        src={selectedImage.src}
+                                        alt={selectedImage.alt}
+                                        className="max-w-full max-h-[470px] w-auto h-auto object-contain"
+                                    />
+                                </div>
+                            </div>
 
-                                    <div className="flex items-center gap-4 pt-1">
-                                        <div className="flex items-center gap-3 bg-black/40 px-5 py-3 rounded-xl border border-white/10 shadow-inner group transition-all">
-                                            <span className="text-[9px] font-black text-gray-600 uppercase tracking-[0.3em]">CÓDIGO</span>
-                                            <span className="text-base font-mono font-black text-teal-400 tracking-tighter">{selectedImage.codigo}</span>
-                                        </div>
+                            <div className="p-6 md:p-8 flex flex-col">
+                                <div className="flex flex-wrap gap-2">
+                                    <span className="px-3 py-1.5 rounded-md border border-[#3f3f46] bg-[#111112] text-[10px] font-semibold uppercase tracking-[0.18em] text-[#a1a1aa]">
+                                        Artículo
+                                    </span>
+                                    {selectedImage.marca && (
+                                        <span className="px-3 py-1.5 rounded-md border border-[#3f3f46] bg-[#111112] text-[10px] font-semibold uppercase tracking-[0.18em] text-[#a1a1aa]">
+                                            Marca: {selectedImage.marca}
+                                        </span>
+                                    )}
+                                </div>
+
+                                <h3 className="mt-6 text-2xl md:text-3xl font-semibold text-[#f4f4f5] leading-tight">
+                                    {selectedImage.alt}
+                                </h3>
+
+                                <div className="mt-8 grid sm:grid-cols-2 gap-3">
+                                    <div className="rounded-lg border border-[#3f3f46] bg-[#111112] px-4 py-4">
+                                        <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-[#71717a]">Código</p>
+                                        <p className="mt-2 text-sm font-mono font-semibold text-[#e4e4e7] break-all">{selectedImage.codigo}</p>
+                                    </div>
+                                    <div className="rounded-lg border border-[#3f3f46] bg-[#111112] px-4 py-4">
+                                        <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-[#71717a]">Unidad</p>
+                                        <p className="mt-2 text-sm font-semibold uppercase text-[#e4e4e7]">{selectedImage.unidad || 'Sin definir'}</p>
                                     </div>
                                 </div>
-                                <div className="bg-gradient-to-br from-teal-500/5 to-transparent border border-white/10 px-10 py-6 rounded-[1.5rem] flex flex-col items-center gap-2 group hover:border-teal-500/40 transition-all duration-700 shadow-2xl shrink-0">
-                                    <span className="text-[9px] font-black text-gray-500 uppercase tracking-[0.4em] opacity-60 text-center">Disponibilidad</span>
-                                    <div className="flex items-baseline gap-2">
-                                        <span className={cn(
-                                            "text-6xl font-black italic tracking-tighter transition-all duration-700 leading-none",
-                                            (selectedImage.stock || 0) <= 0 ? 'text-red-500/50' : 'text-teal-400 group-hover:text-teal-300'
-                                        )}>
-                                            {selectedImage.stock?.toLocaleString()}
-                                        </span>
-                                        <span className="text-xs font-black uppercase text-gray-600 tracking-widest">{selectedImage.unidad}</span>
+
+                                <div className="mt-auto pt-8">
+                                    <div className="rounded-xl border border-[#52525b] bg-[#141416] px-5 py-5 flex items-end justify-between gap-5">
+                                        <div>
+                                            <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-[#71717a]">Stock disponible</p>
+                                            <p className="mt-1 text-xs text-[#a1a1aa]">Existencias registradas actualmente</p>
+                                        </div>
+                                        <div className="flex items-baseline gap-2 shrink-0">
+                                            <span className="text-4xl font-semibold tracking-tight text-[#fafafa]">
+                                                {selectedImage.stock?.toLocaleString()}
+                                            </span>
+                                            <span className="text-xs font-semibold uppercase text-[#a1a1aa] tracking-wider">
+                                                {selectedImage.unidad}
+                                            </span>
+                                        </div>
                                     </div>
                                 </div>
                             </div>
