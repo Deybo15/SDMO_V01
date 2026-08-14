@@ -1,108 +1,189 @@
+import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
-    Users,
+    ArrowLeft,
+    ArrowRight,
+    ClipboardList,
     LineChart,
     Search,
     Truck,
-    ChevronRight,
     UserCircle,
-    PlusCircle,
-    ArrowLeft
+    UserPlus,
+    Users
 } from 'lucide-react';
-import { PageHeader } from '../components/ui/PageHeader';
-import { cn } from '../lib/utils';
+import { supabase } from '../lib/supabase';
+
+interface ClientStats {
+    clients: number;
+    activeRequests: number;
+    pendingDeliveries: number;
+}
+
+const modules = [
+    {
+        id: 'request',
+        title: 'Ingresar solicitud',
+        icon: ClipboardList,
+        path: '/cliente-interno/ingresar',
+        description: 'Crear una nueva solicitud de mantenimiento o materiales'
+    },
+    {
+        id: 'tracking',
+        title: 'Seguimiento de solicitud',
+        icon: LineChart,
+        path: '/cliente-interno/seguimiento',
+        description: 'Ver el estado y bitácora de solicitudes activas'
+    },
+    {
+        id: 'deliveries',
+        title: 'Realizar salidas',
+        icon: Truck,
+        path: '/cliente-interno/realizar-salidas',
+        description: 'Procesar la entrega física de materiales'
+    },
+    {
+        id: 'client',
+        title: 'Ingresar cliente interno',
+        icon: UserPlus,
+        path: '/cliente-interno/ingresar-cliente',
+        description: 'Registrar nuevos clientes internos en el sistema'
+    },
+    {
+        id: 'status',
+        title: 'Consultar estado de solicitud',
+        icon: Search,
+        path: '/cliente-interno/consultar-estado',
+        description: 'Búsqueda rápida de solicitudes por número'
+    }
+] as const;
+
+async function fetchClientStats(): Promise<ClientStats> {
+    const [clientsResult, activeResult] = await Promise.all([
+        supabase.from('cliente_interno_15').select('id_cliente', { count: 'exact', head: true }),
+        supabase
+            .from('solicitud_17')
+            .select('numero_solicitud, seguimiento_solicitud!inner(estado_actual)')
+            .eq('tipo_solicitud', 'STI')
+            .eq('seguimiento_solicitud.estado_actual', 'ACTIVA')
+    ]);
+
+    if (clientsResult.error) throw clientsResult.error;
+    if (activeResult.error) throw activeResult.error;
+
+    const activeIds = [...new Set((activeResult.data || []).map((request) => String(request.numero_solicitud)))];
+    let pendingDeliveries = activeIds.length;
+
+    if (activeIds.length > 0) {
+        const { data: deliveries, error } = await supabase
+            .from('salida_articulo_08')
+            .select('numero_solicitud')
+            .in('numero_solicitud', activeIds);
+
+        if (error) throw error;
+        const deliveredIds = new Set((deliveries || []).map((delivery) => String(delivery.numero_solicitud)));
+        pendingDeliveries = activeIds.filter((id) => !deliveredIds.has(id)).length;
+    }
+
+    return {
+        clients: clientsResult.count || 0,
+        activeRequests: activeIds.length,
+        pendingDeliveries
+    };
+}
 
 export default function ClienteInterno() {
     const navigate = useNavigate();
+    const [stats, setStats] = useState<ClientStats | null>(null);
 
-    const modules = [
-        {
-            title: 'Ingresar Cliente Interno',
-            icon: <PlusCircle className="w-8 h-8" />,
-            path: '/cliente-interno/ingresar-cliente',
-            description: 'Registrar nuevos clientes internos en el sistema'
-        },
-        {
-            title: 'Ingresar Solicitud',
-            icon: <Users className="w-8 h-8" />,
-            path: '/cliente-interno/ingresar',
-            description: 'Crear una nueva solicitud de mantenimiento o materiales'
-        },
-        {
-            title: 'Seguimiento de Solicitud',
-            icon: <LineChart className="w-8 h-8" />,
-            path: '/cliente-interno/seguimiento',
-            description: 'Ver el estado y bitácora de sus solicitudes activas'
-        },
-        {
-            title: 'Consultar Estado de Solicitud',
-            icon: <Search className="w-8 h-8" />,
-            path: '/cliente-interno/consultar-estado',
-            description: 'Búsqueda rápida de solicitudes por número'
-        },
-        {
-            title: 'Realizar Salidas',
-            icon: <Truck className="w-8 h-8" />,
-            path: '/cliente-interno/realizar-salidas',
-            description: 'Procesar la entrega física de materiales'
-        }
-    ];
+    useEffect(() => {
+        const loadStats = async () => {
+            try {
+                setStats(await fetchClientStats());
+            } catch (error) {
+                console.error('Error cargando indicadores de cliente interno:', error);
+                setStats({ clients: 0, activeRequests: 0, pendingDeliveries: 0 });
+            }
+        };
+
+        loadStats();
+    }, []);
+
+    const primaryModules = modules.slice(0, 3);
+    const secondaryModules = modules.slice(3);
+
+    const renderModule = (module: (typeof modules)[number], compact = false) => {
+        const Icon = module.icon;
+        return (
+            <button
+                key={module.id}
+                type="button"
+                onClick={() => navigate(module.path)}
+                className={`group flex w-full items-center rounded-xl border border-[#3f3f46] bg-[#0d0d0e] text-left transition-colors hover:border-[#71717a] hover:bg-[#111112] ${
+                    compact ? 'min-h-[104px] gap-5 p-5' : 'min-h-[128px] gap-5 p-5'
+                }`}
+            >
+                <span className={`flex shrink-0 items-center justify-center rounded-lg border border-[#52525b] bg-[#151517] text-[#e4e4e7] ${compact ? 'h-12 w-12' : 'h-14 w-14'}`}>
+                    <Icon className={compact ? 'h-5 w-5' : 'h-6 w-6'} />
+                </span>
+                <span className="min-w-0 flex-1">
+                    <strong className="block text-[15px] font-semibold text-white">{module.title}</strong>
+                    <span className="mt-1 block text-xs leading-relaxed text-[#a1a1aa]">{module.description}</span>
+                </span>
+                <ArrowRight className="h-5 w-5 shrink-0 text-[#a1a1aa] transition-transform group-hover:translate-x-1 group-hover:text-white" />
+            </button>
+        );
+    };
 
     return (
-        <div className="min-h-screen bg-[#000000] p-8 text-[#F5F5F7]">
-            <div className="max-w-7xl mx-auto space-y-12 animate-fade-in-up">
-                <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-[#27272a] pb-6">
-                    <PageHeader
-                        title="Cliente Interno"
-                        icon={UserCircle}
-                        themeColor="blue"
-                        subtitle="Gestión de solicitudes y entregas para clientes internos"
-                        compact
-                    />
-                    <button
-                        onClick={() => navigate('/')}
-                        className="btn-ghost"
-                    >
-                        <div className="flex items-center gap-2">
-                            <ArrowLeft className="w-5 h-5" />
-                            <span className="text-[11px] font-bold uppercase tracking-widest">Menú Principal</span>
+        <div className="min-h-screen bg-black p-4 text-[#f4f4f5] selection:bg-white/20 md:px-8 md:py-6">
+            <div className="w-full space-y-6 animate-fade-in-up">
+                <header className="flex flex-col justify-between gap-4 border-b border-[#27272a] pb-4 md:flex-row md:items-center">
+                    <div className="flex items-center gap-3">
+                        <div className="rounded-lg border border-[#71717a] bg-[#111112] p-3 text-[#e4e4e7]">
+                            <UserCircle className="h-7 w-7" />
                         </div>
+                        <div>
+                            <h1 className="text-2xl font-black tracking-tight text-white md:text-[30px]">Cliente Interno</h1>
+                            <p className="text-sm text-[#a1a1aa]">Gestión de solicitudes y entregas para clientes internos</p>
+                        </div>
+                    </div>
+                    <button
+                        type="button"
+                        onClick={() => navigate('/')}
+                        className="inline-flex items-center justify-center gap-2 rounded-lg border border-[#71717a] bg-[#111112] px-5 py-3 text-sm font-semibold text-white transition-colors hover:bg-[#18181b]"
+                    >
+                        <ArrowLeft className="h-5 w-5" />
+                        Menú principal
                     </button>
-                </div>
+                </header>
 
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-                    {modules.map((module, index) => (
-                        <button
-                            key={index}
-                            onClick={() => navigate(module.path)}
-                            className="glass-card group relative p-8 flex flex-col h-72 text-left hover:border-[#0071E3]/50 transition-all duration-300"
-                        >
-                            {/* Icon Container */}
-                            <div className="mb-6 p-4 bg-[#0071E3]/10 rounded-[8px] w-fit group-hover:scale-105 transition-all duration-300 text-[#0071E3] border border-[#0071E3]/20">
-                                {module.icon}
+                <section className="grid grid-cols-1 rounded-xl border border-[#3f3f46] bg-[#0d0d0e] md:grid-cols-3">
+                    {[
+                        { label: 'Clientes registrados', value: stats?.clients, icon: Users },
+                        { label: 'Solicitudes activas', value: stats?.activeRequests, icon: ClipboardList },
+                        { label: 'Entregas pendientes', value: stats?.pendingDeliveries, icon: Truck }
+                    ].map((metric, index) => (
+                        <div key={metric.label} className={`flex items-center gap-4 px-5 py-4 ${index > 0 ? 'border-t border-[#3f3f46] md:border-l md:border-t-0' : ''}`}>
+                            <span className="flex h-12 w-12 items-center justify-center rounded-lg border border-[#52525b] bg-[#151517] text-[#d4d4d8]">
+                                <metric.icon className="h-5 w-5" />
+                            </span>
+                            <div>
+                                <p className="text-2xl font-semibold tabular-nums text-white">{metric.value === undefined ? '—' : metric.value.toLocaleString('es-CR')}</p>
+                                <p className="mt-0.5 text-xs font-medium text-[#a1a1aa]">{metric.label}</p>
                             </div>
-
-                            {/* Content */}
-                            <div className="flex-1 space-y-3">
-                                <h3 className="text-xl font-bold text-[#F5F5F7] leading-tight tracking-tight uppercase group-hover:text-[#0071E3] transition-colors">
-                                    {module.title}
-                                </h3>
-                                <p className="text-[#86868B] text-xs font-medium leading-relaxed line-clamp-3">
-                                    {module.description}
-                                </p>
-                            </div>
-
-                            {/* Footer Interaction */}
-                            <div className="mt-4 flex items-center gap-2 text-[#0071E3] opacity-0 group-hover:opacity-100 transition-opacity">
-                                <span className="text-[10px] font-black uppercase tracking-widest">Explorar categoría</span>
-                                <ChevronRight className="w-4 h-4" />
-                            </div>
-
-                            {/* Apple Accent Indicator */}
-                            <div className="absolute bottom-0 left-0 w-full h-[2px] bg-[#0071E3] transform scale-x-0 group-hover:scale-x-100 transition-transform duration-500 origin-left" />
-                        </button>
+                        </div>
                     ))}
-                </div>
+                </section>
+
+                <section>
+                    <h2 className="mb-3 text-xs font-semibold uppercase tracking-[0.18em] text-[#a1a1aa]">Flujo operativo</h2>
+                    <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">{primaryModules.map((module) => renderModule(module))}</div>
+                </section>
+
+                <section className="pb-8">
+                    <h2 className="mb-3 border-t border-[#27272a] pt-5 text-xs font-semibold uppercase tracking-[0.18em] text-[#a1a1aa]">Gestión y consulta</h2>
+                    <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">{secondaryModules.map((module) => renderModule(module, true))}</div>
+                </section>
             </div>
         </div>
     );
