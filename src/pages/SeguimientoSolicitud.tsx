@@ -20,7 +20,6 @@ import {
     LayoutGrid,
     Calendar // Added for date fields
 } from 'lucide-react';
-import { PageHeader } from '../components/ui/PageHeader';
 import { format, subMonths, startOfMonth, endOfMonth } from 'date-fns';
 import { cn, formatDateOnly } from '../lib/utils';
 
@@ -76,15 +75,15 @@ const TableSkeleton = () => (
 );
 
 function getEstadoBadge(estado?: string) {
-    if (!estado) return <span className="text-[#86868B] font-bold text-[10px] uppercase tracking-widest px-4 py-1.5 border border-[#333333] rounded-[8px] bg-[#1D1D1F]">Sin Registro</span>;
+    if (!estado) return <span className="text-[#71717a] font-semibold text-[10px] uppercase tracking-widest px-3 py-1.5 border border-[#3f3f46] rounded-md bg-[#18181b]">Sin registro</span>;
 
     const colors = {
-        'ACTIVA': 'bg-[#0071E3]/10 border-[#0071E3]/50 text-[#0071E3]',
-        'EJECUTADA': 'bg-emerald-500/10 border-emerald-500/50 text-emerald-400',
-        'CANCELADA': 'bg-rose-500/10 border-rose-500/50 text-rose-400'
-    }[estado] || 'bg-[#1D1D1F] text-[#86868B] border-[#333333]';
+        'ACTIVA': 'bg-[#18181b] border-[#e4e4e7] text-white',
+        'EJECUTADA': 'bg-[#e4e4e7] border-white text-black',
+        'CANCELADA': 'bg-[#111112] border-[#52525b] text-[#a1a1aa] border-dashed'
+    }[estado] || 'bg-[#18181b] text-[#a1a1aa] border-[#3f3f46]';
 
-    return <span className={cn("px-4 py-1.5 rounded-[8px] font-black text-[10px] uppercase tracking-wider border", colors)}>{estado}</span>;
+    return <span className={cn("px-3 py-1.5 rounded-md font-semibold text-[10px] uppercase tracking-wider border", colors)}>{estado}</span>;
 }
 
 export default function SeguimientoSolicitud() {
@@ -360,61 +359,64 @@ export default function SeguimientoSolicitud() {
     };
 
     return (
-        <div className="min-h-screen bg-[#000000] text-[#F5F5F7] pb-20 selection:bg-[#0071E3]/30">
-            <PageHeader
-                title="Seguimiento Cliente Interno"
-                icon={Wrench}
-                subtitle="Gestión Operativa"
-                rightElement={
-                    <>
-                        <button onClick={() => navigate('/cliente-interno')} className="h-12 px-6 bg-transparent border border-[#F5F5F7] rounded-[8px] text-[10px] font-black uppercase tracking-widest text-[#F5F5F7] hover:bg-white/5 transition-all flex items-center gap-3 active:scale-95 shadow-xl">
-                            <ChevronLeft className="w-4 h-4 text-[#0071E3]" /> Regresar
+        <div className="min-h-screen bg-black text-[#f4f4f5] pb-20 selection:bg-white/20">
+            <div className="max-w-[1600px] mx-auto px-4 md:px-8 pt-6 space-y-6 relative z-10">
+                <header className="flex flex-col justify-between gap-4 border-b border-[#27272a] pb-4 md:flex-row md:items-center">
+                    <div className="flex items-center gap-3">
+                        <div className="rounded-lg border border-[#71717a] bg-[#111112] p-3 text-[#e4e4e7]">
+                            <Wrench className="h-7 w-7" />
+                        </div>
+                        <div>
+                            <h1 className="text-2xl font-black tracking-tight text-white md:text-[30px]">Seguimiento Cliente Interno</h1>
+                            <p className="text-sm text-[#a1a1aa]">Consulta y control operativo de solicitudes internas</p>
+                        </div>
+                    </div>
+                    <div className="flex flex-wrap gap-3">
+                        <button onClick={() => navigate('/cliente-interno')} className="inline-flex items-center justify-center gap-2 rounded-lg border border-[#71717a] bg-[#111112] px-5 py-3 text-sm font-semibold text-white transition-colors hover:bg-[#18181b]">
+                            <ChevronLeft className="h-5 w-5" /> Regresar
                         </button>
-                        <button onClick={handleExportExcel} disabled={loading} className="h-12 px-6 bg-[#0071E3] text-white rounded-[8px] text-[10px] font-black uppercase tracking-widest hover:brightness-110 transition-all flex items-center gap-3 shadow-2xl shadow-[#0071E3]/20 disabled:opacity-50 active:scale-95">
-                            <Download className="w-4 h-4" /> Exportar
+                        <button onClick={handleExportExcel} disabled={loading} className="inline-flex items-center justify-center gap-2 rounded-lg border border-[#e4e4e7] bg-[#e4e4e7] px-5 py-3 text-sm font-semibold text-black transition-colors hover:bg-white disabled:opacity-50">
+                            <Download className="h-5 w-5" /> Exportar
                         </button>
-                    </>
-                }
-            />
+                    </div>
+                </header>
 
-            <div className="max-w-[1600px] mx-auto px-4 md:px-8 space-y-12 relative z-10">
-
-                <div className="grid grid-cols-2 lg:grid-cols-4 gap-6">
+                <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4">
                     {[
                         { label: 'Total', value: stats.total, icon: LayoutGrid, color: 'text-[#0071E3]', bg: 'bg-[#0071E3]/10' },
                         { label: 'Activas', value: stats.activas, icon: PlayCircle, color: 'text-[#0071E3]', bg: 'bg-[#0071E3]/10' },
                         { label: 'Terminadas', value: stats.ejecutadas, icon: CheckCircle, color: 'text-emerald-400', bg: 'bg-emerald-400/10' },
                         { label: 'Canceladas', value: stats.canceladas, icon: XCircle, color: 'text-rose-400', bg: 'bg-rose-400/10' }
                     ].map((m, i) => (
-                        <div key={i} className="bg-[#121212] border border-[#333333] rounded-[8px] p-7 flex items-center gap-6 group hover:border-[#0071E3]/30 transition-all shadow-2xl">
-                            <div className={cn("w-16 h-16 rounded-[8px] flex items-center justify-center transition-transform group-hover:scale-110 border border-white/5", m.bg, m.color)}>
-                                <m.icon className="w-8 h-8" />
+                        <div key={i} className="rounded-xl border border-[#3f3f46] bg-[#0d0d0e] p-5 flex items-center gap-4 group hover:border-[#71717a] transition-colors">
+                            <div className="w-12 h-12 rounded-lg flex items-center justify-center border border-[#52525b] bg-[#151517] text-[#e4e4e7]">
+                                <m.icon className="w-5 h-5" />
                             </div>
                             <div>
-                                <p className="text-4xl font-black text-white tracking-tighter leading-none">{m.value}</p>
-                                <p className="text-[10px] font-black text-[#86868B] uppercase tracking-widest mt-2">{m.label}</p>
+                                <p className="text-2xl font-semibold tabular-nums text-white leading-none">{m.value}</p>
+                                <p className="text-xs font-medium text-[#a1a1aa] mt-1">{m.label}</p>
                             </div>
                         </div>
                     ))}
                 </div>
 
-                <section className="bg-[#121212] border border-[#333333] rounded-[8px] p-8 md:p-10 space-y-8 shadow-3xl">
-                    <div className="flex items-center gap-3 mb-2 px-2">
-                        <Search className="w-5 h-5 text-[#0071E3]" />
-                        <h2 className="text-[10px] font-black text-white/90 uppercase tracking-[0.3em]">Criterios de Búsqueda</h2>
+                <section className="rounded-xl border border-[#3f3f46] bg-[#0d0d0e] p-5 md:p-6 space-y-5">
+                    <div className="flex items-center gap-3">
+                        <Search className="w-5 h-5 text-[#d4d4d8]" />
+                        <h2 className="text-xs font-semibold text-[#a1a1aa] uppercase tracking-[0.18em]">Criterios de búsqueda</h2>
                     </div>
 
-                    <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-end">
+                    <div className="grid grid-cols-1 lg:grid-cols-12 gap-4 items-end">
                         <div className="lg:col-span-8 space-y-3">
                             <label className="text-[10px] font-black text-[#86868B] uppercase tracking-widest ml-3">Búsqueda Unificada</label>
                             <div className="relative group">
-                                <Search className="absolute left-5 top-1/2 -translate-y-1/2 w-5 h-5 text-[#333333] group-focus-within:text-[#0071E3] transition-colors" />
-                                <input value={searchTerm} onChange={e => { setSearchTerm(e.target.value); setPage(1); }} className="w-full bg-[#1D1D1F] border border-[#333333] rounded-[8px] h-14 pl-14 pr-6 text-sm text-white font-bold placeholder:text-[#333333] focus:border-[#0071E3]/50 transition-all outline-none" placeholder="N° Solicitud o descripción técnica..." />
+                                <Search className="absolute left-5 top-1/2 -translate-y-1/2 w-5 h-5 text-[#71717a] group-focus-within:text-white transition-colors" />
+                                <input value={searchTerm} onChange={e => { setSearchTerm(e.target.value); setPage(1); }} className="w-full bg-black border border-[#3f3f46] rounded-lg h-14 pl-14 pr-6 text-sm text-white font-medium placeholder:text-[#71717a] focus:border-[#a1a1aa] transition-colors outline-none" placeholder="N° Solicitud o descripción técnica..." />
                             </div>
                         </div>
                         <div className="lg:col-span-3 space-y-3">
                             <label className="text-[10px] font-black text-[#86868B] uppercase tracking-widest ml-3">Filtrar por Estado</label>
-                            <select value={filterEstado} onChange={e => { setFilterEstado(e.target.value); setPage(1); }} className="w-full bg-[#1D1D1F] border border-[#333333] rounded-[8px] h-14 px-6 text-sm text-white font-bold appearance-none cursor-pointer focus:border-[#0071E3]/50 outline-none transition-all">
+                            <select value={filterEstado} onChange={e => { setFilterEstado(e.target.value); setPage(1); }} className="w-full bg-black border border-[#3f3f46] rounded-lg h-14 px-5 text-sm text-white font-semibold appearance-none cursor-pointer focus:border-[#a1a1aa] outline-none transition-colors">
                                 <option value="">Todos los Estados</option>
                                 <option value="ACTIVA">ACTIVAS</option>
                                 <option value="EJECUTADA">EJECUTADAS</option>
@@ -422,44 +424,44 @@ export default function SeguimientoSolicitud() {
                             </select>
                         </div>
                         <div className="lg:col-span-1 flex gap-4 h-14">
-                            <button onClick={clearFilters} className="w-full bg-transparent border border-[#333333] rounded-[8px] flex items-center justify-center hover:bg-white/5 transition-all text-[#86868B] hover:text-[#F5F5F7] group"><Eraser className="w-6 h-6 group-hover:rotate-12 transition-transform" /></button>
+                            <button onClick={clearFilters} className="w-full bg-[#111112] border border-[#3f3f46] rounded-lg flex items-center justify-center hover:border-[#71717a] hover:bg-[#18181b] transition-colors text-[#a1a1aa] hover:text-white"><Eraser className="w-5 h-5" /></button>
                         </div>
                     </div>
                 </section>
 
-                <section className="bg-[#121212] border border-[#333333] shadow-3xl rounded-[8px] overflow-hidden">
+                <section className="bg-[#0d0d0e] border border-[#3f3f46] rounded-xl overflow-hidden">
                     <div className="">
                         <table className="w-full text-left border-collapse">
                             <thead>
-                                <tr className="bg-[#1D1D1F] border-b border-[#333333] text-[10px] font-black text-white uppercase tracking-[0.2em]">
-                                    <th className="px-6 py-8 cursor-pointer hover:text-[#0071E3] transition-colors" onClick={() => { setSortCol('numero_solicitud'); setSortDir(sortDir === 'asc' ? 'desc' : 'asc'); }}>N° Solicitud</th>
-                                    <th className="px-6 py-8">Fecha Registro</th>
-                                    <th className="px-6 py-8">Descripción STI</th>
-                                    <th className="px-6 py-8 text-center">Supervisor</th>
-                                    <th className="px-6 py-8 text-center">Estado STI</th>
-                                    <th className="px-6 py-8 text-right">Acciones</th>
+                                <tr className="bg-[#151517] border-b border-[#3f3f46] text-[10px] font-semibold text-[#a1a1aa] uppercase tracking-[0.16em]">
+                                    <th className="px-5 py-4 cursor-pointer hover:text-white transition-colors" onClick={() => { setSortCol('numero_solicitud'); setSortDir(sortDir === 'asc' ? 'desc' : 'asc'); }}>N° Solicitud</th>
+                                    <th className="px-5 py-4">Fecha registro</th>
+                                    <th className="px-5 py-4">Descripción STI</th>
+                                    <th className="px-5 py-4 text-center">Supervisor</th>
+                                    <th className="px-5 py-4 text-center">Estado STI</th>
+                                    <th className="px-5 py-4 text-right">Acciones</th>
                                 </tr>
                             </thead>
                             <tbody className="divide-y divide-[#333333]">
                                 {loading ? <TableSkeleton /> : solicitudes.map(sol => (
-                                    <tr key={sol.numero_solicitud} className="hover:bg-white/5 transition-all group">
-                                        <td className="px-6 py-7 font-black text-[#0071E3] text-lg">#{sol.numero_solicitud}</td>
-                                        <td className="px-6 py-7 text-sm font-bold text-[#86868B]">{formatDateOnly(sol.fecha_solicitud)}</td>
-                                        <td className="px-6 py-7 italic font-medium text-[#F5F5F7] relative cursor-default" onMouseEnter={e => setHoveredDescription({ id: sol.numero_solicitud, text: sol.descripcion_solicitud, x: e.clientX, y: e.clientY })} onMouseLeave={() => setHoveredDescription(null)}>
+                                    <tr key={sol.numero_solicitud} className="hover:bg-[#151517] transition-colors group">
+                                        <td className="px-5 py-4 font-semibold text-white text-sm">#{sol.numero_solicitud}</td>
+                                        <td className="px-5 py-4 text-xs font-medium text-[#a1a1aa]">{formatDateOnly(sol.fecha_solicitud)}</td>
+                                        <td className="px-5 py-4 text-sm font-medium text-[#f4f4f5] relative cursor-default" onMouseEnter={e => setHoveredDescription({ id: sol.numero_solicitud, text: sol.descripcion_solicitud, x: e.clientX, y: e.clientY })} onMouseLeave={() => setHoveredDescription(null)}>
                                             <div className="truncate max-w-[300px]">
                                                 {sol.descripcion_solicitud}
                                             </div>
                                         </td>
-                                        <td className="px-6 py-7 text-center">
-                                            <span className="px-3 py-1.5 bg-[#1D1D1F] rounded-[6px] border border-[#333333] text-[9px] font-black uppercase tracking-tighter text-[#F5F5F7] whitespace-nowrap block w-fit mx-auto">
+                                        <td className="px-5 py-4 text-center">
+                                            <span className="px-3 py-1.5 bg-[#18181b] rounded-md border border-[#3f3f46] text-[9px] font-semibold uppercase text-[#d4d4d8] whitespace-nowrap block w-fit mx-auto">
                                                 {sol.supervisor_alias}
                                             </span>
                                         </td>
-                                        <td className="px-6 py-7 text-center">
+                                        <td className="px-5 py-4 text-center">
                                             {getEstadoBadge(sol.estado_actual)}
                                         </td>
-                                        <td className="px-6 py-7 text-right">
-                                            <button onClick={() => handleOpenModal(sol)} className="w-12 h-12 bg-transparent border border-[#333333] rounded-[8px] flex items-center justify-center hover:bg-[#0071E3] hover:border-[#0071E3] transition-all text-[#86868B] hover:text-white shadow-xl active:scale-95"><Eye className="w-6 h-6" /></button>
+                                        <td className="px-5 py-4 text-right">
+                                            <button onClick={() => handleOpenModal(sol)} className="ml-auto w-10 h-10 bg-[#111112] border border-[#3f3f46] rounded-lg flex items-center justify-center hover:border-[#a1a1aa] hover:bg-[#18181b] transition-colors text-[#a1a1aa] hover:text-white"><Eye className="w-5 h-5" /></button>
                                         </td>
                                     </tr>
                                 ))}
