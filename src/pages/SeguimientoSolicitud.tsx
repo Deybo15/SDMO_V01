@@ -511,82 +511,82 @@ export default function SeguimientoSolicitud() {
 
             {/* Tracking Detail Modal */}
             {isModalOpen && selectedSolicitud && (
-                <div className="fixed inset-0 z-[1000] flex items-center justify-center p-6">
-                    <div className="absolute inset-0 bg-black/80 backdrop-blur-[20px]" onClick={() => setIsModalOpen(false)}></div>
-                    <div className="relative w-full max-w-7xl bg-[#121212] border border-[#333333] rounded-[8px] shadow-4xl overflow-hidden flex flex-col max-h-[96vh] animate-in zoom-in-95">
-                        <div className="bg-[#1D1D1F] border-b border-[#333333] p-10 flex justify-between items-center">
+                <div className="fixed inset-0 z-[1000] flex items-center justify-center p-4 md:p-6">
+                    <div className="absolute inset-0 bg-black/85 backdrop-blur-md" onClick={() => setIsModalOpen(false)}></div>
+                    <div className="relative w-full max-w-7xl bg-[#0d0d0e] border border-[#52525b] rounded-xl shadow-4xl overflow-hidden flex flex-col max-h-[94vh] animate-in zoom-in-95">
+                        <div className="bg-[#151517] border-b border-[#3f3f46] px-6 py-5 flex justify-between items-center">
                             <div>
-                                <h2 className="text-4xl font-black text-[#F5F5F7] tracking-tighter uppercase italic">Solicitud <span className="text-[#0071E3]">#{selectedSolicitud.numero_solicitud}</span></h2>
-                                <p className="text-[10px] font-black text-[#86868B] uppercase tracking-[0.4em] mt-1">Gabinete de Gestión Técnica</p>
+                                <h2 className="text-2xl md:text-3xl font-black text-white tracking-tight">Solicitud #{selectedSolicitud.numero_solicitud}</h2>
+                                <p className="text-xs font-medium text-[#a1a1aa] mt-1">Detalle y seguimiento técnico</p>
                             </div>
-                            <button onClick={() => setIsModalOpen(false)} className="w-14 h-14 bg-transparent border border-[#333333] rounded-[8px] flex items-center justify-center text-[#86868B] hover:text-[#F5F5F7] hover:bg-white/5 transition-all"><X size={28} /></button>
+                            <button onClick={() => setIsModalOpen(false)} className="w-11 h-11 bg-[#111112] border border-[#3f3f46] rounded-lg flex items-center justify-center text-[#a1a1aa] hover:text-white hover:border-[#71717a] transition-colors"><X size={22} /></button>
                         </div>
 
-                        <div className="p-10 overflow-y-auto custom-scrollbar space-y-10 bg-[#121212] flex-1">
-                            <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
-                                <div className="bg-[#1D1D1F] border border-[#333333] p-7 rounded-[8px] shadow-xl">
-                                    <p className="text-[10px] font-black text-[#86868B] uppercase tracking-widest mb-2">Fecha Reporte</p>
-                                    <p className="text-2xl font-black text-[#F5F5F7]">{formatDateOnly(selectedSolicitud.fecha_solicitud)}</p>
+                        <div className="p-5 md:p-6 overflow-y-auto custom-scrollbar space-y-6 bg-[#0d0d0e] flex-1">
+                            <div className="grid grid-cols-1 lg:grid-cols-4 gap-4">
+                                <div className="bg-[#151517] border border-[#3f3f46] p-5 rounded-lg">
+                                    <p className="text-[10px] font-semibold text-[#a1a1aa] uppercase tracking-widest mb-2">Fecha de reporte</p>
+                                    <p className="text-xl font-semibold text-white">{formatDateOnly(selectedSolicitud.fecha_solicitud)}</p>
                                 </div>
-                                <div className="bg-[#1D1D1F] border border-[#333333] p-7 rounded-[8px] shadow-xl flex flex-col justify-center">
-                                    <p className="text-[10px] font-black text-[#86868B] uppercase tracking-widest mb-3">Estado Actual</p>
+                                <div className="bg-[#151517] border border-[#3f3f46] p-5 rounded-lg flex flex-col justify-center">
+                                    <p className="text-[10px] font-semibold text-[#a1a1aa] uppercase tracking-widest mb-3">Estado actual</p>
                                     <div>{getEstadoBadge(seguimientoData?.estado_actual)}</div>
                                 </div>
-                                <div className="lg:col-span-2 bg-[#1D1D1F] border border-[#333333] p-7 rounded-[8px] shadow-xl">
-                                    <p className="text-[10px] font-black text-[#86868B] uppercase tracking-widest mb-2">Supervisor Responsable</p>
-                                    <p className="text-2xl font-black text-[#0071E3] italic tracking-tight uppercase">{selectedSolicitud.supervisor_alias}</p>
+                                <div className="lg:col-span-2 bg-[#151517] border border-[#3f3f46] p-5 rounded-lg">
+                                    <p className="text-[10px] font-semibold text-[#a1a1aa] uppercase tracking-widest mb-2">Supervisor responsable</p>
+                                    <p className="text-xl font-semibold text-white">{selectedSolicitud.supervisor_alias}</p>
                                 </div>
                             </div>
 
-                            <div className="bg-[#0071E3]/5 border border-[#0071E3]/20 rounded-[8px] p-10 italic text-[#F5F5F7] shadow-inner">
-                                <p className="text-xl font-bold leading-relaxed">"{selectedSolicitud.descripcion_solicitud}"</p>
+                            <div className="bg-[#111112] border border-[#3f3f46] rounded-lg p-5 md:p-6 text-[#e4e4e7]">
+                                <p className="text-sm md:text-base font-medium leading-relaxed">{selectedSolicitud.descripcion_solicitud}</p>
                             </div>
 
-                            <div className="grid grid-cols-1 xl:grid-cols-12 gap-10">
-                                <div className="xl:col-span-8 space-y-10">
-                                    <div className="bg-[#121212] border border-[#333333] rounded-[8px] p-8 md:p-10 shadow-2xl">
-                                        <div className="flex justify-between items-center mb-8">
-                                            <h5 className="font-black text-white text-[10px] uppercase tracking-[0.3em] flex items-center gap-4"><History className="w-6 h-6 text-[#0071E3]" /> Bitácora Técnica STI</h5>
-                                            <button onClick={() => setShowNuevoRegistro(true)} className="h-12 px-7 bg-[#0071E3] text-white rounded-[8px] text-[10px] font-black uppercase tracking-widest hover:bg-[#0077ED] transition-all flex items-center gap-3 shadow-2xl shadow-[#0071E3]/20 active:scale-95"><PlusCircle className="w-5 h-5" /> Agregar registro</button>
+                            <div className="grid grid-cols-1 xl:grid-cols-12 gap-4">
+                                <div className="xl:col-span-8 space-y-4">
+                                    <div className="bg-[#0d0d0e] border border-[#3f3f46] rounded-xl p-5 md:p-6">
+                                        <div className="flex flex-wrap justify-between items-center gap-3 mb-5">
+                                            <h5 className="font-semibold text-white text-xs uppercase tracking-[0.18em] flex items-center gap-3"><History className="w-5 h-5 text-[#d4d4d8]" /> Bitácora técnica STI</h5>
+                                            <button onClick={() => setShowNuevoRegistro(true)} className="h-11 px-5 bg-[#e4e4e7] text-black rounded-lg text-xs font-semibold hover:bg-white transition-colors flex items-center gap-2"><PlusCircle className="w-4 h-4" /> Agregar registro</button>
                                         </div>
 
                                         {showNuevoRegistro && (
-                                            <div className="bg-[#1D1D1F] border border-[#333333] rounded-[8px] p-8 mb-10 gap-6 flex flex-col animate-in slide-in-from-top-6 shadow-4xl">
+                                            <div className="bg-[#151517] border border-[#3f3f46] rounded-lg p-5 mb-6 gap-4 flex flex-col animate-in slide-in-from-top-6">
                                                 <div className="space-y-2">
                                                     <label className="text-[10px] font-black text-[#86868B] uppercase tracking-widest ml-1">Fecha</label>
-                                                    <input type="date" value={nuevoRegistro.fecha} onChange={e => setNuevoRegistro(p => ({ ...p, fecha: e.target.value }))} className="bg-[#121212] border border-[#333333] rounded-[8px] h-14 px-5 text-sm font-black text-white outline-none focus:border-[#0071E3]/50 transition-all uppercase" />
+                                                    <input type="date" value={nuevoRegistro.fecha} onChange={e => setNuevoRegistro(p => ({ ...p, fecha: e.target.value }))} className="bg-black border border-[#3f3f46] rounded-lg h-12 px-4 text-sm font-semibold text-white outline-none focus:border-[#a1a1aa] transition-colors" />
                                                 </div>
                                                 <div className="space-y-2">
                                                     <label className="text-[10px] font-black text-[#86868B] uppercase tracking-widest ml-1">Observaciones Técnicas</label>
-                                                    <textarea value={nuevoRegistro.texto} onChange={e => setNuevoRegistro(p => ({ ...p, texto: e.target.value }))} placeholder="Detalle las acciones realizadas en campo..." className="w-full bg-[#121212] border border-[#333333] rounded-[8px] p-6 text-sm min-h-[150px] outline-none focus:border-[#0071E3]/50 text-white font-bold italic resize-none" />
+                                                    <textarea value={nuevoRegistro.texto} onChange={e => setNuevoRegistro(p => ({ ...p, texto: e.target.value }))} placeholder="Detalle las acciones realizadas en campo..." className="w-full bg-black border border-[#3f3f46] rounded-lg p-4 text-sm min-h-[130px] outline-none focus:border-[#a1a1aa] text-white font-medium resize-none" />
                                                 </div>
                                                 <div className="flex justify-end gap-5 pt-2">
                                                     <button onClick={() => setShowNuevoRegistro(false)} className="text-[10px] font-black text-[#86868B] uppercase tracking-[0.2em] px-6 hover:text-white transition-colors">Cancelar</button>
                                                     <button onClick={async () => {
                                                         const { error } = await supabase.from('registro_seguimiento_solicitud').insert({ numero_solicitud: selectedSolicitud.numero_solicitud, fecha_registro: nuevoRegistro.fecha, registro_seguimiento: nuevoRegistro.texto });
                                                         if (!error) { showNotification('Movimiento Registrado', 'success'); setShowNuevoRegistro(false); handleOpenModal(selectedSolicitud); }
-                                                    }} className="bg-[#0071E3] hover:bg-[#0077ED] text-white px-10 h-14 rounded-[8px] text-[10px] font-black tracking-widest uppercase transition-all shadow-2xl shadow-[#0071E3]/20 active:scale-95">Guardar Registro</button>
+                                                    }} className="bg-[#e4e4e7] hover:bg-white text-black px-6 h-12 rounded-lg text-xs font-semibold transition-colors">Guardar registro</button>
                                                 </div>
                                             </div>
                                         )}
 
                                         <div className="space-y-6 max-h-[500px] overflow-y-auto pr-4 custom-scrollbar">
                                             {registros.length > 0 ? registros.map((reg, i) => (
-                                                <div key={i} className="bg-[#1D1D1F] border border-[#333333] rounded-[8px] p-8 hover:border-[#0071E3]/30 transition-all shadow-xl">
+                                                <div key={i} className="bg-[#151517] border border-[#3f3f46] rounded-lg p-5 hover:border-[#71717a] transition-colors">
                                                     <div className="flex items-center gap-3 mb-4">
-                                                        <Clock className="w-4 h-4 text-[#0071E3]" />
-                                                        <p className="text-[10px] font-black text-[#0071E3] uppercase tracking-widest">{formatDateOnly(reg.fecha_registro)}</p>
+                                                        <Clock className="w-4 h-4 text-[#d4d4d8]" />
+                                                        <p className="text-[10px] font-semibold text-[#d4d4d8] uppercase tracking-widest">{formatDateOnly(reg.fecha_registro)}</p>
                                                     </div>
-                                                    <p className="text-[#F5F5F7] text-[15px] leading-relaxed italic font-bold">"{reg.registro_seguimiento}"</p>
+                                                    <p className="text-[#f4f4f5] text-sm leading-relaxed font-medium">{reg.registro_seguimiento}</p>
                                                 </div>
                                             )) : <div className="text-center py-20 border border-dashed border-[#333333] rounded-[8px]"><p className="text-[#333333] font-black uppercase tracking-[0.4em] text-[10px]">Sin entradas en bitácora</p></div>}
                                         </div>
                                     </div>
 
-                                    <div className="bg-[#121212] border border-[#333333] rounded-[8px] overflow-hidden shadow-2xl">
-                                        <div className="p-10 border-b border-[#333333] bg-[#1D1D1F] flex justify-between items-center">
-                                            <h5 className="font-black text-white text-[10px] uppercase tracking-[0.3em] flex items-center gap-4"><Package className="w-6 h-6 text-[#0071E3]" /> Insumos Aplicados</h5>
-                                            <div className="px-5 h-10 flex items-center bg-[#0071E3]/10 border border-[#0071E3]/30 rounded-[8px] text-[10px] font-black text-[#0071E3] uppercase tracking-widest">{articulos.length} Items</div>
+                                    <div className="bg-[#0d0d0e] border border-[#3f3f46] rounded-xl overflow-hidden">
+                                        <div className="p-5 border-b border-[#3f3f46] bg-[#151517] flex justify-between items-center">
+                                            <h5 className="font-semibold text-white text-xs uppercase tracking-[0.18em] flex items-center gap-3"><Package className="w-5 h-5 text-[#d4d4d8]" /> Insumos aplicados</h5>
+                                            <div className="px-3 h-8 flex items-center bg-[#18181b] border border-[#3f3f46] rounded-md text-[10px] font-semibold text-[#d4d4d8] uppercase tracking-widest">{articulos.length} ítems</div>
                                         </div>
                                         <div className="overflow-x-auto">
                                             <table className="w-full text-sm border-collapse">
@@ -621,15 +621,15 @@ export default function SeguimientoSolicitud() {
                                     </div>
                                 </div>
 
-                                <div className="xl:col-span-4 space-y-8">
-                                    <div className="bg-[#121212] border border-[#333333] rounded-[8px] p-10 space-y-8 shadow-4xl">
+                                <div className="xl:col-span-4 space-y-4">
+                                    <div className="bg-[#0d0d0e] border border-[#3f3f46] rounded-xl p-5 md:p-6 space-y-6">
                                         <div className="space-y-6">
                                             <div className="space-y-3">
                                                 <label className="text-[10px] text-[#86868B] font-black uppercase tracking-widest ml-2 flex items-center gap-2">
-                                                    <PlayCircle className="w-4 h-4 text-[#0071E3]" /> Estado STI
+                                                    <PlayCircle className="w-4 h-4 text-[#d4d4d8]" /> Estado STI
                                                 </label>
                                                 <div className="relative">
-                                                    <select key={seguimientoData?.estado_actual} defaultValue={seguimientoData?.estado_actual || 'ACTIVA'} onChange={e => setSeguimientoData(p => p ? { ...p, estado_actual: e.target.value } : null)} className="w-full bg-[#1D1D1F] border border-[#333333] rounded-[8px] h-16 px-6 text-sm font-black text-white outline-none focus:border-[#0071E3]/50 transition-all appearance-none cursor-pointer">
+                                                    <select key={seguimientoData?.estado_actual} defaultValue={seguimientoData?.estado_actual || 'ACTIVA'} onChange={e => setSeguimientoData(p => p ? { ...p, estado_actual: e.target.value } : null)} className="w-full bg-[#151517] border border-[#3f3f46] rounded-lg h-14 px-4 text-sm font-semibold text-white outline-none focus:border-[#a1a1aa] transition-colors appearance-none cursor-pointer">
                                                         <option value="ACTIVA">ACTIVA</option>
                                                         <option value="EJECUTADA">FINALIZADA</option>
                                                         <option value="CANCELADA">CANCELADA</option>
@@ -638,15 +638,15 @@ export default function SeguimientoSolicitud() {
                                             </div>
                                             <div className="space-y-3">
                                                 <label className="text-[10px] text-[#86868B] font-black uppercase tracking-widest ml-2 flex items-center gap-2">
-                                                    <Calendar className="w-4 h-4 text-[#0071E3]" /> Inicio de Labores
+                                                    <Calendar className="w-4 h-4 text-[#d4d4d8]" /> Inicio de labores
                                                 </label>
-                                                <input type="date" value={seguimientoData?.fecha_inicio || ''} onChange={e => setSeguimientoData(p => p ? { ...p, fecha_inicio: e.target.value } : null)} className="w-full bg-[#1D1D1F] border border-[#333333] rounded-[8px] h-16 px-6 text-sm font-black text-white focus:border-[#0071E3]/50 outline-none transition-all uppercase custom-date-input" />
+                                                <input type="date" value={seguimientoData?.fecha_inicio || ''} onChange={e => setSeguimientoData(p => p ? { ...p, fecha_inicio: e.target.value } : null)} className="w-full bg-[#151517] border border-[#3f3f46] rounded-lg h-14 px-4 text-sm font-semibold text-white focus:border-[#a1a1aa] outline-none transition-colors custom-date-input" />
                                             </div>
                                             <div className="space-y-3">
                                                 <label className="text-[10px] text-[#86868B] font-black uppercase tracking-widest ml-2 flex items-center gap-2">
-                                                    <Calendar className="w-4 h-4 text-emerald-500" /> Cierre de Labores
+                                                    <Calendar className="w-4 h-4 text-[#d4d4d8]" /> Cierre de labores
                                                 </label>
-                                                <input type="date" value={seguimientoData?.fecha_finalizacion || ''} onChange={e => setSeguimientoData(p => p ? { ...p, fecha_finalizacion: e.target.value } : null)} className="w-full bg-[#1D1D1F] border border-[#333333] rounded-[8px] h-16 px-6 text-sm font-black text-white focus:border-emerald-500/50 outline-none transition-all uppercase custom-date-input" />
+                                                <input type="date" value={seguimientoData?.fecha_finalizacion || ''} onChange={e => setSeguimientoData(p => p ? { ...p, fecha_finalizacion: e.target.value } : null)} className="w-full bg-[#151517] border border-[#3f3f46] rounded-lg h-14 px-4 text-sm font-semibold text-white focus:border-[#a1a1aa] outline-none transition-colors custom-date-input" />
                                             </div>
                                             <div className="pt-6">
                                                 <button onClick={async () => {
@@ -663,19 +663,19 @@ export default function SeguimientoSolicitud() {
                                                         fetchSolicitudes();
                                                         loadStats();
                                                     }
-                                                }} className="w-full h-16 bg-[#0071E3] hover:bg-[#0077ED] text-white font-black text-[12px] uppercase tracking-[0.2em] rounded-[8px] shadow-2xl shadow-[#0071E3]/20 transition-all active:scale-95 flex items-center justify-center gap-4">
-                                                    <CheckCircle className="w-6 h-6" /> Guardar Cambios
+                                                }} className="w-full h-14 bg-[#e4e4e7] hover:bg-white text-black font-semibold text-sm rounded-lg transition-colors flex items-center justify-center gap-3">
+                                                    <CheckCircle className="w-5 h-5" /> Guardar cambios
                                                 </button>
                                             </div>
                                         </div>
                                     </div>
 
-                                    <div className="bg-[#1D1D1F] border border-[#333333] rounded-[8px] p-10 text-center shadow-3xl">
-                                        <div className="w-14 h-14 bg-[#0071E3]/10 rounded-[8px] flex items-center justify-center mx-auto mb-6 transform -rotate-12 border border-[#0071E3]/20">
-                                            <History className="w-7 h-7 text-[#0071E3]" />
+                                    <div className="bg-[#151517] border border-[#3f3f46] rounded-xl p-6 text-center">
+                                        <div className="w-12 h-12 bg-[#18181b] rounded-lg flex items-center justify-center mx-auto mb-4 border border-[#52525b]">
+                                            <History className="w-5 h-5 text-[#d4d4d8]" />
                                         </div>
-                                        <p className="text-[10px] font-black text-[#0071E3] uppercase tracking-[0.3em] mb-3">Protocolo de Cierre</p>
-                                        <p className="text-xs text-[#86868B] leading-relaxed italic font-bold">Verifique que todos los materiales estén debidamente asociados y la bitácora técnica refleje fielmente las labores ejecutadas antes de dar el cierre técnico.</p>
+                                        <p className="text-[10px] font-semibold text-white uppercase tracking-[0.2em] mb-3">Protocolo de cierre</p>
+                                        <p className="text-xs text-[#a1a1aa] leading-relaxed font-medium">Verifique que todos los materiales estén debidamente asociados y la bitácora técnica refleje fielmente las labores ejecutadas antes de dar el cierre técnico.</p>
                                     </div>
                                 </div>
                             </div>
