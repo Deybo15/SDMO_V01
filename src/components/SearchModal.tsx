@@ -67,20 +67,25 @@ export default function SearchModal({ isOpen, onClose, title, options, onSelect 
     if (!isOpen) return null;
 
     return (
-        <div className="fixed inset-0 z-[100] flex items-center justify-center p-8 bg-black/80 backdrop-blur-[20px] animate-in fade-in duration-300">
-            <div className="w-full max-w-lg bg-[#121212] border border-[#333333] rounded-[8px] shadow-2xl overflow-hidden animate-in zoom-in-95 duration-200">
-                <div className="p-8 border-b border-[#333333] bg-black/20 flex items-center justify-between">
-                    <h3 className="text-xl font-black text-[#F5F5F7] uppercase italic tracking-tighter">{title}</h3>
+        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 md:p-8 bg-black/85 backdrop-blur-md animate-in fade-in duration-200">
+            <div className="w-full max-w-xl bg-[#0b0b0c] border border-[#3f3f46] rounded-2xl shadow-2xl overflow-hidden animate-in zoom-in-95 duration-150">
+                <div className="px-6 py-5 border-b border-[#27272a] flex items-center justify-between gap-4">
+                    <div>
+                        <p className="text-[10px] font-semibold uppercase tracking-[0.2em] text-[#71717a]">Catálogo disponible</p>
+                        <h3 className="mt-1 text-lg font-semibold text-[#f4f4f5]">{title}</h3>
+                    </div>
                     <button
                         onClick={onClose}
-                        className="p-2 bg-transparent border border-[#F5F5F7]/30 text-[#86868B] rounded-[8px] hover:text-[#F5F5F7] hover:bg-white/5 transition-all"
+                        aria-label="Cerrar selector"
+                        className="w-10 h-10 flex items-center justify-center bg-[#111112] border border-[#3f3f46] text-[#a1a1aa] rounded-lg hover:text-white hover:bg-[#18181b] transition-colors"
                     >
-                        <X className="w-6 h-6" />
+                        <X className="w-5 h-5" />
                     </button>
                 </div>
 
-                <div className="p-8 bg-black/40">
-                    <div className="relative mb-6">
+                <div className="p-6">
+                    <div className="relative mb-4">
+                        <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-[#71717a]" />
                         <input
                             ref={inputRef}
                             type="text"
@@ -91,12 +96,11 @@ export default function SearchModal({ isOpen, onClose, title, options, onSelect 
                             }}
                             onKeyDown={handleKeyDown}
                             placeholder="Escriba para buscar..."
-                            className="w-full bg-[#1D1D1F] border border-[#333333] rounded-[8px] px-4 py-3.5 text-[#F5F5F7] placeholder-[#424245] focus:outline-none focus:border-[#0071E3]/50 transition-all font-medium text-sm"
+                            className="w-full bg-[#111112] border border-[#3f3f46] rounded-lg pl-11 pr-4 py-3.5 text-[#f4f4f5] placeholder-[#71717a] focus:outline-none focus:border-[#a1a1aa] transition-colors text-sm"
                         />
-                        <Search className="absolute right-4 top-1/2 -translate-y-1/2 w-4 h-4 text-[#424245]" />
                     </div>
 
-                    <ul ref={listRef} className="max-h-[300px] overflow-y-auto space-y-2 pr-2 custom-scrollbar">
+                    <ul ref={listRef} className="max-h-[360px] overflow-y-auto space-y-2 pr-2 custom-scrollbar">
                         {filteredOptions.length > 0 ? (
                             filteredOptions.map((item, index) => (
                                 <li
@@ -105,17 +109,17 @@ export default function SearchModal({ isOpen, onClose, title, options, onSelect 
                                         onSelect(item);
                                         onClose();
                                     }}
-                                    className={`p-4 rounded-[8px] border cursor-pointer transition-all duration-200 flex items-center gap-3 uppercase font-black text-[11px] tracking-tight ${index === selectedIndex
-                                        ? 'bg-[#0071E3]/10 border-[#0071E3]/40 text-[#0071E3] translate-x-1'
-                                        : 'bg-[#1D1D1F] border-[#333333] text-[#F5F5F7] hover:border-[#0071E3]/30 hover:bg-white/5'
+                                    className={`px-4 py-3.5 rounded-lg border cursor-pointer transition-colors flex items-center gap-3 text-sm font-medium ${index === selectedIndex
+                                        ? 'bg-[#e4e4e7] border-white text-black'
+                                        : 'bg-[#111112] border-[#3f3f46] text-[#e4e4e7] hover:border-[#a1a1aa] hover:bg-[#18181b]'
                                         }`}
                                 >
-                                    <div className={`w-1.5 h-1.5 rounded-full ${index === selectedIndex ? 'bg-[#0071E3]' : 'bg-[#333333]'}`} />
+                                    <div className={`w-1.5 h-1.5 rounded-full shrink-0 ${index === selectedIndex ? 'bg-black' : 'bg-[#71717a]'}`} />
                                     {item.label}
                                 </li>
                             ))
                         ) : (
-                            <li className="p-8 text-center text-[#86868B] font-black text-[10px] uppercase tracking-widest">No se encontraron resultados</li>
+                            <li className="p-10 text-center text-[#71717a] text-sm">No se encontraron resultados</li>
                         )}
                     </ul>
                 </div>
@@ -123,8 +127,8 @@ export default function SearchModal({ isOpen, onClose, title, options, onSelect 
             <style>{`
                 .custom-scrollbar::-webkit-scrollbar { width: 6px; }
                 .custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
-                .custom-scrollbar::-webkit-scrollbar-thumb { background: #333333; border-radius: 3px; }
-                .custom-scrollbar::-webkit-scrollbar-thumb:hover { background: #424245; }
+                .custom-scrollbar::-webkit-scrollbar-thumb { background: #52525b; border-radius: 3px; }
+                .custom-scrollbar::-webkit-scrollbar-thumb:hover { background: #71717a; }
             `}</style>
         </div>
     );
