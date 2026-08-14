@@ -31,7 +31,12 @@ export const PageHeader = ({
                 <div>
                     <div className="flex items-center gap-3 mb-1">
                         {Icon && (
-                            <div className="p-2 rounded-lg bg-[#0071E3]/10 text-[#0071E3] border border-[#0071E3]/20 shrink-0">
+                            <div className={cn(
+                                "p-2 rounded-lg border shrink-0",
+                                themeColor === 'neutral'
+                                    ? "bg-[#111112] text-[#e4e4e7] border-[#52525b]"
+                                    : "bg-[#0071E3]/10 text-[#0071E3] border-[#0071E3]/20"
+                            )}>
                                 <Icon className="w-6 h-6" />
                             </div>
                         )}
@@ -61,7 +66,12 @@ export const PageHeader = ({
                         </button>
 
                         {Icon && (
-                            <div className="p-2 rounded-lg bg-[#0071E3]/10 text-[#0071E3] border border-[#0071E3]/20 shrink-0">
+                            <div className={cn(
+                                "p-2 rounded-lg border shrink-0",
+                                themeColor === 'neutral'
+                                    ? "bg-[#111112] text-[#e4e4e7] border-[#52525b]"
+                                    : "bg-[#0071E3]/10 text-[#0071E3] border-[#0071E3]/20"
+                            )}>
                                 <Icon className="w-6 h-6" />
                             </div>
                         )}

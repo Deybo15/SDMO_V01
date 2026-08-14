@@ -24,7 +24,7 @@ import {
 import * as XLSX from 'xlsx';
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Cell } from 'recharts';
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 import { PageHeader } from '../components/ui/PageHeader';
 import { cn } from '../lib/utils';
 
@@ -209,46 +209,46 @@ export default function ProyeccionCompras() {
 
     const SortIcon = ({ column }: { column: keyof ProyeccionItem }) => {
         if (sortConfig?.key !== column) return <ArrowUpDown className="w-4 h-4 text-[#86868B] inline ml-1 opacity-50" />;
-        return <ArrowUpDown className={cn("w-4 h-4 text-[#0071E3] inline ml-1 transition-transform", sortConfig.direction === 'asc' ? 'rotate-180' : '')} />;
+        return <ArrowUpDown className={cn("w-4 h-4 text-white inline ml-1 transition-transform", sortConfig.direction === 'asc' ? 'rotate-180' : '')} />;
     };
 
     return (
-        <div className="min-h-screen bg-[#000000] text-[#F5F5F7] font-sans selection:bg-[#0071E3]/30">
+        <div className="min-h-screen bg-black text-[#f4f4f5] font-sans selection:bg-white/20">
             <div className="animate-fade-in-up">
                 <div className="max-w-[1600px] mx-auto px-4 md:px-8 pt-8">
                     <div className="border-b border-[#27272a] pb-6">
                         <PageHeader
                             title="Proyección de Compras Anual"
                             icon={Calculator}
-                            themeColor="blue"
+                            themeColor="neutral"
                             subtitle="Planificación anual de necesidades y presupuesto de inventario"
                             compact
                         />
                     </div>
                 </div>
 
-                <div className="max-w-7xl mx-auto px-8 pt-8 space-y-10">
+                <div className="max-w-[1600px] mx-auto px-4 md:px-8 pt-6 space-y-6">
                     {/* Header Controls Row */}
-                    <div className="flex flex-col md:flex-row justify-between items-end gap-6">
+                    <div className="flex flex-col md:flex-row justify-between md:items-center gap-4">
                         <div className="space-y-1">
                             <p className="text-[#86868B] text-xs font-bold uppercase tracking-widest pl-1 opacity-70">
                                 Cálculo basado en histórico de consumo real considerando Lead Time.
                             </p>
                         </div>
                         <div className="flex gap-3">
-                            <button onClick={handleExportPDF} className="flex items-center gap-2 bg-[#1D1D1F] border border-[#333333] px-6 py-2.5 rounded-[8px] text-[#F5F5F7] hover:bg-[#333333] transition-all active:scale-95 text-[10px] font-bold uppercase tracking-widest">
-                                <FileText className="w-4 h-4 text-[#8B5CF6]" />
+                            <button onClick={handleExportPDF} className="flex items-center gap-2 rounded-lg border border-[#52525b] bg-[#111112] px-5 py-3 text-xs font-semibold text-white transition-colors hover:bg-[#18181b]">
+                                <FileText className="w-4 h-4 text-[#d4d4d8]" />
                                 PDF REQUISICIÓN
                             </button>
-                            <button onClick={handleExportExcel} className="flex items-center gap-2 bg-[#1D1D1F] border border-[#333333] px-6 py-2.5 rounded-[8px] text-[#F5F5F7] hover:bg-[#333333] transition-all active:scale-95 text-[10px] font-bold uppercase tracking-widest">
-                                <Download className="w-4 h-4 text-[#10B981]" />
+                            <button onClick={handleExportExcel} className="flex items-center gap-2 rounded-lg border border-[#e4e4e7] bg-[#e4e4e7] px-5 py-3 text-xs font-semibold text-black transition-colors hover:bg-white">
+                                <Download className="w-4 h-4" />
                                 EXCEL COMPLETO
                             </button>
                         </div>
                     </div>
 
                     {/* KPIs Grid */}
-                    <div className="grid grid-cols-2 md:grid-cols-4 gap-5">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4">
                         <StatCard title="Presupuesto Estimado" value={`₡${stats.totalPresupuesto.toLocaleString()}`} icon={DollarSign} color="text-[#0071E3]" bg="bg-[#0071E3]/10" loading={loading} badge="COSTO" />
                         <StatCard title="Artículos a Comprar" value={stats.itemsAComprar} subtitle={`de ${stats.totalItems}`} icon={Package} color="text-[#10B981]" bg="bg-[#10B981]/10" loading={loading} badge="CANTIDAD" />
                         <StatCard title="Lead Time (Promedio)" value={`${mesesLeadTime} Meses`} icon={Calendar} color="text-[#8B5CF6]" bg="bg-[#8B5CF6]/10" badge="LOGÍSTICA" />
@@ -256,12 +256,12 @@ export default function ProyeccionCompras() {
                     </div>
 
                     {/* Configuration and Charts */}
-                    <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
+                    <div className="grid grid-cols-1 lg:grid-cols-12 gap-4">
                         {/* Config Sidebar */}
-                        <div className="lg:col-span-4 glass-card p-8 flex flex-col justify-between min-h-[500px]">
+                        <div className="lg:col-span-4 rounded-xl border border-[#3f3f46] bg-[#0d0d0e] p-6 flex flex-col justify-between min-h-[500px]">
                             <div className="space-y-10">
                                 <div className="flex items-center gap-4 border-b border-[#333333] pb-6">
-                                    <div className="w-10 h-10 rounded-[8px] bg-[#0071E3]/10 flex items-center justify-center text-[#0071E3] border border-[#0071E3]/20">
+                                    <div className="w-10 h-10 rounded-lg bg-[#151517] flex items-center justify-center text-[#e4e4e7] border border-[#52525b]">
                                         <Settings2 className="w-5 h-5" />
                                     </div>
                                     <h3 className="text-sm font-bold text-[#F5F5F7] uppercase tracking-widest">Configuración del Modelo</h3>
@@ -280,7 +280,7 @@ export default function ProyeccionCompras() {
                                     <select
                                         value={factorSeguridad}
                                         onChange={e => setFactorSeguridad(Number(e.target.value))}
-                                        className="w-full bg-[#1D1D1F] border border-[#333333] rounded-[8px] px-5 py-4 text-[#F5F5F7] font-bold text-xs outline-none appearance-none hover:border-[#0071E3]/50 transition-all cursor-pointer"
+                                        className="w-full bg-[#18181b] border border-[#3f3f46] rounded-lg px-5 py-4 text-white font-semibold text-xs outline-none appearance-none hover:border-[#a1a1aa] transition-colors cursor-pointer"
                                     >
                                         <option value="1.0">0% (Justo a Tiempo)</option>
                                         <option value="1.1">10% (Recomendado)</option>
@@ -292,10 +292,10 @@ export default function ProyeccionCompras() {
                         </div>
 
                         {/* Chart Area */}
-                        <div className="lg:col-span-8 glass-card p-8 flex flex-col min-h-[500px]">
+                        <div className="lg:col-span-8 rounded-xl border border-[#3f3f46] bg-[#0d0d0e] p-6 flex flex-col min-h-[500px]">
                             <div className="flex items-center justify-between mb-10 border-b border-[#333333] pb-6">
                                 <div className="flex items-center gap-4">
-                                    <div className="w-10 h-10 rounded-[8px] bg-[#8B5CF6]/10 flex items-center justify-center text-[#8B5CF6] border border-[#8B5CF6]/20">
+                                    <div className="w-10 h-10 rounded-lg bg-[#151517] flex items-center justify-center text-[#e4e4e7] border border-[#52525b]">
                                         <PieChart className="w-5 h-5" />
                                     </div>
                                     <h3 className="text-sm font-bold text-[#F5F5F7] uppercase tracking-widest">Distribución Presupuestaria</h3>
@@ -306,24 +306,22 @@ export default function ProyeccionCompras() {
                             <div className="flex-1 w-full relative">
                                 {loading && (
                                     <div className="absolute inset-0 flex items-center justify-center bg-[#000000]/40 backdrop-blur-sm rounded-[8px] z-20">
-                                        <Activity className="w-8 h-8 text-[#0071E3] animate-spin" />
+                                        <Activity className="w-8 h-8 text-white animate-spin" />
                                     </div>
                                 )}
                                 <ResponsiveContainer width="100%" height="100%">
                                     <BarChart data={chartData} margin={{ top: 10, right: 10, left: 0, bottom: 60 }}>
-                                        <CartesianGrid strokeDasharray="3 3" stroke="#333333" vertical={false} />
+                                        <defs>
+                                            <pattern id="budgetGraphite" width="8" height="8" patternUnits="userSpaceOnUse" patternTransform="rotate(45)">
+                                                <rect width="8" height="8" fill="#262629" />
+                                                <line x1="0" y1="0" x2="0" y2="8" stroke="#a1a1aa" strokeWidth="1" />
+                                            </pattern>
+                                        </defs>
+                                        <CartesianGrid strokeDasharray="3 4" stroke="#27272a" vertical={false} />
                                         <XAxis dataKey="code" stroke="#333333" fontSize={10} tickLine={false} axisLine={false} angle={-45} textAnchor="end" interval={0} height={80} dy={10} tick={{ fill: '#86868B', fontWeight: 700 }} />
                                         <YAxis stroke="#333333" fontSize={10} tickLine={false} axisLine={false} tickFormatter={(val) => `₡${(val / 1000000).toFixed(1)}M`} tick={{ fill: '#86868B', fontWeight: 700 }} />
                                         <Tooltip content={<ChartTooltip />} cursor={{ fill: 'rgba(255,255,255,0.02)' }} />
-                                        <Bar dataKey="value" radius={[4, 4, 0, 0]} barSize={32}>
-                                            {chartData.map((_, index) => (
-                                                <Cell
-                                                    key={`cell-${index}`}
-                                                    fill={index % 2 === 0 ? "#0071E3" : "#0071E3"}
-                                                    fillOpacity={index % 2 === 0 ? 1 : 0.7}
-                                                />
-                                            ))}
-                                        </Bar>
+                                        <Bar dataKey="value" radius={[3, 3, 0, 0]} barSize={32} fill="url(#budgetGraphite)" stroke="#d4d4d8" strokeWidth={1} />
                                     </BarChart>
                                 </ResponsiveContainer>
                             </div>
@@ -331,24 +329,24 @@ export default function ProyeccionCompras() {
                     </div>
 
                     {/* Filter Area */}
-                    <div className="glass-card p-6 flex flex-col md:flex-row gap-5 items-center justify-between">
+                    <div className="rounded-xl border border-[#3f3f46] bg-[#0d0d0e] p-5 flex flex-col md:flex-row gap-4 items-center justify-between">
                         <div className="flex items-center gap-5 w-full lg:w-3/4">
                             <div className="relative flex-1 group">
-                                <Search className="absolute left-5 top-1/2 -translate-y-1/2 w-4 h-4 text-[#86868B] group-focus-within:text-[#0071E3] transition-colors" />
+                                <Search className="absolute left-5 top-1/2 -translate-y-1/2 w-4 h-4 text-[#86868B] group-focus-within:text-white transition-colors" />
                                 <input
                                     placeholder="Buscar por artículo o código específico..."
                                     value={searchTerm}
                                     onChange={e => { setSearchTerm(e.target.value); setCurrentPage(1); }}
-                                    className="w-full bg-[#1D1D1F] border border-[#333333] rounded-[8px] pl-14 pr-6 py-4 text-sm text-[#F5F5F7] focus:border-[#0071E3]/50 outline-none transition-all placeholder:text-[#86868B] font-medium"
+                                    className="w-full rounded-lg border border-[#3f3f46] bg-black pl-14 pr-6 py-4 text-sm text-white outline-none transition-colors placeholder:text-[#71717a] focus:border-[#a1a1aa]"
                                 />
                             </div>
                             <div className="relative w-full max-w-[340px]" ref={dropdownRef}>
                                 <button
                                     onClick={() => setIsDropdownOpen(!isDropdownOpen)}
-                                    className="w-full bg-[#1D1D1F] border border-[#333333] rounded-[8px] px-6 py-4 text-[10px] font-bold text-[#F5F5F7] flex items-center justify-between hover:border-[#0071E3]/50 transition-all uppercase tracking-widest"
+                                    className="w-full rounded-lg border border-[#3f3f46] bg-black px-5 py-4 text-[10px] font-semibold text-white flex items-center justify-between transition-colors hover:border-[#a1a1aa] uppercase tracking-widest"
                                 >
                                     <span className="truncate flex items-center gap-3">
-                                        <Filter className="w-4 h-4 text-[#0071E3]" />
+                                        <Filter className="w-4 h-4 text-[#d4d4d8]" />
                                         {selectedGasto === 'TODOS' ? 'Rubro de Gasto' : selectedGasto}
                                     </span>
                                     <ChevronRight className={cn("w-4 h-4 text-[#86868B] transition-transform duration-300", isDropdownOpen ? 'rotate-[-90deg]' : 'rotate-90')} />
@@ -356,9 +354,9 @@ export default function ProyeccionCompras() {
                                 {isDropdownOpen && (
                                     <div className="absolute bottom-[calc(100%+8px)] left-0 w-full bg-[#121212] border border-[#333333] rounded-[8px] shadow-2xl z-[100] p-2 animate-in fade-in slide-in-from-bottom-2">
                                         <div className="max-h-[300px] overflow-y-auto space-y-1 p-1">
-                                            <button onClick={() => { setSelectedGasto('TODOS'); setIsDropdownOpen(false); }} className={cn("w-full text-left px-5 py-3 rounded-[6px] text-[9px] font-bold uppercase transition-all", selectedGasto === 'TODOS' ? 'bg-[#0071E3]/20 text-[#0071E3]' : 'text-[#86868B] hover:bg-[#1D1D1F] hover:text-[#F5F5F7]')}>TODAS LAS PARTIDAS</button>
+                                            <button onClick={() => { setSelectedGasto('TODOS'); setIsDropdownOpen(false); }} className={cn("w-full text-left px-5 py-3 rounded-md text-[9px] font-bold uppercase transition-colors", selectedGasto === 'TODOS' ? 'bg-[#e4e4e7] text-black' : 'text-[#a1a1aa] hover:bg-[#27272a] hover:text-white')}>TODAS LAS PARTIDAS</button>
                                             {uniqueGastos.map(g => (
-                                                <button key={g} onClick={() => { setSelectedGasto(g); setIsDropdownOpen(false); }} className={cn("w-full text-left px-5 py-3 rounded-[6px] text-[9px] font-bold uppercase transition-all", selectedGasto === g ? 'bg-[#0071E3]/20 text-[#0071E3]' : 'text-[#86868B] hover:bg-[#1D1D1F] hover:text-[#F5F5F7]')}>{g}</button>
+                                                <button key={g} onClick={() => { setSelectedGasto(g); setIsDropdownOpen(false); }} className={cn("w-full text-left px-5 py-3 rounded-md text-[9px] font-bold uppercase transition-colors", selectedGasto === g ? 'bg-[#e4e4e7] text-black' : 'text-[#a1a1aa] hover:bg-[#27272a] hover:text-white')}>{g}</button>
                                             ))}
                                         </div>
                                     </div>
@@ -366,49 +364,49 @@ export default function ProyeccionCompras() {
                             </div>
                         </div>
                         <div className="flex items-center gap-3 text-[#86868B] text-[10px] font-bold uppercase tracking-widest bg-[#1D1D1F] px-6 py-4 rounded-[8px] border border-[#333333]">
-                            Filtros: <span className="text-[#0071E3] font-black italic">{processedData.length}</span> resultados
+                            Filtros: <span className="text-white font-semibold">{processedData.length}</span> resultados
                         </div>
                     </div>
 
                     {/* Table View */}
-                    <div className="glass-card overflow-hidden flex flex-col min-h-[600px] mb-32">
+                    <div className="rounded-xl border border-[#3f3f46] bg-[#0d0d0e] overflow-hidden flex flex-col min-h-[600px] mb-32">
                         <div className="overflow-x-auto">
                             <table className="w-full text-left border-collapse">
                                 <thead>
-                                    <tr className="bg-[#1D1D1F]/50 text-[#86868B] text-[10px] font-bold tracking-widest uppercase border-b border-[#333333]">
-                                        <th className="p-6 cursor-pointer hover:bg-[#1D1D1F] transition-colors w-[45%]" onClick={() => handleSort('nombre_articulo')}>ARTÍCULO <SortIcon column="nombre_articulo" /></th>
-                                        <th className="p-6 text-right cursor-pointer hover:bg-[#1D1D1F] transition-colors" onClick={() => handleSort('stock_actual')}>STOCK <SortIcon column="stock_actual" /></th>
-                                        <th className="p-6 text-right cursor-pointer hover:bg-[#1D1D1F] transition-colors" onClick={() => handleSort('promedio_mensual')}>CONS/MES <SortIcon column="promedio_mensual" /></th>
-                                        <th className="p-6 text-right cursor-pointer hover:bg-[#1D1D1F] transition-colors" onClick={() => handleSort('cantidad_sugerida')}>SUGERENCIA <SortIcon column="cantidad_sugerida" /></th>
-                                        <th className="p-6 text-right cursor-pointer hover:bg-[#1D1D1F] transition-colors" onClick={() => handleSort('costo_estimado')}>COSTO EST. <SortIcon column="costo_estimado" /></th>
+                                    <tr className="bg-[#151517] text-[#a1a1aa] text-[10px] font-semibold tracking-widest uppercase border-b border-[#3f3f46]">
+                                        <th className="px-5 py-4 cursor-pointer hover:bg-[#1f1f22] transition-colors w-[45%]" onClick={() => handleSort('nombre_articulo')}>ARTÍCULO <SortIcon column="nombre_articulo" /></th>
+                                        <th className="px-5 py-4 text-right cursor-pointer hover:bg-[#1f1f22] transition-colors" onClick={() => handleSort('stock_actual')}>STOCK <SortIcon column="stock_actual" /></th>
+                                        <th className="px-5 py-4 text-right cursor-pointer hover:bg-[#1f1f22] transition-colors" onClick={() => handleSort('promedio_mensual')}>CONS/MES <SortIcon column="promedio_mensual" /></th>
+                                        <th className="px-5 py-4 text-right cursor-pointer hover:bg-[#1f1f22] transition-colors" onClick={() => handleSort('cantidad_sugerida')}>SUGERENCIA <SortIcon column="cantidad_sugerida" /></th>
+                                        <th className="px-5 py-4 text-right cursor-pointer hover:bg-[#1f1f22] transition-colors" onClick={() => handleSort('costo_estimado')}>COSTO EST. <SortIcon column="costo_estimado" /></th>
                                     </tr>
                                 </thead>
                                 <tbody className={cn("text-sm text-[#F5F5F7] divide-y divide-[#333333]/50 transition-opacity duration-500", loading ? 'opacity-30' : 'opacity-100')}>
                                     {paginatedData.map(item => (
-                                        <tr key={item.codigo_articulo} className="hover:bg-[#1D1D1F]/30 transition-colors group">
-                                            <td className="p-6">
+                                        <tr key={item.codigo_articulo} className="hover:bg-[#151517] transition-colors group">
+                                            <td className="px-5 py-4">
                                                 <div>
-                                                    <p className="text-[14px] font-bold text-[#F5F5F7] uppercase tracking-tight group-hover:text-[#0071E3] transition-colors">{item.nombre_articulo}</p>
+                                                    <p className="text-[13px] font-semibold text-[#f4f4f5] leading-snug group-hover:text-white">{item.nombre_articulo}</p>
                                                     <div className="flex items-center gap-3 mt-2">
-                                                        <span className="text-[10px] font-mono text-[#0071E3] bg-[#0071E3]/10 px-2 py-0.5 rounded-[4px] font-bold">#{item.codigo_articulo}</span>
+                                                        <span className="text-[10px] font-mono text-[#d4d4d8] bg-[#18181b] border border-[#3f3f46] px-2 py-0.5 rounded font-semibold">#{item.codigo_articulo}</span>
                                                         <div className="w-1.5 h-1.5 rounded-full bg-[#333333]" />
                                                         <span className="uppercase text-[9px] font-bold text-[#86868B]">{item.unidad}</span>
                                                     </div>
                                                 </div>
                                             </td>
-                                            <td className="p-6 text-right font-mono text-[11px] font-bold text-[#86868B]">{item.stock_actual}</td>
-                                            <td className="p-6 text-right font-mono text-[11px] font-bold text-[#0071E3]">{item.promedio_mensual}</td>
-                                            <td className="p-6 text-right">
+                                            <td className="px-5 py-4 text-right font-mono text-[11px] font-semibold text-[#a1a1aa]">{item.stock_actual}</td>
+                                            <td className="px-5 py-4 text-right font-mono text-[11px] font-semibold text-[#d4d4d8]">{item.promedio_mensual}</td>
+                                            <td className="px-5 py-4 text-right">
                                                 <span className={cn(
-                                                    "px-4 py-1.5 rounded-[4px] text-[12px] font-black italic tracking-tight transition-all",
+                                                    "inline-flex min-w-10 justify-center px-3 py-1.5 rounded text-[11px] font-bold tracking-tight",
                                                     item.cantidad_sugerida > 0
-                                                        ? 'bg-[#10B981] text-[#000000] shadow-[0_0_15px_rgba(16,185,129,0.3)]'
-                                                        : 'text-[#86868B] bg-[#1D1D1F] border border-[#333333]'
+                                                        ? 'bg-[#e4e4e7] text-black border border-white'
+                                                        : 'text-[#71717a] bg-[#18181b] border border-[#3f3f46]'
                                                 )}>
                                                     {Math.ceil(item.cantidad_sugerida)}
                                                 </span>
                                             </td>
-                                            <td className="p-6 text-right font-mono text-[11px] font-bold text-[#F5F5F7]">₡{item.costo_estimado.toLocaleString()}</td>
+                                            <td className="px-5 py-4 text-right font-mono text-[11px] font-semibold text-[#f4f4f5]">₡{item.costo_estimado.toLocaleString()}</td>
                                         </tr>
                                     ))}
                                 </tbody>
@@ -424,11 +422,11 @@ export default function ProyeccionCompras() {
                         {/* Pagination */}
                         <div className="mt-auto p-8 border-t border-[#333333] bg-[#1D1D1F]/30 flex items-center justify-between">
                             <div className="text-[10px] font-bold text-[#86868B] uppercase tracking-widest">
-                                Página <span className="text-[#0071E3] mx-1">{currentPage}</span> de {totalPages || 1}
+                                Página <span className="text-white mx-1">{currentPage}</span> de {totalPages || 1}
                             </div>
                             <div className="flex gap-3">
-                                <button disabled={currentPage <= 1 || loading} onClick={() => setCurrentPage(p => p - 1)} className="p-2 border border-[#333333] rounded-[8px] disabled:opacity-20 hover:border-[#0071E3] transition-all"><ChevronLeft className="w-5 h-5" /></button>
-                                <button disabled={currentPage >= totalPages || loading} onClick={() => setCurrentPage(p => p + 1)} className="p-2 border border-[#333333] rounded-[8px] disabled:opacity-20 hover:border-[#0071E3] transition-all"><ChevronRight className="w-5 h-5" /></button>
+                                <button disabled={currentPage <= 1 || loading} onClick={() => setCurrentPage(p => p - 1)} className="p-2 border border-[#3f3f46] rounded-lg disabled:opacity-20 hover:border-[#a1a1aa] transition-colors"><ChevronLeft className="w-5 h-5" /></button>
+                                <button disabled={currentPage >= totalPages || loading} onClick={() => setCurrentPage(p => p + 1)} className="p-2 border border-[#3f3f46] rounded-lg disabled:opacity-20 hover:border-[#a1a1aa] transition-colors"><ChevronRight className="w-5 h-5" /></button>
                             </div>
                         </div>
                     </div>
@@ -441,12 +439,12 @@ export default function ProyeccionCompras() {
 // Internal Components
 function StatCard({ title, value, subtitle, icon: Icon, color, loading, bg, badge }: any) {
     return (
-        <div className="glass-card p-6 flex flex-col group transition-all duration-300 relative overflow-hidden">
-            <div className="flex justify-between items-start mb-6">
-                <div className={cn("w-12 h-12 rounded-[12px] flex items-center justify-center group-hover:scale-105 transition-transform", bg, color)}>
+        <div className="rounded-xl border border-[#3f3f46] bg-[#0d0d0e] p-5 flex flex-col group transition-colors relative overflow-hidden hover:border-[#71717a]">
+            <div className="flex justify-between items-start mb-5">
+                <div className="w-12 h-12 rounded-lg flex items-center justify-center border border-[#52525b] bg-[#151517] text-[#e4e4e7]">
                     <Icon className="w-5 h-5" />
                 </div>
-                <span className="bg-[#1D1D1F] text-[#86868B] text-[9px] font-bold tracking-widest uppercase px-3 py-1 rounded-[4px] border border-[#333333]">{badge}</span>
+                <span className="bg-[#151517] text-[#a1a1aa] text-[9px] font-bold tracking-widest uppercase px-3 py-1 rounded border border-[#3f3f46]">{badge}</span>
             </div>
             <div className="relative z-10">
                 <p className="text-[10px] font-bold text-[#86868B] uppercase tracking-widest leading-none">{title}</p>
@@ -467,7 +465,7 @@ function HighContrastSlider({ label, value, min, max, onChange, accent }: any) {
             <div className="flex justify-between items-center">
                 <label className="text-[10px] font-bold text-[#86868B] uppercase tracking-widest">{label}</label>
                 <div className="bg-[#1D1D1F] border border-[#333333] px-3 py-1 rounded-[4px] flex items-center gap-2">
-                    <span className="text-xs font-bold text-[#F5F5F7]" style={{ color: accent }}>{value}</span>
+                    <span className="text-xs font-bold text-white">{value}</span>
                     <span className="text-[9px] font-bold text-[#86868B] uppercase uppercase">Meses</span>
                 </div>
             </div>
@@ -475,7 +473,7 @@ function HighContrastSlider({ label, value, min, max, onChange, accent }: any) {
                 <input
                     type="range" min={min} max={max} value={value}
                     onChange={e => onChange(Number(e.target.value))}
-                    className="w-full h-1 bg-[#1D1D1F] rounded-full appearance-none cursor-pointer accent-[#0071E3] hover:accent-[#0071E3]/80 transition-all shadow-inner"
+                    className="w-full h-1 bg-[#27272a] rounded-full appearance-none cursor-pointer accent-[#e4e4e7] transition-all shadow-inner"
                 />
             </div>
         </div>
@@ -486,9 +484,9 @@ function ChartTooltip({ active, payload }: any) {
     if (active && payload?.[0]) {
         const d = payload[0].payload;
         return (
-            <div className="bg-[#1D1D1F] border border-[#333333] px-5 py-4 rounded-[8px] shadow-2xl">
+            <div className="bg-[#111112] border border-[#52525b] px-5 py-4 rounded-lg shadow-2xl">
                 <div className="flex items-center gap-3 mb-3 border-b border-[#333333] pb-3">
-                    <div className="w-2.5 h-2.5 rounded-full bg-[#0071E3]" />
+                    <div className="w-2.5 h-2.5 rounded-sm border border-white bg-[#3f3f46]" />
                     <p className="text-[10px] font-bold text-[#86868B] uppercase tracking-widest">{d.name}</p>
                 </div>
                 <p className="text-[#F5F5F7] text-lg font-bold tracking-tighter">₡{d.value.toLocaleString()}</p>
