@@ -604,23 +604,24 @@ export default function SeguimientoSolicitudExterno() {
     };
 
     return (
-        <div className="min-h-screen bg-[#000000] text-[#F5F5F7] pb-20 selection:bg-[#0071E3]/30">
+        <div className="min-h-screen bg-black text-[#f4f4f5] pb-16 selection:bg-white/20">
             <PageHeader
                 title="Seguimiento STE"
                 icon={Wrench}
-                subtitle="Gestión Operativa Externa"
+                themeColor="neutral"
+                subtitle="Consulta y gestión de solicitudes de clientes externos."
                 rightElement={
                     <>
                         <button
                             onClick={() => navigate('/cliente-externo')}
-                            className="h-12 px-6 bg-transparent border border-[#F5F5F7] rounded-[8px] text-[10px] font-black uppercase tracking-widest text-[#F5F5F7] hover:bg-white/5 transition-all flex items-center gap-3 active:scale-95 shadow-xl"
+                            className="h-11 px-5 bg-[#111112] border border-[#52525b] rounded-lg text-sm font-semibold text-white hover:bg-[#18181b] transition-colors flex items-center gap-2"
                         >
-                            <ChevronLeft className="w-4 h-4 text-[#0071E3]" /> Regresar
+                            <ChevronLeft className="w-4 h-4" /> Regresar
                         </button>
                         <button
                             onClick={handleExportExcel}
                             disabled={loading}
-                            className="h-12 px-6 bg-[#0071E3] text-white rounded-[8px] text-[10px] font-black uppercase tracking-widest hover:brightness-110 transition-all flex items-center gap-3 shadow-2xl shadow-[#0071E3]/20 disabled:opacity-50 active:scale-95"
+                            className="h-11 px-5 bg-[#e4e4e7] text-black rounded-lg text-sm font-semibold hover:bg-white transition-colors flex items-center gap-2 disabled:opacity-50"
                         >
                             <Download className="w-4 h-4" /> Exportar
                         </button>
@@ -628,42 +629,42 @@ export default function SeguimientoSolicitudExterno() {
                 }
             />
 
-            <div className="max-w-[1600px] mx-auto px-4 md:px-8 space-y-12 relative z-10">
+            <div className="max-w-[1600px] mx-auto px-4 md:px-8 space-y-5">
                 {/* Stats Cards */}
-                <div className="grid grid-cols-2 lg:grid-cols-4 gap-6">
+                <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
                     {[
-                        { label: 'Total', value: stats.total, icon: LayoutGrid, color: 'text-[#0071E3]', bg: 'bg-[#0071E3]/10' },
-                        { label: 'Activas', value: stats.activas, icon: PlayCircle, color: 'text-[#0071E3]', bg: 'bg-[#0071E3]/10' },
-                        { label: 'Terminadas', value: stats.ejecutadas, icon: CheckCircle, color: 'text-emerald-400', bg: 'bg-emerald-400/10' },
-                        { label: 'Canceladas', value: stats.canceladas, icon: XCircle, color: 'text-rose-400', bg: 'bg-rose-400/10' }
+                        { label: 'Total', value: stats.total, icon: LayoutGrid },
+                        { label: 'Activas', value: stats.activas, icon: PlayCircle },
+                        { label: 'Terminadas', value: stats.ejecutadas, icon: CheckCircle },
+                        { label: 'Canceladas', value: stats.canceladas, icon: XCircle }
                     ].map((m, i) => (
-                        <div key={i} className="bg-[#121212] border border-[#333333] rounded-[8px] p-7 flex items-center gap-6 group hover:border-[#0071E3]/30 transition-all shadow-2xl">
-                            <div className={cn("w-16 h-16 rounded-[8px] flex items-center justify-center transition-transform group-hover:scale-110 border border-white/5", m.bg, m.color)}>
-                                <m.icon className="w-8 h-8" />
+                        <div key={i} className="bg-[#111112] border border-[#3f3f46] rounded-xl p-5 flex items-center gap-5 hover:border-[#71717a] transition-colors">
+                            <div className="w-12 h-12 rounded-lg flex items-center justify-center border border-[#52525b] bg-[#18181b] text-[#e4e4e7]">
+                                <m.icon className="w-6 h-6" />
                             </div>
                             <div>
-                                <p className="text-4xl font-black text-white tracking-tighter leading-none">{m.value}</p>
-                                <p className="text-[10px] font-black text-[#86868B] uppercase tracking-widest mt-2">{m.label}</p>
+                                <p className="text-3xl font-semibold text-white tracking-tight leading-none">{m.value}</p>
+                                <p className="text-xs font-medium text-[#a1a1aa] mt-2">{m.label}</p>
                             </div>
                         </div>
                     ))}
                 </div>
 
-                <section className="bg-[#121212] border border-[#333333] rounded-[8px] p-8 md:p-10 space-y-8 shadow-3xl">
-                    <div className="flex items-center gap-3 mb-2 px-2">
-                        <Search className="w-5 h-5 text-[#0071E3]" />
-                        <h2 className="text-[10px] font-black text-[#F5F5F7] uppercase tracking-[0.3em]">Criterios de Búsqueda</h2>
+                <section className="bg-[#0d0d0e] border border-[#3f3f46] rounded-xl p-5 md:p-6 space-y-5">
+                    <div className="flex items-center gap-3">
+                        <Search className="w-5 h-5 text-[#d4d4d8]" />
+                        <h2 className="text-base font-semibold text-white">Criterios de búsqueda</h2>
                     </div>
 
-                    <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-end">
+                    <div className="grid grid-cols-1 lg:grid-cols-12 gap-4 items-end">
                         <div className="lg:col-span-8 space-y-3">
                             <label className="text-[10px] font-black text-[#86868B] uppercase tracking-widest ml-3">Búsqueda Unificada</label>
                             <div className="relative group">
-                                <Search className="absolute left-5 top-1/2 -translate-y-1/2 w-5 h-5 text-[#333333] group-focus-within:text-[#0071E3] transition-colors" />
+                                <Search className="absolute left-5 top-1/2 -translate-y-1/2 w-5 h-5 text-[#71717a] group-focus-within:text-white transition-colors" />
                                 <input
                                     value={searchTerm}
                                     onChange={e => { setSearchTerm(e.target.value); }}
-                                    className="w-full bg-[#1D1D1F] border border-[#333333] rounded-[8px] h-14 pl-14 pr-6 text-sm text-[#F5F5F7] font-bold placeholder:text-[#333333] focus:border-[#0071E3]/50 transition-all outline-none"
+                                    className="w-full bg-[#111112] border border-[#3f3f46] rounded-lg h-12 pl-14 pr-6 text-sm text-white placeholder:text-[#71717a] focus:border-[#a1a1aa] transition-colors outline-none"
                                     placeholder="N° Solicitud o descripción técnica..."
                                 />
                             </div>
@@ -674,7 +675,7 @@ export default function SeguimientoSolicitudExterno() {
                                 <select
                                     value={filterEstado}
                                     onChange={e => setFilterEstado(e.target.value)}
-                                    className="w-full bg-[#1D1D1F] border border-[#333333] rounded-[8px] h-14 px-6 text-sm text-[#F5F5F7] font-bold appearance-none cursor-pointer focus:border-[#0071E3]/50 outline-none transition-all"
+                                    className="w-full bg-[#111112] border border-[#3f3f46] rounded-lg h-12 px-5 text-sm text-white font-medium appearance-none cursor-pointer focus:border-[#a1a1aa] outline-none transition-colors"
                                 >
                                     <option value="">TODOS LOS ESTADOS</option>
                                     <option value="ACTIVA">ACTIVAS</option>
@@ -684,10 +685,10 @@ export default function SeguimientoSolicitudExterno() {
                                 <Filter className="absolute right-6 top-1/2 -translate-y-1/2 w-4 h-4 text-[#86868B] pointer-events-none" />
                             </div>
                         </div>
-                        <div className="lg:col-span-1 flex gap-4 h-14">
+                        <div className="lg:col-span-1 flex gap-4 h-12">
                             <button
                                 onClick={() => { setSearchTerm(''); setFilterEstado(''); }}
-                                className="w-full bg-transparent border border-[#333333] rounded-[8px] flex items-center justify-center hover:bg-white/5 transition-all text-[#86868B] hover:text-[#F5F5F7] group"
+                                className="w-full bg-[#111112] border border-[#52525b] rounded-lg flex items-center justify-center hover:bg-[#18181b] transition-colors text-[#a1a1aa] hover:text-white group"
                             >
                                 <Eraser className="w-6 h-6 group-hover:rotate-12 transition-transform" />
                             </button>
@@ -695,28 +696,27 @@ export default function SeguimientoSolicitudExterno() {
                     </div>
                 </section>
 
-                <div className="bg-[#121212] border border-[#333333] rounded-3xl shadow-2xl overflow-hidden relative group">
-                    <div className="absolute top-0 right-0 w-64 h-64 bg-[#0071E3]/5 rounded-full blur-3xl -mr-32 -mt-32" />
-                    <div className="p-8 relative z-10">
+                <div className="bg-[#0d0d0e] border border-[#3f3f46] rounded-xl overflow-hidden">
+                    <div className="p-4 md:p-6">
                         <div className="overflow-x-auto">
                             <table className="w-full text-left border-collapse">
                                 <thead>
-                                    <tr className="bg-[#1D1D1F] border-b border-[#333333] text-[10px] font-black text-white uppercase tracking-[0.2em]">
-                                        <th className="px-6 py-8">N° Solicitud</th>
-                                        <th className="px-6 py-8">Fecha Registro</th>
-                                        <th className="px-6 py-8">Descripción STI</th>
-                                        <th className="px-6 py-8 text-center">Supervisor</th>
-                                        <th className="px-6 py-8 text-center">Estado STI</th>
-                                        <th className="px-6 py-8 text-right">Acciones</th>
+                                    <tr className="bg-[#18181b] border-b border-[#3f3f46] text-[10px] font-semibold text-[#a1a1aa] uppercase tracking-[0.14em]">
+                                        <th className="px-6 py-5">N° Solicitud</th>
+                                        <th className="px-6 py-5">Fecha Registro</th>
+                                        <th className="px-6 py-5">Descripción STI</th>
+                                        <th className="px-6 py-5 text-center">Supervisor</th>
+                                        <th className="px-6 py-5 text-center">Estado STI</th>
+                                        <th className="px-6 py-5 text-right">Acciones</th>
                                     </tr>
                                 </thead>
-                                <tbody className="divide-y divide-[#333333]">
+                                <tbody className="divide-y divide-[#27272a]">
                                     {loading ? (
                                         <tr>
                                             <td colSpan={6} className="px-8 py-20 text-center">
                                                 <div className="flex flex-col items-center gap-4">
-                                                    <div className="w-12 h-12 border-4 border-[#0071E3]/30 border-t-[#0071E3] rounded-full animate-spin"></div>
-                                                    <span className="text-[10px] font-black text-[#86868B] uppercase tracking-widest">Sincronizando datos...</span>
+                                                    <div className="w-10 h-10 border-2 border-[#3f3f46] border-t-white rounded-full animate-spin"></div>
+                                                    <span className="text-xs font-medium text-[#a1a1aa]">Sincronizando datos...</span>
                                                 </div>
                                             </td>
                                         </tr>
@@ -724,54 +724,50 @@ export default function SeguimientoSolicitudExterno() {
                                         <tr>
                                             <td colSpan={6} className="px-8 py-20 text-center">
                                                 <div className="flex flex-col items-center gap-4 opacity-30">
-                                                    <Search className="w-12 h-12 text-[#333333]" />
-                                                    <span className="text-[10px] font-black uppercase tracking-widest text-[#86868B]">No se encontraron solicitudes</span>
+                                                    <Search className="w-10 h-10 text-[#71717a]" />
+                                                    <span className="text-xs font-medium text-[#a1a1aa]">No se encontraron solicitudes</span>
                                                 </div>
                                             </td>
                                         </tr>
                                     ) : (
                                         filteredSolicitudes.map((sol) => (
-                                            <tr key={sol.numero_solicitud} className="hover:bg-white/[0.02] transition-colors group">
-                                                <td className="px-6 py-7">
-                                                    <span className="text-lg font-black text-[#0071E3] tracking-tighter">#{sol.numero_solicitud}</span>
+                                            <tr key={sol.numero_solicitud} className="hover:bg-white/[0.035] transition-colors group">
+                                                <td className="px-6 py-6">
+                                                    <span className="text-base font-semibold text-white tracking-tight">#{sol.numero_solicitud}</span>
                                                 </td>
-                                                <td className="px-6 py-7">
-                                                    <div className="flex items-center gap-2 text-sm font-bold text-[#86868B]">
+                                                <td className="px-6 py-6">
+                                                    <div className="flex items-center gap-2 text-sm font-medium text-[#a1a1aa]">
                                                         <Calendar className="w-4 h-4" />
                                                         {formatDateOnly(sol.fecha_solicitud)}
                                                     </div>
                                                 </td>
-                                                <td className="px-6 py-7 italic font-medium text-[#F5F5F7] relative cursor-default" onMouseEnter={e => setHoveredDescription({ id: sol.numero_solicitud, text: sol.descripcion_solicitud, x: e.clientX, y: e.clientY })} onMouseLeave={() => setHoveredDescription(null)}>
+                                                <td className="px-6 py-6 text-sm font-medium text-[#e4e4e7] relative cursor-default" onMouseEnter={e => setHoveredDescription({ id: sol.numero_solicitud, text: sol.descripcion_solicitud, x: e.clientX, y: e.clientY })} onMouseLeave={() => setHoveredDescription(null)}>
                                                     <div className="truncate max-w-[300px]">
                                                         {sol.descripcion_solicitud || 'Sin descripción'}
                                                     </div>
                                                 </td>
-                                                <td className="px-6 py-7 text-center">
-                                                    <span className="px-3 py-1.5 bg-[#1D1D1F] rounded-[6px] border border-[#333333] text-[9px] font-black uppercase tracking-tighter text-[#F5F5F7] whitespace-nowrap block w-fit mx-auto">
+                                                <td className="px-6 py-6 text-center">
+                                                    <span className="px-3 py-1.5 bg-[#18181b] rounded-md border border-[#3f3f46] text-[10px] font-medium text-[#d4d4d8] whitespace-nowrap block w-fit mx-auto">
                                                         {sol.supervisor_alias || 'Sin asignar'}
                                                     </span>
                                                 </td>
-                                                <td className="px-6 py-7 text-center">
-                                                    <div className="flex items-center justify-center gap-2">
-                                                        <div className={cn(
-                                                            "w-2 h-2 rounded-full",
-                                                            sol.estado_actual?.toUpperCase() === 'EJECUTADA' ? "bg-emerald-400" :
-                                                                sol.estado_actual?.toUpperCase() === 'CANCELADA' ? "bg-rose-400" : "bg-[#0071E3]"
-                                                        )} />
-                                                        <span className={cn(
-                                                            "text-[10px] font-black uppercase tracking-widest",
-                                                            sol.estado_actual?.toUpperCase() === 'EJECUTADA' ? "text-emerald-400" :
-                                                                sol.estado_actual?.toUpperCase() === 'CANCELADA' ? "text-rose-400" : "text-[#0071E3]"
-                                                        )}>
+                                                <td className="px-6 py-6 text-center">
+                                                    <div className={cn(
+                                                        "inline-flex items-center justify-center gap-2 rounded-full border px-3 py-1.5",
+                                                        sol.estado_actual?.toUpperCase() === 'EJECUTADA' ? "border-white bg-white text-black" :
+                                                            sol.estado_actual?.toUpperCase() === 'CANCELADA' ? "border-[#3f3f46] bg-[#111112] text-[#71717a]" : "border-[#71717a] bg-[#18181b] text-[#e4e4e7]"
+                                                    )}>
+                                                        <div className="w-1.5 h-1.5 rounded-full bg-current" />
+                                                        <span className="text-[10px] font-semibold uppercase tracking-wider">
                                                             {sol.estado_actual || 'ACTIVA'}
                                                         </span>
                                                     </div>
                                                 </td>
-                                                <td className="px-6 py-7 text-right">
+                                                <td className="px-6 py-6 text-right">
                                                     <div className="flex items-center justify-end gap-2">
                                                         <button
                                                             onClick={() => abrirModalSeguimiento(sol.numero_solicitud)}
-                                                            className="p-2.5 bg-[#1D1D1F] border border-[#333333] text-[#86868B] hover:text-[#0071E3] hover:border-[#0071E3]/30 rounded-xl transition-all shadow-inner"
+                                                            className="p-2.5 bg-[#18181b] border border-[#3f3f46] text-[#a1a1aa] hover:text-white hover:border-[#71717a] rounded-lg transition-colors"
                                                             title="Ver detalles"
                                                         >
                                                             <Eye className="w-5 h-5" />
