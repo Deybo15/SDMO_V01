@@ -16,7 +16,7 @@ import { supabase } from '../lib/supabase';
 interface ClientStats {
     clients: number;
     activeRequests: number;
-    pendingDeliveries: number;
+    activeRequestsWithMaterialOutput: number;
 }
 
 const modules = [
@@ -71,7 +71,7 @@ async function fetchClientStats(): Promise<ClientStats> {
     if (activeResult.error) throw activeResult.error;
 
     const activeIds = [...new Set((activeResult.data || []).map((request) => String(request.numero_solicitud)))];
-    let pendingDeliveries = activeIds.length;
+    let activeRequestsWithMaterialOutput = 0;
 
     if (activeIds.length > 0) {
         const { data: deliveries, error } = await supabase
@@ -81,13 +81,13 @@ async function fetchClientStats(): Promise<ClientStats> {
 
         if (error) throw error;
         const deliveredIds = new Set((deliveries || []).map((delivery) => String(delivery.numero_solicitud)));
-        pendingDeliveries = activeIds.filter((id) => !deliveredIds.has(id)).length;
+        activeRequestsWithMaterialOutput = activeIds.filter((id) => deliveredIds.has(id)).length;
     }
 
     return {
         clients: clientsResult.count || 0,
         activeRequests: activeIds.length,
-        pendingDeliveries
+        activeRequestsWithMaterialOutput
     };
 }
 
@@ -101,7 +101,7 @@ export default function ClienteInterno() {
                 setStats(await fetchClientStats());
             } catch (error) {
                 console.error('Error cargando indicadores de cliente interno:', error);
-                setStats({ clients: 0, activeRequests: 0, pendingDeliveries: 0 });
+                setStats({ clients: 0, activeRequests: 0, activeRequestsWithMaterialOutput: 0 });
             }
         };
 
@@ -161,7 +161,7 @@ export default function ClienteInterno() {
                     {[
                         { label: 'Clientes registrados', value: stats?.clients, icon: Users },
                         { label: 'Solicitudes activas', value: stats?.activeRequests, icon: ClipboardList },
-                        { label: 'Entregas pendientes', value: stats?.pendingDeliveries, icon: Truck }
+                        { label: 'Solicitudes activas con salida de material', value: stats?.activeRequestsWithMaterialOutput, icon: Truck }
                     ].map((metric, index) => (
                         <div key={metric.label} className={`flex items-center gap-4 px-5 py-4 ${index > 0 ? 'border-t border-[#3f3f46] md:border-l md:border-t-0' : ''}`}>
                             <span className="flex h-12 w-12 items-center justify-center rounded-lg border border-[#52525b] bg-[#151517] text-[#d4d4d8]">
