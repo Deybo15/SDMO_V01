@@ -579,7 +579,7 @@ export default function IngresarSolicitudExterno() {
             )}
 
             {/* Header Content */}
-            <div className="max-w-7xl w-full mx-auto px-4 md:px-8 pt-6 flex flex-col gap-4">
+            <div className="w-full px-4 md:px-8 pt-6 flex flex-col gap-4">
                 <PageHeader
                     title="Nueva Solicitud Externa"
                     icon={FileText}
@@ -589,13 +589,15 @@ export default function IngresarSolicitudExterno() {
                 />
 
                 {/* Date Display */}
-                <div className="flex items-center gap-3 text-[#d4d4d8] text-sm font-medium bg-[#111112] w-fit px-4 py-2.5 rounded-lg border border-[#3f3f46]">
-                    <Calendar className="w-4 h-4" />
-                    {new Date().toLocaleDateString('es-ES', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })}
+                <div className="max-w-[1600px] w-full mx-auto px-4 md:px-8">
+                    <div className="flex items-center gap-3 text-[#d4d4d8] text-sm font-medium bg-[#111112] w-fit px-4 py-2.5 rounded-lg border border-[#3f3f46]">
+                        <Calendar className="w-4 h-4" />
+                        {new Date().toLocaleDateString('es-ES', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })}
+                    </div>
                 </div>
             </div>
 
-            <div className="max-w-6xl w-full mx-auto px-4 md:px-8 pb-8">
+            <div className="max-w-[1600px] w-full mx-auto px-4 md:px-8 pb-8">
                 {/* Content Card */}
                 <div className="bg-[#0d0d0e] border border-[#3f3f46] rounded-xl overflow-hidden mt-4">
 
