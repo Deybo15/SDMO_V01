@@ -1,78 +1,56 @@
 import { useNavigate } from 'react-router-dom';
-import {
-    RefreshCw,
-    ChevronRight,
-    ArrowLeft,
-    FileEdit
-} from 'lucide-react';
-import { PageHeader } from '../components/ui/PageHeader';
+import { ArrowLeft, ArrowRight, FileEdit, RefreshCw } from 'lucide-react';
 
 export default function GestionCambios() {
     const navigate = useNavigate();
 
-    const modules = [
-        {
-            title: 'Cambios en Orden de Trabajo',
-            icon: <FileEdit className="w-8 h-8" />,
-            path: '/gestion-cambios/orden-trabajo',
-            description: 'Modificar supervisor, área, instalación o solicitante de órdenes activas'
-        }
-    ];
-
     return (
-        <div className="min-h-screen bg-[#000000] p-8 text-[#F5F5F7]">
-            <div className="max-w-7xl mx-auto space-y-12 animate-fade-in-up">
-                <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-[#27272a] pb-6">
-                    <PageHeader
-                        title="Gestión de Cambios"
-                        icon={RefreshCw}
-                        subtitle="Control y seguimiento de cambios en las órdenes de trabajo"
-                        compact
-                    />
-                    <button
-                        onClick={() => navigate('/')}
-                        className="btn-ghost !px-8 !py-4"
-                    >
-                        <div className="flex items-center gap-3">
-                            <ArrowLeft className="w-5 h-5" />
-                            <span className="text-[10px] font-black uppercase tracking-widest">Menú Principal</span>
+        <div className="min-h-screen bg-black p-4 text-[#f4f4f5] selection:bg-white/20 md:px-8 md:py-6">
+            <div className="w-full space-y-6 animate-fade-in-up">
+                <header className="flex flex-col justify-between gap-4 border-b border-[#27272a] pb-4 md:flex-row md:items-center">
+                    <div className="flex items-center gap-3">
+                        <div className="rounded-lg border border-[#71717a] bg-[#111112] p-3 text-[#e4e4e7]">
+                            <RefreshCw className="h-7 w-7" />
                         </div>
+                        <div>
+                            <h1 className="text-2xl font-black tracking-tight text-white md:text-[30px]">Gestión de Cambios</h1>
+                            <p className="text-sm text-[#a1a1aa]">Control y seguimiento de cambios en las órdenes de trabajo</p>
+                        </div>
+                    </div>
+
+                    <button
+                        type="button"
+                        onClick={() => navigate('/')}
+                        className="inline-flex items-center justify-center gap-2 rounded-lg border border-[#71717a] bg-[#111112] px-5 py-3 text-sm font-semibold text-white transition-colors hover:bg-[#18181b]"
+                    >
+                        <ArrowLeft className="h-5 w-5" />
+                        Menú principal
                     </button>
-                </div>
+                </header>
 
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-8">
-                    {modules.map((module, index) => (
-                        <button
-                            key={index}
-                            onClick={() => navigate(module.path)}
-                            className="bg-[#121212] border border-[#333333] rounded-[8px] group relative p-8 flex flex-col h-80 text-left hover:border-[#0071E3]/50 transition-all duration-300"
-                        >
-                            {/* Icon Container */}
-                            <div className="mb-6 p-5 bg-black/40 rounded-[4px] w-fit group-hover:scale-105 transition-all duration-300 text-[#0071E3] border border-[#333333]">
-                                {module.icon}
-                            </div>
+                <section>
+                    <h2 className="mb-3 flex items-center gap-4 text-xs font-semibold uppercase tracking-[0.18em] text-[#a1a1aa]">
+                        Administración de órdenes
+                        <span className="h-px flex-1 bg-[#27272a]" />
+                    </h2>
 
-                            {/* Content */}
-                            <div className="flex-1 space-y-4">
-                                <h3 className="text-xl font-black text-[#F5F5F7] leading-tight tracking-tight uppercase group-hover:text-[#0071E3] transition-colors italic">
-                                    {module.title}
-                                </h3>
-                                <p className="text-[#86868B] text-[11px] font-black uppercase leading-relaxed tracking-wider">
-                                    {module.description}
-                                </p>
-                            </div>
-
-                            {/* Footer Interaction */}
-                            <div className="mt-6 flex items-center gap-3 text-[#0071E3] opacity-0 group-hover:opacity-100 transition-opacity">
-                                <span className="text-[9px] font-black uppercase tracking-widest">Acceder al módulo</span>
-                                <ChevronRight className="w-4 h-4" />
-                            </div>
-
-                            {/* Apple Accent Indicator */}
-                            <div className="absolute bottom-0 left-0 w-full h-[2px] bg-[#0071E3] transform scale-x-0 group-hover:scale-x-100 transition-transform duration-500 origin-left" />
-                        </button>
-                    ))}
-                </div>
+                    <button
+                        type="button"
+                        onClick={() => navigate('/gestion-cambios/orden-trabajo')}
+                        className="group flex min-h-[136px] w-full items-center gap-5 rounded-xl border border-[#3f3f46] bg-[#0d0d0e] p-5 text-left transition-colors hover:border-[#71717a] hover:bg-[#111112]"
+                    >
+                        <span className="flex h-14 w-14 shrink-0 items-center justify-center rounded-lg border border-[#52525b] bg-[#151517] text-[#e4e4e7]">
+                            <FileEdit className="h-6 w-6" />
+                        </span>
+                        <span className="min-w-0 flex-1">
+                            <strong className="block text-[15px] font-semibold text-white">Cambios en orden de trabajo</strong>
+                            <span className="mt-1 block text-xs leading-relaxed text-[#a1a1aa]">
+                                Modificar supervisor, área, instalación o solicitante de órdenes activas
+                            </span>
+                        </span>
+                        <ArrowRight className="h-5 w-5 shrink-0 text-[#a1a1aa] transition-transform group-hover:translate-x-1 group-hover:text-white" />
+                    </button>
+                </section>
             </div>
         </div>
     );
