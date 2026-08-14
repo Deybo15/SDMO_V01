@@ -488,7 +488,7 @@ export default function MaintenanceDashboard() {
     return (
         <div className="min-h-screen bg-[#000000] text-[#F5F5F7] font-sans selection:bg-white/20">
             <div className="animate-fade-in-up">
-                <div className="max-w-7xl mx-auto px-4 md:px-8 pt-8">
+                <div className="w-full px-4 md:px-8 pt-8">
                     <div className="border-b border-[#27272a] pb-6">
                         <PageHeader
                             title="Panel de Control (STI) - V2.2"
@@ -500,7 +500,7 @@ export default function MaintenanceDashboard() {
                     </div>
                 </div>
 
-                <div className="max-w-7xl mx-auto px-8 pt-8 flex flex-col gap-10">
+                <div className="w-full px-4 md:px-8 pt-6 flex flex-col gap-8">
                     {/* Filters Row */}
                     <div className="flex flex-col xl:flex-row items-stretch xl:items-center justify-between gap-5">
                         <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
@@ -582,8 +582,8 @@ export default function MaintenanceDashboard() {
                             { label: 'Eficiencia global', value: `${metrics.porcentajeEjecucion.toFixed(1)}%`, icon: Activity, trend: comparison?.porcentajeEjecucionChange, isPercentage: true }
                         ].map((metric) => (
                             <div key={metric.label} className={cn(
-                                "bg-[#111112] border rounded-[12px] p-6 min-h-[190px] flex flex-col justify-between",
-                                metric.featured ? "border-[#B8B8BD]" : "border-[#29292B]"
+                                "bg-[#111112] border rounded-[12px] p-5 min-h-[160px] flex flex-col justify-between",
+                                metric.featured ? "border-[#B8B8BD]" : "border-[#3F3F46]"
                             )}>
                                 <div className="flex items-center gap-3 text-[#B8B8BD]">
                                     <metric.icon className="w-5 h-5" />
@@ -602,7 +602,7 @@ export default function MaintenanceDashboard() {
                                 onClick={() => setShowCriticalOnly(!showCriticalOnly)}
                                 className={cn(
                                     "bg-[#111112] border rounded-[12px] px-5 py-4 text-left transition-colors",
-                                    showCriticalOnly ? "border-[#F1F1F2]" : "border-[#29292B] hover:border-[#71717A]"
+                                    showCriticalOnly ? "border-[#F1F1F2]" : "border-[#3F3F46] hover:border-[#71717A]"
                                 )}
                             >
                                 <div className="flex items-center gap-4">
@@ -613,7 +613,7 @@ export default function MaintenanceDashboard() {
                                     </div>
                                 </div>
                             </button>
-                            <div className="bg-[#111112] border border-[#29292B] rounded-[12px] px-5 py-4 flex items-center gap-4">
+                            <div className="bg-[#111112] border border-[#3F3F46] rounded-[12px] px-5 py-4 flex items-center gap-4">
                                 <Building2 className="w-5 h-5 text-[#B8B8BD]" />
                                 <div>
                                     <p className="text-[10px] uppercase tracking-widest text-[#8A8A90]">Instalaciones</p>
@@ -624,13 +624,13 @@ export default function MaintenanceDashboard() {
                     </div>
                 </div>
 
-                <main className="max-w-7xl mx-auto p-8 space-y-12 pb-32">
+                <main className="w-full px-4 md:px-8 py-8 space-y-10 pb-32">
                     {/* Charts Section */}
                     <div className={cn("grid grid-cols-1 lg:grid-cols-2 gap-8 transition-opacity duration-300", loading ? 'opacity-50' : 'opacity-100')}>
 
                         {/* Performance por Área */}
                         <section className="lg:col-span-2">
-                            <div className="bg-[#111112] border border-[#29292B] rounded-[14px] p-5 md:p-8">
+                            <div className="bg-[#111112] border border-[#3F3F46] rounded-xl p-5 md:p-7">
                                 <div className="flex flex-col lg:flex-row lg:items-start justify-between gap-4 pb-6 border-b border-[#242426]">
                                     <div className="flex items-start gap-3">
                                         <Wrench className="w-5 h-5 text-[#D4D4D6] mt-0.5" />
@@ -692,7 +692,7 @@ export default function MaintenanceDashboard() {
 
                         {/* Cobertura por Instalación */}
                         <section>
-                            <div className="bg-[#111112] border border-[#29292B] rounded-[14px] p-5 md:p-7 h-full">
+                            <div className="bg-[#111112] border border-[#3F3F46] rounded-xl p-5 md:p-6 h-full">
                                 <div className="flex items-start gap-3 mb-6">
                                     <Building2 className="w-5 h-5 text-[#D4D4D6] mt-0.5" />
                                     <div>
@@ -732,7 +732,7 @@ export default function MaintenanceDashboard() {
 
                         {/* Desempeño por Supervisión */}
                         <section>
-                            <div className="bg-[#111112] border border-[#29292B] rounded-[14px] p-5 md:p-7 h-full">
+                            <div className="bg-[#111112] border border-[#3F3F46] rounded-xl p-5 md:p-6 h-full">
                                 <div className="flex items-start gap-3 mb-6">
                                     <Activity className="w-5 h-5 text-[#D4D4D6] mt-0.5" />
                                     <div>
@@ -771,7 +771,7 @@ export default function MaintenanceDashboard() {
                         </section>
                         {/* Evolución Cronológica */}
                         <section className="lg:col-span-2">
-                            <div className="bg-[#111112] border border-[#29292B] rounded-[14px] p-5 md:p-8">
+                            <div className="bg-[#111112] border border-[#3F3F46] rounded-xl p-5 md:p-7">
                                 <div className="flex flex-col lg:flex-row lg:items-start justify-between gap-5 mb-5">
                                     <div className="flex items-start gap-3">
                                         <Calendar className="w-5 h-5 text-[#D4D4D6] mt-0.5" />
