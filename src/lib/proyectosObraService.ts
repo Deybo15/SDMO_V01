@@ -1037,11 +1037,25 @@ export async function getProyectosConGeo() {
   try {
     const { data, error } = await supabase
       .from('proyecto_obra')
-      .select('id, nombre_proyecto, dependencia, estado, georeferencia')
+      .select('id, codigo_meta, nombre_proyecto, dependencia, profesional_responsable, estado, anio, avance_poa, georeferencia')
       .not('georeferencia', 'is', null);
 
     if (error) throw error;
     if (!data) return [];
+
+    const valoresResp = Array.from(new Set(data.map((p: any) => p.profesional_responsable).filter(Boolean)));
+    const colabMap: Record<string, string> = {};
+
+    if (valoresResp.length > 0) {
+      const { data: colabs } = await supabase
+        .from('colaboradores_06')
+        .select('identificacion, colaborador, alias');
+
+      colabs?.forEach((colab: any) => {
+        if (colab.identificacion) colabMap[colab.identificacion] = colab.alias || colab.colaborador;
+        if (colab.alias) colabMap[colab.alias] = colab.alias;
+      });
+    }
 
     return data
       .map((p: any) => {
@@ -1049,6 +1063,7 @@ export async function getProyectosConGeo() {
         if (!coords) return null;
         return {
           ...p,
+          nombre_responsable: colabMap[p.profesional_responsable] || p.profesional_responsable || 'Sin responsable',
           lat: coords[0],
           lng: coords[1]
         };

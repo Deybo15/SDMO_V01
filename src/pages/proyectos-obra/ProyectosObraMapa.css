@@ -1,0 +1,45 @@
+.project-map .leaflet-tile-pane {
+  filter: grayscale(1) contrast(0.92) brightness(1.04);
+}
+
+.project-map .leaflet-control-attribution {
+  background: rgba(255, 255, 255, 0.88);
+  color: #27272a;
+  font-size: 10px;
+}
+
+.project-map .leaflet-tooltip {
+  border: 1px solid #52525b;
+  border-radius: 6px;
+  background: #111112;
+  color: #f4f4f5;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.35);
+}
+
+.project-map .leaflet-tooltip-top::before {
+  border-top-color: #111112;
+}
+
+.map-control {
+  display: flex;
+  width: 40px;
+  height: 40px;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid #71717a;
+  border-radius: 6px;
+  background: #111112;
+  color: #f4f4f5;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.28);
+  transition: background-color 160ms ease, border-color 160ms ease;
+}
+
+.map-control:hover {
+  border-color: #f4f4f5;
+  background: #27272a;
+}
+
+.map-control svg {
+  width: 20px;
+  height: 20px;
+}
