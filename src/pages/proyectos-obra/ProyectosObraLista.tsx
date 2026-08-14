@@ -81,12 +81,12 @@ export default function ProyectosObraLista() {
   const totalPaginas = Math.ceil(totalCount / porPagina) || 1;
 
   return (
-    <div className="min-h-screen bg-[#09090b] text-[#f4f4f5] p-4 md:p-8 space-y-8">
+    <div className="min-h-screen bg-black text-[#f4f4f5] p-4 md:p-8 space-y-7 selection:bg-white/20">
       {/* Header y Navegación rápida */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-[#27272a] pb-6">
+      <div className="flex flex-col 2xl:flex-row 2xl:items-center justify-between gap-4 border-b border-[#27272a] pb-6">
         <div>
           <div className="flex items-center gap-3 mb-1">
-            <div className="p-2 rounded-lg bg-[#0071E3]/10 text-[#0071E3] border border-[#0071E3]/20">
+            <div className="p-2 rounded-lg bg-[#111112] text-[#e4e4e7] border border-[#71717a]">
               <Layers className="w-6 h-6" />
             </div>
             <h1 className="text-2xl md:text-3xl font-black tracking-tight text-white">Proyectos de Obra</h1>
@@ -99,86 +99,85 @@ export default function ProyectosObraLista() {
         <div className="flex items-center gap-3 flex-wrap">
           <Link
             to="/proyectos-obra/nuevo"
-            className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-[#0071E3] hover:bg-[#0071E3]/80 text-white text-sm font-semibold transition-all duration-200 shadow-lg shadow-[#0071E3]/20"
+            className="flex items-center gap-2 px-4 py-2.5 rounded-lg bg-[#e4e4e7] hover:bg-white text-[#111112] text-sm font-semibold transition-colors duration-200 border border-white"
           >
             <Plus className="w-4 h-4" />
-            <span>Nuevo Proyecto</span>
+            <span>Nuevo proyecto</span>
           </Link>
           <button
             onClick={handleDescargarInformeGeneral}
             disabled={generandoExcel}
-            className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-[#27272a] hover:bg-[#3f3f46] text-white text-sm font-semibold transition-all duration-200 border border-[#3f3f46]/50 shadow-sm disabled:opacity-50"
+            className="flex items-center gap-2 px-4 py-2.5 rounded-lg bg-[#111112] hover:bg-[#18181b] text-white text-sm font-semibold transition-colors duration-200 border border-[#52525b] disabled:opacity-50"
             title="Descargar Informe General Consolidado en Excel"
           >
-            <FileSpreadsheet className="w-4 h-4 text-emerald-400" />
-            <span>{generandoExcel ? 'Generando...' : 'Informe General'}</span>
+            <FileSpreadsheet className="w-4 h-4 text-[#d4d4d8]" />
+            <span>{generandoExcel ? 'Generando...' : 'Informe general'}</span>
           </button>
           <Link
             to="/proyectos-obra/mapa"
-            className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-[#27272a] hover:bg-[#3f3f46] text-white text-sm font-semibold transition-all duration-200 border border-[#3f3f46]/50 shadow-sm"
+            className="flex items-center gap-2 px-4 py-2.5 rounded-lg bg-[#111112] hover:bg-[#18181b] text-white text-sm font-semibold transition-colors duration-200 border border-[#52525b]"
           >
-            <MapPin className="w-4 h-4 text-emerald-400" />
-            <span>Ver Mapa</span>
+            <MapPin className="w-4 h-4 text-[#d4d4d8]" />
+            <span>Ver mapa</span>
           </Link>
           <Link
             to="/proyectos-obra/dashboard"
-            className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-[#27272a] hover:bg-[#3f3f46] text-white text-sm font-semibold transition-all duration-200 border border-[#3f3f46]/50 shadow-sm"
+            className="flex items-center gap-2 px-4 py-2.5 rounded-lg bg-[#111112] hover:bg-[#18181b] text-white text-sm font-semibold transition-colors duration-200 border border-[#52525b]"
           >
-            <LayoutDashboard className="w-4 h-4 text-[#0071E3]" />
+            <LayoutDashboard className="w-4 h-4 text-[#d4d4d8]" />
             <span>Dashboard</span>
           </Link>
         </div>
       </div>
 
       {/* Barra de Filtros */}
-      <div className="bg-[#18181b] p-5 rounded-2xl border border-[#27272a] shadow-xl space-y-4">
-        <form onSubmit={handleBuscar} className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+      <div className="bg-[#111112] p-4 md:p-5 rounded-xl border border-[#3f3f46]">
+        <form onSubmit={handleBuscar} className="grid grid-cols-1 lg:grid-cols-[minmax(0,1.35fr)_minmax(220px,0.65fr)_auto_auto] items-center gap-4">
           {/* Nombre */}
-          <div className="relative lg:col-span-2">
+          <div className="relative">
             <Search className="w-4 h-4 absolute left-3.5 top-1/2 -translate-y-1/2 text-[#71717a]" />
             <input
               type="text"
+              aria-label="Buscar proyectos por nombre"
               placeholder="Buscar por nombre de proyecto..."
               value={filtroNombre}
               onChange={(e) => setFiltroNombre(e.target.value)}
-              className="w-full pl-10 pr-4 py-2.5 bg-[#09090b] border border-[#27272a] rounded-xl text-sm text-white placeholder-[#71717a] focus:outline-none focus:border-[#0071E3] focus:ring-1 focus:ring-[#0071E3] transition-all"
+              className="w-full pl-10 pr-4 py-3 bg-black border border-[#3f3f46] rounded-lg text-sm text-white placeholder-[#71717a] focus:outline-none focus:border-[#a1a1aa] transition-colors"
             />
           </div>
 
           {/* Año */}
           <div>
             <select
+              aria-label="Filtrar proyectos por año"
               value={filtroAnio}
               onChange={(e) => { setFiltroAnio(e.target.value); setPagina(1); }}
-              className="w-full px-3 py-2.5 bg-[#09090b] border border-[#27272a] rounded-xl text-sm text-white focus:outline-none focus:border-[#0071E3] transition-all cursor-pointer"
+              className="w-full px-3 py-3 bg-black border border-[#3f3f46] rounded-lg text-sm text-white focus:outline-none focus:border-[#a1a1aa] transition-colors cursor-pointer"
             >
-              <option value="">Todos los Años</option>
+              <option value="">Todos los años</option>
               {anios.map((a) => (
                 <option key={a} value={a}>{a}</option>
               ))}
             </select>
           </div>
-
-
+          <span className="text-xs text-[#a1a1aa] whitespace-nowrap">
+            Mostrando <strong className="text-white">{proyectos.length}</strong> de <strong className="text-white">{totalCount}</strong> proyectos
+          </span>
+          <button
+            type="button"
+            aria-label="Limpiar filtros de proyectos"
+            onClick={handleLimpiarFiltros}
+            className="flex items-center justify-center gap-1.5 text-xs text-[#a1a1aa] hover:text-white transition-colors whitespace-nowrap"
+          >
+            <RefreshCw className="w-3.5 h-3.5" />
+            <span>Limpiar filtros</span>
+          </button>
         </form>
-
-        <div className="flex justify-between items-center pt-2 border-t border-[#27272a]/50 text-xs text-[#a1a1aa]">
-          <span>Mostrando <strong>{proyectos.length}</strong> de <strong>{totalCount}</strong> proyectos</span>
-          <div className="flex items-center gap-3">
-            <button
-              onClick={handleLimpiarFiltros}
-              className="flex items-center gap-1.5 hover:text-white transition-colors"
-            >
-              <RefreshCw className="w-3.5 h-3.5" />
-              <span>Limpiar Filtros</span>
-            </button>
-          </div>
-        </div>
       </div>
 
       {/* Grid de Proyectos */}
       {loading ? (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-5">
           {[...Array(6)].map((_, i) => (
             <div key={i} className="h-64 bg-[#18181b] rounded-xl border border-[#27272a] animate-pulse p-5 space-y-4">
               <div className="h-4 bg-[#27272a] rounded w-1/3" />
@@ -203,7 +202,7 @@ export default function ProyectosObraLista() {
           </button>
         </div>
       ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-5">
           {proyectos.map((proyecto) => (
             <ProyectoCard key={proyecto.id} proyecto={proyecto} />
           ))}
@@ -218,6 +217,7 @@ export default function ProyectosObraLista() {
           </span>
           <div className="flex items-center gap-2">
             <button
+              aria-label="Ir a la página anterior"
               disabled={pagina === 1}
               onClick={() => setPagina((prev) => Math.max(prev - 1, 1))}
               className="p-2 rounded-lg bg-[#27272a] hover:bg-[#3f3f46] disabled:opacity-40 disabled:hover:bg-[#27272a] text-white transition-all"
@@ -225,6 +225,7 @@ export default function ProyectosObraLista() {
               <ChevronLeft className="w-5 h-5" />
             </button>
             <button
+              aria-label="Ir a la página siguiente"
               disabled={pagina === totalPaginas}
               onClick={() => setPagina((prev) => Math.min(prev + 1, totalPaginas))}
               className="p-2 rounded-lg bg-[#27272a] hover:bg-[#3f3f46] disabled:opacity-40 disabled:hover:bg-[#27272a] text-white transition-all"
