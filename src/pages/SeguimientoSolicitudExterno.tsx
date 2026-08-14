@@ -786,40 +786,40 @@ export default function SeguimientoSolicitudExterno() {
 
             {/* Modal Seguimiento */}
             {showModalSeguimiento && selectedSolicitud && (
-                <div className="fixed inset-0 z-[100] bg-[#000000] flex flex-col animate-in fade-in zoom-in duration-300">
+                <div className="fixed inset-0 z-[100] bg-black flex flex-col animate-in fade-in duration-200">
                     {/* Modal Header */}
-                    <header className="h-20 min-h-[5rem] border-b border-[#333333] bg-[#1D1D1F] px-8 md:px-12 flex items-center justify-between relative z-10 shrink-0">
+                    <header className="h-20 min-h-[5rem] border-b border-[#3f3f46] bg-[#111112] px-6 md:px-10 flex items-center justify-between relative z-10 shrink-0">
                         <div className="flex items-center gap-6">
-                            <div className="w-12 h-12 rounded-[8px] bg-[#0071E3]/10 border border-[#0071E3]/30 flex items-center justify-center shadow-2xl">
-                                <History className="w-6 h-6 text-[#0071E3]" />
+                            <div className="w-11 h-11 rounded-lg bg-[#18181b] border border-[#52525b] flex items-center justify-center">
+                                <History className="w-5 h-5 text-[#e4e4e7]" />
                             </div>
                             <div>
-                                <p className="text-[10px] font-black text-[#0071E3] uppercase tracking-[0.4em]">Seguimiento Técnico</p>
-                                <h2 className="text-2xl font-black text-[#F5F5F7] tracking-tighter">
-                                    Solicitud <span className="text-[#0071E3]"># {selectedSolicitud.numero_solicitud}</span>
+                                <p className="text-[10px] font-semibold text-[#a1a1aa] uppercase tracking-[0.24em]">Seguimiento técnico</p>
+                                <h2 className="text-2xl font-semibold text-white tracking-tight">
+                                    Solicitud <span className="text-[#d4d4d8]">#{selectedSolicitud.numero_solicitud}</span>
                                 </h2>
                             </div>
                         </div>
                         <button
                             onClick={() => setShowModalSeguimiento(false)}
-                            className="w-12 h-12 bg-transparent border border-[#333333] rounded-[8px] flex items-center justify-center hover:bg-rose-500/10 hover:border-rose-500/30 hover:text-rose-400 transition-all group"
+                            className="w-11 h-11 bg-transparent border border-[#52525b] rounded-lg flex items-center justify-center text-[#a1a1aa] hover:bg-[#18181b] hover:text-white transition-colors group"
                         >
                             <X className="w-6 h-6 transform group-hover:rotate-90 transition-transform" />
                         </button>
                     </header>
 
                     {/* Modal Content */}
-                    <div className="flex-1 overflow-y-auto px-8 md:px-12 py-12 relative z-10 custom-scrollbar">
-                        <div className="max-w-7xl mx-auto space-y-12 pb-12">
+                    <div className="flex-1 overflow-y-auto px-4 md:px-8 py-6 relative z-10 custom-scrollbar">
+                        <div className="max-w-[1500px] mx-auto space-y-5 pb-8">
 
                             {/* Summary Card */}
-                            <div className="grid grid-cols-1 lg:grid-cols-12 gap-10">
-                                <div className="lg:col-span-8 space-y-8">
-                                    <div className="bg-[#121212] border border-[#333333] rounded-[8px] p-8 md:p-10 relative overflow-hidden group">
+                            <div className="grid grid-cols-1 lg:grid-cols-12 gap-5">
+                                <div className="lg:col-span-8 space-y-5">
+                                    <div className="bg-[#0d0d0e] border border-[#3f3f46] rounded-xl p-6 relative overflow-hidden group">
                                         <div className="relative z-10">
-                                            <h3 className="text-[10px] font-black text-[#0071E3] uppercase tracking-widest mb-6 border-b border-[#333333] pb-2 inline-block">Detalle de la Orden</h3>
-                                            <p className="text-xl font-bold text-[#F5F5F7] leading-tight mb-8 italic">
-                                                "{selectedSolicitud.descripcion_solicitud}"
+                                            <h3 className="text-base font-semibold text-white mb-4">Detalle de la orden</h3>
+                                            <p className="text-lg font-medium text-[#e4e4e7] leading-relaxed mb-6">
+                                                {selectedSolicitud.descripcion_solicitud}
                                             </p>
                                             <div className="grid grid-cols-1 sm:grid-cols-2 gap-8">
                                                 <div>
@@ -827,10 +827,9 @@ export default function SeguimientoSolicitudExterno() {
                                                     <div className="relative">
                                                         <select
                                                             className={cn(
-                                                                "appearance-none bg-[#1D1D1F] border border-[#333333] rounded-[8px] px-6 py-3 text-[10px] font-black uppercase tracking-[0.2em] transition-all focus:border-[#0071E3]/50 outline-none cursor-pointer pr-14 h-12 w-full",
-                                                                seguimientoData.estado_actual === 'ACTIVA' ? "text-[#0071E3]" :
-                                                                    seguimientoData.estado_actual === 'EJECUTADA' ? "text-emerald-400" :
-                                                                        "text-rose-400"
+                                                                "appearance-none bg-[#18181b] border border-[#3f3f46] rounded-lg px-4 py-3 text-xs font-semibold uppercase tracking-wider transition-colors focus:border-[#a1a1aa] outline-none cursor-pointer pr-14 h-12 w-full",
+                                                                seguimientoData.estado_actual === 'EJECUTADA' ? "text-white" :
+                                                                    seguimientoData.estado_actual === 'CANCELADA' ? "text-[#71717a]" : "text-[#d4d4d8]"
                                                             )}
                                                             value={seguimientoData.estado_actual || ''}
                                                             onChange={(e) => setSeguimientoData({ ...seguimientoData, estado_actual: e.target.value })}
@@ -847,8 +846,8 @@ export default function SeguimientoSolicitudExterno() {
                                                 </div>
                                                 <div>
                                                     <p className="text-[9px] font-black text-[#86868B] uppercase tracking-widest mb-2">Fecha Apertura</p>
-                                                    <div className="h-12 flex items-center px-4 bg-[#1D1D1F] border border-[#333333] rounded-[8px]">
-                                                        <Calendar className="w-4 h-4 text-[#0071E3] mr-3" />
+                                                    <div className="h-12 flex items-center px-4 bg-[#18181b] border border-[#3f3f46] rounded-lg">
+                                                        <Calendar className="w-4 h-4 text-[#d4d4d8] mr-3" />
                                                         <p className="text-sm font-bold text-[#F5F5F7]">
                                                             {formatDateOnly(selectedSolicitud.fecha_solicitud)}
                                                         </p>
@@ -859,9 +858,9 @@ export default function SeguimientoSolicitudExterno() {
                                     </div>
 
                                     {/* Imágenes del Servicio */}
-                                    <div className="bg-[#121212] border border-[#333333] rounded-[8px] p-8 md:p-10 space-y-8">
-                                        <h3 className="text-[10px] font-black text-[#0071E3] uppercase tracking-widest flex items-center gap-3 border-b border-[#333333] pb-2 inline-flex">
-                                            <ImageIcon className="w-5 h-5" /> Registro Visual del Servicio
+                                    <div className="bg-[#0d0d0e] border border-[#3f3f46] rounded-xl p-6 space-y-6">
+                                        <h3 className="text-base font-semibold text-white flex items-center gap-3">
+                                            <ImageIcon className="w-5 h-5 text-[#d4d4d8]" /> Registro visual del servicio
                                         </h3>
                                         <div className="grid grid-cols-1 md:grid-cols-2 gap-10">
                                             {[
@@ -871,14 +870,14 @@ export default function SeguimientoSolicitudExterno() {
                                                 <div key={idx} className="space-y-4">
                                                     <div className="flex justify-between items-center px-2">
                                                         <span className="text-[10px] font-black text-[#86868B] uppercase tracking-widest">{img.label}</span>
-                                                        <label htmlFor={img.inputId} className="cursor-pointer text-[#0071E3] hover:brightness-110 transition-colors">
+                                                        <label htmlFor={img.inputId} className="cursor-pointer text-[#d4d4d8] hover:text-white transition-colors">
                                                             <PlusCircle className="w-5 h-5" />
                                                             <input type="file" className="hidden" id={img.inputId} accept="image/*" onChange={(e) => handleImageChange(e, img.key)} />
                                                         </label>
                                                     </div>
                                                     {img.preview ? (
                                                         <div
-                                                            className="relative aspect-video rounded-[8px] overflow-hidden border border-[#333333] group bg-[#1D1D1F] shadow-2xl"
+                                                            className="relative aspect-video rounded-lg overflow-hidden border border-[#3f3f46] group bg-[#18181b]"
                                                             onDragOver={(e) => handleDragOver(e, img.key)}
                                                             onDragLeave={(e) => handleDragLeave(e, img.key)}
                                                             onDrop={(e) => handleDrop(e, img.key)}
@@ -888,13 +887,13 @@ export default function SeguimientoSolicitudExterno() {
                                                                 <button onClick={() => setShowModalImagen({ url: img.preview!, title: img.label })} className="w-12 h-12 bg-white/20 hover:bg-white/40 rounded-[8px] flex items-center justify-center transition-all">
                                                                     <Eye className="w-6 h-6 text-white" />
                                                                 </button>
-                                                                <button onClick={() => eliminarImagen(img.key)} className="w-12 h-12 bg-rose-500/20 hover:bg-rose-500/40 rounded-[8px] flex items-center justify-center transition-all">
-                                                                    <Trash2 className="w-6 h-6 text-rose-400" />
+                                                                <button onClick={() => eliminarImagen(img.key)} className="w-12 h-12 bg-black/60 hover:bg-black rounded-lg border border-white/20 flex items-center justify-center transition-colors">
+                                                                    <Trash2 className="w-6 h-6 text-white" />
                                                                 </button>
                                                             </div>
                                                             {img.isDragging && (
-                                                                <div className="absolute inset-0 bg-[#0071E3]/20 backdrop-blur-sm flex items-center justify-center border-2 border-dashed border-[#0071E3] z-20">
-                                                                    <Upload className="w-12 h-12 text-[#0071E3] animate-bounce" />
+                                                                <div className="absolute inset-0 bg-white/10 backdrop-blur-sm flex items-center justify-center border-2 border-dashed border-white z-20">
+                                                                    <Upload className="w-12 h-12 text-white animate-bounce" />
                                                                 </div>
                                                             )}
                                                         </div>
@@ -903,17 +902,16 @@ export default function SeguimientoSolicitudExterno() {
                                                             htmlFor={img.inputId}
                                                             className={cn(
                                                                 "aspect-video rounded-[8px] border border-dashed flex flex-col items-center justify-center gap-6 bg-[#1D1D1F]/50 hover:bg-[#1D1D1F] transition-all cursor-pointer group px-6 text-center",
-                                                                img.isDragging ? "border-[#0071E3] bg-[#0071E3]/5" : "border-[#333333] hover:border-[#0071E3]/30"
+                                                                img.isDragging ? "border-white bg-white/5" : "border-[#3f3f46] hover:border-[#71717a]"
                                                             )}
                                                             onDragOver={(e) => handleDragOver(e, img.key)}
                                                             onDragLeave={(e) => handleDragLeave(e, img.key)}
                                                             onDrop={(e) => handleDrop(e, img.key)}
                                                         >
-                                                            <div className="w-20 h-20 rounded-full bg-[#1D1D1F] border border-[#333333] flex items-center justify-center group-hover:scale-110 group-hover:border-[#0071E3]/50 transition-all shadow-2xl relative overflow-hidden">
-                                                                <div className="absolute inset-0 bg-gradient-to-b from-[#0071E3]/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
+                                                            <div className="w-16 h-16 rounded-full bg-[#18181b] border border-[#52525b] flex items-center justify-center group-hover:border-white transition-colors relative overflow-hidden">
                                                                 <Upload className={cn(
                                                                     "w-8 h-8 transition-colors",
-                                                                    img.isDragging ? "text-[#0071E3]" : "text-[#333333] group-hover:text-[#0071E3]"
+                                                                    img.isDragging ? "text-white" : "text-[#71717a] group-hover:text-white"
                                                                 )} />
                                                             </div>
                                                             <div className="space-y-2">
@@ -928,29 +926,28 @@ export default function SeguimientoSolicitudExterno() {
                                     </div>
 
                                     {/* Stock de Materiales Aplicados */}
-                                    <div className="bg-[#121212] border border-[#333333] rounded-[8px] p-8 md:p-10 space-y-8">
+                                    <div className="bg-[#0d0d0e] border border-[#3f3f46] rounded-xl p-6 space-y-6">
                                         <div className="flex justify-between items-center">
-                                            <h3 className="text-[10px] font-black text-[#0071E3] uppercase tracking-widest flex items-center gap-3 border-b border-[#333333] pb-2 inline-flex">
-                                                <Package className="w-5 h-5" /> Insumos Técnicos Aplicados
+                                            <h3 className="text-base font-semibold text-white flex items-center gap-3">
+                                                <Package className="w-5 h-5 text-[#d4d4d8]" /> Insumos técnicos aplicados
                                             </h3>
                                         </div>
-                                        <div className="overflow-hidden rounded-[8px] border border-[#333333] bg-[#1D1D1F]/50 shadow-inner">
+                                        <div className="overflow-hidden rounded-lg border border-[#3f3f46] bg-[#111112]">
                                             <table className="w-full">
                                                 <thead>
-                                                    <tr className="bg-[#1D1D1F] border-b border-[#333333]">
+                                                    <tr className="bg-[#18181b] border-b border-[#3f3f46]">
                                                         <th className="px-6 py-5 text-left text-[9px] font-black text-[#86868B] uppercase tracking-widest">N° Salida</th>
                                                         <th className="px-6 py-5 text-left text-[9px] font-black text-[#86868B] uppercase tracking-widest">Fecha</th>
                                                         <th className="px-6 py-5 text-left text-[9px] font-black text-[#86868B] uppercase tracking-widest">Insumo</th>
                                                         <th className="px-6 py-5 text-center text-[9px] font-black text-[#86868B] uppercase tracking-widest">Cant.</th>
                                                     </tr>
                                                 </thead>
-                                                <tbody className="divide-y divide-[#333333]">
+                                                <tbody className="divide-y divide-[#27272a]">
                                                     {articulos.length > 0 ? (
                                                         articulos.map((art, idx) => (
                                                             <tr key={idx} className="hover:bg-white/5 transition-colors">
                                                                 <td className="px-6 py-5">
-                                                                    <span className="text-xs font-black text-[#0071E3]">#</span>
-                                                                    <span className="text-sm font-bold text-[#F5F5F7] ml-1">{art.id_salida}</span>
+                                                                    <span className="text-sm font-semibold text-white">#{art.id_salida}</span>
                                                                 </td>
                                                                 <td className="px-6 py-5 text-sm font-medium text-[#86868B]">
                                                                     {formatDateOnly(art.fecha_salida)}
@@ -962,7 +959,7 @@ export default function SeguimientoSolicitudExterno() {
                                                                     </div>
                                                                 </td>
                                                                 <td className="px-6 py-5 text-center">
-                                                                    <span className="inline-block px-4 py-1.5 bg-[#0071E3]/10 border border-[#0071E3]/20 rounded-[8px] text-[10px] font-black text-[#0071E3] shadow-xl">
+                                                                    <span className="inline-block px-4 py-1.5 bg-[#18181b] border border-[#52525b] rounded-md text-xs font-semibold text-white">
                                                                         {art.cantidad}
                                                                     </span>
                                                                 </td>
@@ -983,9 +980,9 @@ export default function SeguimientoSolicitudExterno() {
 
                                 {/* Sidebar Info */}
                                 <div className="lg:col-span-4 space-y-6">
-                                    <div className="bg-[#121212] border border-[#333333] rounded-[8px] p-8 space-y-6">
-                                        <h3 className="text-[10px] font-black text-[#0071E3] uppercase tracking-widest flex items-center gap-3 border-b border-[#333333] pb-2">
-                                            <Clock className="w-4 h-4" /> Cronograma STE
+                                    <div className="bg-[#0d0d0e] border border-[#3f3f46] rounded-xl p-6 space-y-4">
+                                        <h3 className="text-base font-semibold text-white flex items-center gap-3 pb-3 border-b border-[#27272a]">
+                                            <Clock className="w-4 h-4 text-[#d4d4d8]" /> Cronograma STE
                                         </h3>
                                         {[
                                             { label: 'Ingreso', key: 'fecha_ingreso' },
@@ -994,7 +991,7 @@ export default function SeguimientoSolicitudExterno() {
                                             { label: 'Valoración', key: 'fecha_valoracion' },
                                             { label: 'Finalización', key: 'fecha_finalizacion' }
                                         ].map((t, idx) => (
-                                            <div key={idx} className="bg-[#1D1D1F] border border-[#333333] rounded-[8px] p-4 flex flex-col gap-2 group/date hover:border-[#0071E3]/30 transition-colors">
+                                            <div key={idx} className="bg-[#18181b] border border-[#3f3f46] rounded-lg p-4 flex flex-col gap-2 group/date hover:border-[#71717a] transition-colors">
                                                 <span className="text-[9px] font-black text-[#86868B] uppercase tracking-[0.2em]">{t.label}</span>
                                                 <input
                                                     type="date"
@@ -1009,47 +1006,47 @@ export default function SeguimientoSolicitudExterno() {
                                     <button
                                         onClick={guardarSeguimiento}
                                         disabled={loading}
-                                        className="w-full h-16 bg-[#0071E3] hover:brightness-110 disabled:opacity-50 text-white rounded-[8px] flex items-center justify-center gap-4 shadow-2xl shadow-[#0071E3]/20 group transition-all active:scale-95"
+                                        className="w-full h-14 bg-[#e4e4e7] hover:bg-white disabled:opacity-50 text-black rounded-lg flex items-center justify-center gap-3 group transition-colors"
                                     >
                                         <Save className="w-6 h-6 group-hover:scale-110 transition-transform" />
-                                        <span className="text-sm font-black uppercase tracking-[0.2em]">Guardar Cambios</span>
+                                        <span className="text-sm font-semibold">Guardar cambios</span>
                                     </button>
                                 </div>
                             </div>
 
                             {/* Bitácora de Registro Técnico */}
-                            <div className="bg-[#121212] border border-[#333333] rounded-[8px] p-8 md:p-10 space-y-8">
+                            <div className="bg-[#0d0d0e] border border-[#3f3f46] rounded-xl p-6 space-y-6">
                                 <div className="flex justify-between items-center">
-                                    <h3 className="text-[10px] font-black text-[#0071E3] uppercase tracking-widest flex items-center gap-3 border-b border-[#333333] pb-2 inline-flex">
-                                        <History className="w-5 h-5" /> Bitácora de Registro Técnico
+                                    <h3 className="text-base font-semibold text-white flex items-center gap-3">
+                                        <History className="w-5 h-5 text-[#d4d4d8]" /> Bitácora de registro técnico
                                     </h3>
                                     <button
                                         onClick={() => {
                                             setNuevoRegistro({ fecha: new Date().toLocaleDateString('en-CA'), texto: '', tipo: 'General' });
                                             setShowModalRegistro(true);
                                         }}
-                                        className="h-10 px-6 bg-transparent border border-[#F5F5F7] rounded-[8px] flex items-center gap-3 text-[10px] font-black uppercase tracking-widest hover:bg-white/5 transition-all text-[#F5F5F7] shadow-xl active:scale-95"
+                                        className="h-10 px-5 bg-[#18181b] border border-[#52525b] rounded-lg flex items-center gap-2 text-xs font-semibold hover:bg-[#27272a] transition-colors text-white"
                                     >
-                                        <PlusCircle className="w-4 h-4 text-[#0071E3]" /> Nuevo Registro
+                                        <PlusCircle className="w-4 h-4 text-white" /> Nuevo registro
                                     </button>
                                 </div>
                                 <div className="space-y-6">
                                     {registros.length > 0 ? (
                                         registros.map((reg, idx) => (
-                                            <div key={idx} className="bg-[#1D1D1F] border border-[#333333] rounded-[8px] p-8 hover:border-[#0071E3]/30 transition-all relative overflow-hidden group shadow-2xl">
-                                                <div className="absolute top-0 left-0 w-1 h-full bg-[#0071E3] opacity-30 group-hover:opacity-100 transition-opacity"></div>
+                                            <div key={idx} className="bg-[#18181b] border border-[#3f3f46] rounded-lg p-6 hover:border-[#71717a] transition-colors relative overflow-hidden group">
+                                                <div className="absolute top-0 left-0 w-px h-full bg-white/40"></div>
                                                 <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 mb-4">
                                                     <div className="flex items-center gap-4">
-                                                        <div className="w-10 h-10 rounded-[8px] bg-[#0071E3]/10 border border-[#0071E3]/20 flex items-center justify-center">
-                                                            <Calendar className="w-5 h-5 text-[#0071E3]" />
+                                                        <div className="w-10 h-10 rounded-lg bg-[#111112] border border-[#52525b] flex items-center justify-center">
+                                                            <Calendar className="w-5 h-5 text-[#d4d4d8]" />
                                                         </div>
                                                         <span className="text-[10px] font-black text-[#F5F5F7] tracking-[0.2em] uppercase">
                                                             {formatDateOnly(reg.fecha_registro)}
                                                         </span>
                                                     </div>
                                                 </div>
-                                                <p className="text-sm font-bold text-[#86868B] leading-relaxed whitespace-pre-wrap ml-14 italic">
-                                                    "{reg.registro_seguimiento}"
+                                                <p className="text-sm font-medium text-[#d4d4d8] leading-relaxed whitespace-pre-wrap ml-14">
+                                                    {reg.registro_seguimiento}
                                                 </p>
                                             </div>
                                         ))
@@ -1069,10 +1066,10 @@ export default function SeguimientoSolicitudExterno() {
             {/* Modal Agregar Registro */}
             {showModalRegistro && (
                 <div className="fixed inset-0 z-[110] flex items-center justify-center p-4 bg-black/80 backdrop-blur-md animate-in fade-in duration-300 shadow-3xl">
-                    <div className="bg-[#121212] border border-[#333333] rounded-[8px] shadow-4xl w-full max-w-lg overflow-hidden">
-                        <div className="p-6 border-b border-[#333333] bg-[#1D1D1F] flex justify-between items-center">
+                    <div className="bg-[#0d0d0e] border border-[#3f3f46] rounded-xl shadow-4xl w-full max-w-lg overflow-hidden">
+                        <div className="p-6 border-b border-[#3f3f46] bg-[#111112] flex justify-between items-center">
                             <h3 className="text-sm font-black text-[#F5F5F7] uppercase tracking-widest flex items-center gap-3">
-                                <PlusCircle size={20} className="text-[#0071E3]" /> Agregar Registro
+                                <PlusCircle size={20} className="text-[#d4d4d8]" /> Agregar Registro
                             </h3>
                             <button onClick={() => setShowModalRegistro(false)} className="text-[#86868B] hover:text-[#F5F5F7] transition-colors"><X size={20} /></button>
                         </div>
@@ -1081,7 +1078,7 @@ export default function SeguimientoSolicitudExterno() {
                                 <label className="text-[10px] font-black text-[#86868B] uppercase tracking-widest ml-1">Fecha de Registro *</label>
                                 <input
                                     type="date"
-                                    className="w-full bg-[#1D1D1F] border border-[#333333] rounded-[8px] p-4 text-[#F5F5F7] font-bold focus:border-[#0071E3]/50 outline-none [color-scheme:dark] h-12"
+                                    className="w-full bg-[#18181b] border border-[#3f3f46] rounded-lg p-4 text-white font-medium focus:border-[#a1a1aa] outline-none [color-scheme:dark] h-12"
                                     value={nuevoRegistro.fecha}
                                     onChange={(e) => setNuevoRegistro({ ...nuevoRegistro, fecha: e.target.value })}
                                 />
@@ -1089,18 +1086,18 @@ export default function SeguimientoSolicitudExterno() {
                             <div className="space-y-3">
                                 <label className="text-[10px] font-black text-[#86868B] uppercase tracking-widest ml-1">Detalle Técnico *</label>
                                 <textarea
-                                    className="w-full bg-[#1D1D1F] border border-[#333333] rounded-[8px] p-4 text-[#F5F5F7] font-bold focus:border-[#0071E3]/50 outline-none h-40 resize-none italic text-sm"
+                                    className="w-full bg-[#18181b] border border-[#3f3f46] rounded-lg p-4 text-white font-medium focus:border-[#a1a1aa] outline-none h-40 resize-none text-sm"
                                     placeholder="Describa el avance técnico o novedad..."
                                     value={nuevoRegistro.texto}
                                     onChange={(e) => setNuevoRegistro({ ...nuevoRegistro, texto: e.target.value })}
                                 />
                             </div>
                         </div>
-                        <div className="p-6 bg-[#1D1D1F] border-t border-[#333333] flex justify-end gap-4">
+                        <div className="p-6 bg-[#111112] border-t border-[#3f3f46] flex justify-end gap-4">
                             <button onClick={() => setShowModalRegistro(false)} className="px-6 h-12 rounded-[8px] border border-[#F5F5F7] text-[#F5F5F7] text-[10px] font-black uppercase tracking-widest hover:bg-white/5 transition-all">
                                 Cancelar
                             </button>
-                            <button onClick={guardarRegistro} className="px-8 h-12 rounded-[8px] bg-[#0071E3] text-white text-[10px] font-black uppercase tracking-widest shadow-2xl shadow-[#0071E3]/20 hover:brightness-110 active:scale-95 transition-all">
+                            <button onClick={guardarRegistro} className="px-8 h-12 rounded-lg bg-[#e4e4e7] text-black text-xs font-semibold hover:bg-white transition-colors">
                                 Guardar Registro
                             </button>
                         </div>
@@ -1112,7 +1109,7 @@ export default function SeguimientoSolicitudExterno() {
             {showModalImagen && (
                 <div className="fixed inset-0 z-[120] flex items-center justify-center bg-black/95 backdrop-blur-xl p-6 animate-in fade-in duration-300" onClick={() => setShowModalImagen(null)}>
                     <div className="relative max-w-5xl w-full" onClick={e => e.stopPropagation()}>
-                        <button onClick={() => setShowModalImagen(null)} className="absolute -top-6 -right-6 w-12 h-12 bg-[#0071E3] text-white rounded-[8px] flex items-center justify-center font-bold hover:scale-110 transition-transform shadow-2xl z-20">
+                        <button onClick={() => setShowModalImagen(null)} className="absolute -top-6 -right-6 w-12 h-12 bg-[#18181b] border border-[#71717a] text-white rounded-lg flex items-center justify-center hover:bg-[#27272a] transition-colors shadow-2xl z-20">
                             <X size={24} />
                         </button>
                         <div className="rounded-[8px] overflow-hidden border border-white/10 shadow-4xl bg-black">
