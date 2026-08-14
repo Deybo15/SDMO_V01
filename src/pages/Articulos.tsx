@@ -166,27 +166,28 @@ export default function Articulos() {
         loadStats();
     }, []);
 
-    const quickActions = modules.filter((module) => module.group === 'quick');
-    const inventoryModules = modules.filter((module) => module.group === 'inventory');
-    const movementModules = modules.filter((module) => module.group === 'movements');
-    const supportModules = modules.filter((module) => module.group === 'support');
+    const primaryModuleIds = ['inventory', 'entry', 'register', 'scanner'];
+    const primaryModules = primaryModuleIds
+        .map((id) => modules.find((module) => module.id === id))
+        .filter((module): module is (typeof modules)[number] => Boolean(module));
+    const secondaryModules = modules.filter((module) => !primaryModuleIds.includes(module.id));
 
-    const renderModule = (module: (typeof modules)[number], featured = false) => {
+    const renderModule = (module: (typeof modules)[number], compact = false) => {
         const Icon = module.icon;
         return (
             <button
                 key={module.id}
                 type="button"
                 onClick={() => navigate(module.path)}
-                className={`group flex min-h-[104px] w-full items-center gap-5 rounded-xl border bg-[#111112] p-5 text-left transition-colors ${
-                    featured ? 'border-[#71717a] first:border-white' : 'border-[#3f3f46] hover:border-[#71717a]'
+                className={`group flex w-full items-center rounded-xl border border-[#3f3f46] bg-[#0d0d0e] text-left transition-colors hover:border-[#71717a] hover:bg-[#111112] ${
+                    compact ? 'min-h-[96px] gap-4 p-4' : 'min-h-[120px] gap-4 p-5'
                 }`}
             >
-                <span className="flex h-14 w-14 shrink-0 items-center justify-center rounded-lg border border-[#52525b] bg-[#18181b] text-[#e4e4e7]">
-                    <Icon className="h-6 w-6" />
+                <span className={`flex shrink-0 items-center justify-center rounded-lg border border-[#52525b] bg-[#151517] text-[#e4e4e7] ${compact ? 'h-12 w-12' : 'h-14 w-14'}`}>
+                    <Icon className={compact ? 'h-5 w-5' : 'h-6 w-6'} />
                 </span>
                 <span className="min-w-0 flex-1">
-                    <strong className="block text-base font-semibold text-white">{module.title}</strong>
+                    <strong className="block text-[15px] font-semibold text-white">{module.title}</strong>
                     <span className="mt-1 block text-xs leading-relaxed text-[#a1a1aa]">{module.description}</span>
                 </span>
                 <ArrowRight className="h-5 w-5 shrink-0 text-[#a1a1aa] transition-transform group-hover:translate-x-1 group-hover:text-white" />
@@ -195,15 +196,15 @@ export default function Articulos() {
     };
 
     return (
-        <div className="min-h-screen bg-black p-4 text-[#f4f4f5] md:p-8 selection:bg-white/20">
-            <div className="w-full space-y-7 animate-fade-in-up">
-                <header className="flex flex-col justify-between gap-4 border-b border-[#27272a] pb-5 md:flex-row md:items-center">
+        <div className="min-h-screen bg-black p-4 text-[#f4f4f5] selection:bg-white/20 md:px-8 md:py-6">
+            <div className="w-full space-y-6 animate-fade-in-up">
+                <header className="flex flex-col justify-between gap-4 border-b border-[#27272a] pb-4 md:flex-row md:items-center">
                     <div className="flex items-center gap-3">
                         <div className="rounded-lg border border-[#71717a] bg-[#111112] p-3 text-[#e4e4e7]">
                             <LayoutGrid className="h-7 w-7" />
                         </div>
                         <div>
-                            <h1 className="text-2xl font-black tracking-tight text-white md:text-3xl">Gestión de artículos</h1>
+                            <h1 className="text-2xl font-black tracking-tight text-white md:text-[30px]">Gestión de artículos</h1>
                             <p className="text-sm text-[#a1a1aa]">Administración y control del inventario de artículos del SDMO</p>
                         </div>
                     </div>
@@ -217,42 +218,32 @@ export default function Articulos() {
                     </button>
                 </header>
 
-                <section className="grid grid-cols-1 rounded-xl border border-[#3f3f46] bg-[#111112] md:grid-cols-3">
+                <section className="grid grid-cols-1 rounded-xl border border-[#3f3f46] bg-[#0d0d0e] md:grid-cols-3">
                     {[
                         { label: 'Artículos registrados', value: stats?.articles, icon: Package },
                         { label: 'Unidades en inventario', value: stats?.units, icon: Boxes },
                         { label: 'Movimientos de hoy', value: stats?.movements, icon: Activity }
                     ].map((metric, index) => (
-                        <div key={metric.label} className={`flex items-center gap-5 p-5 ${index > 0 ? 'border-t border-[#3f3f46] md:border-l md:border-t-0' : ''}`}>
-                            <span className="flex h-14 w-14 items-center justify-center rounded-lg border border-[#52525b] bg-[#18181b] text-[#d4d4d8]">
-                                <metric.icon className="h-6 w-6" />
+                        <div key={metric.label} className={`flex items-center gap-4 px-5 py-4 ${index > 0 ? 'border-t border-[#3f3f46] md:border-l md:border-t-0' : ''}`}>
+                            <span className="flex h-12 w-12 items-center justify-center rounded-lg border border-[#52525b] bg-[#151517] text-[#d4d4d8]">
+                                <metric.icon className="h-5 w-5" />
                             </span>
                             <div>
-                                <p className="text-xs font-medium text-[#a1a1aa]">{metric.label}</p>
-                                <p className="mt-1 text-3xl font-semibold tabular-nums text-white">{metric.value === undefined ? '—' : metric.value.toLocaleString('es-CR')}</p>
+                                <p className="text-2xl font-semibold tabular-nums text-white">{metric.value === undefined ? '—' : metric.value.toLocaleString('es-CR')}</p>
+                                <p className="mt-0.5 text-xs font-medium text-[#a1a1aa]">{metric.label}</p>
                             </div>
                         </div>
                     ))}
                 </section>
 
                 <section>
-                    <h2 className="mb-3 text-xs font-semibold uppercase tracking-[0.14em] text-[#a1a1aa]">01. Acciones rápidas</h2>
-                    <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">{quickActions.map((module) => renderModule(module, true))}</div>
-                </section>
-
-                <section>
-                    <h2 className="mb-3 text-xs font-semibold uppercase tracking-[0.14em] text-[#a1a1aa]">02. Inventario y consulta</h2>
-                    <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">{inventoryModules.map((module) => renderModule(module))}</div>
-                </section>
-
-                <section>
-                    <h2 className="mb-3 text-xs font-semibold uppercase tracking-[0.14em] text-[#a1a1aa]">03. Movimientos y trazabilidad</h2>
-                    <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">{movementModules.map((module) => renderModule(module))}</div>
+                    <h2 className="mb-3 text-xs font-semibold uppercase tracking-[0.18em] text-[#a1a1aa]">Operaciones principales</h2>
+                    <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-4">{primaryModules.map((module) => renderModule(module))}</div>
                 </section>
 
                 <section className="pb-8">
-                    <h2 className="mb-3 text-xs font-semibold uppercase tracking-[0.14em] text-[#a1a1aa]">04. Soporte del catálogo</h2>
-                    <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">{supportModules.map((module) => renderModule(module))}</div>
+                    <h2 className="mb-3 border-t border-[#27272a] pt-5 text-xs font-semibold uppercase tracking-[0.18em] text-[#a1a1aa]">Gestión y trazabilidad</h2>
+                    <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3">{secondaryModules.map((module) => renderModule(module, true))}</div>
                 </section>
             </div>
         </div>
