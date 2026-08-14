@@ -497,9 +497,9 @@ export default function MaintenanceDashboard() {
                 <div className="w-full px-4 md:px-8 pt-8">
                     <div className="border-b border-[#27272a] pb-6">
                         <PageHeader
-                            title="Panel de Control (STI) - V2.2"
+                            title="Panel de Control Cliente Interno"
                             icon={Activity}
-                            themeColor="blue"
+                            themeColor="neutral"
                             subtitle="Resumen general de operaciones del Sistema de Desarrollo y Mantenimiento de Obras (SDMO)"
                             compact
                         />
@@ -803,7 +803,7 @@ export default function MaintenanceDashboard() {
                                 <div className="flex flex-wrap items-center gap-5 mb-4 text-[10px] uppercase tracking-widest text-[#8A8A90]">
                                     <span className="flex items-center gap-2"><i className="w-7 h-3 border border-[#8A8A90]" style={{ backgroundImage: 'repeating-linear-gradient(135deg, transparent 0, transparent 3px, rgba(255,255,255,0.55) 3px, rgba(255,255,255,0.55) 4px)' }} />Ejecutadas</span>
                                     <span className="flex items-center gap-2"><i className="w-7 h-3 bg-[#77777D] border border-[#D4D4D6]" />Pendientes</span>
-                                    <span className="flex items-center gap-2"><i className="w-7 border-t border-dashed border-white relative"><b className="absolute w-2 h-2 rounded-full border border-white bg-[#111112] left-1/2 -translate-x-1/2 -top-[5px]" /></i>Tendencia proyectada</span>
+                                    <span className="flex items-center gap-2"><i className="relative w-7 border-t-2 border-white"><b className="absolute left-1/2 top-1/2 h-2 w-2 -translate-x-1/2 -translate-y-1/2 rounded-full border-2 border-white bg-[#111112]" /></i>Tendencia proyectada</span>
                                 </div>
                                 <div className="h-[430px] w-full">
                                     <ResponsiveContainer width="100%" height="100%">
@@ -823,7 +823,15 @@ export default function MaintenanceDashboard() {
                                             <Bar dataKey="pending" name="Pendientes" stackId="a" fill="#77777D" stroke="#F1F1F2" strokeWidth={1} barSize={44} radius={[3, 3, 0, 0]}>
                                                 <LabelList dataKey="total" position="top" fill="#F1F1F2" fontSize={11} fontWeight={600} />
                                             </Bar>
-                                            <Line type="monotone" dataKey="tendencia" name="Tendencia proyectada" stroke="#F1F1F2" strokeWidth={2} strokeDasharray="7 7" dot={{ r: 4, fill: '#111112', stroke: '#F1F1F2', strokeWidth: 2 }} activeDot={{ r: 5, fill: '#111112', stroke: '#FFFFFF', strokeWidth: 2 }} />
+                                            <Line
+                                                type="linear"
+                                                dataKey="tendencia"
+                                                name="Tendencia proyectada"
+                                                stroke="#FFFFFF"
+                                                strokeWidth={2.5}
+                                                dot={{ r: 4.5, fill: '#111112', stroke: '#FFFFFF', strokeWidth: 2.5 }}
+                                                activeDot={{ r: 7, fill: '#111112', stroke: '#FFFFFF', strokeWidth: 3 }}
+                                            />
                                             {metrics.tendenciaFormula && (
                                                 <text
                                                     x="95%"
