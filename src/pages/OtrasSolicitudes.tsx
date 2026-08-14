@@ -1,129 +1,149 @@
 import { useNavigate } from 'react-router-dom';
 import {
-    Monitor,
-    Wrench,
+    ArrowLeft,
+    ArrowRight,
     Clock,
-    Paperclip,
-    HelpCircle,
     Hammer,
+    HelpCircle,
+    LayoutGrid,
+    Monitor,
+    Paperclip,
     Shirt,
     Sparkles,
-    ChevronRight,
-    LayoutGrid,
-    ArrowLeft
+    Wrench
 } from 'lucide-react';
-import { PageHeader } from '../components/ui/PageHeader';
-import { cn } from '../lib/utils';
+
+const modules = [
+    {
+        id: 'equipment',
+        title: 'Equipos y activos',
+        icon: Monitor,
+        path: '/otras-solicitudes/equipos-activos',
+        description: 'Insumos para maquinaria y equipos',
+        group: 'equipment'
+    },
+    {
+        id: 'tools',
+        title: 'Herramientas',
+        icon: Wrench,
+        path: '/otras-solicitudes/herramientas',
+        description: 'Taladros, sierras y equipo manual',
+        group: 'equipment'
+    },
+    {
+        id: 'loan',
+        title: 'Préstamo',
+        icon: Clock,
+        path: '/otras-solicitudes/prestamo',
+        description: 'Insumos para otras dependencias',
+        group: 'equipment'
+    },
+    {
+        id: 'workshop',
+        title: 'Taller de ebanistería',
+        icon: Hammer,
+        path: '/otras-solicitudes/taller-ebanisteria',
+        description: 'Materiales para madera y carpintería',
+        group: 'equipment'
+    },
+    {
+        id: 'office',
+        title: 'Artículos de oficina',
+        icon: Paperclip,
+        path: '/otras-solicitudes/articulos-oficina',
+        description: 'Papelería, tintas y accesorios',
+        group: 'supplies'
+    },
+    {
+        id: 'clothing',
+        title: 'Vestimenta e indumentaria',
+        icon: Shirt,
+        path: '/otras-solicitudes/vestimenta',
+        description: 'Uniformes y equipo de protección',
+        group: 'supplies'
+    },
+    {
+        id: 'cleaning',
+        title: 'Limpieza y aseo',
+        icon: Sparkles,
+        path: '/otras-solicitudes/limpieza-aseo',
+        description: 'Insumos de limpieza y desinfección',
+        group: 'supplies'
+    },
+    {
+        id: 'unassigned',
+        title: 'Sin asignación específica',
+        icon: HelpCircle,
+        path: '/otras-solicitudes/sin-asignacion',
+        description: 'Otros artículos no categorizados',
+        group: 'supplies'
+    }
+] as const;
 
 export default function OtrasSolicitudes() {
     const navigate = useNavigate();
+    const equipmentModules = modules.filter((module) => module.group === 'equipment');
+    const supplyModules = modules.filter((module) => module.group === 'supplies');
 
-    const modules = [
-        {
-            title: 'Equipos y activos',
-            icon: <Monitor className="w-8 h-8" />,
-            path: '/otras-solicitudes/equipos-activos',
-            description: 'Computadoras, monitores y periféricos'
-        },
-        {
-            title: 'Herramientas',
-            icon: <Wrench className="w-8 h-8" />,
-            path: '/otras-solicitudes/herramientas',
-            description: 'Taladros, sierras y equipo manual'
-        },
-        {
-            title: 'Préstamo',
-            icon: <Clock className="w-8 h-8" />,
-            path: '/otras-solicitudes/prestamo',
-            description: 'Equipo para uso temporal'
-        },
-        {
-            title: 'Artículos de oficina',
-            icon: <Paperclip className="w-8 h-8" />,
-            path: '/otras-solicitudes/articulos-oficina',
-            description: 'Papelería, tintas y accesorios'
-        },
-        {
-            title: 'Sin asignación especifica',
-            icon: <HelpCircle className="w-8 h-8" />,
-            path: '/otras-solicitudes/sin-asignacion',
-            description: 'Otros artículos no categorizados'
-        },
-        {
-            title: 'Taller de ebanistería',
-            icon: <Hammer className="w-8 h-8" />,
-            path: '/otras-solicitudes/taller-ebanisteria',
-            description: 'Materiales para madera y carpintería'
-        },
-        {
-            title: 'Vestimenta e indumentaría',
-            icon: <Shirt className="w-8 h-8" />,
-            path: '/otras-solicitudes/vestimenta',
-            description: 'Uniformes y equipo de protección'
-        },
-        {
-            title: 'Limpieza y aseo',
-            icon: <Sparkles className="w-8 h-8" />,
-            path: '/otras-solicitudes/limpieza-aseo',
-            description: 'Insumos de limpieza y desinfección'
-        }
-    ];
+    const renderModule = (module: (typeof modules)[number]) => {
+        const Icon = module.icon;
+        return (
+            <button
+                key={module.id}
+                type="button"
+                onClick={() => navigate(module.path)}
+                className={`group flex min-h-[104px] w-full items-center gap-4 rounded-xl border bg-[#0d0d0e] p-4 text-left transition-colors hover:border-[#71717a] hover:bg-[#111112] ${
+                    module.id === 'unassigned' ? 'border-[#333336]' : 'border-[#3f3f46]'
+                }`}
+            >
+                <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-lg border border-[#52525b] bg-[#151517] text-[#e4e4e7]">
+                    <Icon className="h-5 w-5" />
+                </span>
+                <span className="min-w-0 flex-1">
+                    <strong className="block text-[15px] font-semibold text-white">{module.title}</strong>
+                    <span className="mt-1 block text-xs leading-relaxed text-[#a1a1aa]">{module.description}</span>
+                </span>
+                <ArrowRight className="h-5 w-5 shrink-0 text-[#a1a1aa] transition-transform group-hover:translate-x-1 group-hover:text-white" />
+            </button>
+        );
+    };
 
     return (
-        <div className="min-h-screen bg-[#000000] p-8 text-[#F5F5F7]">
-            <div className="max-w-7xl mx-auto space-y-12 animate-fade-in-up">
-                <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-[#27272a] pb-6">
-                    <PageHeader
-                        title="Otras Solicitudes"
-                        icon={LayoutGrid}
-                        themeColor="blue"
-                        subtitle="Acceso a solicitudes especializadas de bienes y servicios"
-                        compact
-                    />
-                    <button
-                        onClick={() => navigate('/')}
-                        className="btn-ghost"
-                    >
-                        <div className="flex items-center gap-2">
-                            <ArrowLeft className="w-5 h-5" />
-                            <span className="text-[11px] font-bold uppercase tracking-widest">Menú Principal</span>
+        <div className="min-h-screen bg-black p-4 text-[#f4f4f5] selection:bg-white/20 md:px-8 md:py-6">
+            <div className="w-full space-y-6 animate-fade-in-up">
+                <header className="flex flex-col justify-between gap-4 border-b border-[#27272a] pb-4 md:flex-row md:items-center">
+                    <div className="flex items-center gap-3">
+                        <div className="rounded-lg border border-[#71717a] bg-[#111112] p-3 text-[#e4e4e7]">
+                            <LayoutGrid className="h-7 w-7" />
                         </div>
+                        <div>
+                            <h1 className="text-2xl font-black tracking-tight text-white md:text-[30px]">Otras Solicitudes</h1>
+                            <p className="text-sm text-[#a1a1aa]">Acceso a solicitudes especializadas de bienes y servicios</p>
+                        </div>
+                    </div>
+                    <button
+                        type="button"
+                        onClick={() => navigate('/')}
+                        className="inline-flex items-center justify-center gap-2 rounded-lg border border-[#71717a] bg-[#111112] px-5 py-3 text-sm font-semibold text-white transition-colors hover:bg-[#18181b]"
+                    >
+                        <ArrowLeft className="h-5 w-5" />
+                        Menú principal
                     </button>
-                </div>
+                </header>
 
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-                    {modules.map((module, index) => (
-                        <button
-                            key={index}
-                            onClick={() => navigate(module.path)}
-                            className="glass-card group relative p-8 flex flex-col h-72 text-left hover:border-[#0071E3]/50 transition-all duration-300"
-                        >
-                            {/* Icon Container */}
-                            <div className="mb-6 p-4 bg-[#0071E3]/10 rounded-[8px] w-fit group-hover:scale-105 transition-all duration-300 text-[#0071E3] border border-[#0071E3]/20">
-                                {module.icon}
-                            </div>
+                {equipmentModules.length > 0 && (
+                    <section>
+                        <h2 className="mb-3 text-xs font-semibold uppercase tracking-[0.18em] text-[#a1a1aa]">Equipamiento y servicios</h2>
+                        <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-4">{equipmentModules.map(renderModule)}</div>
+                    </section>
+                )}
 
-                            {/* Content */}
-                            <div className="flex-1 space-y-3">
-                                <h3 className="text-xl font-bold text-[#F5F5F7] leading-tight tracking-tight uppercase group-hover:text-[#0071E3] transition-colors">
-                                    {module.title}
-                                </h3>
-                                <p className="text-[#86868B] text-xs font-medium leading-relaxed line-clamp-3">
-                                    {module.description}
-                                </p>
-                            </div>
-
-                            {/* Footer Interaction */}
-                            <div className="mt-4 flex items-center gap-2 text-[#0071E3] opacity-0 group-hover:opacity-100 transition-opacity">
-                                <span className="text-[10px] font-black uppercase tracking-widest">Explorar categoría</span>
-                                <ChevronRight className="w-4 h-4" />
-                            </div>
-
-                            {/* Apple Accent Indicator */}
-                            <div className="absolute bottom-0 left-0 w-full h-[2px] bg-[#0071E3] transform scale-x-0 group-hover:scale-x-100 transition-transform duration-500 origin-left" />
-                        </button>
-                    ))}
-                </div>
+                {supplyModules.length > 0 && (
+                    <section className="pb-8">
+                        <h2 className="mb-3 border-t border-[#27272a] pt-5 text-xs font-semibold uppercase tracking-[0.18em] text-[#a1a1aa]">Suministros y consumo</h2>
+                        <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-4">{supplyModules.map(renderModule)}</div>
+                    </section>
+                )}
             </div>
         </div>
     );
