@@ -1,142 +1,259 @@
+import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
-    ClipboardList,
-    QrCode,
-    Image as ImageIcon,
-    PlusCircle,
-    RotateCcw,
-    LineChart,
-    History,
-    Tag,
+    Activity,
+    ArrowLeft,
+    ArrowRight,
     ArrowUpRight,
+    Boxes,
+    ClipboardList,
+    History,
+    Image as ImageIcon,
     LayoutGrid,
-    ChevronRight,
-    ArrowLeft
+    LineChart,
+    Package,
+    PlusCircle,
+    QrCode,
+    RotateCcw,
+    Tag
 } from 'lucide-react';
-import { PageHeader } from '../components/ui/PageHeader';
-import { cn } from '../lib/utils';
+import { supabase } from '../lib/supabase';
+
+interface InventoryStats {
+    articles: number;
+    units: number;
+    movements: number;
+}
+
+const modules = [
+    {
+        id: 'register',
+        title: 'Registrar nuevo artículo',
+        icon: PlusCircle,
+        path: '/articulos/registrar-nuevo',
+        description: 'Definir un nuevo producto en el catálogo maestro',
+        group: 'quick'
+    },
+    {
+        id: 'inventory',
+        title: 'Consultar inventario',
+        icon: ClipboardList,
+        path: '/articulos/consultar-inventario',
+        description: 'Ver y gestionar el stock completo de artículos',
+        group: 'inventory'
+    },
+    {
+        id: 'scanner',
+        title: 'Escáner QR',
+        icon: QrCode,
+        path: '/articulos/escaner-qr',
+        description: 'Identificar productos mediante códigos QR',
+        group: 'quick'
+    },
+    {
+        id: 'images',
+        title: 'Ingresar imagen',
+        icon: ImageIcon,
+        path: '/articulos/gestion-imagenes',
+        description: 'Adjuntar y gestionar fotografías de productos',
+        group: 'inventory'
+    },
+    {
+        id: 'entry',
+        title: 'Ingresar artículo',
+        icon: ClipboardList,
+        path: '/articulos/ingresar-articulo',
+        description: 'Registrar entradas de stock para artículos existentes',
+        group: 'quick'
+    },
+    {
+        id: 'returns',
+        title: 'Devoluciones',
+        icon: RotateCcw,
+        path: '/articulos/devoluciones',
+        description: 'Gestionar el retorno de artículos prestados',
+        group: 'movements'
+    },
+    {
+        id: 'kardex',
+        title: 'Kárdex diario',
+        icon: LineChart,
+        path: '/articulos/kardex-diario',
+        description: 'Seguimiento detallado de movimientos diarios',
+        group: 'movements'
+    },
+    {
+        id: 'history',
+        title: 'Historial de artículo',
+        icon: History,
+        path: '/articulos/historial-articulo',
+        description: 'Trazabilidad completa de cada artículo',
+        group: 'movements'
+    },
+    {
+        id: 'labels',
+        title: 'Generar etiqueta',
+        icon: Tag,
+        path: '/articulos/generar-etiqueta',
+        description: 'Crear etiquetas de identificación para stock',
+        group: 'support'
+    },
+    {
+        id: 'outputs',
+        title: 'Consultar salidas',
+        icon: ArrowUpRight,
+        path: '/articulos/consultar-salidas',
+        description: 'Ver historial de entregas y consumos',
+        group: 'support'
+    }
+] as const;
+
+const getLocalIsoDate = () => {
+    const date = new Date();
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const day = String(date.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
+};
+
+async function fetchInventorySummary() {
+    const batchSize = 1000;
+    let offset = 0;
+    let units = 0;
+    let articles = 0;
+
+    while (true) {
+        const { data, count, error } = await supabase
+            .from('inventario_con_datos')
+            .select('cantidad_disponible', { count: offset === 0 ? 'exact' : undefined })
+            .range(offset, offset + batchSize - 1);
+
+        if (error) throw error;
+        if (offset === 0) articles = count || 0;
+        units += (data || []).reduce((total, item) => total + (Number(item.cantidad_disponible) || 0), 0);
+        if (!data || data.length < batchSize) break;
+        offset += batchSize;
+    }
+
+    return { articles, units };
+}
 
 export default function Articulos() {
     const navigate = useNavigate();
+    const [stats, setStats] = useState<InventoryStats | null>(null);
 
-    const modules = [
-        {
-            title: 'Registrar Nuevo Artículo',
-            icon: <PlusCircle className="w-8 h-8" />,
-            path: '/articulos/registrar-nuevo',
-            description: 'Definir un nuevo producto en el catálogo maestro'
-        },
-        {
-            title: 'Consultar Inventario',
-            icon: <ClipboardList className="w-8 h-8" />,
-            path: '/articulos/consultar-inventario',
-            description: 'Ver y gestionar el stock completo de artículos'
-        },
-        {
-            title: 'Escáner QR',
-            icon: <QrCode className="w-8 h-8" />,
-            path: '/articulos/escaner-qr',
-            description: 'Identificar productos mediante códigos QR'
-        },
-        {
-            title: 'Ingresar Imagen',
-            icon: <ImageIcon className="w-8 h-8" />,
-            path: '/articulos/gestion-imagenes',
-            description: 'Adjuntar y gestionar fotografías de productos'
-        },
-        {
-            title: 'Ingresar Artículo',
-            icon: <PlusCircle className="w-8 h-8" />,
-            path: '/articulos/ingresar-articulo',
-            description: 'Registrar entradas de stock para artículos existentes'
-        },
-        {
-            title: 'Devoluciones',
-            icon: <RotateCcw className="w-8 h-8" />,
-            path: '/articulos/devoluciones',
-            description: 'Gestionar el retorno de artículos prestados'
-        },
-        {
-            title: 'Kárdex Diario',
-            icon: <LineChart className="w-8 h-8" />,
-            path: '/articulos/kardex-diario',
-            description: 'Seguimiento detallado de movimientos diarios'
-        },
-        {
-            title: 'Historial de Artículo',
-            icon: <History className="w-8 h-8" />,
-            path: '/articulos/historial-articulo',
-            description: 'Trazabilidad completa de cada artículo'
-        },
-        {
-            title: 'Generar Etiqueta',
-            icon: <Tag className="w-8 h-8" />,
-            path: '/articulos/generar-etiqueta',
-            description: 'Crear etiquetas de identificación para stock'
-        },
-        {
-            title: 'Consultar Salidas',
-            icon: <ArrowUpRight className="w-8 h-8" />,
-            path: '/articulos/consultar-salidas',
-            description: 'Ver historial de entregas y consumos'
-        }
-    ];
+    useEffect(() => {
+        const loadStats = async () => {
+            try {
+                const today = getLocalIsoDate();
+                const [inventory, entries, outputs] = await Promise.all([
+                    fetchInventorySummary(),
+                    supabase.from('entrada_articulo_07').select('id_entrada', { count: 'exact', head: true }).eq('fecha_entrada', today),
+                    supabase.from('salida_articulo_08').select('id_salida', { count: 'exact', head: true }).eq('fecha_salida', today)
+                ]);
+
+                setStats({
+                    articles: inventory.articles,
+                    units: inventory.units,
+                    movements: (entries.count || 0) + (outputs.count || 0)
+                });
+            } catch (error) {
+                console.error('Error cargando indicadores de artículos:', error);
+                setStats({ articles: 0, units: 0, movements: 0 });
+            }
+        };
+
+        loadStats();
+    }, []);
+
+    const quickActions = modules.filter((module) => module.group === 'quick');
+    const inventoryModules = modules.filter((module) => module.group === 'inventory');
+    const movementModules = modules.filter((module) => module.group === 'movements');
+    const supportModules = modules.filter((module) => module.group === 'support');
+
+    const renderModule = (module: (typeof modules)[number], featured = false) => {
+        const Icon = module.icon;
+        return (
+            <button
+                key={module.id}
+                type="button"
+                onClick={() => navigate(module.path)}
+                className={`group flex min-h-[104px] w-full items-center gap-5 rounded-xl border bg-[#111112] p-5 text-left transition-colors ${
+                    featured ? 'border-[#71717a] first:border-white' : 'border-[#3f3f46] hover:border-[#71717a]'
+                }`}
+            >
+                <span className="flex h-14 w-14 shrink-0 items-center justify-center rounded-lg border border-[#52525b] bg-[#18181b] text-[#e4e4e7]">
+                    <Icon className="h-6 w-6" />
+                </span>
+                <span className="min-w-0 flex-1">
+                    <strong className="block text-base font-semibold text-white">{module.title}</strong>
+                    <span className="mt-1 block text-xs leading-relaxed text-[#a1a1aa]">{module.description}</span>
+                </span>
+                <ArrowRight className="h-5 w-5 shrink-0 text-[#a1a1aa] transition-transform group-hover:translate-x-1 group-hover:text-white" />
+            </button>
+        );
+    };
 
     return (
-        <div className="min-h-screen bg-[#000000] p-8 text-[#F5F5F7]">
-            <div className="max-w-7xl mx-auto space-y-12 animate-fade-in-up">
-                <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-[#27272a] pb-6">
-                    <PageHeader
-                        title="Gestión de Artículos"
-                        icon={LayoutGrid}
-                        themeColor="blue"
-                        subtitle="Administración y control del inventario de artículos del SDMO"
-                        compact
-                    />
-                    <button
-                        onClick={() => navigate('/')}
-                        className="btn-ghost"
-                    >
-                        <div className="flex items-center gap-2">
-                            <ArrowLeft className="w-5 h-5" />
-                            <span className="text-[11px] font-bold uppercase tracking-widest">Menú Principal</span>
+        <div className="min-h-screen bg-black p-4 text-[#f4f4f5] md:p-8 selection:bg-white/20">
+            <div className="w-full space-y-7 animate-fade-in-up">
+                <header className="flex flex-col justify-between gap-4 border-b border-[#27272a] pb-5 md:flex-row md:items-center">
+                    <div className="flex items-center gap-3">
+                        <div className="rounded-lg border border-[#71717a] bg-[#111112] p-3 text-[#e4e4e7]">
+                            <LayoutGrid className="h-7 w-7" />
                         </div>
+                        <div>
+                            <h1 className="text-2xl font-black tracking-tight text-white md:text-3xl">Gestión de artículos</h1>
+                            <p className="text-sm text-[#a1a1aa]">Administración y control del inventario de artículos del SDMO</p>
+                        </div>
+                    </div>
+                    <button
+                        type="button"
+                        onClick={() => navigate('/')}
+                        className="inline-flex items-center justify-center gap-2 rounded-lg border border-[#71717a] bg-[#111112] px-5 py-3 text-sm font-semibold text-white transition-colors hover:bg-[#18181b]"
+                    >
+                        <ArrowLeft className="h-5 w-5" />
+                        Menú principal
                     </button>
-                </div>
+                </header>
 
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-                    {modules.map((module, index) => (
-                        <button
-                            key={index}
-                            onClick={() => navigate(module.path)}
-                            className="glass-card group relative p-8 flex flex-col h-72 text-left hover:border-[#0071E3]/50 transition-all duration-300"
-                        >
-                            {/* Icon Container */}
-                            <div className="mb-6 p-4 bg-[#0071E3]/10 rounded-[8px] w-fit group-hover:scale-105 transition-all duration-300 text-[#0071E3] border border-[#0071E3]/20">
-                                {module.icon}
+                <section className="grid grid-cols-1 rounded-xl border border-[#3f3f46] bg-[#111112] md:grid-cols-3">
+                    {[
+                        { label: 'Artículos registrados', value: stats?.articles, icon: Package },
+                        { label: 'Unidades en inventario', value: stats?.units, icon: Boxes },
+                        { label: 'Movimientos de hoy', value: stats?.movements, icon: Activity }
+                    ].map((metric, index) => (
+                        <div key={metric.label} className={`flex items-center gap-5 p-5 ${index > 0 ? 'border-t border-[#3f3f46] md:border-l md:border-t-0' : ''}`}>
+                            <span className="flex h-14 w-14 items-center justify-center rounded-lg border border-[#52525b] bg-[#18181b] text-[#d4d4d8]">
+                                <metric.icon className="h-6 w-6" />
+                            </span>
+                            <div>
+                                <p className="text-xs font-medium text-[#a1a1aa]">{metric.label}</p>
+                                <p className="mt-1 text-3xl font-semibold tabular-nums text-white">{metric.value === undefined ? '—' : metric.value.toLocaleString('es-CR')}</p>
                             </div>
-
-                            {/* Content */}
-                            <div className="flex-1 space-y-3">
-                                <h3 className="text-xl font-bold text-[#F5F5F7] leading-tight tracking-tight uppercase group-hover:text-[#0071E3] transition-colors">
-                                    {module.title}
-                                </h3>
-                                <p className="text-[#86868B] text-xs font-medium leading-relaxed line-clamp-3">
-                                    {module.description}
-                                </p>
-                            </div>
-
-                            {/* Footer Interaction */}
-                            <div className="mt-4 flex items-center gap-2 text-[#0071E3] opacity-0 group-hover:opacity-100 transition-opacity">
-                                <span className="text-[10px] font-black uppercase tracking-widest">Explorar categoría</span>
-                                <ChevronRight className="w-4 h-4" />
-                            </div>
-
-                            {/* Apple Accent Indicator */}
-                            <div className="absolute bottom-0 left-0 w-full h-[2px] bg-[#0071E3] transform scale-x-0 group-hover:scale-x-100 transition-transform duration-500 origin-left" />
-                        </button>
+                        </div>
                     ))}
-                </div>
+                </section>
+
+                <section>
+                    <h2 className="mb-3 text-xs font-semibold uppercase tracking-[0.14em] text-[#a1a1aa]">01. Acciones rápidas</h2>
+                    <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">{quickActions.map((module) => renderModule(module, true))}</div>
+                </section>
+
+                <section>
+                    <h2 className="mb-3 text-xs font-semibold uppercase tracking-[0.14em] text-[#a1a1aa]">02. Inventario y consulta</h2>
+                    <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">{inventoryModules.map((module) => renderModule(module))}</div>
+                </section>
+
+                <section>
+                    <h2 className="mb-3 text-xs font-semibold uppercase tracking-[0.14em] text-[#a1a1aa]">03. Movimientos y trazabilidad</h2>
+                    <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">{movementModules.map((module) => renderModule(module))}</div>
+                </section>
+
+                <section className="pb-8">
+                    <h2 className="mb-3 text-xs font-semibold uppercase tracking-[0.14em] text-[#a1a1aa]">04. Soporte del catálogo</h2>
+                    <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">{supportModules.map((module) => renderModule(module))}</div>
+                </section>
             </div>
         </div>
     );
