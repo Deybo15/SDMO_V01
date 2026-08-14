@@ -485,6 +485,12 @@ export default function MaintenanceDashboard() {
 
     if (!metrics) return null;
 
+    const areaChartData = metrics.solicitudesPorArea.slice(0, 10);
+    const criticalArea = areaChartData.reduce(
+        (critical, area) => area.percentage < critical.percentage ? area : critical,
+        areaChartData[0]
+    );
+
     return (
         <div className="min-h-screen bg-[#000000] text-[#F5F5F7] font-sans selection:bg-white/20">
             <div className="animate-fade-in-up">
@@ -636,55 +642,63 @@ export default function MaintenanceDashboard() {
                                         <Wrench className="w-5 h-5 text-[#D4D4D6] mt-0.5" />
                                         <div>
                                             <h3 className="text-xl font-semibold text-[#F1F1F2]">Desempeño por área de trabajo</h3>
-                                            <p className="text-sm text-[#8A8A90] mt-1">Volumen total y porcentaje de eficiencia por especialidad</p>
+                                            <p className="text-sm text-[#8A8A90] mt-1">Volumen total y porcentaje de órdenes ejecutadas por especialidad</p>
                                         </div>
                                     </div>
-                                    <p className="text-xs text-[#A1A1AA] tabular-nums">
-                                        {metrics.solicitudesPorArea.length} áreas · {metrics.totalSolicitudes.toLocaleString()} solicitudes · {metrics.porcentajeEjecucion.toFixed(1)}% eficiencia
-                                    </p>
+                                    <div className="flex flex-col items-start gap-2 lg:items-end">
+                                        <p className="text-xs text-[#A1A1AA] tabular-nums">
+                                            {metrics.solicitudesPorArea.length} áreas · {metrics.totalSolicitudes.toLocaleString()} solicitudes · {metrics.porcentajeEjecucion.toFixed(1)}% eficiencia
+                                        </p>
+                                        {criticalArea && (
+                                            <button type="button" onClick={() => setSelectedArea(criticalArea.area)} className="rounded-lg border border-[#71717A] bg-black px-3 py-2 text-left transition-colors hover:border-white lg:text-right">
+                                                <span className="block text-[9px] font-semibold uppercase tracking-[0.16em] text-[#8A8A90]">Área crítica</span>
+                                                <strong className="mt-0.5 block text-sm font-semibold text-white">{criticalArea.area} · {criticalArea.percentage.toFixed(1)}%</strong>
+                                            </button>
+                                        )}
+                                    </div>
                                 </div>
 
-                                <div className="mt-5 overflow-x-auto">
-                                    <div className="min-w-[780px]">
-                                        <div className="grid grid-cols-[36px_220px_minmax(240px,1fr)_70px_190px] gap-4 px-2 pb-3 text-[10px] uppercase tracking-widest text-[#71717A] border-b border-[#242426]">
-                                            <span>#</span><span>Área de trabajo</span><span>Volumen</span><span className="text-right">Total</span><span>Eficiencia</span>
-                                        </div>
-                                        {metrics.solicitudesPorArea.slice(0, 10).map((area, index) => {
-                                            const maxTotal = Math.max(...metrics.solicitudesPorArea.map(item => item.total), 1);
-                                            return (
-                                                <button
-                                                    type="button"
-                                                    key={area.area}
-                                                    onClick={() => setSelectedArea(area.area)}
-                                                    className={cn(
-                                                        "w-full grid grid-cols-[36px_220px_minmax(240px,1fr)_70px_190px] gap-4 items-center px-2 py-3.5 text-left border-b border-[#1D1D1F] hover:bg-white/[0.025] transition-colors",
-                                                        selectedArea === area.area && "bg-white/[0.045]"
-                                                    )}
-                                                >
-                                                    <span className="text-sm text-[#8A8A90] tabular-nums">{index + 1}</span>
-                                                    <span className="text-sm text-[#D4D4D6] truncate">{area.area}</span>
-                                                    <span className="h-4 bg-[#1D1D1F] border border-[#5A5A5F] rounded-[3px] overflow-hidden">
-                                                        <span
-                                                            className="block h-full rounded-[2px]"
-                                                            style={{
-                                                                width: `${Math.max((area.total / maxTotal) * 100, 1)}%`,
-                                                                backgroundColor: '#242426',
-                                                                backgroundImage: 'repeating-linear-gradient(135deg, transparent 0, transparent 5px, rgba(255,255,255,0.7) 5px, rgba(255,255,255,0.7) 6px)',
-                                                                boxShadow: 'inset 0 0 0 1px #B8B8BD'
-                                                            }}
-                                                        />
-                                                    </span>
-                                                    <span className="text-right text-sm font-medium text-[#F1F1F2] tabular-nums">{area.total}</span>
-                                                    <span className="flex items-center gap-3">
-                                                        <span className="w-12 text-right text-sm text-[#D4D4D6] tabular-nums">{area.percentage.toFixed(1)}%</span>
-                                                        <span className="relative flex-1 h-px bg-[#3A3A3D]">
-                                                            <span className="absolute left-0 top-0 h-px bg-[#B8B8BD]" style={{ width: `${area.percentage}%` }} />
-                                                            <span className="absolute top-1/2 -translate-y-1/2 w-2.5 h-2.5 rounded-full bg-[#111112] border border-white" style={{ left: `calc(${area.percentage}% - 5px)` }} />
-                                                        </span>
-                                                    </span>
-                                                </button>
-                                            );
-                                        })}
+                                <div className="mt-5 flex flex-wrap items-center gap-5 text-[10px] uppercase tracking-widest text-[#8A8A90]">
+                                    <span className="flex items-center gap-2"><i className="h-3 w-7 border border-[#B8B8BD]" style={{ backgroundColor: '#242426', backgroundImage: 'repeating-linear-gradient(135deg, transparent 0, transparent 4px, rgba(255,255,255,0.65) 4px, rgba(255,255,255,0.65) 5px)' }} />Volumen total</span>
+                                    <span className="flex items-center gap-2"><i className="relative w-7 border-t-2 border-white"><b className="absolute left-1/2 top-1/2 h-2 w-2 -translate-x-1/2 -translate-y-1/2 rounded-full border-2 border-white bg-[#111112]" /></i>% ejecutadas</span>
+                                    <span className="flex items-center gap-2"><i className="w-7 border-t border-dashed border-[#A1A1AA]" />Meta 90%</span>
+                                </div>
+
+                                <div className="mt-2 h-[500px] w-full overflow-x-auto">
+                                    <div className="h-full min-w-[980px]">
+                                        <ResponsiveContainer width="100%" height="100%">
+                                            <ComposedChart data={areaChartData} margin={{ top: 42, right: 28, left: 0, bottom: 72 }} onClick={(data: any) => {
+                                                const area = data?.activePayload?.[0]?.payload?.area;
+                                                if (area) setSelectedArea(area);
+                                            }}>
+                                                <defs>
+                                                    <pattern id="areaGraphite" width="8" height="8" patternUnits="userSpaceOnUse" patternTransform="rotate(45)">
+                                                        <rect width="8" height="8" fill="#242426" />
+                                                        <line x1="0" y1="0" x2="0" y2="8" stroke="#B8B8BD" strokeWidth="1.25" />
+                                                    </pattern>
+                                                </defs>
+                                                <CartesianGrid strokeDasharray="4 5" stroke="#303034" vertical={false} />
+                                                <XAxis dataKey="area" interval={0} height={74} tickLine={false} axisLine={{ stroke: '#71717A' }} tick={{ fill: '#B8B8BD', fontSize: 10 }} angle={-24} textAnchor="end" />
+                                                <YAxis yAxisId="volume" stroke="#3A3A3D" fontSize={10} tickLine={false} axisLine={false} tick={{ fill: '#8A8A90' }} />
+                                                <YAxis yAxisId="percentage" orientation="right" domain={[0, 100]} tickFormatter={(value) => `${value}%`} stroke="#3A3A3D" fontSize={10} tickLine={false} axisLine={false} tick={{ fill: '#8A8A90' }} />
+                                                <Tooltip content={<CustomTooltip />} />
+                                                <ReferenceLine yAxisId="percentage" y={90} stroke="#A1A1AA" strokeDasharray="7 7" label={{ value: 'META 90%', fill: '#A1A1AA', fontSize: 9, position: 'insideTopRight' }} />
+                                                <Bar yAxisId="volume" dataKey="total" name="Volumen total" fill="url(#areaGraphite)" stroke="#D4D4D6" strokeWidth={1.25} barSize={50} radius={[3, 3, 0, 0]}>
+                                                    <LabelList dataKey="total" position="top" fill="#F1F1F2" fontSize={11} fontWeight={600} />
+                                                </Bar>
+                                                <Line yAxisId="percentage" type="linear" dataKey="percentage" name="% ejecutadas" stroke="#FFFFFF" strokeWidth={2.5} dot={(props: any) => {
+                                                    const isCritical = props.payload?.area === criticalArea?.area;
+                                                    return (
+                                                        <g key={`area-dot-${props.payload?.area}`}>
+                                                            {isCritical && <circle cx={props.cx} cy={props.cy} r={11} fill="#111112" stroke="#FFFFFF" strokeWidth={1.5} />}
+                                                            <circle cx={props.cx} cy={props.cy} r={isCritical ? 6 : 4.5} fill="#111112" stroke="#FFFFFF" strokeWidth={2.5} />
+                                                        </g>
+                                                    );
+                                                }} activeDot={{ r: 7, fill: '#111112', stroke: '#FFFFFF', strokeWidth: 3 }}>
+                                                    <LabelList dataKey="percentage" position="top" offset={12} fill="#F1F1F2" fontSize={10} fontWeight={600} formatter={(value: number) => `${Number(value).toFixed(1)}%`} />
+                                                </Line>
+                                            </ComposedChart>
+                                        </ResponsiveContainer>
                                     </div>
                                 </div>
                             </div>
