@@ -552,7 +552,7 @@ export default function IngresarSolicitudExterno() {
     };
 
     return (
-        <div className="min-h-screen bg-[#000000] text-[#F5F5F7] font-sans relative flex flex-col selection:bg-[#0071E3]/30 pb-20">
+        <div className="min-h-screen bg-black text-[#f4f4f5] font-sans flex flex-col selection:bg-white/20 pb-16">
             <style>{`
                 .custom-scrollbar::-webkit-scrollbar { width: 6px; height: 6px; }
                 .custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
@@ -562,7 +562,7 @@ export default function IngresarSolicitudExterno() {
 
             {/* Notification Toast */}
             {notification && (
-                <div className={`fixed top-24 right-8 z-[1100] flex items-center gap-4 px-6 py-4 rounded-[8px] shadow-2xl border backdrop-blur-[20px] animate-in slide-in-from-right duration-300 ${notification.type === 'success' ? 'bg-[#1D1D1F] border-[#0071E3]/50 text-[#0071E3]' :
+                <div className={`fixed top-24 right-8 z-[1100] flex items-center gap-4 px-6 py-4 rounded-lg shadow-2xl border backdrop-blur-[20px] animate-in slide-in-from-right duration-300 ${notification.type === 'success' ? 'bg-[#111112] border-[#71717a] text-white' :
                     notification.type === 'error' ? 'bg-[#1D1D1F] border-rose-500/30 text-rose-400' :
                         notification.type === 'warning' ? 'bg-[#1D1D1F] border-yellow-500/30 text-yellow-400' :
                             'bg-[#1D1D1F] border-[#333333] text-[#F5F5F7]'
@@ -579,33 +579,35 @@ export default function IngresarSolicitudExterno() {
             )}
 
             {/* Header Content */}
-            <div className="max-w-7xl mx-auto px-6 pt-6 flex flex-col gap-6 relative z-10">
+            <div className="max-w-7xl w-full mx-auto px-4 md:px-8 pt-6 flex flex-col gap-4">
                 <PageHeader
-                    title="REGISTRO DE SOLICITUDES EXTERNAS"
+                    title="Nueva Solicitud Externa"
                     icon={FileText}
                     backRoute="/cliente-externo"
+                    themeColor="neutral"
+                    subtitle="Registro y ubicación de solicitudes para clientes externos."
                 />
 
                 {/* Date Display */}
-                <div className="flex items-center gap-3 text-[#0071E3] font-black text-[10px] uppercase tracking-[0.2em] bg-[#0071E3]/10 w-fit px-6 py-3 rounded-[8px] border border-[#0071E3]/20 shadow-xl italic">
+                <div className="flex items-center gap-3 text-[#d4d4d8] text-sm font-medium bg-[#111112] w-fit px-4 py-2.5 rounded-lg border border-[#3f3f46]">
                     <Calendar className="w-4 h-4" />
                     {new Date().toLocaleDateString('es-ES', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })}
                 </div>
             </div>
 
-            <div className="max-w-6xl mx-auto relative z-10 px-6 pb-8">
+            <div className="max-w-6xl w-full mx-auto px-4 md:px-8 pb-8">
                 {/* Content Card */}
-                <div className="bg-[#121212] border border-[#333333] rounded-[8px] overflow-hidden shadow-2xl mt-8">
+                <div className="bg-[#0d0d0e] border border-[#3f3f46] rounded-xl overflow-hidden mt-4">
 
-                    <div className="p-12 relative">
+                    <div className="p-6 md:p-8">
                         {/* Section Title */}
-                        <div className="relative flex items-center gap-4 mb-12">
-                            <div className="w-12 h-12 rounded-[8px] bg-[#0071E3]/10 border border-[#0071E3]/20 flex items-center justify-center text-[#0071E3]">
+                        <div className="flex items-center gap-4 mb-8 pb-6 border-b border-[#27272a]">
+                            <div className="w-11 h-11 rounded-lg bg-[#111112] border border-[#52525b] flex items-center justify-center text-[#e4e4e7]">
                                 <Edit className="w-6 h-6" />
                             </div>
                             <div>
-                                <h3 className="text-2xl font-black text-[#F5F5F7] uppercase italic tracking-tighter">Información de la Solicitud</h3>
-                                <p className="text-[10px] font-black text-[#86868B] uppercase tracking-widest mt-1">Complete todos los campos requeridos</p>
+                                <h3 className="text-xl font-semibold text-white tracking-tight">Información de la solicitud</h3>
+                                <p className="text-sm text-[#a1a1aa] mt-1">Complete los datos requeridos y marque la ubicación en el mapa.</p>
                             </div>
                         </div>
 
@@ -618,7 +620,7 @@ export default function IngresarSolicitudExterno() {
                                 <textarea
                                     value={formData.descripcion}
                                     onChange={(e) => setFormData(prev => ({ ...prev, descripcion: e.target.value }))}
-                                    className="w-full bg-[#1D1D1F] border border-[#333333] rounded-[8px] py-6 px-6 text-[#F5F5F7] placeholder-[#424245] focus:border-[#0071E3]/50 outline-none min-h-[160px] transition-all duration-300 font-medium text-sm italic"
+                                    className="w-full bg-[#111112] border border-[#3f3f46] rounded-lg py-5 px-5 text-white placeholder-[#52525b] focus:border-[#a1a1aa] outline-none min-h-[140px] transition-colors text-sm resize-y"
                                     placeholder="Describa detalladamente la solicitud..."
                                 />
                             </div>
@@ -633,6 +635,7 @@ export default function IngresarSolicitudExterno() {
                                     onClear={() => setFormData(prev => ({ ...prev, tipologia: '' }))}
                                     required
                                     icon={Briefcase}
+                                    theme="neutral"
                                 />
 
                                 <div className="space-y-2">
@@ -644,10 +647,11 @@ export default function IngresarSolicitudExterno() {
                                         onClear={() => setFormData(prev => ({ ...prev, barrio: '' }))}
                                         required
                                         icon={MapPin}
+                                        theme="neutral"
                                     />
                                     <div className={`text-[10px] font-bold px-4 py-2 rounded-[8px] flex items-center gap-2 transition-all duration-300 ${barrioMessage.type === 'success' ? 'bg-green-500/10 text-green-400 border border-green-500/20' :
                                         barrioMessage.type === 'warning' ? 'bg-yellow-500/10 text-yellow-400 border border-yellow-500/20' :
-                                            barrioMessage.type === 'loading' ? 'bg-[#0071E3]/10 text-[#0071E3] border border-[#0071E3]/20' :
+                                            barrioMessage.type === 'loading' ? 'bg-[#18181b] text-white border border-[#52525b]' :
                                                 'bg-black/20 text-[#86868B] border border-[#333333]'
                                         }`}>
                                         {barrioMessage.type === 'loading' ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> :
@@ -667,7 +671,7 @@ export default function IngresarSolicitudExterno() {
                                 <textarea
                                     value={formData.direccion}
                                     onChange={(e) => setFormData(prev => ({ ...prev, direccion: e.target.value }))}
-                                    className="w-full bg-[#1D1D1F] border border-[#333333] rounded-[8px] py-6 px-6 text-[#F5F5F7] placeholder-[#424245] focus:border-[#0071E3]/50 outline-none min-h-[120px] transition-all duration-300 font-medium text-sm italic"
+                                    className="w-full bg-[#111112] border border-[#3f3f46] rounded-lg py-5 px-5 text-white placeholder-[#52525b] focus:border-[#a1a1aa] outline-none min-h-[110px] transition-colors text-sm resize-y"
                                     placeholder="Indique la dirección lo más detallada posible..."
                                 />
                             </div>
@@ -682,6 +686,7 @@ export default function IngresarSolicitudExterno() {
                                     onClear={() => setFormData(prev => ({ ...prev, supervisor: '' }))}
                                     required
                                     icon={Shield}
+                                    theme="neutral"
                                 />
 
                                 <FormSelect
@@ -693,6 +698,7 @@ export default function IngresarSolicitudExterno() {
                                     required
                                     icon={Users}
                                     locked={!!formData.profesional}
+                                    theme="neutral"
                                 />
                             </div>
 
@@ -706,6 +712,7 @@ export default function IngresarSolicitudExterno() {
                                     onClear={() => setFormData(prev => ({ ...prev, clienteExterno: '' }))}
                                     required
                                     icon={Users}
+                                    theme="neutral"
                                 />
 
                                 <FormSelect
@@ -715,6 +722,7 @@ export default function IngresarSolicitudExterno() {
                                     onOpenSearch={() => handleOpenSearch('clientesInternos', 'Buscar Cliente Interno')}
                                     onClear={() => setFormData(prev => ({ ...prev, clienteInterno: '' }))}
                                     icon={Users}
+                                    theme="neutral"
                                 />
                             </div>
 
@@ -723,7 +731,7 @@ export default function IngresarSolicitudExterno() {
                                 <label className="block text-[11px] font-black text-[#86868B] uppercase tracking-wider ml-1">
                                     Ubicación en el Mapa <span className="text-[#86868B]/40 font-bold text-[9px] ml-2 tracking-normal lowercase">(Haga clic para seleccionar)</span> <span className="text-rose-500">*</span>
                                 </label>
-                                <div className="relative w-full h-[500px] rounded-[8px] border border-[#333333] shadow-3xl overflow-hidden bg-black group/map">
+                                <div className="relative w-full h-[500px] rounded-xl border border-[#52525b] overflow-hidden bg-black group/map">
                                     {/* Map Container */}
                                     <div ref={mapRef} id="map" className="w-full h-full z-0 group-hover:scale-[1.01] transition-transform duration-700" />
 
@@ -735,19 +743,19 @@ export default function IngresarSolicitudExterno() {
                                                 value={mapSearchQuery}
                                                 onChange={(e) => setMapSearchQuery(e.target.value)}
                                                 placeholder="Buscar lugar (ej: Parque Central)..."
-                                                className="w-full bg-black/80 backdrop-blur-[20px] border border-[#333333] text-[#F5F5F7] rounded-[8px] pl-14 pr-6 py-4 shadow-2xl focus:outline-none focus:border-[#0071E3]/50 transition-all text-sm font-medium italic"
+                                                className="w-full bg-[#111112]/95 backdrop-blur-xl border border-[#52525b] text-white rounded-lg pl-12 pr-12 py-4 shadow-2xl focus:outline-none focus:border-white transition-colors text-sm"
                                             />
-                                            <Search className="absolute left-5 top-5 w-5 h-5 text-[#0071E3]" />
+                                            <Search className="absolute left-5 top-5 w-5 h-5 text-[#d4d4d8]" />
                                             {isSearchingMap && (
                                                 <div className="absolute right-5 top-5">
-                                                    <Loader2 className="w-5 h-5 animate-spin text-[#0071E3]" />
+                                                    <Loader2 className="w-5 h-5 animate-spin text-white" />
                                                 </div>
                                             )}
                                         </form>
                                         <button
                                             type="button"
                                             onClick={handleLocateMe}
-                                            className="bg-black/80 backdrop-blur-[20px] border border-[#333333] text-[#0071E3] p-4 rounded-[8px] shadow-2xl hover:bg-[#0071E3]/10 hover:border-[#0071E3]/30 transition-all duration-300 active:scale-95"
+                                            className="bg-[#111112]/95 backdrop-blur-xl border border-[#52525b] text-white p-4 rounded-lg shadow-2xl hover:bg-[#27272a] hover:border-white transition-colors active:scale-95"
                                             title="Mi Ubicación"
                                         >
                                             <Crosshair className="w-7 h-7" />
@@ -764,10 +772,10 @@ export default function IngresarSolicitudExterno() {
                             </div>
 
                             {/* Footer Buttons */}
-                            <div className="flex flex-col md:flex-row justify-end items-center gap-6 mt-16 pt-8 border-t border-[#333333]">
+                            <div className="flex flex-col md:flex-row justify-end items-center gap-4 mt-10 pt-6 border-t border-[#27272a]">
                                 <button
                                     onClick={() => navigate('/cliente-externo/seguimiento')}
-                                    className="w-full md:w-auto px-10 py-4 bg-transparent border border-[#F5F5F7] text-[#F5F5F7] font-black text-[10px] rounded-[8px] hover:bg-white/5 transition-all duration-300 flex items-center justify-center gap-3 group active:scale-95 uppercase tracking-widest"
+                                    className="w-full md:w-auto h-12 px-8 bg-[#111112] border border-[#52525b] text-white font-semibold text-sm rounded-lg hover:bg-[#18181b] transition-colors flex items-center justify-center gap-3 group"
                                 >
                                     <Table className="w-5 h-5 group-hover:rotate-6 transition-transform" />
                                     Ver Solicitudes
@@ -775,7 +783,7 @@ export default function IngresarSolicitudExterno() {
                                 <button
                                     onClick={handleSave}
                                     disabled={saving}
-                                    className="w-full md:w-auto px-12 py-4 bg-[#0071E3] text-white font-black text-[10px] rounded-[8px] hover:brightness-110 shadow-2xl shadow-[#0071E3]/20 transition-all duration-300 flex items-center justify-center gap-4 disabled:opacity-20 disabled:cursor-not-allowed group active:scale-95 uppercase tracking-widest"
+                                    className="w-full md:w-auto h-12 px-9 bg-[#e4e4e7] text-black font-semibold text-sm rounded-lg hover:bg-white transition-colors flex items-center justify-center gap-3 disabled:opacity-30 disabled:cursor-not-allowed group"
                                 >
                                     {saving ? <Loader2 className="w-5 h-5 animate-spin" /> : <Save className="w-5 h-5 group-hover:translate-x-0.5 transition-transform" />}
                                     Guardar Solicitud
