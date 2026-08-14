@@ -361,14 +361,15 @@ export default function RegistroSalidaExterno() {
 
 
     return (
-        <div className="min-h-screen bg-[#0f111a] p-4 md:p-8">
+        <div className="min-h-screen bg-black text-[#f4f4f5] flex flex-col pt-4 selection:bg-white/20">
             <PageHeader
                 title="Registro de Salida Externo"
                 icon={Box}
-                themeColor={themeColor}
+                themeColor="neutral"
+                subtitle="Registro de entrega de materiales para solicitudes externas."
             />
 
-            <div className="max-w-6xl mx-auto">
+            <div className="max-w-[1400px] mx-auto w-full px-4 md:px-8 pb-16">
                 {/* Feedback Toast */}
                 {feedback && (
                     <div className={`fixed top-8 right-8 z-[100] px-6 py-4 rounded-2xl shadow-2xl backdrop-blur-xl border flex items-center gap-3 animate-in slide-in-from-top-4 duration-300 ${feedback.type === 'success' ? 'bg-emerald-500/20 border-emerald-500/50 text-emerald-400' :
@@ -386,26 +387,28 @@ export default function RegistroSalidaExterno() {
 
                 <form onSubmit={handleSubmit} className="space-y-6">
                     {/* Section 1: Header Information */}
-                    <div className="bg-[#1e2235] border border-white/10 rounded-3xl shadow-2xl overflow-hidden p-6 md:p-8">
-                        <div className="flex items-center gap-3 mb-8 border-b border-white/10 pb-4">
-                            <Info className={`w-5 h-5 text-${themeColor}-400`} />
-                            <h3 className="text-xl font-black text-white uppercase tracking-tight">Información de la Salida Externa</h3>
+                    <div className="bg-[#0d0d0e] border border-[#3f3f46] rounded-xl overflow-hidden p-6 md:p-8">
+                        <div className="space-y-1 mb-6">
+                            <h3 className="text-xl font-semibold text-white tracking-tight flex items-center gap-3">
+                                <Info className="w-5 h-5 text-[#d4d4d8]" /> Información de la salida externa
+                            </h3>
+                            <p className="text-sm text-[#a1a1aa] ml-8">Datos generales de la entrega</p>
                         </div>
 
-                        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+                        <div className="grid grid-cols-1 md:grid-cols-3 gap-5 mb-6">
                             {/* Autoriza Selector */}
                             <div className="space-y-3">
                                 <label className="text-[10px] font-black text-gray-500 uppercase tracking-widest ml-1 block">Responsable (Autoriza)</label>
                                 <div
-                                    className="group relative bg-black/10 border border-white/5 rounded-2xl p-4 cursor-not-allowed transition-all flex items-center justify-between shadow-inner"
+                                    className="group relative bg-[#0a0a0b] border border-[#27272a] rounded-lg p-4 cursor-not-allowed flex items-center justify-between"
                                     title="Campo bloqueado por auditoría: Se asigna automáticamente al responsable titular."
                                 >
                                     <div className="flex items-center gap-4 min-w-0">
-                                        <div className="w-10 h-10 rounded-xl bg-slate-800 flex items-center justify-center shrink-0 border border-white/5">
-                                            <Shield className="w-5 h-5 text-teal-500" />
+                                        <div className="w-10 h-10 rounded-lg bg-[#111112] flex items-center justify-center shrink-0 border border-[#27272a]">
+                                            <Shield className="w-5 h-5 text-[#71717a]" />
                                         </div>
                                         <div className="min-w-0">
-                                            <span className="block truncate font-bold text-slate-300">
+                                            <span className="block truncate font-semibold text-[#a1a1aa] text-sm">
                                                 {colaboradores.todos.find(c => c.identificacion === autoriza)?.alias || colaboradores.todos.find(c => c.identificacion === autoriza)?.colaborador || 'Cargando responsable...'}
                                             </span>
                                             {autoriza && <span className="text-[9px] text-gray-500 font-mono tracking-tighter uppercase">Asignado: {autoriza}</span>}
@@ -420,14 +423,14 @@ export default function RegistroSalidaExterno() {
                                 <label className="text-[10px] font-black text-gray-500 uppercase tracking-widest ml-1 block">Entregado a (Retira)</label>
                                 <div
                                     onClick={() => handleOpenBusqueda('retira')}
-                                    className="group relative bg-black/30 border border-white/10 rounded-2xl p-4 cursor-pointer hover:bg-white/5 hover:border-teal-500/30 transition-all flex items-center justify-between shadow-inner"
+                                    className="group relative bg-[#111112] border border-[#3f3f46] rounded-lg p-4 cursor-pointer hover:border-[#a1a1aa] transition-colors flex items-center justify-between"
                                 >
                                     <div className="flex items-center gap-4 min-w-0">
-                                        <div className={`w-10 h-10 rounded-xl bg-${themeColor}-500/10 flex items-center justify-center shrink-0 border border-teal-500/10`}>
-                                            <User className={`w-5 h-5 text-${themeColor}-400 group-hover:scale-110 transition-transform`} />
+                                        <div className="w-10 h-10 rounded-lg bg-[#18181b] flex items-center justify-center shrink-0 border border-[#3f3f46]">
+                                            <User className="w-5 h-5 text-[#d4d4d8]" />
                                         </div>
                                         <div className="min-w-0">
-                                            <span className={`block truncate font-bold ${retira ? 'text-white' : 'text-gray-600 italic text-sm'}`}>
+                                            <span className={`block truncate font-semibold text-sm ${retira ? 'text-white' : 'text-[#71717a]'}`}>
                                                 {colaboradores.todos.find((c: any) => c.identificacion === retira)?.colaborador || 'Seleccionar...'}
                                             </span>
                                             {retira && <span className="text-[9px] text-gray-500 font-mono tracking-tighter uppercase">{retira}</span>}
@@ -442,12 +445,12 @@ export default function RegistroSalidaExterno() {
                                 <label className="text-[10px] font-black text-gray-500 uppercase tracking-widest ml-1 block">Número de Solicitud</label>
                                 <div className="relative group flex gap-2">
                                     <div className="relative flex-1">
-                                        <div className="absolute left-5 top-1/2 -translate-y-1/2 text-teal-400 font-black italic">#</div>
+                                        <div className="absolute left-5 top-1/2 -translate-y-1/2 text-[#71717a] font-semibold">#</div>
                                         <input
                                             type="text"
                                             value={numeroSolicitud}
                                             readOnly
-                                            className="w-full bg-black/10 border border-white/5 rounded-2xl py-4 pl-12 pr-4 text-slate-400 font-bold cursor-not-allowed opacity-80 shadow-inner"
+                                            className="w-full bg-[#0a0a0b] border border-[#27272a] rounded-lg py-4 pl-12 pr-4 text-[#a1a1aa] font-semibold cursor-not-allowed"
                                             placeholder="Sin número..."
                                         />
                                     </div>
@@ -455,7 +458,7 @@ export default function RegistroSalidaExterno() {
                                         type="button"
                                         onClick={() => setShowHistorialModal(true)}
                                         disabled={!numeroSolicitud}
-                                        className="px-4 bg-purple-500/10 border border-purple-500/20 rounded-2xl text-purple-400 hover:bg-purple-500/20 transition-all disabled:opacity-30 disabled:cursor-not-allowed group/btn"
+                                        className="px-4 bg-[#111112] border border-[#3f3f46] rounded-lg text-[#d4d4d8] hover:border-[#a1a1aa] hover:text-white transition-colors disabled:opacity-30 disabled:cursor-not-allowed group/btn"
                                         title="Ver historial de materiales entregados"
                                     >
                                         <ClipboardList className="w-6 h-6 group-hover/btn:scale-110 transition-transform" />
@@ -467,11 +470,11 @@ export default function RegistroSalidaExterno() {
                         <div className="space-y-3">
                             <label className="text-[10px] font-black text-gray-500 uppercase tracking-widest ml-1 block">Observaciones adicionales</label>
                             <div className="relative group">
-                                <Info className="absolute left-5 top-5 w-5 h-5 text-gray-600 group-focus-within:text-teal-400 transition-colors" />
+                                <Info className="absolute left-5 top-5 w-5 h-5 text-[#71717a] group-focus-within:text-white transition-colors" />
                                 <textarea
                                     value={comentarios}
                                     onChange={(e) => setComentarios(e.target.value)}
-                                    className="w-full bg-black/30 border border-white/10 rounded-2xl py-5 pl-14 pr-6 text-white font-medium placeholder-gray-700 focus:outline-none focus:border-teal-500/50 transition-all shadow-inner min-h-[120px] resize-none"
+                                    className="w-full bg-[#111112] border border-[#3f3f46] rounded-lg py-5 pl-14 pr-6 text-white text-sm placeholder-[#52525b] focus:outline-none focus:border-[#a1a1aa] transition-colors min-h-[110px] resize-y"
                                     placeholder="Detalles sobre la entrega, destino o requerimientos especiales..."
                                 />
                             </div>
@@ -479,10 +482,12 @@ export default function RegistroSalidaExterno() {
                     </div>
 
                     {/* Section 2: Items Table */}
-                    <div className="bg-[#1e2235] border border-white/10 rounded-3xl shadow-2xl overflow-hidden p-6 md:p-8">
-                        <div className="flex items-center gap-3 mb-8 border-b border-white/10 pb-4">
-                            <Box className={`w-5 h-5 text-${themeColor}-400`} />
-                            <h3 className="text-xl font-black text-white uppercase tracking-tight">Artículos a Retirar</h3>
+                    <div className="bg-[#0d0d0e] border border-[#3f3f46] rounded-xl overflow-hidden p-6 md:p-8">
+                        <div className="space-y-1 mb-6">
+                            <h3 className="text-xl font-semibold text-white tracking-tight flex items-center gap-3">
+                                <Box className="w-5 h-5 text-[#d4d4d8]" /> Artículos a retirar
+                            </h3>
+                            <p className="text-sm text-[#a1a1aa] ml-8">Seleccione los materiales y sus cantidades</p>
                         </div>
                         <TransactionTable
                             items={items}
@@ -491,16 +496,16 @@ export default function RegistroSalidaExterno() {
                             onOpenSearch={handleOpenArticulos}
                             onAddRow={agregarFila}
                             onWarning={(msg) => showAlert(msg, 'warning')}
-                            themeColor={themeColor}
+                            themeColor="#e4e4e7"
                         />
                     </div>
 
                     {/* Form Controls */}
-                    <div className="flex justify-between items-center pt-4">
+                    <div className="flex justify-between items-center pt-4 pb-12">
                         <button
                             type="button"
                             onClick={() => navigate('/cliente-externo/realizar')}
-                            className="px-8 py-4 border border-white/10 rounded-2xl text-gray-500 font-black uppercase text-xs tracking-widest hover:bg-white/5 hover:text-white transition-all flex items-center gap-2"
+                            className="h-12 px-6 bg-[#111112] border border-[#52525b] rounded-lg text-[#d4d4d8] text-sm font-semibold hover:bg-[#18181b] hover:text-white transition-colors flex items-center gap-2"
                         >
                             <ArrowLeft className="w-4 h-4" />
                             Cancelar
@@ -510,10 +515,10 @@ export default function RegistroSalidaExterno() {
                             type="submit"
                             disabled={loading || !isFormValid}
                             className={cn(
-                                "px-12 py-5 text-white font-black text-xl rounded-2xl transition-all flex items-center justify-center gap-3 shadow-xl uppercase tracking-tight",
+                                "h-12 px-8 font-semibold text-sm rounded-lg transition-colors flex items-center justify-center gap-2",
                                 (loading || !isFormValid)
-                                    ? "bg-slate-700 opacity-50 cursor-not-allowed shadow-none"
-                                    : "bg-gradient-to-r from-teal-600 to-teal-400 hover:brightness-110 active:scale-95 shadow-teal-500/20"
+                                    ? "bg-[#27272a] text-[#71717a] opacity-60 cursor-not-allowed"
+                                    : "bg-[#e4e4e7] text-black hover:bg-white"
                             )}
                         >
                             {loading ? <Loader2 className="w-7 h-7 animate-spin" /> : <Save className="w-7 h-7" />}
@@ -542,8 +547,8 @@ export default function RegistroSalidaExterno() {
                 isOpen={showArticulosModal}
                 onClose={() => setShowArticulosModal(false)}
                 onSelect={handleSelectArticulo}
-                themeColor="teal"
-                title="BUSCADOR"
+                themeColor="neutral"
+                title="Seleccionar artículo"
                 showOnlyAvailable={true}
             />
             {/* Historial Modal */}
