@@ -229,7 +229,7 @@ export default function TablaSolicitudesSalida() {
     const totalPages = Math.ceil(totalRecords / ITEMS_PER_PAGE);
 
     return (
-        <div className="min-h-screen bg-[#000000] text-[#F5F5F7] font-sans relative flex flex-col selection:bg-[#0071E3]/30 pb-20">
+        <div className="min-h-screen bg-black text-[#f4f4f5] font-sans relative flex flex-col selection:bg-white/20 pb-12">
             <style>{`
                 .custom-scrollbar::-webkit-scrollbar { width: 6px; height: 6px; }
                 .custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
@@ -240,18 +240,19 @@ export default function TablaSolicitudesSalida() {
             <PageHeader
                 title="Salidas de Cliente Interno"
                 icon={FileText}
+                themeColor="neutral"
                 subtitle="Gestión y entrega de materiales para órdenes de trabajo activas ST-I."
                 rightElement={
-                    <div className="flex items-center gap-4">
+                    <div className="flex items-center gap-3">
                         <button
                             onClick={handleExportPDF}
-                            className="h-11 px-6 bg-transparent border border-[#F5F5F7] text-[#F5F5F7] rounded-[8px] text-[10px] font-black uppercase tracking-widest hover:bg-white/5 transition-all flex items-center gap-2.5 active:scale-95"
+                            className="h-11 px-5 bg-[#111112] border border-[#52525b] text-white rounded-lg text-sm font-semibold hover:bg-[#18181b] transition-colors flex items-center gap-2"
                         >
                             <File className="w-4 h-4" /> PDF Listado
                         </button>
                         <button
                             onClick={handleExportExcel}
-                            className="h-11 px-6 bg-[#0071E3] text-white rounded-[8px] text-[10px] font-black uppercase tracking-widest hover:brightness-110 transition-all flex items-center gap-2.5 shadow-xl active:scale-95"
+                            className="h-11 px-5 bg-[#e4e4e7] border border-white text-black rounded-lg text-sm font-semibold hover:bg-white transition-colors flex items-center gap-2"
                         >
                             <FileSpreadsheet className="w-4 h-4" /> Excel Completo
                         </button>
@@ -259,25 +260,25 @@ export default function TablaSolicitudesSalida() {
                 }
             />
 
-            <div className="max-w-[1600px] mx-auto w-full px-8 space-y-8 flex-1 flex flex-col">
+            <div className="max-w-[1600px] mx-auto w-full px-4 md:px-8 space-y-5 flex-1 flex flex-col">
                 {/* Filters Section */}
-                <div className="bg-[#121212] border border-[#333333] rounded-[8px] p-6 shadow-2xl">
-                    <div className="flex flex-col lg:flex-row gap-6 items-center justify-between">
-                        <div className="w-full lg:w-[70%]">
+                <div className="bg-[#0d0d0e] border border-[#3f3f46] rounded-xl p-4">
+                    <div className="flex flex-col lg:flex-row gap-4 items-center justify-between">
+                        <div className="w-full lg:flex-1">
                             <div className="relative group">
-                                <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-[#86868B] group-focus-within:text-[#0071E3] transition-colors" />
+                                <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-[#71717a] group-focus-within:text-white transition-colors" />
                                 <input
                                     type="text"
                                     placeholder="Buscar por número de solicitud o descripción de la órden..."
                                     value={searchTerm}
                                     onChange={e => setSearchTerm(e.target.value)}
-                                    className="w-full bg-[#1D1D1F] border border-[#333333] rounded-[8px] pl-12 pr-4 py-3 text-sm text-[#F5F5F7] focus:border-[#0071E3]/50 outline-none transition-all placeholder:text-[#424245] font-medium"
+                                    className="w-full bg-[#111112] border border-[#3f3f46] rounded-lg pl-11 pr-4 py-3 text-sm text-white focus:border-[#a1a1aa] outline-none transition-colors placeholder:text-[#71717a]"
                                 />
                             </div>
                         </div>
                         <button
                             onClick={() => navigate('/')}
-                            className="h-11 px-8 bg-transparent border border-[#F5F5F7] text-[#F5F5F7] rounded-[8px] text-[10px] font-black uppercase tracking-widest hover:bg-white/5 transition-all flex items-center gap-2.5 active:scale-95"
+                            className="h-11 px-5 bg-[#111112] border border-[#52525b] text-white rounded-lg text-sm font-semibold hover:bg-[#18181b] transition-colors flex items-center gap-2"
                         >
                             <ArrowLeft className="w-4 h-4" /> Regresar
                         </button>
@@ -285,19 +286,19 @@ export default function TablaSolicitudesSalida() {
                 </div>
 
                 {/* Table Section */}
-                <div className="bg-[#121212] border border-[#333333] rounded-[8px] shadow-3xl overflow-hidden mb-16">
+                <div className="bg-[#0d0d0e] border border-[#3f3f46] rounded-xl overflow-hidden mb-8">
                     <div className="overflow-x-auto custom-scrollbar">
                         <table className="w-full text-left border-collapse min-w-[1000px]">
                             <thead>
-                                <tr className="bg-[#1D1D1F] text-[#86868B] text-[10px] font-black tracking-[0.2em] uppercase border-b border-[#333333]">
-                                    <th className="p-6 text-center w-[12%]">NÚMERO</th>
-                                    <th className="p-6 w-[38%]">DESCRIPCIÓN DE LA SOLICITUD</th>
-                                    <th className="p-6 w-[20%]">INSTALACIÓN</th>
-                                    <th className="p-6 text-center w-[15%]">FECHA</th>
-                                    <th className="p-6 text-center w-[15%]">ACCIONES</th>
+                                <tr className="bg-[#18181b] text-[#a1a1aa] text-[10px] font-semibold tracking-[0.14em] uppercase border-b border-[#3f3f46]">
+                                    <th className="px-5 py-4 text-center w-[12%]">Número</th>
+                                    <th className="px-5 py-4 w-[38%]">Descripción de la solicitud</th>
+                                    <th className="px-5 py-4 w-[20%]">Instalación</th>
+                                    <th className="px-5 py-4 text-center w-[15%]">Fecha</th>
+                                    <th className="px-5 py-4 text-center w-[15%]">Acciones</th>
                                 </tr>
                             </thead>
-                            <tbody className={cn("text-sm divide-y divide-[#333333]/30 transition-opacity duration-500", loading ? 'opacity-30 pointer-events-none' : 'opacity-100')}>
+                            <tbody className={cn("text-sm divide-y divide-[#27272a] transition-opacity duration-300", loading ? 'opacity-30 pointer-events-none' : 'opacity-100')}>
                                 {solicitudes.length === 0 && !loading ? (
                                     <tr>
                                         <td colSpan={5} className="py-24 text-center">
@@ -309,45 +310,45 @@ export default function TablaSolicitudesSalida() {
                                     </tr>
                                 ) : (
                                     solicitudes.map((sol) => (
-                                        <tr key={sol.numero_solicitud} className="hover:bg-white/[0.02] transition-colors group">
-                                            <td className="p-6 text-center">
+                                        <tr key={sol.numero_solicitud} className="hover:bg-[#111112] transition-colors group">
+                                            <td className="px-5 py-4 text-center">
                                                 <button
                                                     onDoubleClick={() => handleDoubleClick(sol.numero_solicitud)}
-                                                    className="inline-block px-4 py-2 rounded-[8px] bg-[#0071E3]/10 text-[#0071E3] text-[13px] font-black tracking-tight border border-[#0071E3]/20 hover:bg-[#0071E3]/20 transition-all"
+                                                    className="inline-block px-3 py-2 rounded-lg bg-[#18181b] text-white text-sm font-semibold border border-[#52525b] hover:border-[#a1a1aa] transition-colors"
                                                     title="Doble clic para ver materiales"
                                                 >
                                                     #{sol.numero_solicitud}
                                                 </button>
                                             </td>
-                                            <td className="p-6">
-                                                <p className="text-[11px] font-black text-[#F5F5F7] uppercase tracking-tight leading-relaxed line-clamp-2 max-w-2xl" title={sol.descripcion_solicitud}>
+                                            <td className="px-5 py-4">
+                                                <p className="text-sm font-medium text-[#e4e4e7] leading-relaxed line-clamp-2 max-w-2xl" title={sol.descripcion_solicitud}>
                                                     {sol.descripcion_solicitud}
                                                 </p>
                                             </td>
-                                            <td className="p-6">
+                                            <td className="px-5 py-4">
                                                 <div className="flex items-center gap-3">
-                                                    <Package className="w-3.5 h-3.5 text-[#86868B]" />
-                                                    <span className="text-[10px] font-bold text-[#86868B] uppercase tracking-widest">{sol.instalacion_municipal}</span>
+                                                    <Package className="w-4 h-4 text-[#71717a] shrink-0" />
+                                                    <span className="text-xs font-medium text-[#a1a1aa] leading-relaxed">{sol.instalacion_municipal}</span>
                                                 </div>
                                             </td>
-                                            <td className="p-6 text-center">
+                                            <td className="px-5 py-4 text-center">
                                                 <div className="flex flex-col items-center gap-1">
-                                                    <Calendar className="w-3.5 h-3.5 text-[#86868B]" />
-                                                    <span className="text-[11px] font-black text-[#F5F5F7]">{new Date(sol.fecha_solicitud).toLocaleDateString('es-ES')}</span>
+                                                    <Calendar className="w-4 h-4 text-[#71717a]" />
+                                                    <span className="text-xs font-semibold text-[#e4e4e7]">{new Date(sol.fecha_solicitud).toLocaleDateString('es-ES')}</span>
                                                 </div>
                                             </td>
-                                            <td className="p-6">
-                                                <div className="flex items-center justify-center gap-4">
+                                            <td className="px-5 py-4">
+                                                <div className="flex items-center justify-center gap-2">
                                                     <button
                                                         onClick={() => navigate(`/cliente-interno/realizar-salidas/formulario?numero=${sol.numero_solicitud}`)}
-                                                        className="h-10 w-10 bg-[#0071E3]/10 text-[#0071E3] rounded-[8px] border border-[#0071E3]/30 flex items-center justify-center hover:bg-[#0071E3] hover:text-white transition-all active:scale-90"
+                                                        className="h-10 w-10 bg-[#e4e4e7] text-black rounded-lg border border-white flex items-center justify-center hover:bg-white transition-colors"
                                                         title="Realizar Salida"
                                                     >
                                                         <ExternalLink className="w-4 h-4" />
                                                     </button>
                                                     <button
                                                         onClick={() => handlePrintRow(sol.numero_solicitud)}
-                                                        className="h-10 w-10 bg-transparent border border-[#333333] text-[#86868B] rounded-[8px] flex items-center justify-center hover:bg-white/5 hover:text-[#F5F5F7] transition-all active:scale-90"
+                                                        className="h-10 w-10 bg-[#111112] border border-[#3f3f46] text-[#a1a1aa] rounded-lg flex items-center justify-center hover:border-[#a1a1aa] hover:text-white transition-colors"
                                                         title="Imprimir Orden"
                                                     >
                                                         <Printer className="w-4 h-4" />
@@ -362,23 +363,23 @@ export default function TablaSolicitudesSalida() {
                     </div>
 
                     {/* Pagination Footer */}
-                    <div className="bg-[#1D1D1F] border-t border-[#333333] px-8 py-4 flex items-center justify-between mt-auto">
-                        <div className="text-[10px] font-black text-[#86868B] uppercase tracking-widest">
-                            Página <span className="text-[#F5F5F7]">{currentPage}</span> de <span className="text-[#F5F5F7]">{totalPages || 1}</span>
+                    <div className="bg-[#111112] border-t border-[#3f3f46] px-5 py-4 flex items-center justify-between mt-auto">
+                        <div className="text-xs font-medium text-[#a1a1aa]">
+                            Página <span className="text-white font-semibold">{currentPage}</span> de <span className="text-white font-semibold">{totalPages || 1}</span>
                             <span className="ml-4 opacity-40">({totalRecords} registros)</span>
                         </div>
                         <div className="flex gap-4">
                             <button
                                 disabled={currentPage <= 1 || loading}
                                 onClick={() => setCurrentPage(p => p - 1)}
-                                className="h-10 px-6 bg-transparent border border-[#333333] text-[#F5F5F7] rounded-[8px] text-[10px] font-black uppercase tracking-widest hover:bg-white/5 transition-all disabled:opacity-20 flex items-center gap-2"
+                                className="h-10 px-4 bg-[#18181b] border border-[#3f3f46] text-white rounded-lg text-sm font-semibold hover:border-[#a1a1aa] transition-colors disabled:opacity-20 flex items-center gap-2"
                             >
                                 <ChevronLeft className="w-4 h-4" /> Anterior
                             </button>
                             <button
                                 disabled={currentPage >= totalPages || loading}
                                 onClick={() => setCurrentPage(p => p + 1)}
-                                className="h-10 px-6 bg-transparent border border-[#333333] text-[#F5F5F7] rounded-[8px] text-[10px] font-black uppercase tracking-widest hover:bg-white/5 transition-all disabled:opacity-20 flex items-center gap-2"
+                                className="h-10 px-4 bg-[#18181b] border border-[#3f3f46] text-white rounded-lg text-sm font-semibold hover:border-[#a1a1aa] transition-colors disabled:opacity-20 flex items-center gap-2"
                             >
                                 Siguiente <ChevronRight className="w-4 h-4" />
                             </button>
@@ -389,30 +390,30 @@ export default function TablaSolicitudesSalida() {
 
             {/* Premium Details Modal */}
             {showDetailsModal && (
-                <div className="fixed inset-0 z-[100] flex items-center justify-center p-8 bg-black/80 backdrop-blur-[20px] animate-in fade-in duration-300">
-                    <div className="w-full max-w-4xl bg-[#121212] border border-[#333333] rounded-[8px] shadow-[0_32px_128px_rgba(0,0,0,0.8)] overflow-hidden flex flex-col max-h-[85vh]">
-                        <div className="p-8 border-b border-[#333333] flex justify-between items-center bg-black/20">
+                <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 md:p-8 bg-black/85 backdrop-blur-md animate-in fade-in duration-200">
+                    <div className="w-full max-w-4xl bg-[#0b0b0c] border border-[#3f3f46] rounded-2xl shadow-2xl overflow-hidden flex flex-col max-h-[88vh]">
+                        <div className="px-6 py-5 border-b border-[#27272a] flex justify-between items-center">
                             <div className="flex items-center gap-4">
-                                <div className="p-3 bg-[#0071E3]/10 rounded-[8px] border border-[#0071E3]/20">
-                                    <Package className="w-7 h-7 text-[#0071E3]" />
+                                <div className="p-3 bg-[#18181b] rounded-lg border border-[#3f3f46]">
+                                    <Package className="w-6 h-6 text-[#d4d4d8]" />
                                 </div>
                                 <div>
-                                    <h3 className="text-2xl font-black text-[#F5F5F7] uppercase tracking-tighter">Materiales Entregados</h3>
-                                    <p className="text-[10px] font-black text-[#86868B] uppercase tracking-widest mt-1">Órden de Trabajo #{selectedSolicitudNum}</p>
+                                    <h3 className="text-xl font-semibold text-white">Materiales entregados</h3>
+                                    <p className="text-xs text-[#a1a1aa] mt-1">Orden de trabajo #{selectedSolicitudNum}</p>
                                 </div>
                             </div>
                             <button
                                 onClick={() => setShowDetailsModal(false)}
-                                className="p-3 bg-transparent border border-[#F5F5F7]/30 text-[#86868B] rounded-[8px] hover:text-[#F5F5F7] hover:bg-white/5 transition-all"
+                                className="w-10 h-10 flex items-center justify-center bg-[#111112] border border-[#3f3f46] text-[#a1a1aa] rounded-lg hover:text-white hover:bg-[#18181b] transition-colors"
                             >
                                 <X className="w-6 h-6" />
                             </button>
                         </div>
 
-                        <div className="flex-1 overflow-y-auto p-8 custom-scrollbar space-y-8 bg-black/40">
+                        <div className="flex-1 overflow-y-auto p-5 md:p-6 custom-scrollbar space-y-5">
                             {loadingDetails ? (
                                 <div className="flex flex-col items-center justify-center py-24 text-[#86868B] space-y-4">
-                                    <Loader2 className="w-12 h-12 animate-spin text-[#0071E3]" />
+                                    <Loader2 className="w-10 h-10 animate-spin text-white" />
                                     <p className="font-black text-[10px] uppercase tracking-[0.3em]">Recuperando historial...</p>
                                 </div>
                             ) : detailsData.length === 0 ? (
@@ -422,10 +423,10 @@ export default function TablaSolicitudesSalida() {
                                 </div>
                             ) : (
                                 detailsData.map((salida) => (
-                                    <div key={salida.id_salida} className="bg-[#1D1D1F] border border-[#333333] rounded-[8px] overflow-hidden shadow-xl">
-                                        <div className="px-8 py-5 bg-black/20 border-b border-[#333333] flex items-center justify-between">
+                                    <div key={salida.id_salida} className="bg-[#111112] border border-[#3f3f46] rounded-xl overflow-hidden">
+                                        <div className="px-5 py-4 bg-[#18181b] border-b border-[#3f3f46] flex items-center justify-between">
                                             <div className="flex items-center gap-3">
-                                                <span className="text-[#0071E3] font-black text-[13px] uppercase italic">SALIDA #{salida.id_salida}</span>
+                                                <span className="text-white font-semibold text-sm">Salida #{salida.id_salida}</span>
                                             </div>
                                             <div className="flex items-center gap-3 text-[10px] font-black text-[#86868B] uppercase tracking-widest">
                                                 <Calendar className="w-4 h-4" />
@@ -452,7 +453,7 @@ export default function TablaSolicitudesSalida() {
                                                                 <td className="px-6 py-4 font-mono text-[11px] font-black text-[#86868B]">#{item.articulo}</td>
                                                                 <td className="px-6 py-4 text-[11px] font-black text-[#F5F5F7] uppercase tracking-tight">{nombreArticulo || 'Desconocido'}</td>
                                                                 <td className="px-6 py-4 text-right">
-                                                                    <span className="bg-[#0071E3]/10 text-[#0071E3] px-3 py-1 rounded-[4px] font-black text-[11px] border border-[#0071E3]/20">{item.cantidad}</span>
+                                                                    <span className="bg-[#e4e4e7] text-black px-3 py-1 rounded-md font-semibold text-xs border border-white">{item.cantidad}</span>
                                                                 </td>
                                                             </tr>
                                                         );
@@ -465,10 +466,10 @@ export default function TablaSolicitudesSalida() {
                             )}
                         </div>
 
-                        <div className="p-8 border-t border-[#333333] bg-black/20 flex justify-end">
+                        <div className="p-5 border-t border-[#27272a] flex justify-end">
                             <button
                                 onClick={() => setShowDetailsModal(false)}
-                                className="h-11 px-8 bg-[#0071E3] text-white rounded-[8px] text-[10px] font-black uppercase tracking-widest hover:brightness-110 active:scale-95 transition-all shadow-xl"
+                                className="h-11 px-6 bg-[#e4e4e7] text-black rounded-lg text-sm font-semibold hover:bg-white transition-colors"
                             >
                                 Cerrar Ventana
                             </button>
