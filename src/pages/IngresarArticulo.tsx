@@ -377,31 +377,32 @@ export default function IngresarArticulo() {
     };
 
     return (
-        <div className="min-h-screen bg-[#000000] text-[#F5F5F7]">
+        <div className="min-h-screen bg-black text-[#f4f4f5] selection:bg-white/20">
             <PageHeader
                 title="Ingresar Artículo"
                 icon={PlusCircle}
-                themeColor="blue"
+                themeColor="neutral"
+                subtitle="Registro de entradas y ajustes del inventario."
             />
 
-            <div className="max-w-7xl mx-auto px-8 py-8 grid grid-cols-1 lg:grid-cols-12 gap-8 relative animate-fade-in-up">
+            <div className="max-w-[1500px] mx-auto px-4 md:px-8 py-5 grid grid-cols-1 lg:grid-cols-12 gap-5 relative animate-fade-in-up">
 
                 {/* Main Content */}
-                <div className={cn("transition-all duration-300 space-y-8", showHistory ? "lg:col-span-9" : "lg:col-span-12")}>
+                <div className={cn("transition-all duration-300 space-y-5", showHistory ? "lg:col-span-9" : "lg:col-span-12")}>
 
                     {/* Header Controls */}
                     <div className="flex justify-between items-center gap-4">
-                        <div className="flex items-center gap-3 bg-[#121212] border border-[#333333] px-5 py-3 rounded-[8px]">
-                            <Calendar className="w-5 h-5 text-[#0071E3]" />
+                        <div className="flex items-center gap-3 bg-[#111112] border border-[#3f3f46] px-5 py-3 rounded-lg">
+                            <Calendar className="w-5 h-5 text-[#d4d4d8]" />
                             <span className="text-[#F5F5F7] font-bold text-sm">{fecha}</span>
                         </div>
                         <button
                             onClick={() => setShowHistory(!showHistory)}
                             className={cn(
-                                "flex items-center gap-2 px-6 py-3 rounded-[8px] font-bold transition-all text-xs uppercase tracking-widest",
+                                "flex items-center gap-2 px-5 py-3 rounded-lg font-semibold transition-colors text-sm",
                                 showHistory
-                                    ? "bg-[#0071E3] text-white"
-                                    : "bg-transparent border border-[#F5F5F7] text-[#F5F5F7] hover:bg-[#F5F5F7]/10"
+                                    ? "bg-[#e4e4e7] text-black"
+                                    : "bg-[#111112] border border-[#52525b] text-white hover:bg-[#18181b]"
                             )}
                         >
                             <History className="w-5 h-5" />
@@ -409,24 +410,24 @@ export default function IngresarArticulo() {
                         </button>
                     </div>
 
-                    <form onSubmit={handleSubmit} className="space-y-8">
+                    <form onSubmit={handleSubmit} className="space-y-5">
                         {/* Section 1: Cabecera */}
-                        <div className="bg-[#121212] border border-[#333333] rounded-[8px] p-8 space-y-8 shadow-2xl">
-                            <h3 className="text-lg font-bold text-[#0071E3] flex items-center gap-2 border-b border-[#333333] pb-4 uppercase italic">
-                                <Info className="w-5 h-5" />
-                                Datos de la Entrada
+                        <div className="bg-[#0d0d0e] border border-[#3f3f46] rounded-xl p-6 space-y-6">
+                            <h3 className="text-xl font-semibold text-white flex items-center gap-3 border-b border-[#27272a] pb-4">
+                                <Info className="w-5 h-5 text-[#d4d4d8]" />
+                                Datos de la entrada
                             </h3>
 
-                            <div className="grid grid-cols-1 md:grid-cols-3 gap-8 mb-8">
+                            <div className="grid grid-cols-1 md:grid-cols-3 gap-5 mb-6">
                                 {/* Origen Selector */}
                                 <div className="space-y-3">
                                     <label className="block text-[10px] font-bold text-[#86868B] uppercase tracking-[0.2em] ml-1">Origen</label>
                                     <div
                                         onClick={() => setShowOrigenModal(true)}
-                                        className="group relative bg-[#1D1D1F] border border-[#333333] rounded-[8px] p-4 cursor-pointer hover:border-[#0071E3]/50 transition-all flex items-center justify-between"
+                                        className="group relative bg-[#111112] border border-[#3f3f46] rounded-lg p-4 cursor-pointer hover:border-[#a1a1aa] transition-colors flex items-center justify-between"
                                     >
                                         <div className="flex items-center gap-3 min-w-0">
-                                            <Building2 className="w-5 h-5 text-[#0071E3]/50 group-hover:text-[#0071E3] transition-colors shrink-0" />
+                                            <Building2 className="w-5 h-5 text-[#a1a1aa] group-hover:text-white transition-colors shrink-0" />
                                             <span className={cn("truncate font-bold text-sm", selectedOrigen ? "text-[#F5F5F7]" : "text-[#86868B] italic")}>
                                                 {selectedOrigen ? selectedOrigen.origen : 'Seleccionar origen...'}
                                             </span>
@@ -440,15 +441,15 @@ export default function IngresarArticulo() {
                                     <div className="flex justify-between items-end">
                                         <label className="block text-[10px] font-bold text-[#86868B] uppercase tracking-[0.2em] ml-1">Autoriza</label>
                                         {selectedAutoriza && (
-                                            <span className="text-[9px] font-bold text-[#0071E3] bg-[#0071E3]/10 px-2 py-0.5 rounded-[4px] border border-[#0071E3]/20 mb-1 flex items-center gap-1">
+                                            <span className="text-[9px] font-semibold text-[#a1a1aa] bg-[#18181b] px-2 py-0.5 rounded-md border border-[#3f3f46] mb-1 flex items-center gap-1">
                                                 <Shield className="w-2.5 h-2.5" />
                                                 ASIGNADO: {selectedAutoriza.identificacion}
                                             </span>
                                         )}
                                     </div>
-                                    <div className="bg-[#1D1D1F]/50 border border-[#333333] rounded-[8px] p-4 flex items-center gap-4 cursor-default">
-                                        <div className="w-10 h-10 rounded-[8px] bg-[#0071E3]/10 flex items-center justify-center shrink-0">
-                                            <Shield className="w-5 h-5 text-[#0071E3]" />
+                                    <div className="bg-[#0a0a0b] border border-[#27272a] rounded-lg p-4 flex items-center gap-4 cursor-default">
+                                        <div className="w-10 h-10 rounded-lg bg-[#111112] border border-[#27272a] flex items-center justify-center shrink-0">
+                                            <Shield className="w-5 h-5 text-[#71717a]" />
                                         </div>
                                         <div className="flex flex-col min-w-0">
                                             <span className={cn("truncate font-bold text-sm", selectedAutoriza ? "text-[#F5F5F7]" : "text-[#86868B] italic")}>
@@ -467,10 +468,10 @@ export default function IngresarArticulo() {
                                             setColaboradorField('recibe');
                                             setShowColaboradorModal(true);
                                         }}
-                                        className="group relative bg-[#1D1D1F] border border-[#333333] rounded-[8px] p-4 cursor-pointer hover:border-[#0071E3]/50 transition-all flex items-center justify-between"
+                                        className="group relative bg-[#111112] border border-[#3f3f46] rounded-lg p-4 cursor-pointer hover:border-[#a1a1aa] transition-colors flex items-center justify-between"
                                     >
                                         <div className="flex items-center gap-3 min-w-0">
-                                            <UserCircle className="w-5 h-5 text-[#0071E3]/50 group-hover:text-[#0071E3] transition-colors shrink-0" />
+                                            <UserCircle className="w-5 h-5 text-[#a1a1aa] group-hover:text-white transition-colors shrink-0" />
                                             <span className={cn("truncate font-bold text-sm", selectedRecibe ? "text-[#F5F5F7]" : "text-[#86868B] italic")}>
                                                 {selectedRecibe ? selectedRecibe.colaborador : '¿Quién recibe?'}
                                             </span>
@@ -482,7 +483,7 @@ export default function IngresarArticulo() {
 
                             <div className="space-y-3">
                                 <label className="block text-[10px] font-bold text-[#86868B] uppercase tracking-[0.2em] ml-1 flex items-center gap-2">
-                                    <ClipboardList className="w-4 h-4 text-[#0071E3]" />
+                                    <ClipboardList className="w-4 h-4 text-[#d4d4d8]" />
                                     Justificación
                                 </label>
                                 <textarea
@@ -491,14 +492,14 @@ export default function IngresarArticulo() {
                                     maxLength={500}
                                     rows={3}
                                     placeholder="Describa el motivo. Obligatorio si hay cantidades negativas."
-                                    className="w-full bg-[#1D1D1F] border border-[#333333] rounded-[8px] p-5 text-[#F5F5F7] placeholder-[#424245] focus:border-[#0071E3]/50 outline-none transition-all font-medium text-sm"
+                                    className="w-full bg-[#111112] border border-[#3f3f46] rounded-lg p-5 text-white placeholder-[#52525b] focus:border-[#a1a1aa] outline-none transition-colors font-medium text-sm"
                                 />
                                 <div className="flex justify-between items-center text-[9px] font-bold uppercase tracking-widest text-[#86868B]">
                                     <span className="flex items-center gap-1">
-                                        <Info className="w-3 h-3 text-[#0071E3]" />
+                                        <Info className="w-3 h-3 text-[#a1a1aa]" />
                                         Valores negativos = ajuste de inventario
                                     </span>
-                                    <span className={cn(justificacion.length > 450 ? "text-rose-500" : "text-[#86868B]")}>
+                                    <span className={cn(justificacion.length > 450 ? "text-white" : "text-[#86868B]")}>
                                         {justificacion.length} / 500
                                     </span>
                                 </div>
@@ -506,16 +507,16 @@ export default function IngresarArticulo() {
                         </div>
 
                         {/* Section 2: Detalle */}
-                        <div className="bg-[#121212] border border-[#333333] rounded-[8px] p-8 space-y-8 shadow-2xl">
-                            <div className="flex flex-col sm:flex-row justify-between items-center mb-4 gap-4 border-b border-[#333333] pb-6">
-                                <h3 className="text-lg font-bold text-[#0071E3] flex items-center gap-2 uppercase italic">
-                                    <List className="w-5 h-5" />
-                                    Detalle de Artículos
+                        <div className="bg-[#0d0d0e] border border-[#3f3f46] rounded-xl p-6 space-y-6">
+                            <div className="flex flex-col sm:flex-row justify-between items-center gap-4 border-b border-[#27272a] pb-5">
+                                <h3 className="text-xl font-semibold text-white flex items-center gap-3">
+                                    <List className="w-5 h-5 text-[#d4d4d8]" />
+                                    Detalle de artículos
                                 </h3>
                                 <button
                                     type="button"
                                     onClick={handleAddRow}
-                                    className="w-full sm:w-auto px-6 py-3 bg-transparent border border-[#0071E3] text-[#0071E3] rounded-[8px] hover:bg-[#0071E3]/10 transition-all flex items-center justify-center gap-2 font-bold text-xs uppercase tracking-widest active:scale-95"
+                                    className="w-full sm:w-auto px-5 py-3 bg-[#e4e4e7] border border-white text-black rounded-lg hover:bg-white transition-colors flex items-center justify-center gap-2 font-semibold text-sm"
                                 >
                                     <PlusCircle className="w-4 h-4" />
                                     Agregar Fila
@@ -526,10 +527,10 @@ export default function IngresarArticulo() {
                                 {detalles.map((row, index) => (
                                     <div
                                         key={row.id}
-                                        className="bg-[#1D1D1F] border border-[#333333] rounded-[8px] p-6 relative overflow-hidden group animate-in slide-in-from-right-4 duration-300"
+                                        className="bg-[#111112] border border-[#3f3f46] rounded-lg p-5 relative overflow-hidden group animate-in slide-in-from-right-4 duration-300"
                                         style={{ animationDelay: `${index * 50}ms` }}
                                     >
-                                        <div className="absolute top-0 left-0 w-1.5 h-full bg-[#0071E3]" />
+                                        <div className="absolute top-0 left-0 w-px h-full bg-white/50" />
 
                                         <div className="flex flex-col md:flex-row gap-8 items-start">
                                             {/* Article Selector */}
@@ -540,10 +541,10 @@ export default function IngresarArticulo() {
                                                         setCurrentDetailIndex(index);
                                                         setShowArticleModal(true);
                                                     }}
-                                                    className="bg-black/20 border border-[#424245] rounded-[8px] p-4 text-[#F5F5F7] text-sm min-h-[70px] flex items-center justify-between cursor-pointer hover:border-[#0071E3]/50 transition-all group/field"
+                                                    className="bg-[#0d0d0e] border border-[#3f3f46] rounded-lg p-4 text-white text-sm min-h-[70px] flex items-center justify-between cursor-pointer hover:border-[#a1a1aa] transition-colors group/field"
                                                 >
                                                     <div className="flex items-center gap-4 min-w-0">
-                                                        <div className="w-12 h-12 bg-[#121212] rounded-[8px] border border-[#333333] flex items-center justify-center shrink-0 overflow-hidden text-[#0071E3]/30 font-bold text-xs">
+                                                        <div className="w-12 h-12 bg-[#18181b] rounded-lg border border-[#3f3f46] flex items-center justify-center shrink-0 overflow-hidden text-[#71717a] font-bold text-xs">
                                                             {row.articulo?.imagen_url ? (
                                                                 <img src={row.articulo.imagen_url} className="w-full h-full object-cover" />
                                                             ) : (
@@ -567,14 +568,14 @@ export default function IngresarArticulo() {
                                                         value={row.cantidad}
                                                         onChange={(e) => handleDetailChange(index, 'cantidad', e.target.value)}
                                                         onWheel={handleQuantityWheel}
-                                                        className="w-full bg-black/20 border border-[#424245] rounded-[8px] p-4 text-[#F5F5F7] text-2xl font-bold focus:border-[#0071E3] outline-none transition-all text-center tabular-nums"
+                                                        className="w-full bg-[#0d0d0e] border border-[#3f3f46] rounded-lg p-4 text-white text-2xl font-semibold focus:border-[#a1a1aa] outline-none transition-colors text-center tabular-nums"
                                                         placeholder="0"
                                                     />
                                                 </div>
                                                 <button
                                                     type="button"
                                                     onClick={() => handleRemoveRow(index)}
-                                                    className="p-5 bg-rose-500/10 text-rose-500 rounded-[8px] border border-rose-500/20 active:scale-95 transition-all mt-auto hover:bg-rose-500/20"
+                                                    className="p-5 bg-[#18181b] text-[#a1a1aa] rounded-lg border border-[#3f3f46] transition-colors mt-auto hover:border-[#71717a] hover:text-white"
                                                 >
                                                     <Trash2 className="w-6 h-6" />
                                                 </button>
@@ -586,7 +587,7 @@ export default function IngresarArticulo() {
                                             <div className="mt-5 pt-5 border-t border-[#333333] flex flex-wrap gap-4 items-center">
                                                 <span className="text-[9px] font-bold text-[#86868B] uppercase tracking-[0.2em]">Detalles:</span>
                                                 <div className="flex gap-2">
-                                                    <span className="bg-[#0071E3]/10 border border-[#0071E3]/20 text-[#0071E3] px-3 py-1 rounded-[4px] text-[10px] font-bold font-mono">
+                                                    <span className="bg-[#18181b] border border-[#3f3f46] text-[#d4d4d8] px-3 py-1 rounded-md text-[10px] font-semibold font-mono">
                                                         {row.articulo.codigo_articulo}
                                                     </span>
                                                     <span className="bg-black/20 border border-[#333333] text-[#86868B] px-3 py-1 rounded-[4px] text-[10px] font-bold uppercase">
@@ -608,10 +609,10 @@ export default function IngresarArticulo() {
                             <button
                                 type="submit"
                                 disabled={saving || loading}
-                                className="w-full md:w-auto md:ml-auto px-12 py-5 bg-[#0071E3] text-white font-bold rounded-[8px] hover:brightness-110 transition-all flex items-center justify-center gap-4 disabled:opacity-30 shadow-2xl active:scale-[0.98] text-xl uppercase tracking-widest"
+                            className="w-full md:w-auto md:ml-auto h-14 px-8 bg-[#e4e4e7] text-black font-semibold rounded-lg hover:bg-white transition-colors flex items-center justify-center gap-3 disabled:opacity-30 text-sm"
                             >
                                 {saving ? <Loader2 className="w-7 h-7 animate-spin" /> : <Save className="w-7 h-7" />}
-                                <span>Procesar Entrada</span>
+                                <span>Procesar entrada</span>
                             </button>
                         </div>
                     </form>
@@ -620,10 +621,10 @@ export default function IngresarArticulo() {
                 {/* Recent History Sidebar */}
                 {showHistory && (
                     <div className="lg:col-span-3 lg:sticky lg:top-24 h-fit animate-in slide-in-from-right-8 duration-500">
-                        <div className="bg-[#121212] border border-[#333333] rounded-[8px] shadow-2xl overflow-hidden flex flex-col">
-                            <div className="p-6 bg-black/20 border-b border-[#333333] flex items-center justify-between">
+                        <div className="bg-[#0d0d0e] border border-[#3f3f46] rounded-xl overflow-hidden flex flex-col">
+                            <div className="p-5 bg-[#111112] border-b border-[#3f3f46] flex items-center justify-between">
                                 <h3 className="font-bold text-[#F5F5F7] text-xs uppercase tracking-widest flex items-center gap-2">
-                                    <History className="w-4 h-4 text-[#0071E3]" />
+                                    <History className="w-4 h-4 text-[#d4d4d8]" />
                                     Recientes
                                 </h3>
                             </div>
@@ -637,9 +638,9 @@ export default function IngresarArticulo() {
                                     </div>
                                 ) : (
                                     recentHistory.map((entry) => (
-                                        <div key={entry.id} className="bg-[#1D1D1F] border border-[#333333] rounded-[8px] p-5 hover:border-[#0071E3]/30 transition-all group relative overflow-hidden">
+                                        <div key={entry.id} className="bg-[#18181b] border border-[#3f3f46] rounded-lg p-5 hover:border-[#71717a] transition-colors group relative overflow-hidden">
                                             <div className="flex justify-between items-start mb-4">
-                                                <span className="font-bold text-[10px] text-[#0071E3] bg-[#0071E3]/10 px-3 py-1 rounded-[4px] border border-[#0071E3]/20 font-mono">
+                                                <span className="font-semibold text-[10px] text-white bg-[#111112] px-3 py-1 rounded-md border border-[#52525b] font-mono">
                                                     #{entry.id}
                                                 </span>
                                                 <span className="text-[9px] font-bold text-[#86868B] tabular-nums">{entry.timestamp}</span>
@@ -648,7 +649,7 @@ export default function IngresarArticulo() {
                                                 {entry.origen}
                                             </p>
                                             <div className="flex items-center gap-2 mt-4 text-[#86868B] mb-4">
-                                                <div className="w-1.5 h-1.5 rounded-full bg-[#0071E3]" />
+                                                <div className="w-1.5 h-1.5 rounded-full bg-[#d4d4d8]" />
                                                 <span className="text-[10px] font-bold uppercase tracking-tight">
                                                     {entry.itemsCount} artículo{entry.itemsCount !== 1 ? 's' : ''}
                                                 </span>
@@ -663,7 +664,7 @@ export default function IngresarArticulo() {
                                                                 <span className="text-[10px] font-bold text-[#F5F5F7] line-clamp-2 leading-tight flex-1">
                                                                     {item.nombre}
                                                                 </span>
-                                                                <span className="text-[11px] font-black text-[#0071E3] tabular-nums shrink-0 bg-[#0071E3]/5 px-1.5 py-0.5 rounded">
+                                                                <span className="text-[11px] font-semibold text-white tabular-nums shrink-0 bg-[#111112] border border-[#3f3f46] px-1.5 py-0.5 rounded">
                                                                     x{item.cantidad}
                                                                 </span>
                                                             </div>
@@ -703,20 +704,20 @@ export default function IngresarArticulo() {
                     setCurrentDetailIndex(null);
                 }}
                 onSelect={handleSelectArticle}
-                themeColor="blue"
-                title="BUSCADOR"
+                themeColor="neutral"
+                title="Seleccionar artículo"
                 showOnlyAvailable={false}
             />
 
             {/* Origen Search Modal */}
             {showOrigenModal && (
                 <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/95 backdrop-blur-sm animate-in fade-in duration-200">
-                    <div className="bg-[#121212] border border-[#333333] rounded-[8px] w-full max-w-md shadow-2xl overflow-hidden flex flex-col max-h-[85vh]">
-                        <div className="p-8 border-b border-[#333333] bg-black/20">
+                    <div className="bg-[#0d0d0e] border border-[#3f3f46] rounded-xl w-full max-w-md shadow-2xl overflow-hidden flex flex-col max-h-[85vh]">
+                        <div className="p-6 border-b border-[#3f3f46] bg-[#111112]">
                             <div className="flex justify-between items-center mb-6">
                                 <div>
-                                    <h3 className="text-xl font-bold text-[#F5F5F7] uppercase tracking-widest flex items-center gap-3 italic">
-                                        <Building2 className="w-6 h-6 text-[#0071E3]" />
+                                    <h3 className="text-xl font-semibold text-white flex items-center gap-3">
+                                        <Building2 className="w-6 h-6 text-[#d4d4d8]" />
                                         Origen
                                     </h3>
                                     <p className="text-[10px] font-bold text-[#86868B] uppercase mt-2 tracking-[0.2em]">Seleccione la procedencia</p>
@@ -733,7 +734,7 @@ export default function IngresarArticulo() {
                                     placeholder="Buscar origen..."
                                     value={origenSearchTerm}
                                     onChange={(e) => setOrigenSearchTerm(e.target.value)}
-                                    className="w-full bg-[#1D1D1F] border border-[#333333] rounded-[8px] py-4 pl-12 pr-4 text-[#F5F5F7] placeholder-[#424245] focus:border-[#0071E3]/50 outline-none transition-all text-sm font-bold uppercase"
+                                    className="w-full bg-[#18181b] border border-[#3f3f46] rounded-lg py-4 pl-12 pr-4 text-white placeholder-[#71717a] focus:border-[#a1a1aa] outline-none transition-colors text-sm font-medium"
                                 />
                             </div>
                         </div>
@@ -749,7 +750,7 @@ export default function IngresarArticulo() {
                                     className="w-full text-left px-6 py-5 rounded-[8px] border border-transparent hover:border-[#333333] hover:bg-[#1D1D1F] text-[#F5F5F7] transition-all flex items-center justify-between group"
                                 >
                                     <span className="font-bold text-sm tracking-wide">{item.origen}</span>
-                                    <ChevronRight className="w-5 h-5 text-[#424245] group-hover:text-[#0071E3] group-hover:translate-x-1 transition-all" />
+                                    <ChevronRight className="w-5 h-5 text-[#71717a] group-hover:text-white group-hover:translate-x-1 transition-all" />
                                 </button>
                             ))}
                             {filteredOrigenes.length === 0 && (
