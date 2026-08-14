@@ -50,12 +50,12 @@ export default function ColaboradorSearchModal({
     if (!isOpen) return null;
 
     return createPortal(
-        <div className="fixed inset-0 z-[99999] flex items-center justify-center p-4 bg-black/85">
-            <div className="bg-[#121212] w-full max-w-lg rounded-[8px] border border-[#333333] shadow-4xl flex flex-col max-h-[85vh] overflow-hidden">
+        <div className="fixed inset-0 z-[99999] flex items-center justify-center p-4 bg-black/85 backdrop-blur-md">
+            <div className="bg-[#0b0b0c] w-full max-w-xl rounded-2xl border border-[#3f3f46] shadow-2xl flex flex-col max-h-[85vh] overflow-hidden">
                 {/* Header */}
-                <div className="p-6 border-b border-[#333333] flex justify-between items-center bg-black/20">
-                    <h3 className="text-[15px] font-black text-[#F5F5F7] uppercase tracking-widest flex items-center gap-3">
-                        <User className="w-5 h-5 text-[#0071E3]" />
+                <div className="px-6 py-5 border-b border-[#27272a] flex justify-between items-center">
+                    <h3 className="text-lg font-semibold text-white flex items-center gap-3">
+                        <User className="w-5 h-5 text-[#d4d4d8]" />
                         {title}
                     </h3>
                     <button
@@ -63,22 +63,22 @@ export default function ColaboradorSearchModal({
                             console.log('Close button clicked');
                             onClose();
                         }}
-                        className="text-gray-400 hover:text-white transition-colors p-1 hover:bg-white/10 rounded-lg"
+                        className="w-10 h-10 flex items-center justify-center text-[#a1a1aa] hover:text-white transition-colors bg-[#111112] border border-[#3f3f46] hover:bg-[#18181b] rounded-lg"
                     >
                         <X className="w-5 h-5" />
                     </button>
                 </div>
 
                 {/* Search Input */}
-                <div className="p-6 border-b border-[#333333]">
+                <div className="p-5 border-b border-[#27272a]">
                     <div className="relative group">
-                        <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-[#86868B] group-focus-within:text-[#0071E3] transition-colors" />
+                        <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-[#71717a] group-focus-within:text-white transition-colors" />
                         <input
                             type="text"
                             placeholder="Buscar por nombre, ID o alias..."
                             value={searchTerm}
                             onChange={(e) => setSearchTerm(e.target.value)}
-                            className="w-full bg-[#1D1D1F] border border-[#333333] rounded-[8px] pl-12 pr-6 py-4 text-sm text-[#F5F5F7] focus:border-[#0071E3] outline-none transition-all placeholder:text-[#424245] font-bold"
+                            className="w-full bg-[#111112] border border-[#3f3f46] rounded-lg pl-11 pr-5 py-3.5 text-sm text-white focus:border-[#a1a1aa] outline-none transition-colors placeholder:text-[#71717a]"
                             autoFocus
                         />
                     </div>
@@ -88,7 +88,7 @@ export default function ColaboradorSearchModal({
                 <div className="flex-1 overflow-y-auto p-2">
                     {loading ? (
                         <div className="flex justify-center py-8">
-                            <Loader2 className="w-8 h-8 animate-spin text-blue-500" />
+                            <Loader2 className="w-8 h-8 animate-spin text-white" />
                         </div>
                     ) : (
                         <div className="space-y-1 px-2">
@@ -100,18 +100,18 @@ export default function ColaboradorSearchModal({
                                         onSelect(item);
                                         onClose();
                                     }}
-                                    className="p-4 rounded-[8px] hover:bg-[#1D1D1F] cursor-pointer border border-transparent hover:border-[#333333] transition-all group flex items-center justify-between"
+                                    className="p-4 rounded-lg bg-[#111112] cursor-pointer border border-[#27272a] hover:border-[#a1a1aa] hover:bg-[#18181b] transition-colors group flex items-center justify-between"
                                 >
                                     <div className="flex flex-col">
-                                        <h4 className="text-sm font-black text-[#F5F5F7] group-hover:text-[#0071E3] transition-colors uppercase tracking-tight">
+                                        <h4 className="text-sm font-semibold text-[#f4f4f5] transition-colors">
                                             {item.alias || item.colaborador}
                                         </h4>
-                                        <p className="text-[10px] text-[#86868B] font-bold uppercase tracking-widest mt-0.5">
+                                        <p className="text-[10px] text-[#71717a] font-medium uppercase tracking-wider mt-1">
                                             ID: {item.identificacion}
                                             {item.alias && <span className="ml-2 opacity-50">({item.colaborador})</span>}
                                         </p>
                                     </div>
-                                    <User className="w-4 h-4 text-[#333333] group-hover:text-[#0071E3] opacity-0 group-hover:opacity-100 transition-all" />
+                                    <User className="w-4 h-4 text-[#71717a] group-hover:text-white transition-colors" />
                                 </div>
                             ))}
 
@@ -128,7 +128,7 @@ export default function ColaboradorSearchModal({
                 </div>
 
                 {/* Footer */}
-                <div className="p-4 border-t border-[#333333] bg-black/20 text-[9px] text-[#86868B] font-black uppercase tracking-widest text-center">
+                <div className="p-4 border-t border-[#27272a] text-xs text-[#71717a] font-medium text-center">
                     {filteredColaboradores.length} encontrados
                 </div>
             </div>

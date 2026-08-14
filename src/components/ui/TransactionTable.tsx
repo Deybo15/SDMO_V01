@@ -20,8 +20,10 @@ export const TransactionTable = ({
     onOpenSearch,
     onAddRow,
     onWarning,
+    themeColor,
     maxItems = 10
 }: TransactionTableProps) => {
+    const isNeutral = themeColor === '#e4e4e7';
 
     const currentMax = maxItems;
     const limitReached = items.length >= currentMax;
@@ -47,7 +49,9 @@ export const TransactionTable = ({
                         "w-full sm:w-auto h-12 px-8 font-black rounded-[8px] transition-all flex items-center justify-center gap-2.5 text-[10px] uppercase tracking-widest",
                         limitReached
                             ? "bg-[#1D1D1F] border border-[#333333] text-[#424245] cursor-not-allowed"
-                            : "bg-[#0071E3] hover:brightness-110 text-white shadow-xl shadow-[#0071E3]/20 active:scale-95"
+                            : isNeutral
+                                ? "border border-white bg-[#e4e4e7] text-black shadow-xl shadow-black/30 hover:bg-white active:scale-95"
+                                : "bg-[#0071E3] hover:brightness-110 text-white shadow-xl shadow-[#0071E3]/20 active:scale-95"
                     )}
                 >
                     <PlusCircle className="w-5 h-5" />
@@ -73,12 +77,12 @@ export const TransactionTable = ({
                                 <td className="py-5 pl-4">
                                     <div
                                         onClick={() => onOpenSearch(index)}
-                                        className="w-full bg-[#1D1D1F] border border-[#333333] rounded-[8px] py-4 pl-6 pr-12 text-[#F5F5F7] text-[13px] cursor-pointer hover:border-[#0071E3]/50 transition-all min-h-[56px] flex items-center relative shadow-sm"
+                                        className={cn("w-full bg-[#1D1D1F] border border-[#333333] rounded-[8px] py-4 pl-6 pr-12 text-[#F5F5F7] text-[13px] cursor-pointer transition-all min-h-[56px] flex items-center relative shadow-sm", isNeutral ? "hover:border-[#a1a1aa]" : "hover:border-[#0071E3]/50")}
                                     >
                                         <span className={`line-clamp-2 uppercase font-black tracking-tight ${!item.articulo ? 'text-[#86868B] italic' : ''}`}>
                                             {item.articulo || "Buscar artículo..."}
                                         </span>
-                                        <Search className="absolute right-5 top-1/2 -translate-y-1/2 w-4 h-4 text-[#0071E3] group-hover:scale-110 transition-transform" />
+                                        <Search className={cn("absolute right-5 top-1/2 -translate-y-1/2 w-4 h-4 group-hover:scale-110 transition-transform", isNeutral ? "text-[#d4d4d8]" : "text-[#0071E3]")} />
                                     </div>
                                 </td>
                                 <td className="py-5">
@@ -114,12 +118,12 @@ export const TransactionTable = ({
                                                 }
                                             }}
                                             onFocus={(e) => e.target.select()}
-                                            className="w-full h-14 bg-black/40 border border-[#333333] rounded-[8px] px-6 text-[#F5F5F7] text-lg font-black focus:border-[#0071E3]/50 focus:outline-none transition-all placeholder-[#424245] shadow-inner font-mono"
+                                            className={cn("w-full h-14 bg-black/40 border border-[#333333] rounded-[8px] px-6 text-[#F5F5F7] text-lg font-black focus:outline-none transition-all placeholder-[#424245] shadow-inner font-mono", isNeutral ? "focus:border-[#d4d4d8]" : "focus:border-[#0071E3]/50")}
                                             placeholder="0"
                                         />
                                         {item.cantidad_disponible !== undefined && item.codigo_articulo && (
                                             <div className="text-[11px] text-[#86868B] mt-2 font-black uppercase tracking-widest pl-1">
-                                                Stock: <span className="text-[#0071E3]">{item.cantidad_disponible}</span>
+                                                Stock: <span className={isNeutral ? "text-[#f4f4f5]" : "text-[#0071E3]"}>{item.cantidad_disponible}</span>
                                             </div>
                                         )}
                                     </div>
@@ -146,7 +150,7 @@ export const TransactionTable = ({
             <div className="md:hidden space-y-6">
                 {items.map((item, index) => (
                     <div key={index} className="bg-[#1D1D1F] border border-[#333333] rounded-[8px] p-6 shadow-xl relative overflow-hidden group">
-                        <div className="absolute top-0 left-0 w-1 h-full bg-[#0071E3]" />
+                        <div className={cn("absolute top-0 left-0 w-1 h-full", isNeutral ? "bg-[#d4d4d8]" : "bg-[#0071E3]")} />
 
                         <div className="flex justify-between items-start gap-4 mb-6">
                             <div className="flex-1 min-w-0">
@@ -158,7 +162,7 @@ export const TransactionTable = ({
                                     <span className={`line-clamp-2 font-black text-xs uppercase tracking-tight ${!item.articulo ? 'text-[#86868B] italic' : ''}`}>
                                         {item.articulo || "Seleccionar..."}
                                     </span>
-                                    <Search className="w-5 h-5 text-[#0071E3] shrink-0 ml-3" />
+                                    <Search className={cn("w-5 h-5 shrink-0 ml-3", isNeutral ? "text-[#d4d4d8]" : "text-[#0071E3]")} />
                                 </div>
                             </div>
                             <button
@@ -199,12 +203,12 @@ export const TransactionTable = ({
                                                 onUpdateRow(index, 'cantidad', '0' + val);
                                             }
                                         }}
-                                        className="w-full h-14 bg-black/40 border border-[#333333] rounded-[8px] px-4 text-[#F5F5F7] text-xl font-black focus:border-[#0071E3] outline-none transition-all shadow-inner font-mono"
+                                        className={cn("w-full h-14 bg-black/40 border border-[#333333] rounded-[8px] px-4 text-[#F5F5F7] text-xl font-black outline-none transition-all shadow-inner font-mono", isNeutral ? "focus:border-[#d4d4d8]" : "focus:border-[#0071E3]")}
                                         placeholder="0"
                                     />
                                     {item.codigo_articulo && (
                                         <div className="flex items-center gap-2 mt-2">
-                                            <div className="w-1.5 h-1.5 rounded-full bg-[#0071E3]" />
+                                            <div className={cn("w-1.5 h-1.5 rounded-full", isNeutral ? "bg-[#d4d4d8]" : "bg-[#0071E3]")} />
                                             <span className="text-[11px] text-[#86868B] font-black uppercase tracking-tight">
                                                 DISP: <span className="text-[#F5F5F7]">{item.cantidad_disponible}</span> {item.unidad}
                                             </span>
@@ -217,7 +221,7 @@ export const TransactionTable = ({
                                 <div className="space-y-2">
                                     <div className="flex items-center justify-between bg-black/20 border border-[#333333] rounded-[4px] px-3 py-2">
                                         <span className="text-[8px] font-black text-[#86868B] uppercase">Marca</span>
-                                        <span className="text-[10px] font-black text-[#0071E3] truncate ml-2 uppercase">{item.marca || 'N/A'}</span>
+                                        <span className={cn("text-[10px] font-black truncate ml-2 uppercase", isNeutral ? "text-[#d4d4d8]" : "text-[#0071E3]")}>{item.marca || 'N/A'}</span>
                                     </div>
                                     <div className="flex items-center justify-between bg-black/20 border border-[#333333] rounded-[4px] px-3 py-2">
                                         <span className="text-[8px] font-black text-[#86868B] uppercase">Uni.</span>
@@ -237,7 +241,7 @@ export const TransactionTable = ({
                     <p className="text-[#86868B] font-black uppercase tracking-[0.2em] text-[10px] mb-6">No hay artículos cargados</p>
                     <button
                         onClick={onAddRow}
-                        className="text-[#0071E3] font-black text-[11px] uppercase tracking-widest hover:underline active:scale-95 transition-all"
+                        className={cn("font-black text-[11px] uppercase tracking-widest hover:underline active:scale-95 transition-all", isNeutral ? "text-[#f4f4f5]" : "text-[#0071E3]")}
                     >
                         Haz clic aquí para agregar el primero
                     </button>

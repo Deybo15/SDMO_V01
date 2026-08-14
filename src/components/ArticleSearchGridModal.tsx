@@ -121,25 +121,29 @@ export default function ArticleSearchGridModal({
     const accentClasses = {
         teal: 'text-teal-400 border-teal-500/30 bg-teal-500/10 hover:border-teal-500/50 shadow-teal-500/10',
         blue: 'text-blue-400 border-blue-500/30 bg-blue-500/10 hover:border-blue-500/50 shadow-blue-500/10',
-        purple: 'text-purple-400 border-purple-500/30 bg-purple-500/10 hover:border-purple-500/50 shadow-purple-500/10'
-    }[themeColor as 'teal' | 'blue' | 'purple'] || 'text-teal-400 border-teal-500/30 bg-teal-500/10';
+        purple: 'text-purple-400 border-purple-500/30 bg-purple-500/10 hover:border-purple-500/50 shadow-purple-500/10',
+        neutral: 'text-white border-[#52525b] bg-[#18181b] hover:border-[#a1a1aa]'
+    }[themeColor as 'teal' | 'blue' | 'purple' | 'neutral'] || 'text-teal-400 border-teal-500/30 bg-teal-500/10';
 
     const accentButtonClasses = {
         teal: 'text-teal-400 hover:border-teal-500/30 hover:bg-teal-500/10',
         blue: 'text-blue-400 hover:border-blue-500/30 hover:bg-blue-500/10',
-        purple: 'text-purple-400 hover:border-purple-500/30 hover:bg-purple-500/10'
-    }[themeColor as 'teal' | 'blue' | 'purple'] || 'text-teal-400 hover:border-teal-500/30 hover:bg-teal-500/10';
+        purple: 'text-purple-400 hover:border-purple-500/30 hover:bg-purple-500/10',
+        neutral: 'text-white hover:border-[#a1a1aa] hover:bg-[#18181b]'
+    }[themeColor as 'teal' | 'blue' | 'purple' | 'neutral'] || 'text-teal-400 hover:border-teal-500/30 hover:bg-teal-500/10';
+
+    const isNeutral = themeColor === 'neutral';
 
     return createPortal(
         <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 md:p-6 animate-in fade-in duration-300">
             <div className="absolute inset-0 bg-black/60 backdrop-blur-xl" onClick={onClose} />
 
-            <div className="relative w-full max-w-6xl bg-[#0f111a]/95 border border-white/10 rounded-3xl shadow-[0_0_80px_rgba(0,0,0,0.8)] overflow-hidden flex flex-col h-[90vh] animate-in zoom-in-95 duration-300">
+            <div className={cn("relative w-full max-w-6xl border overflow-hidden flex flex-col h-[90vh] animate-in zoom-in-95 duration-300", isNeutral ? "bg-[#0b0b0c] border-[#3f3f46] rounded-2xl shadow-2xl" : "bg-[#0f111a]/95 border-white/10 rounded-3xl shadow-[0_0_80px_rgba(0,0,0,0.8)]")}>
                 {/* Modal Header */}
                 <div className="px-8 py-6 border-b border-white/10 flex justify-between items-center bg-black/40 shrink-0">
                     <div>
                         <h3 className="text-3xl font-black text-white flex items-center gap-4 italic tracking-tight uppercase">
-                            <Search className={cn("w-8 h-8", themeColor === 'teal' ? "text-teal-400" : themeColor === 'blue' ? "text-blue-400" : "text-purple-400")} />
+                            <Search className={cn("w-8 h-8", isNeutral ? "text-[#d4d4d8]" : themeColor === 'teal' ? "text-teal-400" : themeColor === 'blue' ? "text-blue-400" : "text-purple-400")} />
                             {title}
                         </h3>
                         <p className="text-[10px] font-black uppercase tracking-[0.2em] text-gray-500 mt-2">Seleccione un elemento de la rejilla para continuar</p>
@@ -155,13 +159,13 @@ export default function ArticleSearchGridModal({
                 {/* Search Bar */}
                 <div className="px-8 py-6 bg-black/20 border-b border-white/5 shrink-0">
                     <div className="relative group">
-                        <Search className="absolute left-6 top-1/2 -translate-y-1/2 w-6 h-6 text-gray-600 group-focus-within:text-teal-400 transition-colors" />
+                        <Search className={cn("absolute left-6 top-1/2 -translate-y-1/2 w-6 h-6 text-gray-600 transition-colors", isNeutral ? "group-focus-within:text-white" : "group-focus-within:text-teal-400")} />
                         <input
                             type="text"
                             placeholder="Buscar por código o nombre del artículo..."
                             value={searchTerm}
                             onChange={(e) => setSearchTerm(e.target.value)}
-                            className="w-full bg-black/40 border border-white/10 rounded-2xl py-5 pl-16 pr-8 text-white text-lg font-medium outline-none focus:border-teal-500/50 focus:ring-4 focus:ring-teal-500/5 transition-all placeholder:text-gray-700"
+                            className={cn("w-full bg-black/40 border rounded-2xl py-5 pl-16 pr-8 text-white text-lg font-medium outline-none transition-all placeholder:text-gray-700", isNeutral ? "border-[#3f3f46] focus:border-[#a1a1aa]" : "border-white/10 focus:border-teal-500/50 focus:ring-4 focus:ring-teal-500/5")}
                             autoFocus
                         />
                     </div>
@@ -171,7 +175,7 @@ export default function ArticleSearchGridModal({
                 <div className="flex-1 overflow-y-auto p-8 custom-scrollbar bg-black/10">
                     {loading && articles.length === 0 ? (
                         <div className="flex flex-col items-center justify-center py-32 gap-6">
-                            <Loader2 className="w-16 h-16 text-teal-400 animate-spin" />
+                            <Loader2 className={cn("w-16 h-16 animate-spin", isNeutral ? "text-white" : "text-teal-400")} />
                             <p className="text-gray-500 font-bold text-xl animate-pulse uppercase tracking-[0.1em]">Consultando Inventario...</p>
                         </div>
                     ) : articles.length > 0 ? (
@@ -181,7 +185,8 @@ export default function ArticleSearchGridModal({
                                     key={art.codigo_articulo}
                                     onClick={() => onSelect(art)}
                                     className={cn(
-                                        "group relative bg-white/[0.03] border border-white/5 rounded-3xl p-5 hover:bg-white/[0.08] hover:border-teal-500/40 transition-all cursor-pointer flex flex-col h-full shadow-2xl hover:shadow-teal-500/20",
+                                        "group relative bg-white/[0.03] border border-white/5 rounded-3xl p-5 hover:bg-white/[0.08] transition-all cursor-pointer flex flex-col h-full shadow-2xl",
+                                        isNeutral ? "hover:border-[#a1a1aa]" : "hover:border-teal-500/40 hover:shadow-teal-500/20",
                                         art.cantidad_disponible === 0 && "opacity-60"
                                     )}
                                 >
@@ -203,14 +208,14 @@ export default function ArticleSearchGridModal({
                                                 <ImageIcon className="w-12 h-12 text-gray-800" />
                                             </div>
                                         )}
-                                        <div className="absolute top-3 right-3 px-3 py-1 bg-black/80 backdrop-blur-md rounded-lg text-[9px] font-black text-teal-400 border border-teal-500/40 uppercase tracking-widest shadow-xl">
+                                        <div className={cn("absolute top-3 right-3 px-3 py-1 bg-black/80 backdrop-blur-md rounded-lg text-[9px] font-semibold border uppercase tracking-widest shadow-xl", isNeutral ? "text-white border-[#71717a]" : "text-teal-400 border-teal-500/40")}>
                                             {art.unidad}
                                         </div>
                                     </div>
 
                                     {/* Content */}
                                     <div className="flex-1 flex flex-col">
-                                        <h4 className="font-bold text-white group-hover:text-teal-400 transition-colors mb-3 leading-snug uppercase italic text-sm tracking-tight">
+                                        <h4 className={cn("font-bold text-white transition-colors mb-3 leading-snug text-sm tracking-tight", isNeutral ? "group-hover:text-white" : "group-hover:text-teal-400 uppercase italic")}>
                                             {art.nombre_articulo}
                                         </h4>
                                         <div className="flex items-center gap-3 mb-4">
@@ -218,7 +223,7 @@ export default function ArticleSearchGridModal({
                                                 {art.codigo_articulo}
                                             </span>
                                             {art.marca && (
-                                                <span className="text-[10px] uppercase font-black text-teal-500/70 tracking-widest">
+                                                <span className={cn("text-[10px] uppercase font-semibold tracking-widest", isNeutral ? "text-[#a1a1aa]" : "text-teal-500/70")}>
                                                     {art.marca}
                                                 </span>
                                             )}
@@ -231,12 +236,12 @@ export default function ArticleSearchGridModal({
                                             <span className="text-[9px] text-gray-600 uppercase font-black tracking-widest mb-1 italic">Stock Disponible</span>
                                             <span className={cn(
                                                 "text-2xl font-black italic",
-                                                art.cantidad_disponible > 0 ? "text-teal-400" : "text-rose-500"
+                                                art.cantidad_disponible > 0 ? (isNeutral ? "text-white" : "text-teal-400") : (isNeutral ? "text-[#71717a]" : "text-rose-500")
                                             )}>
                                                 {art.cantidad_disponible}
                                             </span>
                                         </div>
-                                        <div className="w-12 h-12 rounded-2xl bg-teal-500/10 border border-teal-500/20 flex items-center justify-center group-hover:bg-teal-400 group-hover:text-black transition-all shadow-inner">
+                                        <div className={cn("w-12 h-12 rounded-2xl border flex items-center justify-center transition-all shadow-inner", isNeutral ? "bg-[#18181b] border-[#52525b] group-hover:bg-white group-hover:text-black" : "bg-teal-500/10 border-teal-500/20 group-hover:bg-teal-400 group-hover:text-black")}>
                                             <PlusCircle className="w-6 h-6" />
                                         </div>
                                     </div>

@@ -396,23 +396,24 @@ export default function RealizarSalida() {
     };
 
     return (
-        <div className="min-h-screen bg-[#000000] text-[#F5F5F7] flex flex-col pt-4">
+        <div className="min-h-screen bg-black text-[#f4f4f5] flex flex-col pt-4 selection:bg-white/20">
             <PageHeader
                 title="Realizar Salida"
                 icon={Box}
+                themeColor="neutral"
                 subtitle="Registro de salida de materiales y consumibles del inventario."
                 rightElement={
                     <button
                         onClick={() => navigate('/cliente-interno/realizar-salidas')}
-                        className="btn-ghost px-6 py-3 border border-[#F5F5F7]/20 rounded-[8px] hover:bg-[#F5F5F7]/5 transition-all flex items-center gap-2 group"
+                        className="px-5 py-3 bg-[#111112] border border-[#52525b] rounded-lg hover:bg-[#18181b] transition-colors flex items-center gap-2 group"
                     >
                         <ArrowLeft className="w-5 h-5 text-[#86868B] group-hover:text-[#F5F5F7] transition-colors" />
-                        <span className="text-[11px] font-bold text-[#86868B] group-hover:text-[#F5F5F7] uppercase tracking-widest">Regresar</span>
+                        <span className="text-sm font-semibold text-[#d4d4d8] group-hover:text-white">Regresar</span>
                     </button>
                 }
             />
 
-            <div className="max-w-[1400px] mx-auto w-full px-8 pb-20">
+            <div className="max-w-[1400px] mx-auto w-full px-4 md:px-8 pb-16">
                 {/* Feedback Toast */}
                 {feedback && (
                     <div className={cn(
@@ -424,37 +425,37 @@ export default function RealizarSalida() {
                     </div>
                 )}
 
-                <form onSubmit={handleSubmit} className="space-y-8">
+                <form onSubmit={handleSubmit} className="space-y-5">
                     {/* Section 1: Header Information */}
-                    <div className="bg-[#121212] border border-[#333333] rounded-[8px] shadow-2xl overflow-hidden p-8">
-                        <div className="space-y-1 mb-8">
-                            <h3 className="text-xl font-black text-white italic uppercase tracking-tight flex items-center gap-3">
-                                <Info className="w-5 h-5 text-[#0071E3]" />
-                                Información de la Salida
+                    <div className="bg-[#0d0d0e] border border-[#3f3f46] rounded-xl overflow-hidden p-6 md:p-8">
+                        <div className="space-y-1 mb-6">
+                            <h3 className="text-xl font-semibold text-white tracking-tight flex items-center gap-3">
+                                <Info className="w-5 h-5 text-[#d4d4d8]" />
+                                Información de la salida
                             </h3>
-                            <p className="text-[10px] font-black text-[#86868B] uppercase tracking-[0.2em] ml-8">Detalles generales del registro de salida</p>
+                            <p className="text-sm text-[#a1a1aa] ml-8">Datos generales de la entrega</p>
                         </div>
 
-                        <div className="grid grid-cols-1 md:grid-cols-3 gap-8 mb-8">
+                        <div className="grid grid-cols-1 md:grid-cols-3 gap-5 mb-6">
                             {/* Autoriza Selector */}
                             <div className="space-y-3">
-                                <label className="text-[10px] font-black text-[#86868B] uppercase tracking-widest ml-1 block">Responsable (Autoriza)</label>
+                                <label className="text-[10px] font-semibold text-[#a1a1aa] uppercase tracking-[0.14em] ml-1 block">Responsable (autoriza)</label>
                                 <div
                                     onClick={autorizaId ? undefined : () => handleOpenBusqueda('autoriza')}
                                     className={cn(
-                                        "group relative border rounded-[8px] p-5 transition-all flex items-center justify-between",
-                                        autorizaId ? "bg-black/20 border-[#333333] cursor-not-allowed text-[#86868B]" : "bg-[#1D1D1F] border-[#333333] cursor-pointer hover:border-[#0071E3]/50"
+                                        "group relative border rounded-lg p-4 transition-colors flex items-center justify-between",
+                                        autorizaId ? "bg-[#0a0a0b] border-[#27272a] cursor-not-allowed text-[#71717a]" : "bg-[#111112] border-[#3f3f46] cursor-pointer hover:border-[#a1a1aa]"
                                     )}
                                 >
                                     <div className="flex items-center gap-4 min-w-0">
                                         <div className={cn(
                                             "w-10 h-10 rounded-[4px] flex items-center justify-center shrink-0",
-                                            autorizaId ? "bg-black/40" : "bg-[#0071E3]/10"
+                                            autorizaId ? "bg-[#111112]" : "bg-[#18181b] border border-[#3f3f46]"
                                         )}>
-                                            <UserCircle className={cn("w-5 h-5", autorizaId ? "text-slate-600" : "text-[#0071E3]")} />
+                                            <UserCircle className={cn("w-5 h-5", autorizaId ? "text-[#52525b]" : "text-[#d4d4d8]")} />
                                         </div>
                                         <div className="min-w-0">
-                                            <span className={cn("block truncate font-bold text-[13px] uppercase", autorizaId ? 'text-[#86868B]' : 'text-white')}>
+                                            <span className={cn("block truncate font-semibold text-sm", autorizaId ? 'text-[#a1a1aa]' : 'text-white')}>
                                                 {autorizaAlias || 'Seleccionar...'}
                                             </span>
                                         </div>
@@ -465,17 +466,17 @@ export default function RealizarSalida() {
 
                             {/* Retira Selector */}
                             <div className="space-y-3">
-                                <label className="text-[10px] font-black text-[#86868B] uppercase tracking-widest ml-1 block">Persona que Retira</label>
+                                <label className="text-[10px] font-semibold text-[#a1a1aa] uppercase tracking-[0.14em] ml-1 block">Persona que retira</label>
                                 <div
                                     onClick={() => handleOpenBusqueda('retira')}
-                                    className="group relative bg-[#1D1D1F] border border-[#333333] rounded-[8px] p-5 cursor-pointer hover:border-[#0071E3]/50 transition-all flex items-center justify-between"
+                                    className="group relative bg-[#111112] border border-[#3f3f46] rounded-lg p-4 cursor-pointer hover:border-[#a1a1aa] transition-colors flex items-center justify-between"
                                 >
                                     <div className="flex items-center gap-4 min-w-0">
-                                        <div className="w-10 h-10 rounded-[4px] bg-[#0071E3]/10 flex items-center justify-center shrink-0">
-                                            <UserCircle className="w-5 h-5 text-[#0071E3]" />
+                                        <div className="w-10 h-10 rounded-lg bg-[#18181b] border border-[#3f3f46] flex items-center justify-center shrink-0">
+                                            <UserCircle className="w-5 h-5 text-[#d4d4d8]" />
                                         </div>
                                         <div className="min-w-0">
-                                            <span className={cn("block truncate font-bold text-[13px] uppercase", retiraId ? 'text-white' : 'text-[#86868B] italic')}>
+                                            <span className={cn("block truncate font-semibold text-sm", retiraId ? 'text-white' : 'text-[#71717a]')}>
                                                 {retiraName || 'Seleccionar...'}
                                             </span>
                                         </div>
@@ -486,7 +487,7 @@ export default function RealizarSalida() {
 
                             {/* Solicitud Input */}
                             <div className="space-y-3">
-                                <label className="text-[10px] font-black text-[#86868B] uppercase tracking-widest ml-1 block">Número de Solicitud</label>
+                                <label className="text-[10px] font-semibold text-[#a1a1aa] uppercase tracking-[0.14em] ml-1 block">Número de solicitud</label>
                                 <div className="relative group flex gap-3">
                                     <div className="relative flex-1">
                                         <Ticket className="absolute left-5 top-1/2 -translate-y-1/2 w-5 h-5 text-[#86868B]" />
@@ -494,7 +495,7 @@ export default function RealizarSalida() {
                                             type="text"
                                             value={numeroSolicitud}
                                             readOnly
-                                            className="w-full bg-black/20 border border-[#333333] rounded-[8px] py-4 pl-14 pr-4 text-[#86868B] font-bold cursor-not-allowed opacity-80"
+                                            className="w-full bg-[#0a0a0b] border border-[#27272a] rounded-lg py-4 pl-14 pr-4 text-[#a1a1aa] font-semibold cursor-not-allowed"
                                             placeholder="Sin número..."
                                         />
                                     </div>
@@ -502,7 +503,7 @@ export default function RealizarSalida() {
                                         type="button"
                                         onClick={() => setShowHistorialModal(true)}
                                         disabled={!numeroSolicitud}
-                                        className="h-14 px-5 bg-transparent border border-[#333333] rounded-[8px] text-[#F5F5F7] hover:bg-white/5 disabled:opacity-30 disabled:cursor-not-allowed transition-all"
+                                        className="h-14 px-5 bg-[#111112] border border-[#3f3f46] rounded-lg text-[#d4d4d8] hover:border-[#a1a1aa] hover:text-white disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
                                         title="Historial de materiales"
                                     >
                                         <ClipboardList className="w-6 h-6" />
@@ -512,13 +513,13 @@ export default function RealizarSalida() {
                         </div>
 
                         <div className="space-y-3">
-                            <label className="text-[10px] font-black text-[#86868B] uppercase tracking-widest ml-1 block">Observaciones adicionales</label>
+                            <label className="text-[10px] font-semibold text-[#a1a1aa] uppercase tracking-[0.14em] ml-1 block">Observaciones adicionales</label>
                             <div className="relative group">
-                                <MessageSquare className="absolute left-5 top-5 w-5 h-5 text-[#86868B] group-focus-within:text-[#0071E3] transition-colors" />
+                                <MessageSquare className="absolute left-5 top-5 w-5 h-5 text-[#71717a] group-focus-within:text-white transition-colors" />
                                 <textarea
                                     value={comentarios}
                                     onChange={(e) => setComentarios(e.target.value)}
-                                    className="w-full bg-[#1D1D1F] border border-[#333333] rounded-[8px] py-5 pl-14 pr-6 text-white font-medium placeholder-[#424245] focus:outline-none focus:border-[#0071E3]/50 transition-all min-h-[120px] resize-none"
+                                    className="w-full bg-[#111112] border border-[#3f3f46] rounded-lg py-5 pl-14 pr-6 text-white text-sm placeholder-[#52525b] focus:outline-none focus:border-[#a1a1aa] transition-colors min-h-[110px] resize-y"
                                     placeholder="Detalles sobre la entrega, destino o requerimientos especiales..."
                                 />
                             </div>
@@ -526,13 +527,13 @@ export default function RealizarSalida() {
                     </div>
 
                     {/* Section 2: Items Table */}
-                    <div className="bg-[#121212] border border-[#333333] rounded-[8px] shadow-2xl overflow-hidden p-8">
-                        <div className="space-y-1 mb-8">
-                            <h3 className="text-xl font-black text-white italic uppercase tracking-tight flex items-center gap-3">
-                                <ClipboardList className="w-5 h-5 text-[#0071E3]" />
-                                Detalle de Artículos
+                    <div className="bg-[#0d0d0e] border border-[#3f3f46] rounded-xl overflow-hidden p-6 md:p-8">
+                        <div className="space-y-1 mb-6">
+                            <h3 className="text-xl font-semibold text-white tracking-tight flex items-center gap-3">
+                                <ClipboardList className="w-5 h-5 text-[#d4d4d8]" />
+                                Detalle de artículos
                             </h3>
-                            <p className="text-[10px] font-black text-[#86868B] uppercase tracking-[0.2em] ml-8">Seleccione los materiales a entregar</p>
+                            <p className="text-sm text-[#a1a1aa] ml-8">Seleccione los materiales y sus cantidades</p>
                         </div>
                         <TransactionTable
                             items={items}
@@ -541,7 +542,7 @@ export default function RealizarSalida() {
                             onOpenSearch={handleOpenArticulos}
                             onAddRow={agregarFila}
                             onWarning={(msg) => showAlert(msg, 'warning')}
-                            themeColor="#0071E3"
+                            themeColor="#e4e4e7"
                         />
                     </div>
 
@@ -552,7 +553,7 @@ export default function RealizarSalida() {
                                 <button
                                     type="button"
                                     onClick={generarPDF}
-                                    className="h-14 px-8 bg-transparent border border-[#F5F5F7]/30 text-[#F5F5F7] rounded-[8px] text-[10px] font-black uppercase tracking-widest hover:bg-white/5 active:scale-95 transition-all flex items-center gap-3"
+                                    className="h-12 px-6 bg-[#111112] border border-[#52525b] text-white rounded-lg text-sm font-semibold hover:bg-[#18181b] transition-colors flex items-center gap-2"
                                 >
                                     <Printer className="w-5 h-5" />
                                     Imprimir Comprobante
@@ -562,10 +563,10 @@ export default function RealizarSalida() {
                                 type="submit"
                                 disabled={loading || !isFormValid}
                                 className={cn(
-                                    "h-14 px-12 text-white font-black text-xs rounded-[8px] uppercase tracking-widest transition-all flex items-center gap-3",
+                                    "h-12 px-8 font-semibold text-sm rounded-lg transition-colors flex items-center gap-2",
                                     (loading || !isFormValid)
-                                        ? "bg-[#333333] opacity-50 cursor-not-allowed"
-                                        : "bg-[#0071E3] hover:brightness-110 active:scale-95 shadow-xl shadow-[#0071E3]/20"
+                                        ? "bg-[#27272a] text-[#71717a] opacity-60 cursor-not-allowed"
+                                        : "bg-[#e4e4e7] text-black hover:bg-white"
                                 )}
                             >
                                 {loading ? <Loader2 className="w-6 h-6 animate-spin" /> : <Save className="w-6 h-6" />}
@@ -592,8 +593,8 @@ export default function RealizarSalida() {
                 isOpen={showArticulosModal}
                 onClose={() => setShowArticulosModal(false)}
                 onSelect={handleSelectArticulo}
-                themeColor="blue"
-                title="BUSCADOR"
+                themeColor="neutral"
+                title="Seleccionar artículo"
             />
 
             <HistorialMaterialesModal
