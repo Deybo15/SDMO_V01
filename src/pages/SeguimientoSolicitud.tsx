@@ -589,31 +589,31 @@ export default function SeguimientoSolicitud() {
                                             <div className="px-3 h-8 flex items-center bg-[#18181b] border border-[#3f3f46] rounded-md text-[10px] font-semibold text-[#d4d4d8] uppercase tracking-widest">{articulos.length} ítems</div>
                                         </div>
                                         <div className="overflow-x-auto">
-                                            <table className="w-full text-sm border-collapse">
-                                                <thead className="bg-[#1D1D1F]">
-                                                    <tr className="text-[9px] text-[#86868B] uppercase tracking-[0.2em] font-black">
-                                                        <th className="px-10 py-5 text-left">Ref. Salida</th>
-                                                        <th className="px-10 py-5 text-left">Fecha</th>
-                                                        <th className="px-10 py-5 text-left">Descripción del Artículo</th>
-                                                        <th className="px-10 py-5 text-right">Cantidad</th>
+                                            <table className="w-full table-fixed text-sm border-collapse">
+                                                <thead className="bg-[#151517]">
+                                                    <tr className="text-[9px] text-[#a1a1aa] uppercase tracking-[0.16em] font-semibold">
+                                                        <th className="w-[18%] px-5 py-4 text-left">Ref. salida</th>
+                                                        <th className="w-[18%] px-5 py-4 text-left">Fecha</th>
+                                                        <th className="w-[52%] px-5 py-4 text-left">Descripción del artículo</th>
+                                                        <th className="w-[12%] px-5 py-4 text-right">Cantidad</th>
                                                     </tr>
                                                 </thead>
                                                 <tbody className="divide-y divide-[#333333]">
                                                     {articulos.map((art, i) => (
-                                                        <tr key={i} className="hover:bg-white/5 transition-colors group">
-                                                            <td className="px-10 py-5 text-[11px] font-black text-[#424245] group-hover:text-[#0071E3] transition-colors">#{art.id_salida}</td>
-                                                            <td className="px-10 py-5">
-                                                                <p className="text-[10px] font-black text-[#86868B] uppercase tracking-tighter">{formatDateOnly(art.fecha_salida)}</p>
+                                                        <tr key={i} className="hover:bg-[#151517] transition-colors group">
+                                                            <td className="px-5 py-4 text-[11px] font-mono font-semibold text-[#a1a1aa]">#{art.id_salida}</td>
+                                                            <td className="px-5 py-4">
+                                                                <p className="text-[11px] font-medium text-[#d4d4d8] tabular-nums">{formatDateOnly(art.fecha_salida)}</p>
                                                             </td>
-                                                            <td className="px-10 py-5 text-[#F5F5F7]">
-                                                                <p className="font-black text-sm tracking-tight">{art.nombre_articulo}</p>
-                                                                <p className="text-[9px] text-[#0071E3] font-mono tracking-widest mt-1 uppercase opacity-60">{art.codigo_articulo}</p>
+                                                            <td className="px-5 py-4 text-[#f4f4f5]">
+                                                                <p className="font-semibold text-[13px] leading-snug">{art.nombre_articulo}</p>
+                                                                <p className="text-[10px] text-[#a1a1aa] font-mono mt-1">{art.codigo_articulo}</p>
                                                             </td>
-                                                            <td className="px-10 py-5 text-right"><span className="bg-[#1D1D1F] px-4 py-2 rounded-[8px] font-black text-[#0071E3] border border-[#333333]">{art.cantidad}</span></td>
+                                                            <td className="px-5 py-4 text-right"><span className="inline-flex min-w-10 justify-center rounded-md border border-[#52525b] bg-[#18181b] px-3 py-1.5 font-semibold tabular-nums text-white">{art.cantidad}</span></td>
                                                         </tr>
                                                     ))}
                                                     {articulos.length === 0 && (
-                                                        <tr><td colSpan={4} className="px-10 py-20 text-center text-[#333333] text-[10px] font-black uppercase tracking-[0.4em]">No se registran materiales suministrados</td></tr>
+                                                        <tr><td colSpan={4} className="px-6 py-16 text-center text-[#71717a] text-[10px] font-semibold uppercase tracking-[0.2em]">No se registran materiales suministrados</td></tr>
                                                     )}
                                                 </tbody>
                                             </table>
@@ -670,13 +670,6 @@ export default function SeguimientoSolicitud() {
                                         </div>
                                     </div>
 
-                                    <div className="bg-[#151517] border border-[#3f3f46] rounded-xl p-6 text-center">
-                                        <div className="w-12 h-12 bg-[#18181b] rounded-lg flex items-center justify-center mx-auto mb-4 border border-[#52525b]">
-                                            <History className="w-5 h-5 text-[#d4d4d8]" />
-                                        </div>
-                                        <p className="text-[10px] font-semibold text-white uppercase tracking-[0.2em] mb-3">Protocolo de cierre</p>
-                                        <p className="text-xs text-[#a1a1aa] leading-relaxed font-medium">Verifique que todos los materiales estén debidamente asociados y la bitácora técnica refleje fielmente las labores ejecutadas antes de dar el cierre técnico.</p>
-                                    </div>
                                 </div>
                             </div>
                         </div>
