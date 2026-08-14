@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import {
-  ResponsiveContainer, BarChart, Bar, XAxis, YAxis, Tooltip, Legend,
+  ResponsiveContainer, BarChart, Bar, XAxis, YAxis, Tooltip, Legend, CartesianGrid, LabelList,
   PieChart, Pie, Cell
 } from 'recharts';
 import {
@@ -20,6 +20,14 @@ import {
   getCatalogLabel,
   getFaseProyectoOrder
 } from '../../lib/proyectosObraCatalogos';
+
+const formatProfessionalAxisLabel = (name: string) => {
+  const parts = name.trim().split(/\s+/);
+  if (parts.length >= 4) {
+    return `${parts[0]} ${parts[1]} ${parts[2]} ${parts[3].charAt(0)}.`;
+  }
+  return name.length <= 22 ? name : `${name.slice(0, 20)}…`;
+};
 
 export default function ProyectosObraDashboard() {
   const navigate = useNavigate();
@@ -137,15 +145,11 @@ export default function ProyectosObraDashboard() {
 
     return Array.from(profMap.entries()).map(([nombre, datos]) => {
       const promAvance = datos.total > 0 ? (datos.sumaAvance / datos.total) : 0;
-      let fillColor = '#3b82f6'; // Azul estándar
-      if (promAvance < 0.30) fillColor = '#ef4444'; // Rojo si avance < 30%
-
       return {
         nombre,
         proyectos: datos.total,
         promAvance: Math.round(promAvance * 100),
-        riesgo: datos.riesgo,
-        fillColor
+        riesgo: datos.riesgo
       };
     }).sort((a, b) => b.proyectos - a.proyectos);
   }, [proyectosFiltrados, rawStats]);
@@ -179,6 +183,7 @@ export default function ProyectosObraDashboard() {
 
       return {
         nombre,
+        asignadoM: Number(asignadoM.toFixed(1)),
         ejecutadoM: Number(ejecutadoM.toFixed(1)),
         restanteM: Number(restanteM.toFixed(1)),
         asignadoTotal: datos.asignado,
@@ -376,7 +381,7 @@ export default function ProyectosObraDashboard() {
     return (
       <div className="min-h-screen bg-[#09090b] flex items-center justify-center text-white">
         <div className="flex flex-col items-center gap-3">
-          <div className="w-8 h-8 border-4 border-[#0071E3] border-t-transparent rounded-full animate-spin" />
+          <div className="w-8 h-8 border-2 border-[#d4d4d8] border-t-transparent rounded-full animate-spin" />
           <p className="text-sm text-[#a1a1aa]">Cargando Dashboard Ejecutivo de Proyectos SDMO...</p>
         </div>
       </div>
@@ -384,7 +389,7 @@ export default function ProyectosObraDashboard() {
   }
 
   return (
-    <div className="min-h-screen bg-[#09090b] text-[#f4f4f5] p-4 md:p-8 space-y-8">
+    <div className="min-h-screen bg-black text-[#f4f4f5] p-4 md:p-8 space-y-8 selection:bg-white/20">
       {/* HEADER PRINCIPAL */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-[#27272a] pb-6">
         <div>
@@ -396,7 +401,7 @@ export default function ProyectosObraDashboard() {
             <span>Volver a Lista de Proyectos</span>
           </Link>
           <div className="flex items-center gap-3">
-            <div className="p-3 rounded-xl bg-[#0071E3]/10 text-[#0071E3] border border-[#0071E3]/20">
+            <div className="p-3 rounded-xl bg-[#111112] text-[#e4e4e7] border border-[#71717a]">
               <TrendingUp className="w-7 h-7" />
             </div>
             <div>
@@ -409,7 +414,7 @@ export default function ProyectosObraDashboard() {
         <div className="flex items-center gap-3 flex-wrap">
           {/* Selector de Año */}
           <div className="flex items-center gap-2 bg-[#18181b] px-3 py-2 rounded-xl border border-[#27272a]">
-            <Filter className="w-4 h-4 text-[#0071E3]" />
+            <Filter className="w-4 h-4 text-[#d4d4d8]" />
             <span className="text-xs text-[#a1a1aa] font-semibold">Año:</span>
             <select
               value={filtroAnio}
@@ -428,7 +433,7 @@ export default function ProyectosObraDashboard() {
             onClick={cargarDatos}
             className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-[#27272a] hover:bg-[#3f3f46] text-white text-xs font-semibold transition-all border border-[#3f3f46]/50 shadow-sm"
           >
-            <RefreshCw className="w-3.5 h-3.5 text-[#0071E3]" />
+            <RefreshCw className="w-3.5 h-3.5 text-[#d4d4d8]" />
             <span>Actualizar datos</span>
           </button>
         </div>
@@ -437,33 +442,33 @@ export default function ProyectosObraDashboard() {
       {/* FILA 1 — KPIS PRINCIPALES (4 TARJETAS) */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
         {/* KPI 1: Total Proyectos */}
-        <div className="bg-[#18181b] p-5 rounded-2xl border border-[#27272a] shadow-xl space-y-3">
+        <div className="bg-[#111112] p-5 rounded-xl border border-[#71717a] space-y-3">
           <div className="flex justify-between items-center text-[#a1a1aa]">
             <span className="text-xs font-semibold uppercase tracking-wider">Total Proyectos</span>
-            <Layers className="w-5 h-5 text-[#0071E3]" />
+            <Layers className="w-5 h-5 text-[#d4d4d8]" />
           </div>
           <div className="flex items-baseline gap-2">
             <span className="text-3xl font-black text-white font-mono">{kpis.total}</span>
             <span className="text-xs text-[#a1a1aa]">obras</span>
           </div>
           <div className="grid grid-cols-3 gap-1 pt-2 border-t border-[#27272a] text-[10px] text-center">
-            <div className="bg-emerald-500/10 text-emerald-400 p-1.5 rounded font-bold border border-emerald-500/20">
+            <div className="bg-[#e4e4e7] text-[#111112] p-1.5 rounded font-bold border border-white">
               {kpis.finalizados} Fin.
             </div>
-            <div className="bg-blue-500/10 text-blue-400 p-1.5 rounded font-bold border border-blue-500/20">
+            <div className="bg-[#3f3f46] text-white p-1.5 rounded font-bold border border-[#a1a1aa]">
               {kpis.enEjecucion} Ejec.
             </div>
-            <div className="bg-amber-500/10 text-amber-400 p-1.5 rounded font-bold border border-amber-500/20">
+            <div className="bg-[#18181b] text-[#a1a1aa] p-1.5 rounded font-bold border border-[#52525b]">
               {kpis.sinIniciar} Sin in.
             </div>
           </div>
         </div>
 
         {/* KPI 2: Avance POA Promedio */}
-        <div className="bg-[#18181b] p-5 rounded-2xl border border-[#27272a] shadow-xl flex items-center justify-between">
+        <div className="bg-[#111112] p-5 rounded-xl border border-[#52525b] flex items-center justify-between">
           <div className="space-y-2">
             <span className="text-xs font-semibold text-[#a1a1aa] uppercase tracking-wider block">Avance POA Promedio</span>
-            <span className="text-3xl font-black text-emerald-400 font-mono">
+            <span className="text-3xl font-black text-white font-mono">
               {Math.round(kpis.avancePromedio * 100)}%
             </span>
             <span className="text-[11px] text-[#71717a] block">Cumplimiento metas físicas</span>
@@ -484,8 +489,8 @@ export default function ProyectosObraDashboard() {
                   dataKey="value"
                   stroke="none"
                 >
-                  <Cell fill="#22c55e" />
-                  <Cell fill="#27272a" />
+                  <Cell fill="#d4d4d8" stroke="#ffffff" strokeWidth={1} />
+                  <Cell fill="#27272a" stroke="#71717a" strokeWidth={1} />
                 </Pie>
               </PieChart>
             </ResponsiveContainer>
@@ -493,43 +498,48 @@ export default function ProyectosObraDashboard() {
         </div>
 
         {/* KPI 3: Presupuesto Asignado vs Ejecutado */}
-        <div className="bg-[#18181b] p-5 rounded-2xl border border-[#27272a] shadow-xl space-y-3">
+        <div className="bg-[#111112] p-5 rounded-xl border border-[#52525b] space-y-3">
           <div className="flex justify-between items-center text-[#a1a1aa]">
             <span className="text-xs font-semibold uppercase tracking-wider">Presupuesto Vigente</span>
-            <DollarSign className="w-5 h-5 text-emerald-400" />
+            <DollarSign className="w-5 h-5 text-[#d4d4d8]" />
           </div>
           <div>
             <div className="flex justify-between items-baseline">
               <span className="text-xs text-[#a1a1aa]">Ejecutado:</span>
               <span className="text-lg font-black text-white font-mono">{formatMonedaCRC(kpis.totalEjecutado)}</span>
             </div>
-            <div className="w-full bg-[#09090b] h-2 rounded-full overflow-hidden mt-1.5 mb-1.5 border border-[#27272a]">
+            <div className="w-full bg-[#18181b] h-3 rounded-[3px] overflow-hidden mt-2 mb-2 border border-[#a1a1aa]">
               <div
-                className="bg-emerald-500 h-full rounded-full transition-all duration-500"
-                style={{ width: `${Math.min(100, kpis.pctEjecucionPresupuesto)}%` }}
+                className="h-full transition-all duration-500 border-r border-white"
+                style={{
+                  width: `${Math.min(100, kpis.pctEjecucionPresupuesto)}%`,
+                  backgroundColor: '#27272a',
+                  backgroundImage: 'repeating-linear-gradient(135deg, transparent 0, transparent 5px, rgba(255,255,255,0.7) 5px, rgba(255,255,255,0.7) 6px)',
+                  boxShadow: 'inset 0 0 0 1px #a1a1aa'
+                }}
               />
             </div>
             <div className="flex justify-between items-center text-[10px] text-[#71717a]">
               <span>Asignado: {formatMonedaCRC(kpis.totalAsignado)}</span>
-              <span className="font-bold text-emerald-400 font-mono">{kpis.pctEjecucionPresupuesto}% ejec.</span>
+              <span className="font-bold text-[#e4e4e7] font-mono">{kpis.pctEjecucionPresupuesto}% ejec.</span>
             </div>
           </div>
         </div>
 
         {/* KPI 4: Proyectos en Riesgo (Alerta Parpadeante) */}
-        <div className={`p-5 rounded-2xl border shadow-xl flex items-center justify-between transition-all ${
+        <div className={`p-5 rounded-xl border flex items-center justify-between transition-all ${
           kpis.riesgoCount > 0 
-            ? 'bg-rose-950/20 border-rose-500/40 animate-pulse' 
-            : 'bg-[#18181b] border-[#27272a]'
+            ? 'bg-[#111112] border-white ring-1 ring-inset ring-[#71717a]'
+            : 'bg-[#111112] border-[#52525b]'
         }`}>
           <div className="space-y-2">
-            <span className="text-xs font-semibold text-rose-400 uppercase tracking-wider flex items-center gap-1.5">
-              <AlertTriangle className="w-4 h-4 text-rose-500" />
+            <span className="text-xs font-semibold text-[#e4e4e7] uppercase tracking-wider flex items-center gap-1.5">
+              <AlertTriangle className="w-4 h-4 text-white" />
               <span>Proyectos en Riesgo</span>
             </span>
             <div className="flex items-baseline gap-2">
-              <span className="text-3xl font-black text-rose-500 font-mono">{kpis.riesgoCount}</span>
-              <span className="text-xs text-rose-300 font-semibold">Avance &lt; 30%</span>
+              <span className="text-3xl font-black text-white font-mono">{kpis.riesgoCount}</span>
+              <span className="text-xs text-[#d4d4d8] font-semibold">Avance &lt; 30%</span>
             </div>
             <span className="text-[11px] text-[#a1a1aa] block">Requieren atención inmediata</span>
           </div>
@@ -537,46 +547,46 @@ export default function ProyectosObraDashboard() {
       </div>
 
       <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-5 gap-5">
-        <div className="bg-[#18181b] p-5 rounded-2xl border border-[#27272a] shadow-xl space-y-2">
+        <div className="bg-[#111112] p-5 rounded-xl border border-[#3f3f46] space-y-2">
           <div className="flex justify-between items-center text-[#a1a1aa]">
             <span className="text-xs font-semibold uppercase tracking-wider">Permisos</span>
-            <ShieldCheck className="w-5 h-5 text-[#0071E3]" />
+            <ShieldCheck className="w-5 h-5 text-[#d4d4d8]" />
           </div>
           <div className="flex items-baseline gap-2">
             <span className="text-2xl font-black text-white font-mono">{indicadoresGestion.permisosPendientes}</span>
             <span className="text-xs text-[#a1a1aa]">pendientes</span>
           </div>
-          <p className="text-xs text-rose-300 font-semibold">{indicadoresGestion.permisosVencidos} vencidos</p>
+          <p className="text-xs text-[#a1a1aa] font-semibold">{indicadoresGestion.permisosVencidos} vencidos</p>
         </div>
 
-        <div className="bg-[#18181b] p-5 rounded-2xl border border-[#27272a] shadow-xl space-y-2">
+        <div className="bg-[#111112] p-5 rounded-xl border border-[#3f3f46] space-y-2">
           <div className="flex justify-between items-center text-[#a1a1aa]">
             <span className="text-xs font-semibold uppercase tracking-wider">Hitos</span>
-            <Flag className="w-5 h-5 text-amber-400" />
+            <Flag className="w-5 h-5 text-[#d4d4d8]" />
           </div>
           <div className="flex items-baseline gap-2">
-            <span className="text-2xl font-black text-amber-300 font-mono">{indicadoresGestion.hitosAtrasados}</span>
+            <span className="text-2xl font-black text-white font-mono">{indicadoresGestion.hitosAtrasados}</span>
             <span className="text-xs text-[#a1a1aa]">atrasados</span>
           </div>
           <p className="text-xs text-[#71717a]">Segun fecha plan</p>
         </div>
 
-        <div className="bg-[#18181b] p-5 rounded-2xl border border-[#27272a] shadow-xl space-y-2">
+        <div className="bg-[#111112] p-5 rounded-xl border border-[#3f3f46] space-y-2">
           <div className="flex justify-between items-center text-[#a1a1aa]">
             <span className="text-xs font-semibold uppercase tracking-wider">Garantias</span>
-            <ShieldCheck className="w-5 h-5 text-emerald-400" />
+            <ShieldCheck className="w-5 h-5 text-[#d4d4d8]" />
           </div>
           <div className="flex items-baseline gap-2">
             <span className="text-2xl font-black text-white font-mono">{indicadoresGestion.garantiasPorVencer}</span>
             <span className="text-xs text-[#a1a1aa]">por vencer</span>
           </div>
-          <p className="text-xs text-rose-300 font-semibold">{indicadoresGestion.garantiasVencidas} vencidas</p>
+          <p className="text-xs text-[#a1a1aa] font-semibold">{indicadoresGestion.garantiasVencidas} vencidas</p>
         </div>
 
-        <div className="bg-[#18181b] p-5 rounded-2xl border border-[#27272a] shadow-xl space-y-2">
+        <div className="bg-[#111112] p-5 rounded-xl border border-[#3f3f46] space-y-2">
           <div className="flex justify-between items-center text-[#a1a1aa]">
             <span className="text-xs font-semibold uppercase tracking-wider">Documentos</span>
-            <FileText className="w-5 h-5 text-blue-400" />
+            <FileText className="w-5 h-5 text-[#d4d4d8]" />
           </div>
           <div className="flex items-baseline gap-2">
             <span className="text-2xl font-black text-white font-mono">{indicadoresGestion.documentosTotal}</span>
@@ -585,13 +595,13 @@ export default function ProyectosObraDashboard() {
           <p className="text-xs text-[#71717a]">En proyectos filtrados</p>
         </div>
 
-        <div className="bg-[#18181b] p-5 rounded-2xl border border-[#27272a] shadow-xl space-y-2">
+        <div className="bg-[#111112] p-5 rounded-xl border border-[#3f3f46] space-y-2">
           <div className="flex justify-between items-center text-[#a1a1aa]">
             <span className="text-xs font-semibold uppercase tracking-wider">Donaciones</span>
-            <Gift className="w-5 h-5 text-emerald-400" />
+            <Gift className="w-5 h-5 text-[#d4d4d8]" />
           </div>
           <div className="flex items-baseline gap-2">
-            <span className="text-xl font-black text-emerald-300 font-mono">{formatMonedaCRC(indicadoresGestion.valorDonaciones)}</span>
+            <span className="text-xl font-black text-white font-mono">{formatMonedaCRC(indicadoresGestion.valorDonaciones)}</span>
           </div>
           <p className="text-xs text-[#71717a]">Valor estimado</p>
         </div>
@@ -600,40 +610,48 @@ export default function ProyectosObraDashboard() {
       {/* FILA 2 — GRÁFICOS PRINCIPALES DE CARGA Y PRESUPUESTO POR PROFESIONAL (2 COLUMNAS) */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* Gráfico 1: Carga por Profesional (Barras Horizontales) */}
-        <div className="bg-[#18181b] p-6 rounded-2xl border border-[#27272a] shadow-xl space-y-4">
+        <div className="bg-[#111112] p-6 rounded-xl border border-[#3f3f46] space-y-4">
           <div className="flex justify-between items-center border-b border-[#27272a] pb-3">
             <h3 className="text-base font-bold text-white flex items-center gap-2">
-              <Briefcase className="w-4 h-4 text-[#0071E3]" />
-              <span>Carga por Profesional Responsable</span>
+              <Briefcase className="w-4 h-4 text-[#d4d4d8]" />
+              <span>Carga por profesional responsable</span>
             </h3>
-            <span className="text-[11px] text-[#71717a]">Color según avance prom.</span>
+            <span className="text-[11px] text-[#71717a]">Ordenado por volumen de proyectos</span>
           </div>
 
           <div className="h-72 w-full">
             <ResponsiveContainer width="100%" height="100%">
               <BarChart layout="vertical" data={cargaProfesionalesData} margin={{ top: 5, right: 30, left: 40, bottom: 5 }}>
-                <XAxis type="number" stroke="#71717a" fontSize={11} />
-                <YAxis type="category" dataKey="nombre" stroke="#a1a1aa" fontSize={11} width={110} tickLine={false} />
+                <defs>
+                  <pattern id="cargaGraphite" width="8" height="8" patternUnits="userSpaceOnUse" patternTransform="rotate(45)">
+                    <rect width="8" height="8" fill="#27272a" />
+                    <line x1="0" y1="0" x2="0" y2="8" stroke="#d4d4d8" strokeWidth="1.2" />
+                  </pattern>
+                </defs>
+                <CartesianGrid stroke="#27272a" strokeDasharray="4 5" horizontal={false} />
+                <XAxis type="number" stroke="#71717a" fontSize={11} tickLine={false} />
+                <YAxis type="category" dataKey="nombre" stroke="#a1a1aa" fontSize={10} width={135} tickLine={false} tickFormatter={formatProfessionalAxisLabel} />
                 <Tooltip
                   content={({ active, payload }) => {
                     if (active && payload && payload.length) {
                       const d = payload[0].payload;
                       return (
                         <div className="bg-[#09090b] p-3 rounded-xl border border-[#27272a] text-xs text-white space-y-1.5 shadow-2xl">
-                          <p className="font-bold text-[#0071E3] border-b border-[#27272a] pb-1">{d.nombre}</p>
+                          <p className="font-bold text-white border-b border-[#3f3f46] pb-1">{d.nombre}</p>
                           <p>Total Proyectos: <strong className="font-mono">{d.proyectos}</strong></p>
-                          <p>Promedio Avance: <strong className="font-mono text-emerald-400">{d.promAvance}%</strong></p>
-                          <p>Proyectos en Riesgo: <strong className="font-mono text-rose-400">{d.riesgo}</strong></p>
+                          <p>Promedio Avance: <strong className="font-mono text-[#d4d4d8]">{d.promAvance}%</strong></p>
+                          <p>Proyectos en Riesgo: <strong className="font-mono text-white">{d.riesgo}</strong></p>
                         </div>
                       );
                     }
                     return null;
                   }}
                 />
-                <Bar dataKey="proyectos" radius={[0, 6, 6, 0]}>
-                  {cargaProfesionalesData.map((entry, index) => (
-                    <Cell key={`cell-${index}`} fill={entry.fillColor} />
+                <Bar dataKey="proyectos" fill="url(#cargaGraphite)" stroke="#d4d4d8" strokeWidth={1} radius={[0, 3, 3, 0]} barSize={22}>
+                  {cargaProfesionalesData.map((_, index) => (
+                    <Cell key={`cell-${index}`} stroke="#a1a1aa" strokeWidth={1} />
                   ))}
+                  <LabelList dataKey="proyectos" position="right" fill="#f4f4f5" fontSize={11} fontWeight={600} />
                 </Bar>
               </BarChart>
             </ResponsiveContainer>
@@ -641,11 +659,11 @@ export default function ProyectosObraDashboard() {
         </div>
 
         {/* Gráfico 2: Presupuesto Asignado por Profesional (Barras Horizontales Apiladas) */}
-        <div className="bg-[#18181b] p-6 rounded-2xl border border-[#27272a] shadow-xl space-y-4">
+        <div className="bg-[#111112] p-6 rounded-xl border border-[#3f3f46] space-y-4">
           <div className="flex justify-between items-center border-b border-[#27272a] pb-3">
             <h3 className="text-base font-bold text-white flex items-center gap-2">
-              <DollarSign className="w-4 h-4 text-emerald-400" />
-              <span>Presupuesto Asignado por Profesional</span>
+              <DollarSign className="w-4 h-4 text-[#d4d4d8]" />
+              <span>Presupuesto asignado por profesional</span>
             </h3>
             <span className="text-[11px] text-[#71717a]">En Millones de Colones</span>
           </div>
@@ -653,27 +671,36 @@ export default function ProyectosObraDashboard() {
           <div className="h-72 w-full">
             <ResponsiveContainer width="100%" height="100%">
               <BarChart layout="vertical" data={presupuestoProfesionalesData} margin={{ top: 5, right: 30, left: 40, bottom: 5 }}>
-                <XAxis type="number" stroke="#71717a" fontSize={11} tickFormatter={(v) => `₡${v}M`} />
-                <YAxis type="category" dataKey="nombre" stroke="#a1a1aa" fontSize={11} width={110} tickLine={false} />
+                <defs>
+                  <pattern id="budgetGraphite" width="8" height="8" patternUnits="userSpaceOnUse" patternTransform="rotate(45)">
+                    <rect width="8" height="8" fill="#27272a" />
+                    <line x1="0" y1="0" x2="0" y2="8" stroke="#d4d4d8" strokeWidth="1.2" />
+                  </pattern>
+                </defs>
+                <CartesianGrid stroke="#27272a" strokeDasharray="4 5" horizontal={false} />
+                <XAxis type="number" stroke="#71717a" fontSize={11} tickLine={false} tickFormatter={(v) => `₡${v}M`} />
+                <YAxis type="category" dataKey="nombre" stroke="#a1a1aa" fontSize={10} width={135} tickLine={false} tickFormatter={formatProfessionalAxisLabel} />
                 <Tooltip
                   content={({ active, payload }) => {
                     if (active && payload && payload.length) {
                       const d = payload[0].payload;
                       return (
                         <div className="bg-[#09090b] p-3 rounded-xl border border-[#27272a] text-xs text-white space-y-1.5 shadow-2xl">
-                          <p className="font-bold text-[#0071E3] border-b border-[#27272a] pb-1">{d.nombre}</p>
+                          <p className="font-bold text-white border-b border-[#3f3f46] pb-1">{d.nombre}</p>
                           <p>Presupuesto Asignado Total: <strong className="font-mono text-white">{formatMonedaCRC(d.asignadoTotal)}</strong></p>
-                          <p>Presupuesto Ejecutado: <strong className="font-mono text-emerald-400">{formatMonedaCRC(d.ejecutadoTotal)}</strong></p>
-                          <p>Porcentaje Ejecución: <strong className="font-mono text-blue-400">{d.pctEjecucion}%</strong></p>
+                          <p>Presupuesto Ejecutado: <strong className="font-mono text-[#d4d4d8]">{formatMonedaCRC(d.ejecutadoTotal)}</strong></p>
+                          <p>Porcentaje Ejecución: <strong className="font-mono text-white">{d.pctEjecucion}%</strong></p>
                         </div>
                       );
                     }
                     return null;
                   }}
                 />
-                <Legend wrapperStyle={{ fontSize: '11px', paddingTop: '10px' }} />
-                <Bar dataKey="ejecutadoM" name="Ejecutado (M)" stackId="a" fill="#22c55e" />
-                <Bar dataKey="restanteM" name="Restante (M)" stackId="a" fill="#3b82f6" radius={[0, 6, 6, 0]} />
+                <Legend wrapperStyle={{ fontSize: '11px', paddingTop: '10px', color: '#a1a1aa' }} />
+                <Bar dataKey="ejecutadoM" name="Ejecutado (M)" stackId="a" fill="url(#budgetGraphite)" stroke="#d4d4d8" strokeWidth={1} barSize={22} />
+                <Bar dataKey="restanteM" name="Restante (M)" stackId="a" fill="#71717a" stroke="#f4f4f5" strokeWidth={1} barSize={22} radius={[0, 3, 3, 0]}>
+                  <LabelList dataKey="asignadoM" position="right" fill="#f4f4f5" fontSize={10} formatter={(value: number) => `₡${value}M`} />
+                </Bar>
               </BarChart>
             </ResponsiveContainer>
           </div>
@@ -681,18 +708,25 @@ export default function ProyectosObraDashboard() {
       </div>
 
       {/* FILA 3 — GRÁFICOS SECUNDARIOS: FASES ACTIVAS */}
-      <div className="bg-[#18181b] p-6 rounded-2xl border border-[#27272a] shadow-xl space-y-4">
+      <div className="bg-[#111112] p-6 rounded-xl border border-[#3f3f46] space-y-4">
         <div className="flex justify-between items-center border-b border-[#27272a] pb-3">
           <h3 className="text-base font-bold text-white flex items-center gap-2">
-            <Clock className="w-4 h-4 text-amber-400" />
-            <span>Proyectos por Fase Activa</span>
+            <Clock className="w-4 h-4 text-[#d4d4d8]" />
+            <span>Proyectos por fase activa</span>
           </h3>
         </div>
 
         <div className="h-72 w-full">
           <ResponsiveContainer width="100%" height="100%">
             <BarChart layout="vertical" data={fasesActivasData} margin={{ top: 5, right: 30, left: 50, bottom: 5 }}>
-              <XAxis type="number" stroke="#71717a" fontSize={11} />
+              <defs>
+                <pattern id="phaseGraphite" width="8" height="8" patternUnits="userSpaceOnUse" patternTransform="rotate(45)">
+                  <rect width="8" height="8" fill="#27272a" />
+                  <line x1="0" y1="0" x2="0" y2="8" stroke="#d4d4d8" strokeWidth="1.2" />
+                </pattern>
+              </defs>
+              <CartesianGrid stroke="#27272a" strokeDasharray="4 5" horizontal={false} />
+              <XAxis type="number" stroke="#71717a" fontSize={11} tickLine={false} />
               <YAxis type="category" dataKey="fase" stroke="#a1a1aa" fontSize={10} width={130} tickLine={false} />
               <Tooltip
                 content={({ active, payload }) => {
@@ -700,27 +734,29 @@ export default function ProyectosObraDashboard() {
                     const d = payload[0].payload;
                     return (
                       <div className="bg-[#09090b] p-3 rounded-xl border border-[#27272a] text-xs text-white space-y-1 shadow-xl">
-                        <p className="font-bold text-amber-400 border-b border-[#27272a] pb-1">{d.fase}</p>
+                        <p className="font-bold text-white border-b border-[#3f3f46] pb-1">{d.fase}</p>
                         <p>Proyectos en esta fase: <strong className="font-mono">{d.proyectos}</strong></p>
-                        <p>Promedio Avance: <strong className="font-mono text-emerald-400">{d.promAvance}%</strong></p>
+                        <p>Promedio Avance: <strong className="font-mono text-[#d4d4d8]">{d.promAvance}%</strong></p>
                       </div>
                     );
                   }
                   return null;
                 }}
               />
-              <Bar dataKey="proyectos" fill="#0071E3" radius={[0, 6, 6, 0]} />
+              <Bar dataKey="proyectos" fill="url(#phaseGraphite)" stroke="#d4d4d8" strokeWidth={1} radius={[0, 3, 3, 0]} barSize={22}>
+                <LabelList dataKey="proyectos" position="right" fill="#f4f4f5" fontSize={11} fontWeight={600} />
+              </Bar>
             </BarChart>
           </ResponsiveContainer>
         </div>
       </div>
 
-      <div className="bg-[#18181b] p-6 rounded-2xl border border-[#27272a] shadow-xl space-y-4">
+      <div className="bg-[#111112] p-6 rounded-xl border border-[#3f3f46] space-y-4">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-[#27272a] pb-4">
           <div>
             <h3 className="text-lg font-bold text-white flex items-center gap-2">
-              <Activity className="w-5 h-5 text-amber-400" />
-              <span>Alertas Operativas</span>
+              <Activity className="w-5 h-5 text-[#d4d4d8]" />
+              <span>Alertas operativas</span>
             </h3>
             <p className="text-xs text-[#a1a1aa]">
               Permisos pendientes o vencidos, hitos atrasados y garantias por vencer.
@@ -748,16 +784,16 @@ export default function ProyectosObraDashboard() {
                     className="hover:bg-[#18181b]/80 transition-colors cursor-pointer group"
                   >
                     <td className="px-4 py-3.5 whitespace-nowrap">
-                      <span className={`px-2.5 py-1 rounded-full text-[11px] font-bold border ${
+                      <span className={`px-2.5 py-1 rounded text-[11px] font-bold border ${
                         alerta.severidad === 'alta'
-                          ? 'bg-rose-500/10 text-rose-300 border-rose-500/20'
-                          : 'bg-amber-500/10 text-amber-300 border-amber-500/20'
+                          ? 'bg-[#e4e4e7] text-[#111112] border-white'
+                          : 'bg-[#27272a] text-[#d4d4d8] border-[#71717a]'
                       }`}>
                         {alerta.severidad === 'alta' ? 'Alta' : 'Media'}
                       </span>
                     </td>
                     <td className="px-4 py-3.5 font-semibold text-white whitespace-nowrap">{alerta.tipo}</td>
-                    <td className="px-4 py-3.5 font-bold text-white group-hover:text-[#0071E3] transition-colors max-w-xs truncate">{alerta.proyecto}</td>
+                    <td className="px-4 py-3.5 font-bold text-white group-hover:text-[#d4d4d8] transition-colors max-w-xs truncate">{alerta.proyecto}</td>
                     <td className="px-4 py-3.5 text-[#a1a1aa] max-w-md truncate" title={alerta.detalle}>{alerta.detalle}</td>
                     <td className="px-4 py-3.5 text-[#71717a] font-mono whitespace-nowrap">{alerta.fecha}</td>
                   </tr>
@@ -773,12 +809,12 @@ export default function ProyectosObraDashboard() {
       </div>
 
       {/* FILA 4 — TABLA DE ALERTAS (PROYECTOS QUE REQUIEREN ATENCIÓN) */}
-      <div className="bg-[#18181b] p-6 rounded-2xl border border-[#27272a] shadow-xl space-y-4">
+      <div className="bg-[#111112] p-6 rounded-xl border border-[#3f3f46] space-y-4">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-[#27272a] pb-4">
           <div>
             <h3 className="text-lg font-bold text-white flex items-center gap-2">
-              <AlertTriangle className="w-5 h-5 text-rose-500" />
-              <span>Proyectos que Requieren Atención</span>
+              <AlertTriangle className="w-5 h-5 text-[#d4d4d8]" />
+              <span>Proyectos que requieren atención</span>
             </h3>
             <p className="text-xs text-[#a1a1aa]">
               Mostrando obras con avance menor al 30%
@@ -805,7 +841,7 @@ export default function ProyectosObraDashboard() {
                     onClick={() => navigate(`/proyectos-obra/${p.id}`)}
                     className="hover:bg-[#18181b]/80 transition-colors cursor-pointer group"
                   >
-                    <td className="px-4 py-3.5 font-bold text-white group-hover:text-[#0071E3] transition-colors max-w-xs truncate">
+                    <td className="px-4 py-3.5 font-bold text-white group-hover:text-[#d4d4d8] transition-colors max-w-xs truncate">
                       {p.nombre}
                     </td>
                     <td className="px-4 py-3.5 text-[#a1a1aa] font-medium whitespace-nowrap">
@@ -813,10 +849,15 @@ export default function ProyectosObraDashboard() {
                     </td>
                     <td className="px-4 py-3.5 whitespace-nowrap">
                       <div className="flex items-center gap-2">
-                        <div className="w-20 bg-[#27272a] h-2 rounded-full overflow-hidden border border-[#3f3f46]/50">
+                        <div className="w-20 bg-[#27272a] h-2.5 rounded-[3px] overflow-hidden border border-[#a1a1aa]">
                           <div
-                            className="bg-emerald-500 h-full rounded-full"
-                            style={{ width: `${Math.min(100, p.avance)}%` }}
+                            className="h-full border-r border-white"
+                            style={{
+                              width: `${Math.min(100, p.avance)}%`,
+                              backgroundColor: '#27272a',
+                              backgroundImage: 'repeating-linear-gradient(135deg, transparent 0, transparent 4px, rgba(255,255,255,0.7) 4px, rgba(255,255,255,0.7) 5px)',
+                              boxShadow: 'inset 0 0 0 1px #a1a1aa'
+                            }}
                           />
                         </div>
                         <span className="font-mono font-bold text-white">{p.avance}%</span>
