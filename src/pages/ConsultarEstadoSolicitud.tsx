@@ -73,7 +73,7 @@ const SearchableDropdown = ({
             <div className="relative flex items-center group">
                 <input
                     type="text"
-                    className="w-full bg-[#1D1D1F] border border-[#333333] rounded-[8px] h-10 px-4 pr-12 text-xs text-[#F5F5F7] font-bold placeholder:text-[#424245] focus:border-[#0071E3]/50 transition-all outline-none cursor-pointer"
+                    className="w-full bg-[#111112] border border-[#3f3f46] rounded-lg h-11 px-4 pr-12 text-sm text-[#f4f4f5] placeholder:text-[#71717a] focus:border-[#a1a1aa] transition-colors outline-none cursor-pointer"
                     placeholder={placeholder}
                     value={value || searchTerm}
                     onChange={(e) => {
@@ -99,16 +99,16 @@ const SearchableDropdown = ({
                             <X className="w-3.5 h-3.5" />
                         </button>
                     )}
-                    <Search className="w-3.5 h-3.5 text-[#424245] group-focus-within:text-[#0071E3] transition-colors" />
+                    <Search className="w-3.5 h-3.5 text-[#71717a] group-focus-within:text-white transition-colors" />
                 </div>
             </div>
 
             {isOpen && (
-                <div className="absolute z-50 min-w-full w-max max-w-sm mt-4 bg-black/80 backdrop-blur-[20px] border border-[#333333] rounded-[8px] shadow-4xl max-h-64 overflow-hidden flex flex-col animate-in zoom-in-95 duration-200">
-                    <div className="p-4 border-b border-[#333333] bg-black/20">
+                <div className="absolute z-50 min-w-full w-max max-w-sm mt-2 bg-[#0b0b0c] border border-[#3f3f46] rounded-lg shadow-2xl max-h-64 overflow-hidden flex flex-col animate-in zoom-in-95 duration-200">
+                    <div className="p-3 border-b border-[#27272a]">
                         <input
                             type="text"
-                            className="w-full h-8 px-4 bg-[#121212] border border-[#333333] rounded-[8px] text-xs text-white outline-none focus:border-[#0071E3]/40 transition-all"
+                            className="w-full h-9 px-4 bg-[#111112] border border-[#3f3f46] rounded-lg text-xs text-white outline-none focus:border-[#a1a1aa] transition-colors"
                             placeholder="Buscar en la lista..."
                             value={searchTerm}
                             onChange={(e) => setSearchTerm(e.target.value)}
@@ -120,7 +120,7 @@ const SearchableDropdown = ({
                             filteredOptions.map((opt, idx) => (
                                 <div
                                     key={idx}
-                                    className="px-4 py-2.5 text-[11px] font-bold text-[#86868B] hover:bg-white/5 hover:text-[#0071E3] cursor-pointer whitespace-normal break-words border-b border-white/[0.03] last:border-0 transition-colors"
+                                    className="px-4 py-3 text-xs font-medium text-[#a1a1aa] hover:bg-[#18181b] hover:text-white cursor-pointer whitespace-normal break-words border-b border-[#27272a] last:border-0 transition-colors"
                                     title={opt}
                                     onClick={() => {
                                         onChange(opt);
@@ -168,6 +168,7 @@ interface FilterOptions {
 }
 
 interface Filters {
+    numero_solicitud: string;
     nombre_cliente: string;
     dependencia_cliente: string;
     profesional_responsable: string;
@@ -188,6 +189,7 @@ interface Filters {
 }
 
 const initialFilters: Filters = {
+    numero_solicitud: '',
     nombre_cliente: '',
     dependencia_cliente: '',
     profesional_responsable: '',
@@ -252,6 +254,7 @@ export default function ConsultarEstadoSolicitud() {
 
         const f = debouncedFilters;
 
+        if (f.numero_solicitud) query = query.eq('numero_solicitud', Number(f.numero_solicitud));
         if (f.nombre_cliente) query = query.ilike('nombre_cliente', `%${f.nombre_cliente}%`);
         if (f.dependencia_cliente) query = query.ilike('dependencia_cliente', `%${f.dependencia_cliente}%`);
         if (f.profesional_responsable) query = query.ilike('profesional_responsable', `%${f.profesional_responsable}%`);
@@ -393,6 +396,7 @@ export default function ConsultarEstadoSolicitud() {
                     let query = supabase.from('vw_solicitudes_sti_estado').select('*');
                     const f = filters;
 
+                    if (f.numero_solicitud) query = query.eq('numero_solicitud', Number(f.numero_solicitud));
                     if (f.nombre_cliente) query = query.ilike('nombre_cliente', `%${f.nombre_cliente}%`);
                     if (f.dependencia_cliente) query = query.ilike('dependencia_cliente', `%${f.dependencia_cliente}%`);
                     if (f.profesional_responsable) query = query.ilike('profesional_responsable', `%${f.profesional_responsable}%`);
@@ -431,47 +435,62 @@ export default function ConsultarEstadoSolicitud() {
     };
 
     const getEstadoClass = (estado: string) => {
-        if (!estado) return 'bg-[#333333]/10 text-[#86868B] border-[#333333]';
+        if (!estado) return 'bg-[#18181b] text-[#a1a1aa] border-[#3f3f46]';
         const estadoUpper = estado.toUpperCase();
         // Strict adherence: No greens, no reds. Using Blue for active/done and Gray for others.
-        if (estadoUpper === 'EJECUTADA') return 'bg-[#0071E3] text-white border-[#0071E3]';
-        if (estadoUpper === 'ACTIVA') return 'bg-[#0071E3]/10 text-[#0071E3] border-[#0071E3]/30';
-        if (estadoUpper === 'CANCELADA') return 'bg-[#333333]/50 text-[#86868B] border-[#333333]';
-        return 'bg-[#333333]/10 text-[#86868B] border-[#333333]';
+        if (estadoUpper === 'EJECUTADA') return 'bg-[#e4e4e7] text-black border-white';
+        if (estadoUpper === 'ACTIVA') return 'bg-[#18181b] text-white border-[#71717a]';
+        if (estadoUpper === 'CANCELADA') return 'bg-[#111112] text-[#71717a] border-[#3f3f46]';
+        return 'bg-[#18181b] text-[#a1a1aa] border-[#3f3f46]';
     };
 
     const SortIcon = ({ field }: { field: SortField }) => {
         if (sortConfig.field !== field) return <ArrowUpDown className="w-3.5 h-3.5 opacity-20" />;
         return sortConfig.direction === 'asc'
-            ? <ArrowUp className="w-3.5 h-3.5 text-[#0071E3] animate-in slide-in-from-bottom-2 duration-300" />
-            : <ArrowDown className="w-3.5 h-3.5 text-[#0071E3] animate-in slide-in-from-top-2 duration-300" />;
+            ? <ArrowUp className="w-3.5 h-3.5 text-white animate-in slide-in-from-bottom-2 duration-300" />
+            : <ArrowDown className="w-3.5 h-3.5 text-white animate-in slide-in-from-top-2 duration-300" />;
     };
 
 
     return (
-        <div className="min-h-screen bg-[#000000] text-[#F5F5F7] font-sans relative flex flex-col selection:bg-[#0071E3]/30 pb-24">
+        <div className="min-h-screen bg-black text-[#f4f4f5] font-sans flex flex-col selection:bg-white/20 pb-16">
             <style>{`
                 .custom-scrollbar::-webkit-scrollbar { width: 6px; height: 6px; }
                 .custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
                 .custom-scrollbar::-webkit-scrollbar-thumb { background: #333333; border-radius: 3px; }
                 .custom-scrollbar::-webkit-scrollbar-thumb:hover { background: #424245; }
+                .date-filter-input {
+                    color-scheme: dark;
+                    padding-right: 2.5rem;
+                    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='18' height='18' viewBox='0 0 24 24' fill='none' stroke='%23e4e4e7' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M8 2v4M16 2v4M3 10h18'/%3E%3Crect x='3' y='4' width='18' height='18' rx='2'/%3E%3C/svg%3E");
+                    background-repeat: no-repeat;
+                    background-position: right 0.75rem center;
+                    background-size: 1rem;
+                }
+                .date-filter-input::-webkit-calendar-picker-indicator {
+                    opacity: 0;
+                    cursor: pointer;
+                    width: 1.25rem;
+                    height: 1.25rem;
+                }
             `}</style>
 
             <PageHeader
-                title="Estados de Solicitud"
+                title="Consulta de Solicitudes"
                 icon={Activity}
-                subtitle="Consulta de Seguimiento"
+                themeColor="neutral"
+                subtitle="Búsqueda y seguimiento de solicitudes de cliente interno."
                 rightElement={
                     <div className="flex items-center gap-4">
                         <button
                             onClick={exportarExcel}
-                            className="h-11 px-6 bg-[#0071E3] text-white rounded-[8px] text-[10px] font-black uppercase tracking-widest hover:brightness-110 transition-all flex items-center gap-2.5 shadow-xl active:scale-95"
+                            className="h-11 px-5 bg-[#e4e4e7] text-black rounded-lg text-sm font-semibold hover:bg-white transition-colors flex items-center gap-2.5"
                         >
                             <FileSpreadsheet className="w-4 h-4" /> Exportar
                         </button>
                         <button
                             onClick={limpiarFiltros}
-                            className="h-11 px-6 bg-transparent border border-[#F5F5F7]/30 text-[#F5F5F7] rounded-[8px] text-[10px] font-black uppercase tracking-widest hover:bg-white/5 transition-all flex items-center gap-2.5 active:scale-95"
+                            className="h-11 px-5 bg-[#111112] border border-[#52525b] text-white rounded-lg text-sm font-semibold hover:bg-[#18181b] transition-colors flex items-center gap-2.5"
                         >
                             <Eraser className="w-4 h-4" /> Limpiar
                         </button>
@@ -479,20 +498,31 @@ export default function ConsultarEstadoSolicitud() {
                 }
             />
 
-            <div className="max-w-[1600px] mx-auto w-full px-8 space-y-8 flex-1 flex flex-col">
+            <div className="max-w-[1600px] mx-auto w-full px-4 md:px-8 space-y-5 flex-1 flex flex-col">
                 {/* Filters Section */}
-                <div className="bg-[#121212] border border-[#333333] rounded-[8px] p-6 shadow-2xl">
+                <div className="bg-[#0d0d0e] border border-[#3f3f46] rounded-xl p-5 md:p-6">
                     <div className="flex items-center justify-between mb-6">
                         <div className="flex items-center gap-3">
-                            <Search className="w-4 h-4 text-[#0071E3]" />
-                            <h3 className="text-[10px] font-black text-white/90 uppercase tracking-[0.3em]">Filtros de Búsqueda</h3>
+                            <Search className="w-4 h-4 text-[#d4d4d8]" />
+                            <h3 className="text-base font-semibold text-white">Filtros de búsqueda</h3>
                         </div>
-                        <span className="text-[9px] font-black text-[#86868B] uppercase tracking-widest bg-black/40 px-3 py-1 rounded-full border border-[#333333]">
+                        <span className="text-xs font-medium text-[#a1a1aa] bg-[#111112] px-3 py-1.5 rounded-full border border-[#3f3f46]">
                             {totalRecords.toLocaleString()} registros
                         </span>
                     </div>
 
-                    <div className="grid grid-cols-1 md:grid-cols-4 lg:grid-cols-7 gap-4">
+                    <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-3">
+                        <div className="relative group">
+                            <Search className="absolute right-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-[#71717a] group-focus-within:text-white transition-colors" />
+                            <input
+                                type="text"
+                                inputMode="numeric"
+                                value={filters.numero_solicitud}
+                                onChange={(e) => handleFilterChange('numero_solicitud', e.target.value.replace(/\D/g, ''))}
+                                placeholder="Número de solicitud..."
+                                className="w-full h-11 px-4 pr-10 bg-[#111112] border border-[#3f3f46] rounded-lg text-sm text-white placeholder:text-[#71717a] outline-none focus:border-[#a1a1aa] transition-colors"
+                            />
+                        </div>
                         <SearchableDropdown options={filterOptions.nombre_cliente} value={filters.nombre_cliente} onChange={(val) => handleFilterChange('nombre_cliente', val)} placeholder="Cliente..." />
                         <SearchableDropdown options={filterOptions.dependencia_cliente} value={filters.dependencia_cliente} onChange={(val) => handleFilterChange('dependencia_cliente', val)} placeholder="Dependencia..." />
                         <SearchableDropdown options={filterOptions.profesional_responsable} value={filters.profesional_responsable} onChange={(val) => handleFilterChange('profesional_responsable', val)} placeholder="Profesional..." />
@@ -502,12 +532,12 @@ export default function ConsultarEstadoSolicitud() {
                         <SearchableDropdown options={filterOptions.estado_actual} value={filters.estado_actual} onChange={(val) => handleFilterChange('estado_actual', val)} placeholder="Estado..." />
                     </div>
 
-                    <div className="flex flex-wrap items-center gap-8 mt-8 bg-black/20 p-4 rounded-[8px] border border-[#333333]/30">
+                    <div className="flex flex-wrap items-center gap-6 mt-4 bg-[#0a0a0b] p-4 rounded-lg border border-[#27272a]">
                         <div className="flex items-center gap-4">
                             <label className="text-[9px] font-black text-[#86868B] uppercase tracking-widest whitespace-nowrap">Desde:</label>
                             <input
                                 type="date"
-                                className="bg-[#1D1D1F] border border-[#333333] rounded-[8px] h-8 px-4 text-[11px] text-white uppercase font-bold focus:border-[#0071E3]/50 outline-none transition-all w-48"
+                                className="date-filter-input bg-[#111112] border border-[#3f3f46] rounded-lg h-10 px-4 text-xs text-white uppercase font-medium focus:border-[#a1a1aa] outline-none transition-colors w-48"
                                 value={filters.fecha_inicio}
                                 onChange={(e) => handleFilterChange('fecha_inicio', e.target.value)}
                             />
@@ -516,7 +546,7 @@ export default function ConsultarEstadoSolicitud() {
                             <label className="text-[9px] font-black text-[#86868B] uppercase tracking-widest whitespace-nowrap">Hasta:</label>
                             <input
                                 type="date"
-                                className="bg-[#1D1D1F] border border-[#333333] rounded-[8px] h-8 px-4 text-[11px] text-white uppercase font-bold focus:border-[#0071E3]/50 outline-none transition-all w-48"
+                                className="date-filter-input bg-[#111112] border border-[#3f3f46] rounded-lg h-10 px-4 text-xs text-white uppercase font-medium focus:border-[#a1a1aa] outline-none transition-colors w-48"
                                 value={filters.fecha_fin}
                                 onChange={(e) => handleFilterChange('fecha_fin', e.target.value)}
                             />
@@ -525,11 +555,11 @@ export default function ConsultarEstadoSolicitud() {
                 </div>
 
                 {/* Table Section */}
-                <div className="bg-[#121212] border border-[#333333] rounded-[8px] shadow-3xl overflow-hidden mb-16">
+                <div className="bg-[#0d0d0e] border border-[#3f3f46] rounded-xl overflow-hidden mb-16">
                     <div className="overflow-x-auto custom-scrollbar">
                         <div className="min-w-[1400px]">
                             {/* Header Row */}
-                            <div className="grid grid-cols-[80px_100px_2fr_1.5fr_1fr_1.5fr_1fr] bg-[#1D1D1F] border-b border-[#333333] text-[10px] font-black text-[#86868B] uppercase tracking-[0.2em] sticky top-0 z-20">
+                            <div className="grid grid-cols-[90px_110px_2fr_1.5fr_1fr_1.5fr_1fr] bg-[#18181b] border-b border-[#3f3f46] text-[10px] font-semibold text-[#a1a1aa] uppercase tracking-[0.14em] sticky top-0 z-20">
                                 <div className="px-6 py-5 cursor-pointer hover:bg-white/5 hover:text-[#F5F5F7] transition-all flex items-center gap-2 border-r border-[#333333]/30" onClick={() => handleSort('numero_solicitud')}>
                                     # <SortIcon field="numero_solicitud" />
                                 </div>
@@ -549,7 +579,7 @@ export default function ConsultarEstadoSolicitud() {
                             <div className="relative">
                                 {(isLoading || isFetching) && (
                                     <div className="absolute inset-0 flex items-center justify-center z-10 bg-black/40 backdrop-blur-[2px]">
-                                        <Loader2 className="w-8 h-8 animate-spin text-[#0071E3]" />
+                                        <Loader2 className="w-8 h-8 animate-spin text-white" />
                                     </div>
                                 )}
 
@@ -558,19 +588,19 @@ export default function ConsultarEstadoSolicitud() {
                                         <div
                                             key={row.numero_solicitud}
                                             className={cn(
-                                                "grid grid-cols-[80px_100px_2fr_1.5fr_1fr_1.5fr_1fr] items-center border-b border-[#333333]/30 transition-all hover:bg-white/[0.02]",
-                                                index % 2 === 0 ? 'bg-[#121212]' : 'bg-black/20'
+                                                "grid grid-cols-[90px_110px_2fr_1.5fr_1fr_1.5fr_1fr] items-center border-b border-[#27272a] transition-colors hover:bg-[#18181b]",
+                                                index % 2 === 0 ? 'bg-[#0d0d0e]' : 'bg-[#101011]'
                                             )}
                                         >
-                                            <div className="px-6 py-4 font-mono text-[11px] font-black text-[#0071E3] tracking-tighter">#{row.numero_solicitud}</div>
-                                            <div className="px-6 py-4 text-[10px] font-bold text-[#86868B]">{formatDateOnly(row.fecha_solicitud)}</div>
-                                            <div className="px-6 py-4 text-[11px] italic text-[#F5F5F7] font-medium leading-relaxed italic" title={row.descripcion_solicitud}>{row.descripcion_solicitud}</div>
-                                            <div className="px-6 py-4 text-[11px] font-black text-[#F5F5F7] uppercase tracking-tight" title={row.profesional_responsable}>{row.profesional_responsable}</div>
-                                            <div className="px-6 py-4 text-[10px] font-bold text-[#86868B] uppercase" title={row.instalacion_municipal}>{row.instalacion_municipal}</div>
-                                            <div className="px-6 py-4 text-[10px] font-bold text-[#86868B] uppercase" title={row.descripcion_area}>{row.descripcion_area}</div>
+                                            <div className="px-6 py-4 font-mono text-xs font-semibold text-white">#{row.numero_solicitud}</div>
+                                            <div className="px-6 py-4 text-xs font-medium text-[#a1a1aa]">{formatDateOnly(row.fecha_solicitud)}</div>
+                                            <div className="px-6 py-4 text-xs text-[#e4e4e7] font-medium leading-relaxed" title={row.descripcion_solicitud}>{row.descripcion_solicitud}</div>
+                                            <div className="px-6 py-4 text-xs font-semibold text-[#f4f4f5]" title={row.profesional_responsable}>{row.profesional_responsable}</div>
+                                            <div className="px-6 py-4 text-xs font-medium text-[#a1a1aa]" title={row.instalacion_municipal}>{row.instalacion_municipal}</div>
+                                            <div className="px-6 py-4 text-xs font-medium text-[#a1a1aa]" title={row.descripcion_area}>{row.descripcion_area}</div>
                                             <div className="px-6 py-4 flex items-center justify-center">
                                                 <span className={cn(
-                                                    "px-4 py-1.5 rounded-[8px] text-[10px] font-black uppercase tracking-widest border transition-colors",
+                                                    "px-4 py-1.5 rounded-lg text-[10px] font-semibold uppercase tracking-wider border transition-colors",
                                                     getEstadoClass(row.estado_actual)
                                                 )}>
                                                     {row.estado_actual || 'N/A'}
@@ -589,7 +619,7 @@ export default function ConsultarEstadoSolicitud() {
                     </div>
 
                     {/* Pagination Controls */}
-                    <div className="bg-[#1D1D1F] border-t border-[#333333] px-8 py-4 flex items-center justify-between">
+                    <div className="bg-[#111112] border-t border-[#3f3f46] px-6 py-4 flex items-center justify-between">
                         <div className="text-[10px] font-black text-[#86868B] uppercase tracking-widest">
                             Página <span className="text-[#F5F5F7]">{page + 1}</span> de <span className="text-[#F5F5F7]">{totalPages || 1}</span>
                         </div>
@@ -597,16 +627,16 @@ export default function ConsultarEstadoSolicitud() {
                             <button
                                 onClick={() => setPage(p => Math.max(0, p - 1))}
                                 disabled={page === 0}
-                                className="h-10 px-6 bg-transparent border border-[#333333] text-[#F5F5F7] rounded-[8px] text-[10px] font-black uppercase tracking-widest hover:bg-white/5 transition-all flex items-center gap-2 disabled:opacity-30 disabled:cursor-not-allowed active:scale-95"
+                                className="h-10 px-5 bg-[#18181b] border border-[#52525b] text-white rounded-lg text-xs font-semibold hover:bg-[#27272a] transition-colors flex items-center gap-2 disabled:opacity-30 disabled:cursor-not-allowed"
                             >
-                                <ChevronLeft className="w-4 h-4 text-[#0071E3]" /> Anterior
+                                <ChevronLeft className="w-4 h-4" /> Anterior
                             </button>
                             <button
                                 onClick={() => setPage(p => p + 1)}
                                 disabled={allRows.length < PAGE_SIZE || page >= totalPages - 1}
-                                className="h-10 px-6 bg-transparent border border-[#333333] text-[#F5F5F7] rounded-[8px] text-[10px] font-black uppercase tracking-widest hover:bg-white/5 transition-all flex items-center gap-2 disabled:opacity-30 disabled:cursor-not-allowed active:scale-95"
+                                className="h-10 px-5 bg-[#18181b] border border-[#52525b] text-white rounded-lg text-xs font-semibold hover:bg-[#27272a] transition-colors flex items-center gap-2 disabled:opacity-30 disabled:cursor-not-allowed"
                             >
-                                Siguiente <ChevronRight className="w-4 h-4 text-[#0071E3]" />
+                                Siguiente <ChevronRight className="w-4 h-4" />
                             </button>
                         </div>
                     </div>
