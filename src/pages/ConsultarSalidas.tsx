@@ -41,7 +41,6 @@ import {
 
 // Shared Components
 import { PageHeader } from '../components/ui/PageHeader';
-import { cn } from '../lib/utils';
 
 // Interfaces
 interface Salida {
@@ -667,32 +666,27 @@ export default function ConsultarSalidas() {
     };
 
     return (
-        <div className="min-h-screen bg-[#000000] text-[#F5F5F7] p-4 md:p-8 relative overflow-hidden">
-            <div className="max-w-7xl mx-auto space-y-8 relative z-10">
+        <div className="min-h-screen bg-black text-[#f4f4f5] px-4 py-6 md:px-8 md:py-8">
+            <div className="max-w-[1536px] mx-auto space-y-6 relative z-10">
                 {/* Header */}
-                <div className="flex flex-col md:flex-row justify-between items-end gap-6 pb-2 border-b border-[#333333]">
-                    <div className="space-y-1">
-                        <PageHeader title="Historial de Salidas" icon={FileSearch} themeColor="blue" />
-                    </div>
+                <div className="flex flex-col md:flex-row justify-between md:items-center gap-5 pb-5 border-b border-[#27272a]">
+                    <PageHeader title="Historial de salidas" subtitle="Consulta y trazabilidad de movimientos de inventario." icon={FileSearch} themeColor="neutral" />
                     <button
                         onClick={() => navigate(-1)}
-                        className="px-6 py-2.5 bg-transparent border border-[#333333] rounded-[8px] text-xs font-black uppercase tracking-widest flex items-center gap-2 text-[#F5F5F7] transition-all hover:bg-white/5"
+                        className="h-11 px-5 bg-[#0d0d0e] border border-[#3f3f46] rounded-lg text-sm font-semibold flex items-center gap-2 text-white transition-colors hover:bg-[#18181b]"
                     >
-                        <ArrowLeft className="w-4 h-4 text-[#0071E3]" />
+                        <ArrowLeft className="w-4 h-4" />
                         Regresar
                     </button>
                 </div>
 
                 {/* Status Float Messages */}
                 {statusMessage && (
-                    <div className={cn(
-                        "fixed top-8 right-8 z-[100] px-6 py-4 rounded-[8px] bg-[#121212] border border-[#333333] shadow-2xl flex items-center gap-4 animate-in slide-in-from-right-4",
-                        statusMessage.type === 'error' ? 'border-rose-500/50 text-rose-400' : 'border-[#0071E3]/50 text-white'
-                    )}>
+                    <div className="fixed top-8 right-8 z-[100] px-5 py-4 rounded-lg bg-[#18181b] border border-[#52525b] shadow-2xl text-white flex items-center gap-4 animate-in slide-in-from-right-4">
                         <div className="p-2 rounded-[4px] bg-white/5 shrink-0">
-                            {statusMessage.type === 'error' ? <AlertCircle className="w-5 h-5 text-rose-400" /> :
-                                statusMessage.type === 'success' ? <CheckCircle2 className="w-5 h-5 text-[#0071E3]" /> :
-                                    <Info className="w-5 h-5 text-[#0071E3]" />}
+                            {statusMessage.type === 'error' ? <AlertCircle className="w-5 h-5 text-white" /> :
+                                statusMessage.type === 'success' ? <CheckCircle2 className="w-5 h-5 text-white" /> :
+                                    <Info className="w-5 h-5 text-white" />}
                         </div>
                         <span className="font-black uppercase tracking-widest text-[10px] leading-relaxed">{statusMessage.message}</span>
                         <button onClick={() => setStatusMessage(null)} className="ml-auto p-1 hover:bg-white/5 rounded-[4px] transition-colors">
@@ -702,40 +696,39 @@ export default function ConsultarSalidas() {
                 )}
 
                 {/* Filter Panel */}
-                <div className="bg-[#121212] p-8 border border-[#333333] rounded-3xl relative group">
-                    <div className="absolute top-0 right-0 w-32 h-32 bg-[#0071E3]/5 rounded-full blur-3xl -mr-16 -mt-16" />
+                <div className="bg-[#0d0d0e] p-5 md:p-7 border border-[#3f3f46] rounded-xl">
 
                     {/* Tabs Selector */}
-                    <div className="flex justify-center mb-10">
-                        <div className="bg-[#1D1D1F] p-1.5 rounded-2xl border border-[#333333] flex gap-2 overflow-x-auto no-scrollbar">
+                    <div className="mb-8">
+                        <div className="bg-[#151517] p-1 rounded-lg border border-[#3f3f46] grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-1">
                             <button
                                 onClick={() => { setActiveTab('solicitud'); resetSearchState(); }}
-                                className={`px-6 md:px-8 py-3 rounded-[6px] text-[10px] font-black uppercase tracking-widest transition-all flex items-center gap-3 whitespace-nowrap
-                                     ${activeTab === 'solicitud' ? 'bg-[#0071E3] text-white shadow-lg shadow-[#0071E3]/20' : 'text-[#86868B] hover:text-[#F5F5F7]'}`}
+                                className={`px-5 py-3 rounded-md text-sm font-semibold transition-colors flex items-center justify-center gap-2 whitespace-nowrap
+                                     ${activeTab === 'solicitud' ? 'bg-[#f4f4f5] text-black' : 'text-[#a1a1aa] hover:text-white hover:bg-[#202024]'}`}
                             >
                                 <FileText className="w-4 h-4" />
                                 Consulta por Solicitud
                             </button>
                             <button
                                 onClick={() => { setActiveTab('id_salida'); resetSearchState(); }}
-                                className={`px-6 md:px-8 py-3 rounded-[6px] text-[10px] font-black uppercase tracking-widest transition-all flex items-center gap-3 whitespace-nowrap
-                                     ${activeTab === 'id_salida' ? 'bg-[#0071E3] text-white shadow-lg shadow-[#0071E3]/20' : 'text-[#86868B] hover:text-[#F5F5F7]'}`}
+                                className={`px-5 py-3 rounded-md text-sm font-semibold transition-colors flex items-center justify-center gap-2 whitespace-nowrap
+                                     ${activeTab === 'id_salida' ? 'bg-[#f4f4f5] text-black' : 'text-[#a1a1aa] hover:text-white hover:bg-[#202024]'}`}
                             >
                                 <Hash className="w-4 h-4" />
                                 Consulta por Salida
                             </button>
                             <button
                                 onClick={() => { setActiveTab('colaborador'); resetSearchState(); }}
-                                className={`px-6 md:px-8 py-3 rounded-[6px] text-[10px] font-black uppercase tracking-widest transition-all flex items-center gap-3 whitespace-nowrap
-                                     ${activeTab === 'colaborador' ? 'bg-[#0071E3] text-white shadow-lg shadow-[#0071E3]/20' : 'text-[#86868B] hover:text-[#F5F5F7]'}`}
+                                className={`px-5 py-3 rounded-md text-sm font-semibold transition-colors flex items-center justify-center gap-2 whitespace-nowrap
+                                     ${activeTab === 'colaborador' ? 'bg-[#f4f4f5] text-black' : 'text-[#a1a1aa] hover:text-white hover:bg-[#202024]'}`}
                             >
                                 <Users className="w-4 h-4" />
                                 Consulta por Colaborador
                             </button>
                             <button
                                 onClick={() => { setActiveTab('fecha'); resetSearchState(); }}
-                                className={`px-6 md:px-8 py-3 rounded-[6px] text-[10px] font-black uppercase tracking-widest transition-all flex items-center gap-3 whitespace-nowrap
-                                     ${activeTab === 'fecha' ? 'bg-[#0071E3] text-white shadow-lg shadow-[#0071E3]/20' : 'text-[#86868B] hover:text-[#F5F5F7]'}`}
+                                className={`px-5 py-3 rounded-md text-sm font-semibold transition-colors flex items-center justify-center gap-2 whitespace-nowrap
+                                     ${activeTab === 'fecha' ? 'bg-[#f4f4f5] text-black' : 'text-[#a1a1aa] hover:text-white hover:bg-[#202024]'}`}
                             >
                                 <Calendar className="w-4 h-4" />
                                 Resumen Diario
@@ -747,26 +740,26 @@ export default function ConsultarSalidas() {
                     {activeTab === 'solicitud' && (
                         <div className="max-w-3xl mx-auto space-y-6 animate-in fade-in zoom-in-95 duration-500">
                             <div className="text-center space-y-2 mb-8">
-                                <h3 className="text-xl font-black text-white italic uppercase tracking-tighter">Búsqueda por # Solicitud</h3>
-                                <p className="text-[10px] font-black text-[#86868B] uppercase tracking-widest">Ingrese el identificador único para desplegar el desglose de materiales.</p>
+                                <h3 className="text-xl font-semibold text-white">Consulta por número de solicitud</h3>
+                                <p className="text-sm text-[#a1a1aa]">Ingrese el identificador para consultar sus salidas y materiales.</p>
                             </div>
 
                             <div className="flex flex-col md:flex-row gap-4">
                                 <div className="flex-1 relative group/input">
-                                    <Search className="absolute left-6 top-1/2 -translate-y-1/2 w-6 h-6 text-[#86868B] group-focus-within/input:text-[#0071E3] transition-colors" />
+                                    <Search className="absolute left-5 top-1/2 -translate-y-1/2 w-5 h-5 text-[#a1a1aa]" />
                                     <input
                                         type="text"
                                         placeholder="Número de Solicitud (Ej: 2025-000123)"
                                         value={solicitudInput}
                                         onChange={(e) => setSolicitudInput(e.target.value)}
                                         onKeyDown={(e) => e.key === 'Enter' && handleBuscarSolicitud()}
-                                        className="w-full h-16 bg-[#1D1D1F] border border-[#333333] rounded-[8px] pl-16 pr-6 text-xl text-white font-bold placeholder-[#86868B] focus:outline-none focus:border-[#0071E3]/50 transition-all shadow-inner uppercase"
+                                        className="w-full h-14 bg-[#18181b] border border-[#52525b] rounded-lg pl-14 pr-5 text-base text-white placeholder-[#71717a] focus:outline-none focus:border-white transition-colors"
                                     />
                                 </div>
                                 <button
                                     onClick={handleBuscarSolicitud}
                                     disabled={loading}
-                                    className="h-16 px-10 bg-[#0071E3] hover:bg-[#0077ED] text-white font-black uppercase tracking-widest text-xs rounded-[8px] shadow-xl shadow-[#0071E3]/20 active:scale-95 transition-all flex items-center justify-center gap-3 disabled:opacity-50"
+                                    className="h-14 px-8 bg-[#f4f4f5] hover:bg-white text-black font-semibold text-sm rounded-lg active:scale-95 transition-all flex items-center justify-center gap-3 disabled:opacity-50"
                                 >
                                     {loading ? <Loader2 className="w-5 h-5 animate-spin" /> : <CalendarSearch className="w-5 h-5" />}
                                     Consultar
@@ -779,26 +772,26 @@ export default function ConsultarSalidas() {
                     {activeTab === 'id_salida' && (
                         <div className="max-w-3xl mx-auto space-y-6 animate-in fade-in zoom-in-95 duration-500">
                             <div className="text-center space-y-2 mb-8">
-                                <h3 className="text-xl font-black text-white italic uppercase tracking-tighter">Búsqueda por # de Salida</h3>
-                                <p className="text-[10px] font-black text-[#86868B] uppercase tracking-widest">Ingrese el número de salida directo para una consulta inmediata.</p>
+                                <h3 className="text-xl font-semibold text-white">Consulta por número de salida</h3>
+                                <p className="text-sm text-[#a1a1aa]">Ingrese el identificador de salida para consultar el movimiento.</p>
                             </div>
 
                             <div className="flex flex-col md:flex-row gap-4">
                                 <div className="flex-1 relative group/input">
-                                    <Hash className="absolute left-6 top-1/2 -translate-y-1/2 w-6 h-6 text-[#86868B] group-focus-within/input:text-[#0071E3] transition-colors" />
+                                    <Hash className="absolute left-5 top-1/2 -translate-y-1/2 w-5 h-5 text-[#a1a1aa]" />
                                     <input
                                         type="text"
                                         placeholder="Número de Salida (Ej: 9657)"
                                         value={idSalidaInput}
                                         onChange={(e) => setIdSalidaInput(e.target.value)}
                                         onKeyDown={(e) => e.key === 'Enter' && handleBuscarSalidaId()}
-                                        className="w-full h-16 bg-[#1D1D1F] border border-[#333333] rounded-[8px] pl-16 pr-6 text-xl text-white font-bold placeholder-[#86868B] focus:outline-none focus:border-[#0071E3]/50 transition-all shadow-inner"
+                                        className="w-full h-14 bg-[#18181b] border border-[#52525b] rounded-lg pl-14 pr-5 text-base text-white placeholder-[#71717a] focus:outline-none focus:border-white transition-colors"
                                     />
                                 </div>
                                 <button
                                     onClick={handleBuscarSalidaId}
                                     disabled={loading}
-                                    className="h-16 px-10 bg-[#0071E3] hover:bg-[#0077ED] text-white font-black uppercase tracking-widest text-xs rounded-[8px] shadow-xl shadow-[#0071E3]/20 active:scale-95 transition-all flex items-center justify-center gap-3 disabled:opacity-50"
+                                    className="h-14 px-8 bg-[#f4f4f5] hover:bg-white text-black font-semibold text-sm rounded-lg active:scale-95 transition-all flex items-center justify-center gap-3 disabled:opacity-50"
                                 >
                                     {loading ? <Loader2 className="w-5 h-5 animate-spin" /> : <Search className="w-5 h-5" />}
                                     Consultar
@@ -811,12 +804,12 @@ export default function ConsultarSalidas() {
                     {activeTab === 'colaborador' && (
                         <div className="max-w-3xl mx-auto space-y-6 animate-in fade-in zoom-in-95 duration-500">
                             <div className="text-center space-y-2 mb-8">
-                                <h3 className="text-xl font-black text-white italic uppercase tracking-tighter">Búsqueda por Colaborador</h3>
-                                <p className="text-[10px] font-black text-[#86868B] uppercase tracking-widest">Ingrese el nombre o alias para filtrar movimientos históricos.</p>
+                                <h3 className="text-xl font-semibold text-white">Consulta por colaborador</h3>
+                                <p className="text-sm text-[#a1a1aa]">Busque por nombre o alias para consultar sus movimientos.</p>
                             </div>
 
                             <div className="relative group/input">
-                                <Users className="absolute left-6 top-5 w-6 h-6 text-[#86868B] group-focus-within/input:text-[#0071E3] transition-colors" />
+                                <Users className="absolute left-5 top-1/2 -translate-y-1/2 w-5 h-5 text-[#a1a1aa]" />
                                 <input
                                     type="text"
                                     placeholder="Nombre o Alias del Colaborador..."
@@ -825,12 +818,12 @@ export default function ConsultarSalidas() {
                                         setColaboradorBusqueda(e.target.value);
                                         if (colaboradorSeleccionado) setColaboradorSeleccionado(null);
                                     }}
-                                    className="w-full h-16 bg-[#1D1D1F] border border-[#333333] rounded-[8px] pl-16 pr-6 text-xl text-white font-bold placeholder-[#86868B] focus:outline-none focus:border-[#0071E3]/50 transition-all shadow-inner uppercase"
+                                    className="w-full h-14 bg-[#18181b] border border-[#52525b] rounded-lg pl-14 pr-5 text-base text-white placeholder-[#71717a] focus:outline-none focus:border-white transition-colors"
                                 />
 
                                 {/* Suggestions Dropdown */}
                                 {colaboradorSugerencias.length > 0 && (
-                                    <div className="absolute top-full left-0 right-0 mt-2 bg-[#121212] border border-[#333333] rounded-xl shadow-2xl z-[100] overflow-hidden overflow-y-auto max-h-60">
+                                    <div className="absolute top-full left-0 right-0 mt-2 bg-[#18181b] border border-[#52525b] rounded-lg shadow-2xl z-[100] overflow-hidden overflow-y-auto max-h-60">
                                         {colaboradorSugerencias.map((colab) => (
                                             <button
                                                 key={colab.identificacion}
@@ -840,9 +833,9 @@ export default function ConsultarSalidas() {
                                                     setColaboradorSugerencias([]);
                                                     handleBuscarPorColaborador(colab.identificacion);
                                                 }}
-                                                className="w-full p-4 flex flex-col items-start gap-1 hover:bg-[#0071E3]/5 border-b border-[#333333] last:border-0 transition-colors"
+                                                className="w-full p-4 flex flex-col items-start gap-1 hover:bg-[#27272a] border-b border-[#3f3f46] last:border-0 transition-colors"
                                             >
-                                                <span className="text-sm font-black text-white uppercase italic">{colab.alias}</span>
+                                                <span className="text-sm font-semibold text-white uppercase">{colab.alias}</span>
                                                 <span className="text-[10px] font-bold text-[#86868B] uppercase">{colab.colaborador}</span>
                                             </button>
                                         ))}
@@ -851,12 +844,12 @@ export default function ConsultarSalidas() {
                             </div>
 
                             {colaboradorSeleccionado && (
-                                <div className="p-4 bg-[#0071E3]/5 border border-[#0071E3]/20 rounded-xl flex items-center justify-between">
+                                <div className="p-4 bg-[#18181b] border border-[#52525b] rounded-lg flex items-center justify-between">
                                     <div className="flex items-center gap-3">
-                                        <div className="w-8 h-8 rounded-full bg-[#0071E3]/10 flex items-center justify-center">
-                                            <CheckCircle2 className="w-4 h-4 text-[#0071E3]" />
+                                        <div className="w-8 h-8 rounded-full bg-[#27272a] flex items-center justify-center">
+                                            <CheckCircle2 className="w-4 h-4 text-white" />
                                         </div>
-                                        <span className="text-xs font-black text-white uppercase italic">Filtrando por: {colaboradorSeleccionado.alias}</span>
+                                        <span className="text-xs font-semibold text-white uppercase">Filtrando por: {colaboradorSeleccionado.alias}</span>
                                     </div>
                                     <button
                                         onClick={() => {
@@ -878,8 +871,8 @@ export default function ConsultarSalidas() {
                     {activeTab === 'fecha' && (
                         <div className="max-w-5xl mx-auto space-y-8 animate-in fade-in zoom-in-95 duration-500">
                             <div className="text-center space-y-2 mb-6">
-                                <h3 className="text-xl font-black text-white italic uppercase tracking-tighter">Resumen Cronológico</h3>
-                                <p className="text-[10px] font-black text-[#86868B] uppercase tracking-widest">Generación masiva de consumos agrupados por artículo y ubicación.</p>
+                                <h3 className="text-xl font-semibold text-white">Resumen diario</h3>
+                                <p className="text-sm text-[#a1a1aa]">Consumos agrupados por artículo, ubicación y periodo.</p>
                             </div>
 
                             {/* Quick Filters */}
@@ -888,7 +881,7 @@ export default function ConsultarSalidas() {
                                     <button
                                         key={f}
                                         onClick={() => applyQuickFilter(f as any)}
-                                        className="px-4 py-2 bg-transparent border border-[#333333] text-[9px] font-black uppercase tracking-widest text-[#86868B] hover:text-[#0071E3] hover:border-[#0071E3]/30 transition-all flex items-center gap-2 rounded-[8px]"
+                                        className="px-4 py-2 bg-[#151517] border border-[#3f3f46] text-xs font-semibold text-[#a1a1aa] hover:text-white hover:border-[#71717a] transition-colors flex items-center gap-2 rounded-lg"
                                     >
                                         <Clock className="w-3 h-3" />
                                         {f === 'today' ? 'Hoy' : f === 'week' ? 'Esta Semana' : 'Este Mes'}
@@ -896,28 +889,28 @@ export default function ConsultarSalidas() {
                                 ))}
                             </div>
 
-                            <div className="grid grid-cols-1 md:grid-cols-12 gap-6 items-end bg-black/20 p-8 rounded-[8px] border border-[#333333] shadow-inner">
+                            <div className="grid grid-cols-1 md:grid-cols-12 gap-5 items-end bg-[#151517] p-5 rounded-lg border border-[#3f3f46]">
                                 <div className="md:col-span-4">
                                     <label className="block text-[10px] font-black text-[#86868B] uppercase tracking-[0.2em] mb-3 ml-1">Fecha Inicial</label>
                                     <div className="relative group/date">
-                                        <CalendarDays className="absolute left-5 top-1/2 -translate-y-1/2 w-5 h-5 text-[#86868B] group-focus-within/date:text-[#0071E3] transition-colors pointer-events-none" />
+                                        <CalendarDays className="absolute left-5 top-1/2 -translate-y-1/2 w-5 h-5 text-[#a1a1aa] pointer-events-none" />
                                         <input
                                             type="date"
                                             value={fechaDesde}
                                             onChange={(e) => setFechaDesde(e.target.value)}
-                                            className="w-full h-14 bg-[#1D1D1F] border border-[#333333] rounded-[8px] pl-14 pr-4 font-bold text-white focus:outline-none focus:ring-2 focus:ring-[#0071E3]/30 transition-all [color-scheme:dark]"
+                                            className="w-full h-14 bg-[#18181b] border border-[#52525b] rounded-lg pl-14 pr-4 font-semibold text-white focus:outline-none focus:border-white transition-colors [color-scheme:dark]"
                                         />
                                     </div>
                                 </div>
                                 <div className="md:col-span-4">
                                     <label className="block text-[10px] font-black text-[#86868B] uppercase tracking-[0.2em] mb-3 ml-1">Fecha Final</label>
                                     <div className="relative group/date">
-                                        <CalendarCheck className="absolute left-5 top-1/2 -translate-y-1/2 w-5 h-5 text-[#86868B] group-focus-within/date:text-[#0071E3] transition-colors pointer-events-none" />
+                                        <CalendarCheck className="absolute left-5 top-1/2 -translate-y-1/2 w-5 h-5 text-[#a1a1aa] pointer-events-none" />
                                         <input
                                             type="date"
                                             value={fechaHasta}
                                             onChange={(e) => setFechaHasta(e.target.value)}
-                                            className="w-full h-14 bg-[#1D1D1F] border border-[#333333] rounded-[8px] pl-14 pr-4 font-bold text-white focus:outline-none focus:ring-2 focus:ring-[#0071E3]/30 transition-all [color-scheme:dark]"
+                                            className="w-full h-14 bg-[#18181b] border border-[#52525b] rounded-lg pl-14 pr-4 font-semibold text-white focus:outline-none focus:border-white transition-colors [color-scheme:dark]"
                                         />
                                     </div>
                                 </div>
@@ -925,7 +918,7 @@ export default function ConsultarSalidas() {
                                     <button
                                         onClick={handleBuscarResumen}
                                         disabled={loading}
-                                        className="flex-1 h-14 bg-[#0071E3] hover:bg-[#0077ED] text-white font-black uppercase tracking-widest text-xs rounded-[8px] shadow-xl shadow-[#0071E3]/20 active:scale-95 transition-all flex items-center justify-center gap-2"
+                                        className="flex-1 h-14 bg-[#f4f4f5] hover:bg-white text-black font-semibold text-sm rounded-lg active:scale-95 transition-all flex items-center justify-center gap-2"
                                     >
                                         {loading ? <Loader2 className="w-5 h-5 animate-spin" /> : <Search className="w-5 h-5" />}
                                         Consultar
@@ -934,7 +927,7 @@ export default function ConsultarSalidas() {
                                         <button
                                             onClick={generarPDF}
                                             disabled={resumen.length === 0}
-                                            className="w-14 h-14 bg-transparent border border-[#333333] rounded-[8px] flex items-center justify-center text-[#86868B] hover:text-[#0071E3] hover:border-[#0071E3]/30 transition-all disabled:opacity-20"
+                                            className="w-14 h-14 bg-[#18181b] border border-[#52525b] rounded-lg flex items-center justify-center text-[#d4d4d8] hover:text-white hover:border-[#71717a] transition-colors disabled:opacity-20"
                                             title="Generar PDF"
                                         >
                                             <Download className="w-5 h-5" />
@@ -942,7 +935,7 @@ export default function ConsultarSalidas() {
                                         <button
                                             onClick={generarExcel}
                                             disabled={resumen.length === 0}
-                                            className="w-14 h-14 bg-transparent border border-[#333333] rounded-[8px] flex items-center justify-center text-[#86868B] hover:text-[#0071E3] hover:border-[#0071E3]/30 transition-all disabled:opacity-20"
+                                            className="w-14 h-14 bg-[#18181b] border border-[#52525b] rounded-lg flex items-center justify-center text-[#d4d4d8] hover:text-white hover:border-[#71717a] transition-colors disabled:opacity-20"
                                             title="Exportar Excel"
                                         >
                                             <FileSpreadsheet className="w-5 h-5" />
@@ -956,36 +949,34 @@ export default function ConsultarSalidas() {
 
                 {/* Results Area */}
                 {!hasSearched ? (
-                    <div className="py-40 flex flex-col items-center justify-center text-center group animate-in fade-in zoom-in duration-700">
+                    <div className="min-h-[340px] py-16 flex flex-col items-center justify-center text-center animate-in fade-in duration-500">
                         <div className="relative mb-10">
-                            <div className="absolute inset-0 bg-[#0071E3]/5 rounded-full blur-3xl scale-150 group-hover:scale-200 transition-transform duration-1000" />
-                            <div className="w-32 h-32 bg-[#121212] border border-[#333333] rounded-[8px] flex items-center justify-center relative z-10 group-hover:rotate-6 transition-all duration-700">
-                                <FileSearch className="w-16 h-16 text-[#86868B]" />
+                            <div className="w-20 h-20 bg-[#0d0d0e] border border-[#3f3f46] rounded-xl flex items-center justify-center relative z-10">
+                                <FileSearch className="w-9 h-9 text-[#71717a]" />
                             </div>
                         </div>
-                        <h3 className="text-3xl font-black text-[#F5F5F7] uppercase italic tracking-tighter opacity-20">Sin Datos Consultados</h3>
+                        <h3 className="text-lg font-semibold text-[#d4d4d8]">Sin datos consultados</h3>
                         <p className="text-[#86868B] mt-3 max-w-sm mx-auto font-medium text-sm leading-relaxed tracking-wide">
                             Seleccione el método de búsqueda y aplique los filtros necesarios para desplegar el historial de movimientos.
                         </p>
                     </div>
                 ) : loading ? (
                     <div className="py-40 flex flex-col items-center justify-center space-y-6">
-                        <Loader2 className="w-16 h-16 animate-spin text-[#0071E3]" />
+                        <Loader2 className="w-12 h-12 animate-spin text-white" />
                         <p className="text-[10px] font-black uppercase tracking-[0.3em] text-[#86868B] animate-pulse">Recuperando registros del servidor...</p>
                     </div>
                 ) : (
                     <div className="space-y-8 animate-in fade-in duration-700">
                         {/* Summary Stats Banner */}
                         {(salidas.length > 0 || resumen.length > 0) && (
-                            <div className="bg-[#121212] p-6 border border-[#333333] border-l-4 border-l-[#0071E3] rounded-3xl flex flex-col md:flex-row items-center justify-between gap-6 overflow-hidden relative group">
-                                <div className="absolute inset-0 bg-gradient-to-r from-[#0071E3]/[0.03] to-transparent pointer-events-none" />
+                            <div className="bg-[#0d0d0e] p-5 border border-[#3f3f46] rounded-xl flex flex-col md:flex-row items-center justify-between gap-6 overflow-hidden relative">
                                 <div className="flex items-center gap-6">
                                     <div className="p-4 rounded-[8px] bg-[#1D1D1F] border border-[#333333]">
-                                        <Info className="w-6 h-6 text-[#0071E3]" />
+                                        <Info className="w-6 h-6 text-[#d4d4d8]" />
                                     </div>
                                     <div className="space-y-1">
                                         <h4 className="text-[10px] font-black text-[#86868B] uppercase tracking-widest leading-none">Resultados de la Búsqueda</h4>
-                                        <p className="text-lg font-black text-white italic truncate uppercase">
+                                        <p className="text-base font-semibold text-white truncate">
                                             {activeTab === 'solicitud'
                                                 ? `${salidas.length} Salidas Localizadas • Solicitud: ${solicitudInput}`
                                                 : activeTab === 'id_salida'
@@ -1016,29 +1007,29 @@ export default function ConsultarSalidas() {
                                     const totalSalida = calcularTotalSalida(salida);
 
                                     return (
-                                        <div key={salida.id_salida} className="bg-[#121212] border border-[#333333] rounded-3xl overflow-hidden border-[#0071E3]/30 shadow-2xl">
+                                        <div key={salida.id_salida} className="bg-[#0d0d0e] border border-[#3f3f46] rounded-xl overflow-hidden">
                                             {/* Header Card */}
                                             <div className="p-8 flex flex-col lg:flex-row items-start lg:items-center justify-between gap-8">
                                                 <div className="flex items-center gap-6">
-                                                    <div className="w-16 h-16 rounded-[4px] bg-[#1D1D1F] border border-[#333333] flex items-center justify-center text-[#333333] group-hover:text-[#0071E3] transition-colors">
+                                                    <div className="w-14 h-14 rounded-lg bg-[#18181b] border border-[#3f3f46] flex items-center justify-center text-[#a1a1aa]">
                                                         <Package className="w-8 h-8" />
                                                     </div>
                                                     <div className="space-y-1">
                                                         <div className="flex items-center gap-3">
                                                             <span className="text-[10px] font-black text-[#86868B] uppercase tracking-widest leading-none">ID Salida</span>
                                                             {salida.finalizada ? (
-                                                                <div className="flex items-center gap-1.5 px-2 py-0.5 bg-[#0071E3]/10 border border-[#0071E3]/20 rounded-[4px]">
-                                                                    <CheckCircle className="w-3 h-3 text-[#0071E3]" />
-                                                                    <span className="text-[8px] font-black text-[#0071E3] uppercase tracking-widest">Finalizada</span>
+                                                                <div className="flex items-center gap-1.5 px-2 py-1 bg-[#27272a] border border-[#52525b] rounded">
+                                                                    <CheckCircle className="w-3 h-3 text-white" />
+                                                                    <span className="text-[9px] font-semibold text-white uppercase tracking-wider">Finalizada</span>
                                                                 </div>
                                                             ) : (
-                                                                <div className="flex items-center gap-1.5 px-2 py-0.5 bg-rose-500/10 border border-rose-500/20 rounded-[4px]">
-                                                                    <Clock className="w-3 h-3 text-rose-500" />
-                                                                    <span className="text-[8px] font-black text-rose-500 uppercase tracking-widest">Pendiente</span>
+                                                                <div className="flex items-center gap-1.5 px-2 py-1 bg-[#18181b] border border-[#52525b] rounded">
+                                                                    <Clock className="w-3 h-3 text-[#a1a1aa]" />
+                                                                    <span className="text-[9px] font-semibold text-[#d4d4d8] uppercase tracking-wider">Pendiente</span>
                                                                 </div>
                                                             )}
                                                         </div>
-                                                        <h4 className="text-2xl font-black text-white italic tracking-tighter uppercase"># {salida.id_salida}</h4>
+                                                        <h4 className="text-2xl font-semibold text-white"># {salida.id_salida}</h4>
                                                     </div>
                                                 </div>
 
@@ -1057,7 +1048,7 @@ export default function ConsultarSalidas() {
                                                     </div>
                                                     <div>
                                                         <span className="text-[9px] font-black text-[#86868B] uppercase tracking-widest block mb-1 capitalize">Persona que Retira</span>
-                                                        <p className="font-black text-white text-sm uppercase italic">{colaboradores[salida.retira] || 'No identificado'}</p>
+                                                        <p className="font-semibold text-white text-sm uppercase">{colaboradores[salida.retira] || 'No identificado'}</p>
                                                     </div>
                                                 </div>
                                             </div>
@@ -1078,10 +1069,10 @@ export default function ConsultarSalidas() {
                                                             {salida.dato_salida_13?.map((item: any, idx: number) => (
                                                                 <tr key={idx} className="hover:bg-white/[0.02] transition-colors group h-14">
                                                                     <td className="p-5">
-                                                                        <span className="font-mono text-xs font-black text-[#0071E3] group-hover:text-[#0077ED] transition-colors">{item.articulo}</span>
+                                                                        <span className="font-mono text-xs font-semibold text-[#d4d4d8]">{item.articulo}</span>
                                                                     </td>
                                                                     <td className="p-5">
-                                                                        <p className="text-[#F5F5F7] font-bold text-xs uppercase italic">{item.articulo_01?.nombre_articulo}</p>
+                                                                        <p className="text-[#F5F5F7] font-semibold text-xs uppercase">{item.articulo_01?.nombre_articulo}</p>
                                                                     </td>
                                                                     <td className="p-5 text-right">
                                                                         <span className="text-sm font-black text-white font-mono">{item.cantidad.toLocaleString()}</span>
@@ -1096,7 +1087,7 @@ export default function ConsultarSalidas() {
                                                             <tr className="bg-[#1D1D1F] border-t border-[#333333]">
                                                                 <td colSpan={3} className="p-5 text-right font-black text-[#86868B] uppercase tracking-widest text-[9px]">Monto Total de Salida</td>
                                                                 <td className="p-5 text-right">
-                                                                    <span className="text-xl font-black text-[#0071E3] italic font-mono">{formatearMoneda(totalSalida)}</span>
+                                                                    <span className="text-xl font-semibold text-white font-mono">{formatearMoneda(totalSalida)}</span>
                                                                 </td>
                                                             </tr>
                                                         </tfoot>
@@ -1109,9 +1100,9 @@ export default function ConsultarSalidas() {
 
                                 {/* Pagination Controls for Collaborator */}
                                 {activeTab === 'colaborador' && colaboradorTotal > COLAB_PAGE_SIZE && (
-                                    <div className="p-8 border-t border-[#333333] bg-[#000000]/20 flex flex-col md:flex-row items-center justify-between gap-6 rounded-3xl mt-6">
+                                    <div className="p-6 border border-[#3f3f46] bg-[#0d0d0e] flex flex-col md:flex-row items-center justify-between gap-6 rounded-xl mt-6">
                                         <div className="flex items-center gap-4">
-                                            <div className="w-2 h-2 rounded-full bg-[#0071E3] animate-pulse"></div>
+                                            <div className="w-2 h-2 rounded-full bg-white"></div>
                                             <span className="text-[10px] font-black text-[#86868B] uppercase tracking-[0.2em]">
                                                 Mostrando {(colaboradorPagina - 1) * COLAB_PAGE_SIZE + 1} – {Math.min(colaboradorPagina * COLAB_PAGE_SIZE, colaboradorTotal)} de {colaboradorTotal}
                                             </span>
@@ -1124,7 +1115,7 @@ export default function ConsultarSalidas() {
                                             >
                                                 <ChevronLeft className="w-4 h-4" /> Anterior
                                             </button>
-                                            <div className="px-6 py-3 bg-[#1D1D1F] rounded-[8px] border border-[#333333] text-[#0071E3] font-black text-xs">
+                                            <div className="px-6 py-3 bg-[#18181b] rounded-lg border border-[#52525b] text-white font-semibold text-xs">
                                                 {colaboradorPagina} / {Math.ceil(colaboradorTotal / COLAB_PAGE_SIZE) || 1}
                                             </div>
                                             <button
@@ -1145,19 +1136,19 @@ export default function ConsultarSalidas() {
                             <div className="space-y-6">
                                 <div className="flex items-center justify-between px-2">
                                     <h3 className="text-xs font-black text-[#86868B] uppercase tracking-[0.3em] flex items-center gap-3">
-                                        <Filter className="w-5 h-5 text-[#0071E3]" />
+                                        <Filter className="w-5 h-5 text-[#d4d4d8]" />
                                         Matriz de Resumen Consolidada
                                     </h3>
                                     <div className="flex items-center gap-4">
                                         <span className="text-[9px] font-black text-[#86868B] uppercase tracking-widest">Registros: {resumen.length}</span>
                                         <div className="w-1.5 h-1.5 rounded-full bg-[#333333]" />
-                                        <span className="text-[9px] font-black text-[#0071E3] uppercase tracking-widest">
+                                        <span className="text-[9px] font-black text-[#d4d4d8] uppercase tracking-widest">
                                             {sortConfig ? `Orden x ${sortConfig.key} (${sortConfig.direction})` : 'Carga Predeterminada'}
                                         </span>
                                     </div>
                                 </div>
 
-                                <div className="bg-[#121212] border border-[#333333] rounded-3xl overflow-hidden">
+                                <div className="bg-[#0d0d0e] border border-[#3f3f46] rounded-xl overflow-hidden">
                                     <div className="overflow-x-auto">
                                         <table className="w-full text-left border-collapse">
                                             <thead>
@@ -1182,7 +1173,7 @@ export default function ConsultarSalidas() {
                                                         >
                                                             <div className={`flex items-center gap-1.5 ${col.align === 'right' ? 'justify-end' : 'justify-start'}`}>
                                                                 <span className="whitespace-nowrap">{col.label}</span>
-                                                                <div className="text-[#0071E3]/20 group-hover:text-[#0071E3] transition-colors shrink-0">
+                                                                <div className="text-[#71717a] shrink-0">
                                                                     {sortConfig?.key === col.key ? (
                                                                         sortConfig.direction === 'asc' ? <ArrowUp className="w-2.5 h-2.5" /> : <ArrowDown className="w-2.5 h-2.5" />
                                                                     ) : (
@@ -1201,10 +1192,10 @@ export default function ConsultarSalidas() {
                                                             <span className="font-bold text-[#F5F5F7] text-[10px] block whitespace-nowrap">{formatDate(item.fecha)}</span>
                                                         </td>
                                                         <td className="px-3 py-4">
-                                                            <span className="font-mono text-[9px] font-black text-[#0071E3] group-hover:text-[#0077ED] transition-colors whitespace-nowrap">{item.codigo_articulo}</span>
+                                                            <span className="font-mono text-[9px] font-semibold text-[#d4d4d8] whitespace-nowrap">{item.codigo_articulo}</span>
                                                         </td>
                                                         <td className="px-3 py-4">
-                                                            <p className="text-white font-black text-[10px] uppercase italic leading-tight max-w-[150px] truncate" title={item.nombre_articulo}>
+                                                            <p className="text-white font-semibold text-[10px] uppercase leading-tight max-w-[150px] truncate" title={item.nombre_articulo}>
                                                                 {item.nombre_articulo}
                                                             </p>
                                                         </td>
@@ -1215,7 +1206,7 @@ export default function ConsultarSalidas() {
                                                             <span className="text-[9px] font-black text-[#86868B] whitespace-nowrap opacity-60">{item.tipo_solicitud || 'N/A'}</span>
                                                         </td>
                                                         <td className="px-3 py-4">
-                                                            <span className="text-[9px] font-black text-[#86868B] whitespace-nowrap italic">{item.nombre_dependencia !== 'N/A' ? item.nombre_dependencia : '-'}</span>
+                                                            <span className="text-[9px] font-semibold text-[#a1a1aa] whitespace-nowrap">{item.nombre_dependencia !== 'N/A' ? item.nombre_dependencia : '-'}</span>
                                                         </td>
                                                         <td className="px-3 py-4">
                                                             <p className="text-[10px] font-bold text-[#F5F5F7] leading-tight max-w-[120px] truncate" title={item.instalacion_municipal}>
@@ -1232,7 +1223,7 @@ export default function ConsultarSalidas() {
                                                             <span className="text-[10px] font-black text-[#86868B] font-mono whitespace-nowrap">{formatearMoneda(item.costo_unitario || 0)}</span>
                                                         </td>
                                                         <td className="px-3 py-4 text-right">
-                                                            <span className="text-xs font-black text-[#0071E3] font-mono group-hover:scale-110 transition-transform block whitespace-nowrap">{formatearMoneda(item.total_costo || 0)}</span>
+                                                            <span className="text-xs font-semibold text-white font-mono block whitespace-nowrap">{formatearMoneda(item.total_costo || 0)}</span>
                                                         </td>
                                                     </tr>
                                                 ))}
