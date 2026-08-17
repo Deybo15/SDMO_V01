@@ -39,7 +39,7 @@ export default function EscanerQR() {
     const scannerRef = useRef<any>(null);
     const [scannerKey, setScannerKey] = useState(0);
 
-    const themeColor = 'blue';
+    const themeColor = 'neutral';
 
     useEffect(() => {
         return () => {
@@ -149,28 +149,29 @@ export default function EscanerQR() {
     };
 
     return (
-        <div className="min-h-screen bg-[#000000] text-[#F5F5F7] font-sans selection:bg-[#0071E3]/30 overflow-x-hidden">
-            <div className="animate-fade-in-up">
+        <div className="min-h-screen bg-black p-4 md:p-8 text-[#f4f4f5] selection:bg-white/20 overflow-x-hidden">
+            <div className="max-w-[1536px] mx-auto space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
                 <PageHeader
                     title="Escáner QR"
                     icon={QrCode}
                     themeColor={themeColor}
+                    subtitle="Identificación rápida de artículos mediante su código QR."
                 />
 
-                <div className="max-w-xl mx-auto px-6 pt-16 pb-32 space-y-8">
+                <div className="max-w-6xl mx-auto grid grid-cols-1 lg:grid-cols-[minmax(0,1fr)_360px] gap-6 items-start">
                     {/* Scanner Viewport */}
-                    <div className="relative aspect-square bg-[#121212] rounded-[8px] border border-[#333333] shadow-2xl overflow-hidden group">
+                    <div className="relative aspect-square max-h-[680px] bg-[#09090b] rounded-xl border border-[#3f3f46] shadow-2xl overflow-hidden group">
                         <div id="qr-reader" key={scannerKey} className="w-full h-full" />
 
                         {/* Visual Overlays */}
                         {!scanning && !loading && !result && !error && (
                             <div className="absolute inset-0 flex flex-col items-center justify-center bg-black/40 backdrop-blur-[2px]">
-                                <div className="w-24 h-24 rounded-[8px] bg-[#1D1D1F] flex items-center justify-center mb-8 border border-[#333333] animate-pulse">
-                                    <Camera size={44} className="text-[#86868B]" />
+                                <div className="w-20 h-20 rounded-xl bg-[#18181b] flex items-center justify-center mb-6 border border-[#52525b]">
+                                    <Camera size={36} className="text-[#d4d4d8]" />
                                 </div>
                                 <div className="text-center space-y-2">
-                                    <p className="text-[10px] font-black uppercase tracking-[0.4em] text-[#86868B]">Visor en Reposo</p>
-                                    <p className="text-[9px] font-medium text-[#86868B]/50 uppercase tracking-widest">Listo para iniciar captura</p>
+                                    <p className="text-sm font-semibold text-white">Visor en reposo</p>
+                                    <p className="text-xs text-[#71717a]">Listo para iniciar la captura</p>
                                 </div>
                             </div>
                         )}
@@ -179,87 +180,91 @@ export default function EscanerQR() {
                             <div className="absolute inset-0 pointer-events-none">
                                 {/* Scanning Corners */}
                                 <div className="absolute inset-0 border-[40px] border-black/20" />
-                                <div className="absolute top-12 left-12 w-16 h-16 border-t-[3px] border-l-[3px] border-[#0071E3] rounded-tl-[8px] shadow-[0_0_30px_rgba(0,113,227,0.3)] transition-all" />
-                                <div className="absolute top-12 right-12 w-16 h-16 border-t-[3px] border-r-[3px] border-[#0071E3] rounded-tr-[8px] shadow-[0_0_30px_rgba(0,113,227,0.3)]" />
-                                <div className="absolute bottom-12 left-12 w-16 h-16 border-b-[3px] border-l-[3px] border-[#0071E3] rounded-bl-[8px] shadow-[0_0_30px_rgba(0,113,227,0.3)]" />
-                                <div className="absolute bottom-12 right-12 w-16 h-16 border-b-[3px] border-r-[3px] border-[#0071E3] rounded-br-[8px] shadow-[0_0_30px_rgba(0,113,227,0.3)]" />
+                                <div className="absolute top-12 left-12 w-16 h-16 border-t-2 border-l-2 border-white rounded-tl-lg" />
+                                <div className="absolute top-12 right-12 w-16 h-16 border-t-2 border-r-2 border-white rounded-tr-lg" />
+                                <div className="absolute bottom-12 left-12 w-16 h-16 border-b-2 border-l-2 border-white rounded-bl-lg" />
+                                <div className="absolute bottom-12 right-12 w-16 h-16 border-b-2 border-r-2 border-white rounded-br-lg" />
 
                                 {/* Interactive Scanning Line */}
-                                <div className="absolute top-0 left-12 right-12 h-[2px] bg-[#0071E3]/80 blur-sm animate-scan-line shadow-[0_0_20px_rgba(0,113,227,0.5)]" />
+                                <div className="absolute top-0 left-12 right-12 h-px bg-white/90 animate-scan-line shadow-[0_0_12px_rgba(255,255,255,0.65)]" />
 
                                 {/* Status Pill */}
-                                <div className="absolute bottom-16 left-1/2 -translate-x-1/2 flex items-center gap-3 px-6 py-3 bg-[#121212] border border-[#333333] rounded-[8px] shadow-2xl">
-                                    <div className="w-1.5 h-1.5 rounded-full bg-[#0071E3] animate-pulse shadow-[0_0_10px_rgba(0,113,227,0.8)]" />
-                                    <span className="text-[10px] font-black text-[#0071E3] uppercase tracking-widest">{status}</span>
+                                <div className="absolute bottom-16 left-1/2 -translate-x-1/2 flex items-center gap-3 px-5 py-3 bg-[#111112] border border-[#52525b] rounded-lg shadow-2xl whitespace-nowrap">
+                                    <div className="w-2 h-2 rounded-full bg-white animate-pulse" />
+                                    <span className="text-xs font-semibold text-white">{status}</span>
                                 </div>
                             </div>
                         )}
 
                         {loading && (
                             <div className="absolute inset-0 flex flex-col items-center justify-center bg-black/80 backdrop-blur-md">
-                                <Loader2 className="w-14 h-14 text-[#0071E3] animate-spin relative z-10" />
-                                <p className="mt-6 text-[11px] font-black text-[#86868B] uppercase tracking-[0.3em]">{status}</p>
+                                <Loader2 className="w-12 h-12 text-white animate-spin relative z-10" />
+                                <p className="mt-5 text-sm font-semibold text-[#d4d4d8]">{status}</p>
                             </div>
                         )}
                     </div>
 
                     {/* Action Controls */}
-                    <div className="bg-[#121212] border border-[#333333] p-8 rounded-[8px] space-y-8">
+                    <div className="bg-[#0d0d0e] border border-[#3f3f46] p-6 rounded-xl space-y-6 lg:sticky lg:top-6">
+                        <div className="space-y-1 pb-5 border-b border-[#27272a]">
+                            <h2 className="text-lg font-semibold text-white">Control del visor</h2>
+                            <p className="text-sm text-[#a1a1aa]">Active la cámara y enfoque el código dentro del marco.</p>
+                        </div>
                         {!scanning ? (
                             <button
                                 onClick={startScanning}
-                                className="w-full h-16 bg-[#0071E3] text-[#FFFFFF] font-black text-xs uppercase tracking-[0.2em] rounded-[8px] shadow-2xl shadow-[#0071E3]/20 hover:brightness-110 active:scale-[0.98] transition-all flex items-center justify-center gap-4"
+                                className="w-full h-12 bg-[#e4e4e7] hover:bg-white text-black rounded-lg font-semibold text-sm active:scale-[0.99] transition-all flex items-center justify-center gap-3"
                             >
                                 <Scan className="w-5 h-5" />
-                                {result || error ? 'REINTENTAR ESCANEO' : 'INICIAR VISOR QR'}
+                                {result || error ? 'Reintentar escaneo' : 'Iniciar visor QR'}
                             </button>
                         ) : (
                             <button
                                 onClick={stopScanning}
-                                className="w-full h-16 bg-transparent border border-[#F5F5F7] text-[#F5F5F7] font-black text-xs uppercase tracking-[0.2em] rounded-[8px] hover:bg-[#F5F5F7]/10 transition-all flex items-center justify-center gap-4 group"
+                                className="w-full h-12 bg-[#111112] border border-[#71717a] text-white font-semibold text-sm rounded-lg hover:bg-[#18181b] transition-all flex items-center justify-center gap-3 group"
                             >
-                                <XCircle className="w-5 h-5 group-hover:text-red-500 transition-colors" />
-                                DETENER ESCÁNER
+                                <XCircle className="w-5 h-5 transition-colors" />
+                                Detener escáner
                             </button>
                         )}
 
                         {/* Result Display */}
                         {result && (
                             <div className="animate-in slide-in-from-bottom-8 duration-500">
-                                <div className="bg-[#1D1D1F] rounded-[8px] p-8 border border-[#333333]">
-                                    <div className="flex gap-8 items-center">
-                                        <div className="w-32 h-32 bg-[#121212] rounded-[8px] overflow-hidden shrink-0 border border-[#333333] shadow-inner">
+                                <div className="bg-[#111112] rounded-xl p-5 border border-[#3f3f46]">
+                                    <div className="flex flex-col gap-5 items-stretch">
+                                        <div className="w-full aspect-[4/3] bg-[#09090b] rounded-lg overflow-hidden border border-[#3f3f46] shadow-inner">
                                             <SmartImage
                                                 src={result.imagen_url}
                                                 alt={result.nombre_articulo}
-                                                className="w-full h-full object-cover"
+                                                className="w-full h-full object-contain"
                                             />
                                         </div>
                                         <div className="flex-1 min-w-0 space-y-4">
                                             <div className="flex items-center gap-2">
-                                                <span className="text-[10px] font-black bg-[#0071E3]/10 text-[#0071E3] px-3 py-1 rounded-[4px] border border-[#0071E3]/20 uppercase tracking-widest">
+                                                <span className="text-xs font-mono bg-[#18181b] text-[#d4d4d8] px-3 py-1.5 rounded-md border border-[#52525b]">
                                                     {result.codigo_articulo}
                                                 </span>
-                                                <CheckCircle2 className="w-4 h-4 text-green-500" />
+                                                <CheckCircle2 className="w-4 h-4 text-white" />
                                             </div>
-                                            <h3 className="text-[#F5F5F7] font-bold text-xl leading-tight uppercase tracking-tight line-clamp-2">
+                                            <h3 className="text-white font-semibold text-lg leading-snug line-clamp-3">
                                                 {result.nombre_articulo}
                                             </h3>
 
                                             <div className="flex justify-between items-end pt-4">
                                                 <div className="flex flex-col">
-                                                    <span className="text-[10px] text-[#86868B] font-bold uppercase tracking-widest mb-1">Stock Actual</span>
-                                                    <span className="text-3xl font-black text-[#F5F5F7] italic tracking-tighter shadow-sm">
-                                                        {result.cantidad_disponible} <span className="text-[12px] text-[#86868B] not-italic uppercase ml-1 tracking-widest">{result.unidad}</span>
+                                                    <span className="text-xs text-[#a1a1aa] mb-1">Stock disponible</span>
+                                                    <span className="text-3xl font-semibold text-white tracking-tight">
+                                                        {result.cantidad_disponible} <span className="text-xs text-[#a1a1aa] uppercase ml-1 tracking-wider">{result.unidad}</span>
                                                     </span>
                                                 </div>
 
                                                 <button
                                                     onClick={() => navigate(`/articulos/consultar-inventario`)}
-                                                    className="w-14 h-14 bg-[#121212] hover:bg-[#0071E3] text-[#86868B] hover:text-[#FFFFFF] rounded-[8px] flex items-center justify-center transition-all border border-[#333333] hover:border-transparent active:scale-90"
+                                                    className="w-12 h-12 bg-[#18181b] hover:bg-white text-[#d4d4d8] hover:text-black rounded-lg flex items-center justify-center transition-all border border-[#52525b] active:scale-95"
                                                     title="Ver en inventario"
                                                 >
-                                                    <ArrowRight className="w-7 h-7" />
+                                                    <ArrowRight className="w-5 h-5" />
                                                 </button>
                                             </div>
                                         </div>
@@ -270,22 +275,22 @@ export default function EscanerQR() {
 
                         {/* Error Handling UI */}
                         {error && (
-                            <div className="animate-in shake duration-500 bg-red-500/10 border border-red-500/20 p-8 rounded-[8px] flex items-center gap-8">
-                                <div className="w-16 h-16 rounded-[8px] bg-red-500/20 flex items-center justify-center shrink-0 border border-red-500/10">
-                                    <AlertTriangle className="text-red-500 w-8 h-8" />
+                            <div className="animate-in shake duration-500 bg-[#111112] border border-[#71717a] p-5 rounded-xl flex items-start gap-4">
+                                <div className="w-12 h-12 rounded-lg bg-[#18181b] flex items-center justify-center shrink-0 border border-[#52525b]">
+                                    <AlertTriangle className="text-white w-6 h-6" />
                                 </div>
                                 <div className="space-y-1">
-                                    <p className="text-[10px] font-black text-red-500 uppercase tracking-widest">Error de Escaneo</p>
-                                    <p className="text-sm font-bold text-[#F5F5F7]/70 leading-relaxed">{error}</p>
+                                    <p className="text-sm font-semibold text-white">No fue posible escanear</p>
+                                    <p className="text-sm text-[#a1a1aa] leading-relaxed">{error}</p>
                                 </div>
                             </div>
                         )}
 
                         {/* Interactive Hint */}
                         {!result && !error && !scanning && (
-                            <div className="flex items-center justify-center gap-3 py-4 opacity-50 group cursor-default">
-                                <RefreshCw className="w-4 h-4 text-[#86868B] transition-transform group-hover:rotate-180 duration-700" />
-                                <span className="text-[10px] font-black text-[#86868B] uppercase tracking-[0.4em]">Apunta al código para registrar</span>
+                            <div className="flex items-center justify-center gap-3 pt-2 text-[#71717a] group cursor-default">
+                                <RefreshCw className="w-4 h-4 transition-transform group-hover:rotate-180 duration-700" />
+                                <span className="text-xs">Apunte al código del artículo para identificarlo</span>
                             </div>
                         )}
                     </div>
