@@ -191,41 +191,42 @@ export default function RegistrarArticulo() {
     };
 
     return (
-        <div className="min-h-screen bg-[#000000] p-8 text-[#F5F5F7]">
-            <div className="max-w-7xl mx-auto space-y-12 animate-fade-in-up">
-                <div className="flex flex-col md:flex-row md:items-end justify-between gap-8">
+        <div className="min-h-screen bg-black p-4 md:p-8 text-[#f4f4f5] selection:bg-white/20">
+            <div className="max-w-[1536px] mx-auto space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
+                <div className="flex flex-col md:flex-row md:items-center justify-between gap-5">
                     <PageHeader
                         title="Registrar Nuevo Artículo"
                         icon={PackagePlus}
-                        themeColor="blue"
+                        themeColor="neutral"
+                        subtitle="Creación de productos para el catálogo institucional."
                     />
                     <button
                         onClick={() => navigate('/articulos')}
-                        className="btn-ghost"
+                        className="h-12 px-6 rounded-lg bg-[#111112] border border-[#52525b] flex items-center gap-3 text-[#d4d4d8] hover:text-white hover:bg-[#18181b] transition-colors group"
                     >
                         <div className="flex items-center gap-2">
-                            <ArrowLeft className="w-5 h-5" />
-                            <span className="text-[11px] font-bold uppercase tracking-widest">Regresar</span>
+                            <ArrowLeft className="w-4 h-4 group-hover:-translate-x-1 transition-transform" />
+                            <span className="text-sm font-semibold leading-none">Regresar</span>
                         </div>
                     </button>
                 </div>
 
-                <div className="glass-card">
-                    <div className="p-12 space-y-12">
-                        <div className="space-y-2">
-                            <h3 className="text-2xl font-bold text-[#F5F5F7] tracking-tight uppercase flex items-center gap-3">
-                                <Warehouse className="w-6 h-6 text-[#0071E3]" />
-                                Especificaciones del Producto
+                <div className="bg-[#0d0d0e] border border-[#3f3f46] rounded-xl overflow-hidden">
+                    <div className="p-6 md:p-8 space-y-8">
+                        <div className="space-y-1 pb-5 border-b border-[#27272a]">
+                            <h3 className="text-xl font-semibold text-white tracking-tight flex items-center gap-3">
+                                <Warehouse className="w-5 h-5 text-[#d4d4d8]" />
+                                Especificaciones del producto
                             </h3>
-                            <p className="text-xs text-[#86868B] font-medium uppercase tracking-widest">Defina los parámetros técnicos del nuevo artículo</p>
+                            <p className="text-sm text-[#a1a1aa]">Defina los parámetros técnicos del nuevo artículo. El código y la descripción son obligatorios.</p>
                         </div>
 
-                        <form onSubmit={handleSubmit} className="space-y-12">
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-x-12 gap-y-10">
+                        <form onSubmit={handleSubmit} className="space-y-8">
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-6">
                                 {/* Código */}
                                 <div className="space-y-3">
-                                    <label className="flex items-center gap-2 text-[10px] font-bold text-[#86868B] uppercase tracking-[0.2em] ml-1">
-                                        <Hash className="w-3.5 h-3.5 text-[#0071E3]" />
+                                    <label className="flex items-center gap-2 text-[10px] font-semibold text-[#a1a1aa] uppercase tracking-[0.14em] ml-1">
+                                        <Hash className="w-3.5 h-3.5 text-[#d4d4d8]" />
                                         Código de Artículo
                                     </label>
                                     <input
@@ -235,14 +236,14 @@ export default function RegistrarArticulo() {
                                         value={formData.codigo_articulo}
                                         onChange={handleChange}
                                         placeholder="Ej: ART-001"
-                                        className="glass-input w-full font-mono"
+                                        className="w-full h-14 bg-[#111112] border border-[#3f3f46] rounded-lg px-5 text-white font-mono placeholder-[#52525b] focus:outline-none focus:border-[#a1a1aa] transition-colors"
                                     />
                                 </div>
 
                                 {/* Nombre */}
                                 <div className="space-y-3">
-                                    <label className="flex items-center gap-2 text-[10px] font-bold text-[#86868B] uppercase tracking-[0.2em] ml-1">
-                                        <Box className="w-3.5 h-3.5 text-[#0071E3]" />
+                                    <label className="flex items-center gap-2 text-[10px] font-semibold text-[#a1a1aa] uppercase tracking-[0.14em] ml-1">
+                                        <Box className="w-3.5 h-3.5 text-[#d4d4d8]" />
                                         Nombre / Descripción
                                     </label>
                                     <input
@@ -252,21 +253,21 @@ export default function RegistrarArticulo() {
                                         value={formData.nombre_articulo}
                                         onChange={handleChange}
                                         placeholder="Descripción técnica"
-                                        className="glass-input w-full"
+                                        className="w-full h-14 bg-[#111112] border border-[#3f3f46] rounded-lg px-5 text-white placeholder-[#52525b] focus:outline-none focus:border-[#a1a1aa] transition-colors"
                                     />
                                 </div>
 
                                 {/* Unidad */}
                                 <div className="space-y-3">
-                                    <label className="flex items-center gap-2 text-[10px] font-bold text-[#86868B] uppercase tracking-[0.2em] ml-1">
-                                        <Package className="w-3.5 h-3.5 text-[#0071E3]" />
+                                    <label className="flex items-center gap-2 text-[10px] font-semibold text-[#a1a1aa] uppercase tracking-[0.14em] ml-1">
+                                        <Package className="w-3.5 h-3.5 text-[#d4d4d8]" />
                                         Unidad de Medida
                                     </label>
                                     <select
                                         name="unidad"
                                         value={formData.unidad}
                                         onChange={handleChange}
-                                        className="glass-input w-full appearance-none bg-[#1D1D1F]"
+                                        className="w-full h-14 appearance-none bg-[#111112] border border-[#3f3f46] rounded-lg px-5 text-white focus:outline-none focus:border-[#a1a1aa] transition-colors"
                                     >
                                         <option value="" className="bg-[#121212]">Seleccionar Unidad</option>
                                         {unidades.map(u => (
@@ -279,15 +280,15 @@ export default function RegistrarArticulo() {
 
                                 {/* Marca */}
                                 <div className="space-y-3">
-                                    <label className="flex items-center gap-2 text-[10px] font-bold text-[#86868B] uppercase tracking-[0.2em] ml-1">
-                                        <Tag className="w-3.5 h-3.5 text-[#0071E3]" />
+                                    <label className="flex items-center gap-2 text-[10px] font-semibold text-[#a1a1aa] uppercase tracking-[0.14em] ml-1">
+                                        <Tag className="w-3.5 h-3.5 text-[#d4d4d8]" />
                                         Marca
                                     </label>
                                     <select
                                         name="marca"
                                         value={formData.marca}
                                         onChange={handleChange}
-                                        className="glass-input w-full appearance-none bg-[#1D1D1F]"
+                                        className="w-full h-14 appearance-none bg-[#111112] border border-[#3f3f46] rounded-lg px-5 text-white focus:outline-none focus:border-[#a1a1aa] transition-colors"
                                     >
                                         <option value="" className="bg-[#121212]">Seleccionar Marca</option>
                                         {marcas.map(marca => (
@@ -298,15 +299,15 @@ export default function RegistrarArticulo() {
 
                                 {/* Código Gasto */}
                                 <div className="space-y-3">
-                                    <label className="flex items-center gap-2 text-[10px] font-bold text-[#86868B] uppercase tracking-[0.2em] ml-1">
-                                        <Info className="w-3.5 h-3.5 text-[#0071E3]" />
+                                    <label className="flex items-center gap-2 text-[10px] font-semibold text-[#a1a1aa] uppercase tracking-[0.14em] ml-1">
+                                        <Info className="w-3.5 h-3.5 text-[#d4d4d8]" />
                                         Código de Gasto
                                     </label>
                                     <select
                                         name="codigo_gasto"
                                         value={formData.codigo_gasto}
                                         onChange={handleChange}
-                                        className="glass-input w-full appearance-none bg-[#1D1D1F]"
+                                        className="w-full h-14 appearance-none bg-[#111112] border border-[#3f3f46] rounded-lg px-5 text-white focus:outline-none focus:border-[#a1a1aa] transition-colors"
                                     >
                                         <option value="" className="bg-[#121212]">Seleccionar Partida</option>
                                         {gastos.map(gasto => (
@@ -319,8 +320,8 @@ export default function RegistrarArticulo() {
 
                                 {/* Precio Unitario */}
                                 <div className="space-y-3">
-                                    <label className="flex items-center gap-2 text-[10px] font-bold text-[#86868B] uppercase tracking-[0.2em] ml-1">
-                                        <DollarSign className="w-3.5 h-3.5 text-[#0071E3]" />
+                                    <label className="flex items-center gap-2 text-[10px] font-semibold text-[#a1a1aa] uppercase tracking-[0.14em] ml-1">
+                                        <DollarSign className="w-3.5 h-3.5 text-[#d4d4d8]" />
                                         Precio Unitario
                                     </label>
                                     <input
@@ -330,14 +331,14 @@ export default function RegistrarArticulo() {
                                         value={formData.precio_unitario}
                                         onChange={handleChange}
                                         placeholder="0.00"
-                                        className="glass-input w-full"
+                                        className="w-full h-14 bg-[#111112] border border-[#3f3f46] rounded-lg px-5 text-white placeholder-[#52525b] focus:outline-none focus:border-[#a1a1aa] transition-colors"
                                     />
                                 </div>
 
                                 {/* Image Upload */}
                                 <div className="md:col-span-2 space-y-3">
-                                    <label className="flex items-center gap-2 text-[10px] font-bold text-[#86868B] uppercase tracking-[0.2em] ml-1">
-                                        <ImageIcon className="w-3.5 h-3.5 text-[#0071E3]" />
+                                    <label className="flex items-center gap-2 text-[10px] font-semibold text-[#a1a1aa] uppercase tracking-[0.14em] ml-1">
+                                        <ImageIcon className="w-3.5 h-3.5 text-[#d4d4d8]" />
                                         Imagen del Producto
                                     </label>
                                     <div
@@ -351,8 +352,8 @@ export default function RegistrarArticulo() {
                                             if (file) handleImageChange(file);
                                         }}
                                         className={cn(
-                                            "drag-drop-zone min-h-[200px] flex flex-col items-center justify-center p-8 gap-6 active:scale-[0.99]",
-                                            isDragging && "active"
+                                            "relative min-h-[220px] rounded-xl border border-dashed border-[#52525b] bg-[#09090b] flex flex-col items-center justify-center p-8 gap-5 cursor-pointer transition-colors active:scale-[0.995]",
+                                            isDragging ? "border-white bg-[#18181b]" : "hover:border-[#a1a1aa] hover:bg-[#111112]"
                                         )}
                                     >
                                         <input
@@ -375,19 +376,19 @@ export default function RegistrarArticulo() {
                                                         e.stopPropagation();
                                                         handleImageChange(null);
                                                     }}
-                                                    className="absolute -top-3 -right-3 p-1.5 bg-[#121212] border border-[#333333] text-white rounded-full hover:bg-rose-600 transition-colors"
+                                                    className="absolute -top-3 -right-3 p-2 bg-[#111112] border border-[#71717a] text-white rounded-full hover:bg-white hover:text-black transition-colors"
                                                 >
                                                     <X className="w-4 h-4" />
                                                 </button>
                                             </div>
                                         ) : (
                                             <>
-                                                <div className="p-5 bg-[#1D1D1F] rounded-full border border-[#333333]">
-                                                    <Upload className="w-10 h-10 text-[#0071E3]" />
+                                                <div className="p-5 bg-[#18181b] rounded-full border border-[#52525b]">
+                                                    <Upload className="w-9 h-9 text-white" />
                                                 </div>
                                                 <div className="text-center space-y-2">
-                                                    <p className="text-sm font-bold uppercase tracking-widest text-[#F5F5F7]">Arrastra o selecciona una imagen</p>
-                                                    <p className="text-[10px] font-medium text-[#86868B] uppercase tracking-wider">Soporta PNG, JPG, WEBP (Max 5MB)</p>
+                                                    <p className="text-sm font-semibold text-white">Arrastra o selecciona una imagen</p>
+                                                    <p className="text-xs text-[#71717a]">PNG, JPG o WEBP · máximo 5 MB</p>
                                                 </div>
                                             </>
                                         )}
@@ -395,8 +396,8 @@ export default function RegistrarArticulo() {
                                         {uploadingImage && (
                                             <div className="absolute inset-0 apple-blur flex items-center justify-center z-20 rounded-[8px]">
                                                 <div className="flex flex-col items-center gap-4">
-                                                    <Loader2 className="w-10 h-10 text-[#0071E3] animate-spin" />
-                                                    <span className="text-[10px] font-bold uppercase tracking-[0.2em] text-[#0071E3]">Subiendo imagen...</span>
+                                                    <Loader2 className="w-10 h-10 text-white animate-spin" />
+                                                    <span className="text-xs font-semibold text-white">Subiendo imagen...</span>
                                                 </div>
                                             </div>
                                         )}
@@ -404,36 +405,36 @@ export default function RegistrarArticulo() {
                                 </div>
                             </div>
 
-                            <div className="pt-12 border-t border-[#333333] flex flex-col md:flex-row gap-8">
+                            <div className="pt-6 border-t border-[#27272a] flex flex-col md:flex-row gap-4">
                                 <button
                                     type="submit"
                                     disabled={loading}
-                                    className="btn-primary flex-1 h-16"
+                                    className="flex-1 h-12 bg-[#e4e4e7] hover:bg-white disabled:opacity-50 disabled:pointer-events-none text-black rounded-lg flex items-center justify-center transition-colors"
                                 >
                                     {loading ? (
                                         <Loader2 className="w-6 h-6 animate-spin mx-auto" />
                                     ) : (
                                         <div className="flex items-center justify-center gap-4">
-                                            <Save className="w-6 h-6" />
-                                            <span className="text-xs font-bold uppercase tracking-[0.2em]">Guardar en Catálogo</span>
+                                            <Save className="w-5 h-5" />
+                                            <span className="text-sm font-semibold">Guardar en catálogo</span>
                                         </div>
                                     )}
                                 </button>
                                 <button
                                     type="button"
                                     onClick={() => navigate('/articulos')}
-                                    className="btn-ghost flex-1 h-16"
+                                    className="flex-1 h-12 bg-[#111112] border border-[#52525b] rounded-lg text-white hover:bg-[#18181b] transition-colors"
                                 >
-                                    <span className="text-xs font-bold uppercase tracking-widest">Cancelar</span>
+                                    <span className="text-sm font-semibold">Cancelar</span>
                                 </button>
                             </div>
                         </form>
                     </div>
                 </div>
 
-                <div className="bg-[#121212] border border-[#333333] p-6 rounded-[8px] text-center">
-                    <p className="text-[10px] text-[#86868B] font-bold uppercase tracking-widest leading-relaxed">
-                        Al registrar, el artículo estará disponible inmediatamente para ingresos de stock y transacciones.
+                <div className="p-4 border-t border-[#27272a] text-center">
+                    <p className="text-xs text-[#71717a] leading-relaxed">
+                        Al registrar, el artículo estará disponible inmediatamente para ingresos de inventario y transacciones.
                     </p>
                 </div>
             </div>
@@ -441,8 +442,8 @@ export default function RegistrarArticulo() {
             {/* Notification Toast */}
             {notification && (
                 <div className={cn(
-                    "fixed bottom-8 right-8 z-[100] px-8 py-5 apple-blur rounded-[8px] border border-[#333333] flex items-center gap-5 animate-slide-up shadow-2xl",
-                    notification.type === 'success' ? 'text-[#0071E3]' : 'text-rose-500'
+                    "fixed bottom-8 right-8 z-[100] px-6 py-4 rounded-lg border border-[#52525b] bg-[#111112] backdrop-blur-2xl flex items-center gap-4 animate-in slide-in-from-right-10 shadow-2xl",
+                    notification.type === 'success' ? 'text-white' : 'text-[#d4d4d8]'
                 )}>
                     {notification.type === 'success' ? <CheckCircle2 className="w-6 h-6" /> : <XCircle className="w-6 h-6" />}
                     <span className="text-xs font-bold uppercase tracking-[0.2em]">{notification.message}</span>
