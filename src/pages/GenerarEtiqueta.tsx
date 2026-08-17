@@ -14,7 +14,12 @@ import {
     Info,
     CheckCircle2
 } from 'lucide-react';
-import QRCode from 'react-qr-code';
+// El paquete expone el motor que usa internamente react-qr-code. Dibujarlo aquí
+// evita que un error de render del wrapper externo derribe toda la página.
+// @ts-expect-error qr.js no incluye declaraciones de TypeScript.
+import QRCodeEngine from 'qr.js/lib/QRCode';
+// @ts-expect-error qr.js no incluye declaraciones de TypeScript.
+import ErrorCorrectLevel from 'qr.js/lib/ErrorCorrectLevel';
 
 // Shared Components
 import { PageHeader } from '../components/ui/PageHeader';
@@ -25,6 +30,48 @@ interface Articulo {
     unidad: string | null;
     marca: string | null;
     imagen_url?: string | null;
+}
+
+function SafeQRCode({ value, size = 120 }: { value: string; size?: number }) {
+    try {
+        const qr = new QRCodeEngine(-1, ErrorCorrectLevel.H);
+        qr.addData(String(value || 'SIN-CODIGO'));
+        qr.make();
+
+        const cells: boolean[][] = qr.modules;
+        const foreground = cells
+            .map((row, rowIndex) => row
+                .map((cell, cellIndex) => cell
+                    ? `M ${cellIndex} ${rowIndex} h 1 v 1 h -1 Z`
+                    : '')
+                .join(' '))
+            .join(' ');
+
+        return (
+            <svg
+                aria-label={`Código QR ${value}`}
+                height={size}
+                width={size}
+                viewBox={`0 0 ${cells.length} ${cells.length}`}
+                role="img"
+                shapeRendering="crispEdges"
+                xmlns="http://www.w3.org/2000/svg"
+            >
+                <rect width="100%" height="100%" fill="#ffffff" />
+                <path d={foreground} fill="#000000" />
+            </svg>
+        );
+    } catch (error) {
+        console.error('No se pudo generar el código QR:', error);
+        return (
+            <div
+                className="flex items-center justify-center border-2 border-black bg-white text-center text-[10px] font-bold text-black"
+                style={{ width: size, height: size }}
+            >
+                QR NO DISPONIBLE
+            </div>
+        );
+    }
 }
 
 export default function GenerarEtiqueta() {
@@ -80,7 +127,15 @@ export default function GenerarEtiqueta() {
     }, [articulos.length, showModal]);
 
     const handleSelectArticle = (article: Articulo) => {
-        setGeneratedArticle(article);
+        // Supabase puede devolver códigos numéricos aunque la columna se tipifique
+        // como texto. El generador QR requiere siempre una cadena válida.
+        setGeneratedArticle({
+            ...article,
+            codigo_articulo: String(article.codigo_articulo ?? ''),
+            nombre_articulo: String(article.nombre_articulo ?? ''),
+            unidad: article.unidad == null ? null : String(article.unidad),
+            marca: article.marca == null ? null : String(article.marca),
+        });
         setShowModal(false);
         setStatusMessage({ type: 'success', message: 'Artículo seleccionado correctamente.' });
         setTimeout(() => setStatusMessage(null), 3000);
@@ -91,7 +146,7 @@ export default function GenerarEtiqueta() {
     };
 
     return (
-        <div className="min-h-screen bg-[#000000] text-[#F5F5F7] p-4 md:p-8 relative overflow-hidden">
+        <div className="min-h-screen bg-black text-[#f4f4f5] px-4 py-6 md:px-8 md:py-8">
             <style>{`
                 /* Print Styles */
                 @media print {
@@ -199,35 +254,26 @@ export default function GenerarEtiqueta() {
                 }
             `}</style>
 
-            <div className="max-w-6xl mx-auto space-y-8 relative z-10 no-print">
+            <div className="max-w-[1536px] mx-auto space-y-6 relative z-10 no-print">
                 {/* Header */}
-                <div className="flex flex-col md:flex-row justify-between items-end gap-6 pb-2 border-b border-[#333333]">
-                    <div className="space-y-1">
-                        <PageHeader title="Generar Etiqueta QR" icon={QrCode} themeColor="blue" />
-                        <p className="text-[#86868B] text-sm font-medium tracking-wide">
-                            Generación de etiquetas térmicas estandarizadas (6.5 × 10.5 cm).
-                        </p>
-                    </div>
+                <div className="flex flex-col md:flex-row justify-between md:items-center gap-5 pb-5 border-b border-[#27272a]">
+                    <PageHeader title="Generar etiqueta QR" subtitle="Creación de etiquetas térmicas para identificación de artículos." icon={QrCode} themeColor="neutral" />
                     <button
                         onClick={() => navigate(-1)}
-                        className="px-6 py-2.5 bg-transparent border border-[#333333] rounded-[8px] text-xs font-black uppercase tracking-widest flex items-center gap-2 text-[#F5F5F7] transition-all hover:bg-white/5"
+                        className="h-11 px-5 bg-[#0d0d0e] border border-[#3f3f46] rounded-lg text-sm font-semibold flex items-center gap-2 text-[#f4f4f5] transition-colors hover:bg-[#18181b]"
                     >
-                        <ArrowLeft className="w-4 h-4 text-[#0071E3]" />
+                        <ArrowLeft className="w-4 h-4" />
                         Regresar
                     </button>
                 </div>
 
                 {/* Status Float Messages */}
                 {statusMessage && (
-                    <div className={`fixed top-8 right-8 z-[100] px-6 py-5 rounded-[8px] shadow-2xl backdrop-blur-xl border animate-in slide-in-from-right-4 flex items-center gap-4
-                        ${statusMessage.type === 'success' ? 'bg-emerald-500/10 border-emerald-500/20 text-emerald-100' :
-                            statusMessage.type === 'error' ? 'bg-rose-500/10 border-rose-500/20 text-rose-100' :
-                                'bg-[#0071E3]/10 border-[#0071E3]/20 text-blue-100'
-                        }`}>
+                    <div className="fixed top-8 right-8 z-[100] px-5 py-4 rounded-lg shadow-2xl backdrop-blur-xl border border-[#52525b] bg-[#18181b] text-white animate-in slide-in-from-right-4 flex items-center gap-4">
                         <div className="p-2 rounded-[8px] bg-white/5 shrink-0">
-                            {statusMessage.type === 'error' ? <AlertTriangle className="w-5 h-5 text-rose-400" /> :
-                                statusMessage.type === 'success' ? <CheckCircle2 className="w-5 h-5 text-emerald-400" /> :
-                                    <Info className="w-5 h-5 text-blue-400" />}
+                            {statusMessage.type === 'error' ? <AlertTriangle className="w-5 h-5 text-white" /> :
+                                statusMessage.type === 'success' ? <CheckCircle2 className="w-5 h-5 text-white" /> :
+                                    <Info className="w-5 h-5 text-white" />}
                         </div>
                         <span className="font-black uppercase tracking-widest text-[11px] leading-relaxed">{statusMessage.message}</span>
                         <button onClick={() => setStatusMessage(null)} className="ml-auto p-1 hover:bg-white/5 rounded-[4px] transition-colors">
@@ -236,21 +282,21 @@ export default function GenerarEtiqueta() {
                     </div>
                 )}
 
-                <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
+                <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
                     {/* Selection Panel */}
-                    <div className="lg:col-span-5 space-y-6">
-                        <div className="bg-[#121212] p-8 border border-[#333333] rounded-[8px] relative group">
-                            <h2 className="text-[10px] font-black text-[#86868B] uppercase tracking-[0.3em] mb-8 flex items-center gap-3">
-                                <Tag className="w-4 h-4 text-[#0071E3]" />
-                                Configuración de Etiqueta
+                    <div className="lg:col-span-5 space-y-4">
+                        <div className="bg-[#0d0d0e] p-6 md:p-7 border border-[#3f3f46] rounded-xl">
+                            <h2 className="text-lg font-semibold text-white mb-1 flex items-center gap-3">
+                                <Tag className="w-5 h-5 text-[#d4d4d8]" />
+                                Configuración de la etiqueta
                             </h2>
+                            <p className="text-sm text-[#a1a1aa] mb-7">Seleccione el artículo que desea identificar.</p>
 
                             <label className="block text-[10px] font-black text-[#86868B] uppercase tracking-[0.2em] mb-4 ml-1">Artículo Seleccionado</label>
 
                             <div className="mb-8">
                                 {generatedArticle ? (
-                                    <div className="flex items-center gap-5 p-5 bg-[#1D1D1F] border border-[#333333] rounded-[8px] relative overflow-hidden group/item">
-                                        <div className="absolute top-0 left-0 w-1 h-full bg-[#0071E3]" />
+                                    <div className="flex items-center gap-5 p-4 bg-[#151517] border border-[#52525b] rounded-lg overflow-hidden group/item">
                                         <div className="w-20 h-20 bg-black/40 rounded-[4px] overflow-hidden border border-[#333333] shrink-0 flex items-center justify-center">
                                             {generatedArticle.imagen_url ? (
                                                 <img src={generatedArticle.imagen_url} className="w-full h-full object-cover opacity-90 group-hover/item:scale-105 transition-transform duration-500" />
@@ -259,8 +305,8 @@ export default function GenerarEtiqueta() {
                                             )}
                                         </div>
                                         <div className="flex-1 min-w-0">
-                                            <span className="font-mono text-[10px] font-black text-[#0071E3] uppercase tracking-widest">{generatedArticle.codigo_articulo}</span>
-                                            <p className="text-base font-black text-[#F5F5F7] italic uppercase leading-tight mb-2">{generatedArticle.nombre_articulo}</p>
+                                            <span className="font-mono text-xs font-semibold text-[#d4d4d8]">{generatedArticle.codigo_articulo}</span>
+                                            <p className="text-sm font-semibold text-white uppercase leading-snug mb-2">{generatedArticle.nombre_articulo}</p>
                                             <div className="flex flex-wrap gap-2">
                                                 <span className="px-2 py-0.5 bg-white/5 rounded-[4px] text-[9px] font-black text-[#86868B] uppercase tracking-widest border border-[#333333]">
                                                     Marca: {generatedArticle.marca || 'N/A'}
@@ -272,9 +318,9 @@ export default function GenerarEtiqueta() {
                                         </div>
                                     </div>
                                 ) : (
-                                    <div className="p-10 border-2 border-dashed border-[#333333] rounded-[8px] bg-[#1D1D1F]/50 flex flex-col items-center text-center">
-                                        <div className="w-16 h-16 rounded-[8px] bg-[#1D1D1F] flex items-center justify-center mb-4 border border-[#333333]">
-                                            <AlertTriangle className="w-8 h-8 text-[#333333]" />
+                                    <div className="p-9 border border-dashed border-[#52525b] rounded-lg bg-[#151517] flex flex-col items-center text-center">
+                                        <div className="w-14 h-14 rounded-lg bg-[#202024] flex items-center justify-center mb-4 border border-[#3f3f46]">
+                                            <Tag className="w-6 h-6 text-[#a1a1aa]" />
                                         </div>
                                         <p className="text-[#86868B] font-bold text-sm tracking-wide uppercase text-[10px]">No se ha seleccionado ningún artículo para generar la etiqueta.</p>
                                     </div>
@@ -284,9 +330,9 @@ export default function GenerarEtiqueta() {
                             <div className="space-y-4">
                                 <button
                                     onClick={() => setShowModal(true)}
-                                    className="w-full h-16 bg-transparent border border-[#333333] rounded-[8px] flex items-center justify-center gap-3 text-[#F5F5F7] hover:bg-white/5 transition-all group/btn"
+                                    className="w-full h-12 bg-[#f4f4f5] border border-white rounded-lg flex items-center justify-center gap-3 text-black hover:bg-white transition-colors group/btn"
                                 >
-                                    <Search className="w-5 h-5 text-[#0071E3] group-hover/btn:scale-110 transition-transform" />
+                                    <Search className="w-5 h-5" />
                                     <span className="font-black uppercase tracking-[0.2em] text-xs">
                                         {generatedArticle ? 'Cambiar Artículo' : 'Localizar Artículo'}
                                     </span>
@@ -295,7 +341,7 @@ export default function GenerarEtiqueta() {
                                 {generatedArticle && (
                                     <button
                                         onClick={handlePrint}
-                                        className="w-full h-16 bg-[#0071E3] hover:bg-[#0077ED] text-white rounded-[8px] shadow-lg shadow-[#0071E3]/20 transition-all flex items-center justify-center gap-3 group/print"
+                                        className="w-full h-12 bg-[#27272a] hover:bg-[#3f3f46] border border-[#52525b] text-white rounded-lg transition-colors flex items-center justify-center gap-3 group/print"
                                     >
                                         <Printer className="w-6 h-6 group-hover/print:scale-110 transition-transform" />
                                         <span className="font-black uppercase tracking-[0.2em] text-xs">Imprimir Etiqueta</span>
@@ -305,38 +351,33 @@ export default function GenerarEtiqueta() {
                         </div>
 
                         {/* Specs Card */}
-                        <div className="bg-[#121212] p-6 border border-[#333333] rounded-[8px] flex items-center gap-5">
+                        <div className="bg-[#0d0d0e] p-5 border border-[#3f3f46] rounded-xl flex items-center gap-4">
                             <div className="w-12 h-12 rounded-[4px] bg-[#1D1D1F] flex items-center justify-center border border-[#333333]">
                                 <Info className="w-6 h-6 text-[#86868B]" />
                             </div>
                             <div>
                                 <h4 className="text-[10px] font-black text-[#86868B] uppercase tracking-widest">Formato de Salida</h4>
-                                <p className="text-[10px] text-[#333333] font-black uppercase">Dimensiones: 6.5cm ancho x 10.5cm alto. Optimizado para impresoras térmicas.</p>
+                                <p className="text-xs text-[#a1a1aa] mt-1">6,5 cm de ancho × 10,5 cm de alto, optimizado para impresoras térmicas.</p>
                             </div>
                         </div>
                     </div>
 
                     {/* Preview Panel */}
                     <div className="lg:col-span-7">
-                        <div className="bg-[#121212] p-8 border border-[#333333] rounded-[8px] h-full flex flex-col group/preview">
-                            <h3 className="text-[10px] font-black text-[#86868B] uppercase tracking-[0.3em] mb-8 flex items-center gap-3">
-                                <Printer className="w-4 h-4 text-[#0071E3]" />
-                                Vista Previa del Resultado
+                        <div className="bg-[#0d0d0e] p-6 md:p-7 border border-[#3f3f46] rounded-xl h-full flex flex-col group/preview">
+                            <h3 className="text-lg font-semibold text-white mb-1 flex items-center gap-3">
+                                <Printer className="w-5 h-5 text-[#d4d4d8]" />
+                                Vista previa
                             </h3>
+                            <p className="text-sm text-[#a1a1aa] mb-7">Resultado final a escala para impresión térmica.</p>
 
-                            <div className="flex-1 flex items-center justify-center bg-[#1D1D1F] rounded-[8px] border border-[#333333] p-12 relative overflow-hidden shadow-inner">
+                            <div className="min-h-[560px] flex-1 flex items-center justify-center bg-[#151517] rounded-lg border border-[#3f3f46] p-8 relative overflow-hidden">
                                 {generatedArticle ? (
                                     <div className="transform scale-90 md:scale-100 hover:scale-[1.02] transition-transform duration-500 cursor-default">
                                         <div className="w-[6.5cm] h-[10.5cm] bg-white rounded-sm shadow-2xl flex flex-col border-2 border-black overflow-hidden scale-90 md:scale-100 origin-center p-4 justify-between" style={{ boxSizing: 'border-box' }}>
                                             {/* QR Section */}
                                             <div className="flex justify-center">
-                                                <QRCode
-                                                    value={generatedArticle.codigo_articulo}
-                                                    size={120}
-                                                    fgColor="#000000"
-                                                    bgColor="#ffffff"
-                                                    level="H"
-                                                />
+                                                <SafeQRCode value={String(generatedArticle.codigo_articulo)} size={120} />
                                             </div>
 
                                             {/* Code Box */}
@@ -365,8 +406,8 @@ export default function GenerarEtiqueta() {
                                     </div>
                                 ) : (
                                     <div className="text-center group-hover/preview:scale-105 transition-transform duration-700">
-                                        <div className="w-24 h-24 bg-black/20 rounded-[8px] flex items-center justify-center mx-auto mb-6 border border-[#333333] shadow-2xl relative">
-                                            <QrCode className="w-12 h-12 text-[#333333]" />
+                                        <div className="w-20 h-20 bg-[#202024] rounded-lg flex items-center justify-center mx-auto mb-5 border border-[#3f3f46] relative">
+                                            <QrCode className="w-10 h-10 text-[#71717a]" />
                                         </div>
                                         <p className="text-[#86868B] font-black uppercase tracking-[0.2em] text-[10px]">Esperando selección de artículo...</p>
                                     </div>
@@ -382,16 +423,16 @@ export default function GenerarEtiqueta() {
                 <div className="fixed inset-0 z-50 flex items-center justify-center p-4 md:p-10 animate-in fade-in zoom-in-95 duration-300">
                     <div className="absolute inset-0 bg-black/80 backdrop-blur-xl" onClick={() => setShowModal(false)} />
 
-                    <div className="bg-[#121212] border border-[#333333] rounded-[8px] w-full max-w-5xl shadow-2xl overflow-hidden flex flex-col max-h-[90vh] relative z-10">
+                    <div className="bg-[#0d0d0e] border border-[#52525b] rounded-xl w-full max-w-5xl shadow-2xl overflow-hidden flex flex-col max-h-[90vh] relative z-10">
                         {/* Header */}
-                        <div className="px-10 py-8 border-b border-[#333333] flex justify-between items-center bg-[#1D1D1F]">
+                        <div className="px-6 md:px-8 py-6 border-b border-[#3f3f46] flex justify-between items-center bg-[#151517]">
                             <div className="flex items-center gap-4">
-                                <div className="p-3 rounded-[4px] bg-[#0071E3]/10 text-[#0071E3] border border-[#0071E3]/20">
+                                <div className="p-3 rounded-lg bg-[#202024] text-white border border-[#52525b]">
                                     <Search className="w-6 h-6" />
                                 </div>
                                 <div>
-                                    <h3 className="text-xl font-black text-white uppercase italic tracking-tighter">Buscador de Artículos</h3>
-                                    <p className="text-[10px] font-black text-[#86868B] uppercase tracking-[0.2em] mt-1">Localización por código, nombre o marca</p>
+                                    <h3 className="text-xl font-semibold text-white">Seleccionar artículo</h3>
+                                    <p className="text-sm text-[#a1a1aa] mt-1">Busque por código, nombre o marca.</p>
                                 </div>
                             </div>
                             <button
@@ -403,18 +444,18 @@ export default function GenerarEtiqueta() {
                         </div>
 
                         {/* Search Input Area */}
-                        <div className="px-10 py-8 bg-[#121212] relative">
+                        <div className="px-6 md:px-8 py-6 bg-[#0d0d0e] relative">
                             <div className="relative group/search-input">
-                                <Search className="absolute left-6 top-1/2 -translate-y-1/2 w-6 h-6 text-[#86868B] group-focus-within/search-input:text-[#0071E3] transition-colors" />
+                                <Search className="absolute left-5 top-1/2 -translate-y-1/2 w-5 h-5 text-[#a1a1aa]" />
                                 <input
                                     type="text"
                                     autoFocus
                                     placeholder="Escriba el nombre, código o marca..."
                                     value={searchTerm}
                                     onChange={(e) => setSearchTerm(e.target.value)}
-                                    className="w-full bg-[#1D1D1F] border border-[#333333] rounded-[8px] pl-16 pr-6 py-5 text-xl text-white font-bold placeholder-[#333333] focus:outline-none focus:border-[#0071E3]/50 transition-all shadow-inner"
+                                    className="w-full bg-[#18181b] border border-[#52525b] rounded-lg pl-14 pr-14 py-4 text-base text-white placeholder-[#71717a] focus:outline-none focus:border-white transition-colors"
                                 />
-                                {loading && <Loader2 className="absolute right-6 top-1/2 -translate-y-1/2 w-6 h-6 text-[#0071E3] animate-spin" />}
+                                {loading && <Loader2 className="absolute right-5 top-1/2 -translate-y-1/2 w-5 h-5 text-white animate-spin" />}
                             </div>
                         </div>
 
@@ -443,12 +484,12 @@ export default function GenerarEtiqueta() {
                                                     </div>
                                                 </td>
                                                 <td className="px-6">
-                                                    <span className="font-mono text-sm font-black text-[#0071E3] bg-[#0071E3]/5 px-3 py-1 rounded-[4px] border border-[#0071E3]/10">
+                                                    <span className="font-mono text-sm font-semibold text-white bg-[#202024] px-3 py-1 rounded border border-[#52525b]">
                                                         {art.codigo_articulo}
                                                     </span>
                                                 </td>
                                                 <td className="px-6">
-                                                    <div className="font-black text-[#F5F5F7] group-hover/row-search:text-[#0071E3] transition-colors uppercase leading-tight italic">
+                                                    <div className="font-semibold text-[#F5F5F7] uppercase leading-tight">
                                                         {art.nombre_articulo}
                                                     </div>
                                                     <span className="text-[9px] font-black text-[#86868B] uppercase tracking-widest mt-1 block">
@@ -458,7 +499,7 @@ export default function GenerarEtiqueta() {
                                                 <td className="px-6 text-center">
                                                     <button
                                                         onClick={() => handleSelectArticle(art)}
-                                                        className="px-6 py-3 bg-[#0071E3] hover:bg-[#0077ED] text-white rounded-[8px] text-[10px] font-black uppercase tracking-widest flex items-center gap-2 mx-auto active:scale-95 transition-all shadow-lg shadow-[#0071E3]/20"
+                                                        className="px-5 py-2.5 bg-[#f4f4f5] hover:bg-white text-black rounded-lg text-xs font-semibold flex items-center gap-2 mx-auto active:scale-95 transition-all"
                                                     >
                                                         Seleccionar
                                                         <ChevronRight className="w-4 h-4" />
@@ -483,7 +524,7 @@ export default function GenerarEtiqueta() {
                         <div className="px-10 py-5 bg-[#1D1D1F] border-t border-[#333333] flex justify-between items-center shrink-0">
                             <span className="text-[9px] font-black text-[#86868B] uppercase tracking-[0.2em]">Criterio de búsqueda sensible a mayúsculas</span>
                             <div className="flex items-center gap-3">
-                                <span className="text-[9px] font-black text-[#0071E3] uppercase tracking-widest">Max. 50 Resultados</span>
+                                <span className="text-[9px] font-black text-[#d4d4d8] uppercase tracking-widest">Máx. 50 resultados</span>
                                 <div className="w-1 h-1 rounded-full bg-[#333333]" />
                                 <span className="text-[9px] font-black text-[#86868B] uppercase tracking-widest">{searchTerm.length} Caracteres</span>
                             </div>
@@ -497,13 +538,7 @@ export default function GenerarEtiqueta() {
                 <div className="print-area hidden">
                     <div className="etiqueta">
                         <div className="etiqueta-qr">
-                            <QRCode
-                                value={generatedArticle.codigo_articulo}
-                                size={120}
-                                fgColor="#000000"
-                                bgColor="#ffffff"
-                                level="H"
-                            />
+                            <SafeQRCode value={String(generatedArticle.codigo_articulo)} size={120} />
                         </div>
                         <div className="etiqueta-codigo-box">{generatedArticle.codigo_articulo}</div>
                         <div className="etiqueta-info">
