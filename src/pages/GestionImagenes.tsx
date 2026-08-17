@@ -104,40 +104,39 @@ export default function GestionImagenes() {
     const isFormValid = codigo.trim() !== '' && file !== null;
 
     return (
-        <div className="min-h-screen bg-[#000000] text-[#F5F5F7] font-sans selection:bg-[#0071E3]/30">
-            <div className="max-w-4xl mx-auto px-8 pt-8 space-y-8 animate-fade-in-up">
+        <div className="min-h-screen bg-black p-4 md:p-8 text-[#f4f4f5] selection:bg-white/20">
+            <div className="max-w-[1536px] mx-auto space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
                 {/* Header Section */}
-                <div className="flex flex-col md:flex-row justify-between items-end gap-6 pb-4 border-b border-[#333333]">
-                    <div className="space-y-2">
-                        <PageHeader title="Asociar imagen a artículo" icon={ImageIcon} themeColor="blue" />
-                        <p className="text-[#86868B] text-sm font-medium">
-                            Vincula rápidamente fotografías reales a los artículos del inventario.
-                        </p>
-                    </div>
+                <div className="flex flex-col md:flex-row justify-between md:items-center gap-5">
+                    <PageHeader
+                        title="Asociar imagen a artículo"
+                        icon={ImageIcon}
+                        themeColor="neutral"
+                        subtitle="Vinculación de fotografías con los artículos del inventario."
+                    />
                     <button
                         onClick={() => navigate(-1)}
-                        className="flex items-center gap-2 px-6 py-3 bg-transparent border border-[#F5F5F7] text-[#F5F5F7] rounded-[8px] hover:bg-[#F5F5F7]/10 transition-all text-xs font-bold uppercase tracking-widest active:scale-95"
+                        className="h-12 px-6 rounded-lg bg-[#111112] border border-[#52525b] flex items-center gap-3 text-[#d4d4d8] hover:text-white hover:bg-[#18181b] transition-colors group"
                     >
-                        <ArrowLeft className="w-4 h-4 text-[#0071E3]" />
-                        Regresar
+                        <ArrowLeft className="w-4 h-4 group-hover:-translate-x-1 transition-transform" />
+                        <span className="text-sm font-semibold">Regresar</span>
                     </button>
                 </div>
 
-                <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
+                <div className="max-w-6xl mx-auto grid grid-cols-1 lg:grid-cols-12 gap-6 items-stretch">
                     {/* Left: Form */}
-                    <div className="lg:col-span-7 bg-[#121212] border border-[#333333] rounded-[8px] p-8 space-y-8 relative group">
-                        <div className="absolute top-0 left-0 w-1.5 h-32 bg-gradient-to-b from-[#0071E3] to-transparent rounded-full -ml-0.5 mt-8 group-hover:h-48 transition-all duration-700" />
+                    <div className="lg:col-span-7 bg-[#0d0d0e] border border-[#3f3f46] rounded-xl p-6 md:p-8 space-y-8">
 
-                        <div className="space-y-2">
-                            <h2 className="text-2xl font-bold text-[#F5F5F7] uppercase tracking-tight italic">Detalles de la Asociación</h2>
-                            <p className="text-[#86868B] text-[10px] font-bold uppercase tracking-widest">Ingrese los datos para actualizar la galería</p>
+                        <div className="space-y-1 pb-5 border-b border-[#27272a]">
+                            <h2 className="text-xl font-semibold text-white tracking-tight">Detalles de la asociación</h2>
+                            <p className="text-sm text-[#a1a1aa]">Indique el código del artículo y seleccione su fotografía.</p>
                         </div>
 
                         <div className="space-y-6">
                             {/* Article Code Input */}
                             <div className="space-y-3">
-                                <label className="flex items-center gap-2 text-[10px] font-bold text-[#F5F5F7] uppercase tracking-[0.2em] ml-1">
-                                    <Barcode className="w-4 h-4 text-[#0071E3]" />
+                                <label className="flex items-center gap-2 text-[10px] font-semibold text-[#a1a1aa] uppercase tracking-[0.14em] ml-1">
+                                    <Barcode className="w-4 h-4 text-[#d4d4d8]" />
                                     Código del Artículo
                                 </label>
                                 <div className="relative group/input">
@@ -146,25 +145,24 @@ export default function GestionImagenes() {
                                         value={codigo}
                                         onChange={(e) => setCodigo(e.target.value)}
                                         placeholder="Ejem: ART-001..."
-                                        className="w-full bg-[#1D1D1F] border border-[#333333] rounded-[8px] px-5 py-4 text-base text-[#F5F5F7] placeholder-[#86868B] focus:outline-none focus:border-[#0071E3]/50 transition-all shadow-inner uppercase font-mono font-bold"
+                                        className="w-full h-14 bg-[#111112] border border-[#3f3f46] rounded-lg px-5 text-white placeholder-[#52525b] focus:outline-none focus:border-[#a1a1aa] transition-colors uppercase font-mono"
                                     />
-                                    <div className="absolute inset-x-0 bottom-0 h-[1px] bg-[#0071E3] scale-x-0 group-focus-within/input:scale-x-100 transition-transform duration-500" />
                                 </div>
                             </div>
 
                             {/* Dropzone Container */}
                             <div className="space-y-3">
-                                <label className="flex items-center gap-2 text-[10px] font-bold text-[#F5F5F7] uppercase tracking-[0.2em] ml-1">
-                                    <FileImage className="w-4 h-4 text-[#0071E3]" />
+                                <label className="flex items-center gap-2 text-[10px] font-semibold text-[#a1a1aa] uppercase tracking-[0.14em] ml-1">
+                                    <FileImage className="w-4 h-4 text-[#d4d4d8]" />
                                     Imagen del Artículo
                                 </label>
                                 <div
                                     onClick={() => fileInputRef.current?.click()}
                                     className={cn(
-                                        "relative group cursor-pointer border-2 border-dashed rounded-[8px] p-8 transition-all duration-500 flex flex-col items-center gap-4 text-center overflow-hidden bg-[#1D1D1F]",
+                                        "relative group cursor-pointer border border-dashed rounded-xl p-8 transition-colors flex flex-col items-center gap-4 text-center overflow-hidden bg-[#09090b]",
                                         file
-                                            ? "border-[#0071E3] bg-[#0071E3]/5 shadow-[0_0_30px_rgba(0,113,227,0.1)]"
-                                            : "border-[#424245] hover:border-[#0071E3] hover:bg-[#0071E3]/5 shadow-xl"
+                                            ? "border-white bg-[#18181b]"
+                                            : "border-[#52525b] hover:border-[#a1a1aa] hover:bg-[#111112]"
                                     )}
                                 >
                                     <input
@@ -178,22 +176,22 @@ export default function GestionImagenes() {
                                     <div className="relative">
                                         <div className={cn(
                                             "w-16 h-16 rounded-[8px] flex items-center justify-center transition-all duration-500 shadow-2xl",
-                                            file ? "bg-[#0071E3] scale-110" : "bg-black/20 group-hover:scale-110 group-hover:rotate-6"
+                                            file ? "bg-white text-black" : "bg-[#18181b] border border-[#52525b] group-hover:scale-105"
                                         )}>
-                                            <Upload className={cn("w-8 h-8 transition-colors", file ? "text-white" : "text-[#86868B] group-hover:text-[#0071E3]")} />
+                                            <Upload className={cn("w-8 h-8 transition-colors", file ? "text-black" : "text-[#d4d4d8]")} />
                                         </div>
                                         {file && (
                                             <div className="absolute -top-1 -right-1 w-6 h-6 bg-white rounded-full flex items-center justify-center animate-in zoom-in shadow-lg">
-                                                <CheckCircle2 className="w-4 h-4 text-[#0071E3]" />
+                                                <CheckCircle2 className="w-4 h-4 text-black" />
                                             </div>
                                         )}
                                     </div>
 
                                     <div className="space-y-1">
-                                        <p className="text-base font-bold text-[#F5F5F7] uppercase italic tracking-tight">
-                                            {file ? '¡Imagen Seleccionada!' : 'Haz clic para seleccionar'}
+                                        <p className="text-sm font-semibold text-white">
+                                            {file ? 'Imagen seleccionada' : 'Haz clic para seleccionar'}
                                         </p>
-                                        <p className={cn("text-[10px] font-bold uppercase tracking-widest leading-loose", file ? "text-[#0071E3]" : "text-[#86868B]")}>
+                                        <p className="text-xs text-[#71717a] leading-relaxed break-all">
                                             {file ? file.name : 'JPG, PNG o WebP (Máx. 5MB)'}
                                         </p>
                                     </div>
@@ -207,21 +205,21 @@ export default function GestionImagenes() {
                                 onClick={handleUpload}
                                 disabled={loading || !isFormValid}
                                 className={cn(
-                                    "w-full py-5 rounded-[8px] flex items-center justify-center gap-4 transition-all duration-500 shadow-2xl relative overflow-hidden group/btn font-bold",
+                                    "w-full h-12 rounded-lg flex items-center justify-center gap-3 transition-colors group/btn font-semibold text-sm",
                                     isFormValid
-                                        ? "bg-[#0071E3] text-white hover:brightness-110 hover:scale-[1.01] active:scale-[0.98]"
-                                        : "bg-[#1D1D1F] text-[#86868B] border border-[#333333] opacity-30"
+                                        ? "bg-[#e4e4e7] text-black hover:bg-white active:scale-[0.99]"
+                                        : "bg-[#18181b] text-[#71717a] border border-[#3f3f46] opacity-60"
                                 )}
                             >
                                 {loading ? (
                                     <>
                                         <Loader2 className="w-6 h-6 animate-spin" />
-                                        <span className="text-sm uppercase tracking-[0.2em]">Sincronizando...</span>
+                                        <span>Sincronizando...</span>
                                     </>
                                 ) : (
                                     <>
                                         <LinkIcon className={cn("w-6 h-6 transition-transform", isFormValid && "group-hover/btn:rotate-45")} />
-                                        <span className="text-sm uppercase tracking-[0.2em]">
+                                        <span>
                                             Subir imagen y asociar
                                         </span>
                                     </>
@@ -232,15 +230,15 @@ export default function GestionImagenes() {
                         {/* Status Messages */}
                         {message && (
                             <div className={cn(
-                                "p-5 rounded-[8px] flex items-center gap-4 animate-in slide-in-from-top-2 duration-300 border shadow-2xl backdrop-blur-xl",
-                                message.type === 'error' && "bg-rose-500/10 border-rose-500/20 text-rose-100",
-                                message.type === 'success' && "bg-[#0071E3]/10 border-[#0071E3]/20 text-blue-100",
-                                message.type === 'info' && "bg-[#1D1D1F] border-[#333333] text-blue-100"
+                                "p-4 rounded-lg flex items-center gap-4 animate-in slide-in-from-top-2 duration-300 border bg-[#111112] text-[#d4d4d8]",
+                                message.type === 'error' && "border-[#71717a]",
+                                message.type === 'success' && "border-white",
+                                message.type === 'info' && "border-[#52525b]"
                             )}>
-                                {message.type === 'error' && <AlertTriangle className="w-6 h-6 shrink-0 text-rose-500" />}
-                                {message.type === 'success' && <CheckCircle2 className="w-6 h-6 shrink-0 text-[#0071E3]" />}
-                                {message.type === 'info' && <Loader2 className="w-6 h-6 shrink-0 animate-spin text-[#0071E3]" />}
-                                <p className="text-[10px] font-bold uppercase tracking-widest leading-relaxed">{message.text}</p>
+                                {message.type === 'error' && <AlertTriangle className="w-5 h-5 shrink-0 text-white" />}
+                                {message.type === 'success' && <CheckCircle2 className="w-5 h-5 shrink-0 text-white" />}
+                                {message.type === 'info' && <Loader2 className="w-5 h-5 shrink-0 animate-spin text-white" />}
+                                <p className="text-sm leading-relaxed">{message.text}</p>
                             </div>
                         )}
                     </div>
@@ -248,12 +246,11 @@ export default function GestionImagenes() {
                     {/* Right: Preview Preview */}
                     <div className="lg:col-span-5 h-full">
                         {preview ? (
-                            <div className="bg-[#121212] border border-[#333333] rounded-[8px] p-8 h-full flex flex-col items-center justify-center relative overflow-hidden min-h-[450px] shadow-2xl">
-                                <div className="absolute inset-0 bg-[#0071E3]/5" />
+                            <div className="bg-[#0d0d0e] border border-[#3f3f46] rounded-xl p-6 h-full flex flex-col items-center justify-center relative overflow-hidden min-h-[520px]">
                                 <img
                                     src={preview}
                                     alt="Vista Previa"
-                                    className="max-w-full max-h-[500px] object-contain rounded-[8px] shadow-2xl relative z-10 transition-transform duration-700 hover:scale-[1.02]"
+                                    className="max-w-full max-h-[440px] object-contain rounded-lg shadow-2xl relative z-10"
                                 />
                                 <button
                                     onClick={() => {
@@ -261,25 +258,25 @@ export default function GestionImagenes() {
                                         setPreview(null);
                                         if (fileInputRef.current) fileInputRef.current.value = '';
                                     }}
-                                    className="absolute top-8 right-8 p-3 rounded-[8px] bg-black/60 text-[#F5F5F7] hover:bg-rose-500 transition-all shadow-2xl border border-[#333333] z-20"
+                                    className="absolute top-6 right-6 p-3 rounded-lg bg-[#111112] text-white hover:bg-white hover:text-black transition-colors border border-[#71717a] z-20"
                                 >
                                     <X className="w-6 h-6" />
                                 </button>
                                 <div className="mt-8 text-center relative z-10">
-                                    <div className="inline-block px-4 py-1 rounded-[4px] bg-[#0071E3]/10 border border-[#0071E3]/20 mb-2">
-                                        <p className="text-[9px] font-bold text-[#0071E3] uppercase tracking-[0.3em]">Vista Previa Activa</p>
+                                    <div className="inline-block px-3 py-1.5 rounded-md bg-[#18181b] border border-[#52525b] mb-2">
+                                        <p className="text-xs font-semibold text-white">Vista previa</p>
                                     </div>
-                                    <p className="text-[#86868B] text-xs font-mono font-bold uppercase truncate max-w-[250px]">{file?.name}</p>
+                                    <p className="text-[#a1a1aa] text-xs font-mono truncate max-w-[280px]">{file?.name}</p>
                                 </div>
                             </div>
                         ) : (
-                            <div className="bg-[#121212] border border-[#333333] border-dashed rounded-[8px] h-full flex flex-col items-center justify-center p-12 min-h-[450px] opacity-40">
-                                <div className="p-8 rounded-[8px] bg-black/20 border border-[#333333] mb-8">
-                                    <ImageIcon className="w-16 h-16 text-[#333333]" />
+                            <div className="bg-[#0d0d0e] border border-[#3f3f46] border-dashed rounded-xl h-full flex flex-col items-center justify-center p-12 min-h-[520px]">
+                                <div className="p-6 rounded-xl bg-[#18181b] border border-[#52525b] mb-6">
+                                    <ImageIcon className="w-12 h-12 text-[#71717a]" />
                                 </div>
                                 <div className="text-center space-y-3">
-                                    <p className="text-xl font-bold text-[#86868B] uppercase tracking-tight italic">Sin Imagen</p>
-                                    <p className="text-[10px] font-bold text-[#86868B] uppercase tracking-[0.2em] leading-loose max-w-[240px]">
+                                    <p className="text-lg font-semibold text-white">Sin imagen seleccionada</p>
+                                    <p className="text-sm text-[#71717a] leading-relaxed max-w-[260px]">
                                         Seleccione una fotografía para visualizar el resultado.
                                     </p>
                                 </div>
