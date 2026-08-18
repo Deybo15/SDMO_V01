@@ -29,13 +29,34 @@ interface Activo {
     numero_serie_activo: string;
     codigo_activo: string;
     descripcion_activo: string;
-    valor_activo: number;
+    valor_activo: string | number;
     ingreso_activo: string;
     imagen_activo: string | null;
     nota_activo?: string;
 }
 
 const IMAGE_BUCKET = 'Img-activos';
+
+function parseAssetValue(value: string | number | null | undefined) {
+    if (typeof value === 'number') return Number.isFinite(value) ? value : 0;
+    if (!value) return 0;
+
+    const normalized = value
+        .trim()
+        .replace(/[^\d,.-]/g, '')
+        .replace(/\.(?=\d{3}(?:\D|$))/g, '')
+        .replace(',', '.');
+
+    const parsed = Number.parseFloat(normalized);
+    return Number.isFinite(parsed) ? parsed : 0;
+}
+
+const currencyFormatter = new Intl.NumberFormat('es-CR', {
+    style: 'currency',
+    currency: 'CRC',
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2
+});
 
 function getImageCandidates(value: string | null) {
     if (!value?.trim()) return [];
@@ -134,7 +155,7 @@ export default function InventarioActivos() {
     );
 
     const totalValue = useMemo(
-        () => activos.reduce((sum, activo) => sum + (Number(activo.valor_activo) || 0), 0),
+        () => activos.reduce((sum, activo) => sum + parseAssetValue(activo.valor_activo), 0),
         [activos]
     );
 
@@ -192,7 +213,7 @@ export default function InventarioActivos() {
         });
     };
 
-    const formatCurrency = (value: number) => `₡${(Number(value) || 0).toLocaleString('es-CR')}`;
+    const formatCurrency = (value: string | number) => currencyFormatter.format(parseAssetValue(value));
 
     return (
         <div className="min-h-screen bg-black px-4 py-6 text-[#f4f4f5] md:px-8 md:py-8">
@@ -318,7 +339,7 @@ export default function InventarioActivos() {
                         <FormField label="Número de serie"><input value={editingActivo.numero_serie_activo || ''} onChange={(e) => setEditingActivo({ ...editingActivo, numero_serie_activo: e.target.value })} className={fieldClass} /></FormField>
                         <FormField label="Código o placa"><input value={editingActivo.codigo_activo || ''} onChange={(e) => setEditingActivo({ ...editingActivo, codigo_activo: e.target.value })} className={fieldClass} /></FormField>
                         <div className="sm:col-span-2"><FormField label="Descripción técnica"><textarea value={editingActivo.descripcion_activo || ''} onChange={(e) => setEditingActivo({ ...editingActivo, descripcion_activo: e.target.value })} rows={4} className={`${fieldClass} resize-none`} /></FormField></div>
-                        <FormField label="Valor del activo"><input type="number" value={editingActivo.valor_activo || 0} onChange={(e) => setEditingActivo({ ...editingActivo, valor_activo: Number(e.target.value) })} className={fieldClass} /></FormField>
+                        <FormField label="Valor del activo"><input type="number" step="0.01" value={parseAssetValue(editingActivo.valor_activo)} onChange={(e) => setEditingActivo({ ...editingActivo, valor_activo: e.target.value })} className={fieldClass} /></FormField>
                     </div>
                     <div className="flex justify-end gap-3 border-t border-[#3f3f46] bg-[#18181b] px-6 py-4">
                         <button onClick={() => setEditingActivo(null)} className="rounded-lg border border-[#52525b] px-5 py-2.5 text-sm font-semibold text-[#d4d4d8] hover:bg-[#27272a]">Cancelar</button>
