@@ -4,11 +4,8 @@ import {
     Save,
     User,
     Loader2,
-    Search,
-    ArrowLeft,
     ClipboardList
 } from 'lucide-react';
-import { useNavigate } from 'react-router-dom';
 
 // Custom Architecture
 import { useTransactionManager } from '../hooks/useTransactionManager';
@@ -20,7 +17,6 @@ import ColaboradorSearchModal from '../components/ColaboradorSearchModal';
 import { Articulo } from '../types/inventory';
 
 export default function Herramientas() {
-    const navigate = useNavigate();
     const {
         loading,
         items,
@@ -90,96 +86,94 @@ export default function Herramientas() {
         });
     };
 
-    const colorTheme = 'orange';
+    const colorTheme = '#e4e4e7';
 
     return (
         <div className="min-h-screen bg-[#000000]">
             <PageHeader
                 title="Herramientas"
                 icon={Wrench}
-                themeColor={colorTheme}
-                rightElement={
-                    <button
-                        onClick={() => navigate('/otras-solicitudes')}
-                        className="btn-ghost px-6 py-3 border border-[#F5F5F7]/20 rounded-[8px] hover:bg-[#F5F5F7]/5 transition-all flex items-center gap-2 group"
-                    >
-                        <ArrowLeft className="w-5 h-5 text-[#86868B] group-hover:text-[#F5F5F7] transition-colors" />
-                        <span className="text-[11px] font-bold text-[#86868B] group-hover:text-[#F5F5F7] uppercase tracking-widest">Regresar</span>
-                    </button>
-                }
+                themeColor="neutral"
+                backRoute="/otras-solicitudes"
             />
 
-            <div className="max-w-7xl mx-auto p-8 pb-32">
-                <Card className="overflow-hidden border-[#333333] shadow-4xl mb-12">
-                    <form onSubmit={handleSubmit} className="p-8 md:p-10">
+            <main className="max-w-[1600px] mx-auto px-4 md:px-8 pb-24">
+                <form onSubmit={handleSubmit} className="grid grid-cols-1 lg:grid-cols-[minmax(0,1fr)_340px] gap-5 items-start">
+                    <div className="space-y-5 min-w-0">
+                    <Card className="overflow-hidden border-[#27272a] shadow-2xl shadow-black/30">
+                    <div className="p-5 md:p-8">
                         {/* Headers Section */}
-                        <div className="space-y-2 mb-10">
-                            <h3 className="text-2xl font-bold text-[#F5F5F7] tracking-tight uppercase flex items-center gap-3 italic">
-                                <User className="w-6 h-6 text-[#0071E3]" />
-                                Información de Responsables
-                            </h3>
-                            <p className="text-xs text-[#86868B] font-medium uppercase tracking-widest ml-9">Defina los responsables de la solicitud</p>
+                        <div className="flex items-start justify-between gap-4 mb-8">
+                            <div>
+                                <h2 className="text-xl font-semibold text-white tracking-tight">Información de responsables</h2>
+                                <p className="text-sm text-[#a1a1aa] mt-1">Defina las personas responsables de la solicitud.</p>
+                            </div>
+                            <div className="w-11 h-11 rounded-lg border border-[#3f3f46] flex items-center justify-center shrink-0"><User className="w-5 h-5 text-[#d4d4d8]" /></div>
                         </div>
 
-                        <div className="bg-[#1D1D1F]/30 border border-[#333333] rounded-[8px] p-6 md:p-8 mb-10">
+                        <div className="space-y-7">
 
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mb-8">
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                                 <div>
-                                    <label className="block text-[10px] font-black text-[#86868B] uppercase tracking-widest mb-3">
+                                    <label className="block text-[10px] font-semibold text-[#a1a1aa] uppercase tracking-[0.16em] mb-3">
                                         Responsable que autoriza <span className="text-red-400">*</span>
                                     </label>
                                     <div className="relative group">
                                         <div
-                                            className="w-full bg-[#1D1D1F] border border-[#333333] rounded-[8px] py-5 px-6 text-[#F5F5F7] cursor-not-allowed flex items-center justify-between opacity-80 shadow-inner"
+                                            className="min-h-[72px] w-full bg-[#111112] border border-[#27272a] rounded-lg px-5 text-white cursor-not-allowed flex items-center justify-between gap-4"
                                             title="El responsable se asigna automáticamente según su usuario"
                                         >
-                                            <span className={autoriza ? 'text-[#0071E3] font-black text-sm' : 'text-[#86868B] italic'}>
+                                            <span className={autoriza ? 'text-[#d4d4d8] font-medium text-sm' : 'text-[#71717a] text-sm'}>
                                                 {autoriza ? colaboradores.todos.find((c: any) => c.identificacion === autoriza)?.alias || colaboradores.todos.find((c: any) => c.identificacion === autoriza)?.colaborador : 'Usuario no identificado'}
                                             </span>
-                                            <User className={`w-5 h-5 text-[#0071E3]/50 ml-2`} />
+                                            <User className="w-5 h-5 text-[#52525b] shrink-0" />
                                         </div>
                                     </div>
                                 </div>
 
                                 <div>
-                                    <label className="block text-[10px] font-black text-[#86868B] uppercase tracking-widest mb-3">
+                                    <label className="block text-[10px] font-semibold text-[#a1a1aa] uppercase tracking-[0.16em] mb-3">
                                         Persona que retira <span className="text-red-400">*</span>
                                     </label>
                                     <div className="relative group">
                                         <div
                                             onClick={() => handleOpenColaborador('retira')}
-                                            className="w-full bg-[#1D1D1F] border border-[#333333] rounded-[8px] py-5 pl-6 pr-12 text-[#F5F5F7] cursor-pointer hover:bg-[#1D1D1F]/80 transition-colors flex items-center justify-between active:scale-[0.99] shadow-inner"
+                                            className="min-h-[72px] w-full bg-[#111112] border border-[#3f3f46] rounded-lg px-5 text-white cursor-pointer hover:border-[#71717a] transition-colors flex items-center justify-between gap-4"
                                         >
-                                            <span className={retira ? 'text-[#F5F5F7] font-black text-sm' : 'text-[#86868B] italic font-black text-sm'}>
+                                            <span className={retira ? 'text-white font-medium text-sm' : 'text-[#71717a] text-sm'}>
                                                 {retira ? colaboradores.todos.find((c: any) => c.identificacion === retira)?.alias || colaboradores.todos.find((c: any) => c.identificacion === retira)?.colaborador : '-- Seleccione --'}
                                             </span>
-                                            <User className={`w-5 h-5 text-[#0071E3] ml-2`} />
+                                            <User className="w-5 h-5 text-[#d4d4d8] shrink-0" />
                                         </div>
                                     </div>
                                 </div>
                             </div>
 
                             <div>
-                                <label className="block text-[10px] font-black text-[#86868B] uppercase tracking-widest mb-3">Comentarios</label>
+                                <label className="block text-[10px] font-semibold text-[#a1a1aa] uppercase tracking-[0.16em] mb-3">Comentarios</label>
                                 <textarea
                                     value={comentarios}
                                     onChange={(e) => setComentarios(e.target.value)}
-                                    className="w-full bg-[#1D1D1F] border border-[#333333] rounded-[8px] p-6 text-[#F5F5F7] focus:border-[#0071E3] outline-none min-h-[140px] transition-all shadow-inner placeholder-[#424245] text-sm font-bold"
+                                    className="w-full bg-[#111112] border border-[#3f3f46] rounded-lg p-5 text-white focus:border-[#71717a] outline-none min-h-[150px] transition-all placeholder:text-[#52525b] text-sm resize-y"
                                     placeholder="Detalles adicionales sobre esta solicitud de herramientas..."
                                 />
                             </div>
                         </div>
+                    </div>
+                    </Card>
 
                         {/* Items Section */}
-                        <div className="space-y-2 mb-10">
-                            <h3 className="text-2xl font-bold text-[#F5F5F7] tracking-tight uppercase flex items-center gap-3 italic">
-                                <ClipboardList className="w-6 h-6 text-[#0071E3]" />
-                                Detalle de Artículos
-                            </h3>
-                            <p className="text-xs text-[#86868B] font-medium uppercase tracking-widest ml-9">Seleccione las herramientas a entregar</p>
+                    <Card className="overflow-hidden border-[#27272a] shadow-2xl shadow-black/30">
+                    <div className="p-5 md:p-8">
+                        <div className="flex items-start justify-between gap-4 mb-8">
+                            <div>
+                                <h2 className="text-xl font-semibold text-white tracking-tight">Detalle de artículos</h2>
+                                <p className="text-sm text-[#a1a1aa] mt-1">Seleccione las herramientas que se entregarán.</p>
+                            </div>
+                            <div className="w-11 h-11 rounded-lg border border-[#3f3f46] flex items-center justify-center shrink-0"><ClipboardList className="w-5 h-5 text-[#d4d4d8]" /></div>
                         </div>
 
-                        <div className="bg-[#1D1D1F]/30 border border-[#333333] rounded-[8px] p-6 md:p-8 mb-10">
+                        <div className="bg-[#0a0a0a] border border-[#27272a] rounded-lg p-4 md:p-6">
                             <TransactionTable
                                 items={items}
                                 onUpdateRow={updateRow}
@@ -190,19 +184,28 @@ export default function Herramientas() {
                                 themeColor={colorTheme}
                             />
                         </div>
+                    </div>
+                    </Card>
+                    </div>
 
                         {/* Actions */}
+                    <aside className="space-y-5 lg:sticky lg:top-6">
+                        <Card className="border-[#3f3f46] p-5">
+                            <h3 className="font-semibold text-white">Finalizar solicitud</h3>
+                            <p className="text-sm text-[#a1a1aa] mt-1 mb-5">Verifique la información antes de procesar.</p>
                         <button
                             type="submit"
                             disabled={loading || !isFormValid}
-                            className={`w-full md:w-auto h-16 px-12 bg-[#0071E3] text-white font-black rounded-[8px] hover:brightness-110 transition-all flex items-center justify-center gap-4 disabled:opacity-50 disabled:grayscale disabled:cursor-not-allowed shadow-2xl shadow-[#0071E3]/20 active:scale-95 text-sm uppercase tracking-widest`}
+                            className="w-full h-14 px-6 bg-[#f4f4f5] text-[#18181b] font-semibold rounded-lg hover:bg-white transition-all flex items-center justify-center gap-3 disabled:opacity-30 disabled:cursor-not-allowed active:scale-[0.98] text-sm"
                         >
-                            {loading ? <Loader2 className="w-6 h-6 animate-spin" /> : <Save className="w-6 h-6" />}
+                            {loading ? <Loader2 className="w-5 h-5 animate-spin" /> : <Save className="w-5 h-5" />}
                             Procesar Solicitud
                         </button>
-                    </form>
-                </Card>
-            </div>
+                            <p className="text-[10px] text-center text-[#52525b] uppercase tracking-[0.15em] mt-4">Nueva solicitud</p>
+                        </Card>
+                    </aside>
+                </form>
+            </main>
 
             {/* Colaborador Search Modal */}
             <ColaboradorSearchModal
@@ -220,7 +223,7 @@ export default function Herramientas() {
                 isOpen={showSearch}
                 onClose={() => setShowSearch(false)}
                 onSelect={(article) => handleSelectArticle(currentRowIndex, article)}
-                themeColor="blue"
+                themeColor="neutral"
                 title="BUSCADOR"
             />
         </div>
