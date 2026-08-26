@@ -298,12 +298,12 @@ export default function ConsultarSalidas() {
                 if (idsUnicos.length > 0) {
                     const { data: cols } = await supabase
                         .from('colaboradores_06')
-                        .select('identificacion, alias')
+                        .select('identificacion, alias, colaborador')
                         .in('identificacion', idsUnicos);
 
                     if (cols) {
                         const map = cols.reduce((acc, curr) => {
-                            acc[curr.identificacion] = curr.alias;
+                            acc[curr.identificacion] = curr.alias?.trim() || curr.colaborador?.trim() || curr.identificacion;
                             return acc;
                         }, {} as Record<string, string>);
                         setColaboradores(prev => ({ ...prev, ...map }));
@@ -371,12 +371,12 @@ export default function ConsultarSalidas() {
                 if (idsUnicos.length > 0) {
                     const { data: cols } = await supabase
                         .from('colaboradores_06')
-                        .select('identificacion, alias')
+                        .select('identificacion, alias, colaborador')
                         .in('identificacion', idsUnicos);
 
                     if (cols) {
                         const map = cols.reduce((acc, curr) => {
-                            acc[curr.identificacion] = curr.alias;
+                            acc[curr.identificacion] = curr.alias?.trim() || curr.colaborador?.trim() || curr.identificacion;
                             return acc;
                         }, {} as Record<string, string>);
                         setColaboradores(prev => ({ ...prev, ...map }));
@@ -447,12 +447,12 @@ export default function ConsultarSalidas() {
                 if (idsUnicos.length > 0) {
                     const { data: cols } = await supabase
                         .from('colaboradores_06')
-                        .select('identificacion, alias')
+                        .select('identificacion, alias, colaborador')
                         .in('identificacion', idsUnicos);
 
                     if (cols) {
                         const map = cols.reduce((acc, curr) => {
-                            acc[curr.identificacion] = curr.alias;
+                            acc[curr.identificacion] = curr.alias?.trim() || curr.colaborador?.trim() || curr.identificacion;
                             return acc;
                         }, {} as Record<string, string>);
                         setColaboradores(prev => ({ ...prev, ...map }));
