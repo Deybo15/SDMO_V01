@@ -1,10 +1,8 @@
 import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '../lib/supabase';
-import { useNavigate } from 'react-router-dom';
 import {
     Search,
     Edit3,
-    ArrowLeft,
     Loader2,
     RefreshCw,
     X,
@@ -51,7 +49,6 @@ interface Catalogs {
 }
 
 export default function CambiosOrdenTrabajo() {
-    const navigate = useNavigate();
     const [loading, setLoading] = useState(false);
     const [solicitudes, setSolicitudes] = useState<Solicitud[]>([]);
     const [searchTerm, setSearchTerm] = useState('');
@@ -260,58 +257,52 @@ export default function CambiosOrdenTrabajo() {
     );
 
     return (
-        <div className="min-h-screen bg-black text-[#F5F5F7] p-8">
-            <div className="max-w-7xl mx-auto space-y-8 animate-fade-in-up">
+        <div className="min-h-screen bg-black text-[#f4f4f5]">
+            <div className="max-w-[1600px] mx-auto px-4 md:px-8 pb-24 animate-fade-in-up">
                 {/* Header */}
-                <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
-                    <PageHeader 
-                        title="Cambios en Orden de Trabajo" 
-                        icon={RefreshCw}
-                    />
-                    <button
-                        onClick={() => navigate('/gestion-cambios')}
-                        className="btn-ghost !px-6 !py-3 flex items-center gap-2"
-                    >
-                        <ArrowLeft className="w-5 h-5" />
-                        <span className="text-[10px] font-black uppercase tracking-widest italic">Volver</span>
-                    </button>
-                </div>
+                <PageHeader title="Cambios en Orden de Trabajo" icon={RefreshCw} themeColor="neutral" backRoute="/gestion-cambios" />
 
                 {/* Filters */}
-                <div className="bg-[#121212] border border-[#333333] rounded-[12px] p-6">
-                    <div className="relative group max-w-md">
-                        <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-[#86868B] group-focus-within:text-[#0071E3] transition-colors" />
+                <section className="bg-[#0d0d0e] border border-[#27272a] rounded-xl p-5 md:p-6 mb-5 shadow-2xl shadow-black/30">
+                    <div className="flex flex-col md:flex-row md:items-center justify-between gap-5">
+                        <div>
+                            <h2 className="text-xl font-semibold text-white tracking-tight">Órdenes de trabajo activas</h2>
+                            <p className="text-sm text-[#a1a1aa] mt-1">Localice una solicitud para actualizar sus responsables y ubicación.</p>
+                        </div>
+                        <div className="relative group w-full md:max-w-md">
+                        <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-[#71717a] group-focus-within:text-[#d4d4d8] transition-colors" />
                         <input
                             type="text"
                             placeholder="Buscar por número de solicitud..."
                             value={searchTerm}
                             onChange={(e) => setSearchTerm(e.target.value)}
-                            className="w-full bg-black/40 border border-[#333333] rounded-[10px] py-4 pl-12 pr-4 text-sm focus:outline-none focus:border-[#0071E3] transition-all placeholder:text-[#424245] font-medium"
+                            className="w-full h-14 bg-[#111112] border border-[#3f3f46] rounded-lg pl-12 pr-4 text-sm text-white focus:outline-none focus:border-[#71717a] transition-all placeholder:text-[#52525b]"
                         />
+                        </div>
                     </div>
-                </div>
+                </section>
 
                 {/* Table */}
-                <div className="bg-[#121212] border border-[#333333] rounded-[12px] overflow-hidden shadow-2xl">
+                <div className="bg-[#0d0d0e] border border-[#27272a] rounded-xl overflow-hidden shadow-2xl shadow-black/30">
                     <div className="overflow-x-auto">
                         <table className="w-full text-left border-collapse">
                             <thead>
-                                <tr className="bg-[#1D1D1F] border-b border-[#333333]">
-                                    <th className="px-8 py-5 text-[10px] font-black text-[#86868B] uppercase tracking-widest italic"># Solicitud</th>
-                                    <th className="px-8 py-5 text-[10px] font-black text-[#86868B] uppercase tracking-widest italic text-center">Fecha</th>
-                                    <th className="px-8 py-5 text-[10px] font-black text-[#86868B] uppercase tracking-widest italic">Solicitante</th>
-                                    <th className="px-8 py-5 text-[10px] font-black text-[#86868B] uppercase tracking-widest italic">Supervisor</th>
-                                    <th className="px-8 py-5 text-[10px] font-black text-[#86868B] uppercase tracking-widest italic">Área</th>
-                                    <th className="px-8 py-5 text-[10px] font-black text-[#86868B] uppercase tracking-widest italic">Instalación</th>
-                                    <th className="px-8 py-5 text-right text-[10px] font-black text-[#86868B] uppercase tracking-widest italic">Acción</th>
+                                <tr className="bg-[#111112] border-b border-[#27272a]">
+                                    <th className="px-6 py-4 text-[10px] font-semibold text-[#a1a1aa] uppercase tracking-[0.14em]">Solicitud</th>
+                                    <th className="px-6 py-4 text-[10px] font-semibold text-[#a1a1aa] uppercase tracking-[0.14em] text-center">Fecha</th>
+                                    <th className="px-6 py-4 text-[10px] font-semibold text-[#a1a1aa] uppercase tracking-[0.14em]">Solicitante</th>
+                                    <th className="px-6 py-4 text-[10px] font-semibold text-[#a1a1aa] uppercase tracking-[0.14em]">Supervisor</th>
+                                    <th className="px-6 py-4 text-[10px] font-semibold text-[#a1a1aa] uppercase tracking-[0.14em]">Área</th>
+                                    <th className="px-6 py-4 text-[10px] font-semibold text-[#a1a1aa] uppercase tracking-[0.14em]">Instalación</th>
+                                    <th className="px-6 py-4 text-right text-[10px] font-semibold text-[#a1a1aa] uppercase tracking-[0.14em]">Acción</th>
                                 </tr>
                             </thead>
-                            <tbody className="divide-y divide-[#333333]">
+                            <tbody className="divide-y divide-[#27272a]">
                                 {loading ? (
                                     [...Array(5)].map((_, i) => (
                                         <tr key={i} className="animate-pulse">
                                             {[...Array(7)].map((_, j) => (
-                                                <td key={j} className="px-8 py-6">
+                                                <td key={j} className="px-6 py-5">
                                                     <div className="h-4 bg-white/5 rounded w-full"></div>
                                                 </td>
                                             ))}
@@ -319,29 +310,29 @@ export default function CambiosOrdenTrabajo() {
                                     ))
                                 ) : filteredSolicitudes.length > 0 ? (
                                     filteredSolicitudes.map((s) => (
-                                        <tr key={s.numero_solicitud} className="hover:bg-white/[0.02] transition-colors group">
-                                            <td className="px-8 py-6 font-black text-[#0071E3] tracking-tight italic">
-                                                {s.numero_solicitud}
+                                        <tr key={s.numero_solicitud} className="hover:bg-white/[0.035] transition-colors group">
+                                            <td className="px-6 py-5 font-semibold text-white tracking-tight">
+                                                #{s.numero_solicitud}
                                             </td>
-                                            <td className="px-8 py-6 text-sm text-[#86868B] font-medium text-center">
+                                            <td className="px-6 py-5 text-sm text-[#a1a1aa] text-center">
                                                 {formatDateOnly(s.fecha_solicitud)}
                                             </td>
-                                            <td className="px-8 py-6 text-sm text-[#F5F5F7] font-bold">
+                                            <td className="px-6 py-5 text-sm text-[#e4e4e7] font-medium">
                                                 {s.cliente_nombre || 'N/A'}
                                             </td>
-                                            <td className="px-8 py-6 text-sm text-[#F5F5F7] font-bold">
+                                            <td className="px-6 py-5 text-sm text-[#e4e4e7] font-medium">
                                                 {s.supervisor_alias || 'Sin asignar'}
                                             </td>
-                                            <td className="px-8 py-6 text-sm text-[#F5F5F7] font-bold">
+                                            <td className="px-6 py-5 text-sm text-[#e4e4e7] font-medium">
                                                 {s.area_descripcion || 'N/A'}
                                             </td>
-                                            <td className="px-8 py-6 text-sm text-[#F5F5F7] font-bold">
+                                            <td className="px-6 py-5 text-sm text-[#e4e4e7] font-medium">
                                                 {s.instalacion_nombre || 'N/A'}
                                             </td>
-                                            <td className="px-8 py-6 text-right">
+                                            <td className="px-6 py-5 text-right">
                                                 <button
                                                     onClick={() => handleEdit(s)}
-                                                    className="p-3 bg-[#0071E3]/10 text-[#0071E3] border border-[#0071E3]/20 rounded-[8px] hover:bg-[#0071E3] hover:text-white transition-all group-hover:scale-105"
+                                                    className="w-10 h-10 inline-flex items-center justify-center bg-[#111112] text-[#d4d4d8] border border-[#3f3f46] rounded-lg hover:border-[#71717a] hover:text-white transition-colors"
                                                     title="Editar orden"
                                                 >
                                                     <Edit3 className="w-4 h-4" />
@@ -369,33 +360,33 @@ export default function CambiosOrdenTrabajo() {
 
             {/* Edit Modal */}
             {isEditModalOpen && selectedSolicitud && (
-                <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/90 backdrop-blur-md animate-in fade-in duration-300">
-                    <div className="bg-[#121212] border border-[#333333] w-full max-w-2xl rounded-[16px] shadow-2xl overflow-hidden animate-in zoom-in-95 duration-300">
+                <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/85 backdrop-blur-md animate-in fade-in duration-300">
+                    <div className="bg-[#0d0d0e] border border-[#3f3f46] w-full max-w-2xl rounded-xl shadow-2xl overflow-hidden animate-in zoom-in-95 duration-300">
                         {/* Modal Header */}
-                        <div className="p-6 bg-[#1D1D1F] border-b border-[#333333] flex items-center justify-between">
+                        <div className="p-6 border-b border-[#27272a] flex items-center justify-between">
                             <div className="flex items-center gap-4">
-                                <div className="p-3 bg-[#0071E3]/10 rounded-[10px] text-[#0071E3] border border-[#0071E3]/20">
-                                    <Edit3 className="w-6 h-6" />
+                                <div className="w-11 h-11 bg-[#151517] rounded-lg text-[#d4d4d8] border border-[#3f3f46] flex items-center justify-center">
+                                    <Edit3 className="w-5 h-5" />
                                 </div>
                                 <div>
-                                    <h3 className="text-xl font-black text-[#F5F5F7] italic tracking-tight uppercase">Editar Orden #{selectedSolicitud.numero_solicitud}</h3>
-                                    <p className="text-[#86868B] text-[10px] font-bold uppercase tracking-widest mt-1">Realice los cambios necesarios en la solicitud</p>
+                                    <h3 className="text-xl font-semibold text-white tracking-tight">Editar orden #{selectedSolicitud.numero_solicitud}</h3>
+                                    <p className="text-[#a1a1aa] text-sm mt-1">Actualice los datos necesarios de la solicitud.</p>
                                 </div>
                             </div>
                             <button
                                 onClick={() => setIsEditModalOpen(false)}
-                                className="p-2 hover:bg-white/10 rounded-full text-[#86868B] transition-colors"
+                                className="w-10 h-10 flex items-center justify-center bg-[#111112] border border-[#3f3f46] hover:border-[#71717a] rounded-lg text-[#a1a1aa] hover:text-white transition-colors"
                             >
                                 <X className="w-6 h-6" />
                             </button>
                         </div>
 
                         {/* Modal Body */}
-                        <div className="p-8 space-y-8 max-h-[70vh] overflow-y-auto custom-scrollbar">
+                        <div className="p-6 md:p-8 space-y-8 max-h-[70vh] overflow-y-auto custom-scrollbar">
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                                 {/* Supervisor */}
                                 <div className="space-y-3">
-                                    <label className="flex items-center gap-2 text-[10px] font-black text-[#86868B] uppercase tracking-widest italic">
+                                    <label className="flex items-center gap-2 text-[10px] font-semibold text-[#a1a1aa] uppercase tracking-[0.14em]">
                                         <Users className="w-3.5 h-3.5" />
                                         Supervisor Asignado
                                     </label>
@@ -406,11 +397,11 @@ export default function CambiosOrdenTrabajo() {
                                             value={catalogs.supervisores.find(c => c.id === editData.supervisor)?.label || ''}
                                             placeholder="Seleccione supervisor..."
                                             onClick={() => handleOpenSearch('supervisores', 'Buscar Supervisor')}
-                                            className="w-full bg-black/40 border border-[#333333] rounded-[10px] py-4 px-4 text-sm cursor-pointer focus:border-[#0071E3] group-hover:border-[#333333] transition-all font-bold placeholder:text-[#424245]"
+                                            className="w-full h-14 bg-[#111112] border border-[#3f3f46] rounded-lg px-4 pr-12 text-sm text-white cursor-pointer focus:outline-none focus:border-[#71717a] transition-all placeholder:text-[#52525b]"
                                         />
                                         <button 
                                             onClick={() => handleOpenSearch('supervisores', 'Buscar Supervisor')}
-                                            className="absolute right-3 top-1/2 -translate-y-1/2 p-2 text-[#86868B] hover:text-[#0071E3]"
+                                            className="absolute right-3 top-1/2 -translate-y-1/2 p-2 text-[#a1a1aa] hover:text-white"
                                         >
                                             <Search className="w-4 h-4" />
                                         </button>
@@ -419,7 +410,7 @@ export default function CambiosOrdenTrabajo() {
 
                                 {/* Solicitante */}
                                 <div className="space-y-3">
-                                    <label className="flex items-center gap-2 text-[10px] font-black text-[#86868B] uppercase tracking-widest italic">
+                                    <label className="flex items-center gap-2 text-[10px] font-semibold text-[#a1a1aa] uppercase tracking-[0.14em]">
                                         <User className="w-3.5 h-3.5" />
                                         Solicitante (Cliente)
                                     </label>
@@ -430,11 +421,11 @@ export default function CambiosOrdenTrabajo() {
                                             value={catalogs.clientes.find(c => c.id.toString() === editData.cliente)?.label || ''}
                                             placeholder="Seleccione solicitante..."
                                             onClick={() => handleOpenSearch('clientes', 'Buscar Solicitante')}
-                                            className="w-full bg-black/40 border border-[#333333] rounded-[10px] py-4 px-4 text-sm cursor-pointer focus:border-[#0071E3] group-hover:border-[#333333] transition-all font-bold placeholder:text-[#424245]"
+                                            className="w-full h-14 bg-[#111112] border border-[#3f3f46] rounded-lg px-4 pr-12 text-sm text-white cursor-pointer focus:outline-none focus:border-[#71717a] transition-all placeholder:text-[#52525b]"
                                         />
                                         <button 
                                             onClick={() => handleOpenSearch('clientes', 'Buscar Solicitante')}
-                                            className="absolute right-3 top-1/2 -translate-y-1/2 p-2 text-[#86868B] hover:text-[#0071E3]"
+                                            className="absolute right-3 top-1/2 -translate-y-1/2 p-2 text-[#a1a1aa] hover:text-white"
                                         >
                                             <Search className="w-4 h-4" />
                                         </button>
@@ -443,7 +434,7 @@ export default function CambiosOrdenTrabajo() {
 
                                 {/* Área */}
                                 <div className="space-y-3">
-                                    <label className="flex items-center gap-2 text-[10px] font-black text-[#86868B] uppercase tracking-widest italic">
+                                    <label className="flex items-center gap-2 text-[10px] font-semibold text-[#a1a1aa] uppercase tracking-[0.14em]">
                                         <Briefcase className="w-3.5 h-3.5" />
                                         Área de Trabajo
                                     </label>
@@ -454,11 +445,11 @@ export default function CambiosOrdenTrabajo() {
                                             value={catalogs.areas.find(c => c.id.toString() === editData.area)?.label || ''}
                                             placeholder="Seleccione área..."
                                             onClick={() => handleOpenSearch('areas', 'Buscar Área')}
-                                            className="w-full bg-black/40 border border-[#333333] rounded-[10px] py-4 px-4 text-sm cursor-pointer focus:border-[#0071E3] group-hover:border-[#333333] transition-all font-bold placeholder:text-[#424245]"
+                                            className="w-full h-14 bg-[#111112] border border-[#3f3f46] rounded-lg px-4 pr-12 text-sm text-white cursor-pointer focus:outline-none focus:border-[#71717a] transition-all placeholder:text-[#52525b]"
                                         />
                                         <button 
                                             onClick={() => handleOpenSearch('areas', 'Buscar Área')}
-                                            className="absolute right-3 top-1/2 -translate-y-1/2 p-2 text-[#86868B] hover:text-[#0071E3]"
+                                            className="absolute right-3 top-1/2 -translate-y-1/2 p-2 text-[#a1a1aa] hover:text-white"
                                         >
                                             <Search className="w-4 h-4" />
                                         </button>
@@ -467,7 +458,7 @@ export default function CambiosOrdenTrabajo() {
 
                                 {/* Instalación */}
                                 <div className="space-y-3">
-                                    <label className="flex items-center gap-2 text-[10px] font-black text-[#86868B] uppercase tracking-widest italic">
+                                    <label className="flex items-center gap-2 text-[10px] font-semibold text-[#a1a1aa] uppercase tracking-[0.14em]">
                                         <Home className="w-3.5 h-3.5" />
                                         Instalación Municipal
                                     </label>
@@ -478,11 +469,11 @@ export default function CambiosOrdenTrabajo() {
                                             value={catalogs.instalaciones.find(c => c.id.toString() === editData.instalacion)?.label || ''}
                                             placeholder="Seleccione instalación..."
                                             onClick={() => handleOpenSearch('instalaciones', 'Buscar Instalación')}
-                                            className="w-full bg-black/40 border border-[#333333] rounded-[10px] py-4 px-4 text-sm cursor-pointer focus:border-[#0071E3] group-hover:border-[#333333] transition-all font-bold placeholder:text-[#424245]"
+                                            className="w-full h-14 bg-[#111112] border border-[#3f3f46] rounded-lg px-4 pr-12 text-sm text-white cursor-pointer focus:outline-none focus:border-[#71717a] transition-all placeholder:text-[#52525b]"
                                         />
                                         <button 
                                             onClick={() => handleOpenSearch('instalaciones', 'Buscar Instalación')}
-                                            className="absolute right-3 top-1/2 -translate-y-1/2 p-2 text-[#86868B] hover:text-[#0071E3]"
+                                            className="absolute right-3 top-1/2 -translate-y-1/2 p-2 text-[#a1a1aa] hover:text-white"
                                         >
                                             <Search className="w-4 h-4" />
                                         </button>
@@ -492,17 +483,17 @@ export default function CambiosOrdenTrabajo() {
                         </div>
 
                         {/* Modal Footer */}
-                        <div className="p-8 bg-[#1D1D1F]/50 border-t border-[#333333] flex items-center justify-end gap-4">
+                        <div className="p-6 border-t border-[#27272a] flex items-center justify-end gap-3">
                             <button
                                 onClick={() => setIsEditModalOpen(false)}
-                                className="px-8 py-4 bg-[#2C2C2E] text-white rounded-[12px] text-[11px] font-black uppercase tracking-widest hover:bg-[#3A3A3C] transition-all"
+                                className="h-12 px-6 bg-[#18181b] border border-[#3f3f46] text-[#e4e4e7] rounded-lg text-sm font-semibold hover:border-[#71717a] transition-colors"
                             >
                                 Cancelar
                             </button>
                             <button
                                 onClick={handleSave}
                                 disabled={saving}
-                                className="px-10 py-4 bg-[#0071E3] text-white rounded-[12px] text-[11px] font-black uppercase tracking-widest hover:bg-[#0077ED] transition-all flex items-center gap-3 shadow-lg shadow-[#0071E3]/20 disabled:opacity-50"
+                                className="h-12 px-7 bg-[#f4f4f5] text-[#18181b] rounded-lg text-sm font-semibold hover:bg-white transition-all flex items-center gap-3 disabled:opacity-50"
                             >
                                 {saving ? (
                                     <>
