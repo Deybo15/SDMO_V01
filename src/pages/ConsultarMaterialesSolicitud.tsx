@@ -1,6 +1,5 @@
 import { useState, useEffect, useRef, useMemo } from 'react';
 import { supabase } from '../lib/supabase';
-import { useNavigate } from 'react-router-dom';
 import * as XLSX from 'xlsx';
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
@@ -8,7 +7,6 @@ import { useQuery } from '@tanstack/react-query';
 import { PageHeader } from '../components/ui/PageHeader';
 import { cn, formatDateOnly } from '../lib/utils';
 import {
-    ArrowLeft,
     FileSpreadsheet,
     FileText,
     Eraser,
@@ -76,7 +74,7 @@ const SearchableDropdown = ({
             <div className="relative flex items-center group">
                 <input
                     type="text"
-                    className="w-full bg-[#1D1D1F] border border-[#333333] rounded-[8px] h-10 px-4 pr-12 text-xs text-[#F5F5F7] font-bold placeholder:text-[#424245] focus:border-[#0071E3]/50 transition-all outline-none cursor-pointer"
+                    className="w-full bg-[#18181b] border border-[#3f3f46] rounded-lg h-11 px-4 pr-12 text-xs text-white font-medium placeholder:text-[#71717a] focus:border-[#a1a1aa] transition-all outline-none cursor-pointer"
                     placeholder={placeholder}
                     value={value || searchTerm}
                     onChange={(e) => {
@@ -102,7 +100,7 @@ const SearchableDropdown = ({
                             <X className="w-3.5 h-3.5" />
                         </button>
                     )}
-                    <Search className="w-3.5 h-3.5 text-[#424245] group-focus-within:text-[#0071E3] transition-colors" />
+                    <Search className="w-3.5 h-3.5 text-[#71717a] group-focus-within:text-white transition-colors" />
                 </div>
             </div>
 
@@ -111,7 +109,7 @@ const SearchableDropdown = ({
                     <div className="p-4 border-b border-[#333333] bg-black/20">
                         <input
                             type="text"
-                            className="w-full h-8 px-4 bg-[#121212] border border-[#333333] rounded-[8px] text-xs text-white outline-none focus:border-[#0071E3]/40 transition-all"
+                            className="w-full h-9 px-4 bg-[#111112] border border-[#3f3f46] rounded-lg text-xs text-white outline-none focus:border-[#a1a1aa] transition-all"
                             placeholder="Buscar en la lista..."
                             value={searchTerm}
                             onChange={(e) => setSearchTerm(e.target.value)}
@@ -123,7 +121,7 @@ const SearchableDropdown = ({
                             filteredOptions.map((opt, idx) => (
                                 <div
                                     key={idx}
-                                    className="px-4 py-2.5 text-[11px] font-bold text-[#86868B] hover:bg-white/5 hover:text-[#0071E3] cursor-pointer whitespace-normal break-words border-b border-white/[0.03] last:border-0 transition-colors"
+                                    className="px-4 py-2.5 text-[11px] font-medium text-[#a1a1aa] hover:bg-[#27272a] hover:text-white cursor-pointer whitespace-normal break-words border-b border-white/[0.03] last:border-0 transition-colors"
                                     title={opt}
                                     onClick={() => {
                                         onChange(opt);
@@ -211,7 +209,6 @@ interface SortConfig {
 }
 
 export default function ConsultarMaterialesSolicitud() {
-    const navigate = useNavigate();
 
     // Data State
     const [filterOptions, setFilterOptions] = useState<FilterOptions>({
@@ -811,8 +808,8 @@ export default function ConsultarMaterialesSolicitud() {
     const getEstadoClass = (estado: string) => {
         if (!estado) return 'bg-[#333333]/10 text-[#86868B] border-[#333333]';
         const estadoUpper = estado.toUpperCase();
-        if (estadoUpper === 'EJECUTADA') return 'bg-[#0071E3] text-white border-[#0071E3]';
-        if (estadoUpper === 'ACTIVA') return 'bg-[#0071E3]/10 text-[#0071E3] border-[#0071E3]/30';
+        if (estadoUpper === 'EJECUTADA') return 'bg-[#e4e4e7] text-[#09090b] border-[#e4e4e7]';
+        if (estadoUpper === 'ACTIVA') return 'bg-[#27272a] text-[#f4f4f5] border-[#52525b]';
         if (estadoUpper === 'CANCELADA') return 'bg-[#333333]/50 text-[#86868B] border-[#333333]';
         return 'bg-[#333333]/10 text-[#86868B] border-[#333333]';
     };
@@ -820,12 +817,12 @@ export default function ConsultarMaterialesSolicitud() {
     const SortIcon = ({ field }: { field: SortField }) => {
         if (sortConfig.field !== field) return <ArrowUpDown className="w-3.5 h-3.5 opacity-20" />;
         return sortConfig.direction === 'asc'
-            ? <ArrowUp className="w-3.5 h-3.5 text-[#0071E3] animate-in slide-in-from-bottom-2 duration-300" />
-            : <ArrowDown className="w-3.5 h-3.5 text-[#0071E3] animate-in slide-in-from-top-2 duration-300" />;
+            ? <ArrowUp className="w-3.5 h-3.5 text-white animate-in slide-in-from-bottom-2 duration-300" />
+            : <ArrowDown className="w-3.5 h-3.5 text-white animate-in slide-in-from-top-2 duration-300" />;
     };
 
     return (
-        <div className="min-h-screen bg-[#000000] text-[#F5F5F7] font-sans relative flex flex-col selection:bg-[#0071E3]/30 pb-24">
+        <div className="min-h-screen bg-black text-[#f4f4f5] font-sans relative flex flex-col selection:bg-white/20 pb-16">
             <style>{`
                 .custom-scrollbar::-webkit-scrollbar { width: 6px; height: 6px; }
                 .custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
@@ -836,24 +833,26 @@ export default function ConsultarMaterialesSolicitud() {
             <PageHeader
                 title="Materiales por Solicitud"
                 icon={ClipboardList}
-                subtitle="Consulta de consumos y costos"
+                subtitle="Consulte los materiales utilizados, responsables y costos por solicitud."
+                themeColor="neutral"
+                backRoute="/gestion-interna"
                 rightElement={
-                    <div className="flex items-center gap-4">
+                    <div className="flex flex-wrap items-center gap-2">
                         <button
                             onClick={exportarExcel}
-                            className="h-11 px-6 bg-[#0071E3] text-white rounded-[8px] text-[10px] font-black uppercase tracking-widest hover:brightness-110 transition-all flex items-center gap-2.5 shadow-xl active:scale-95"
+                            className="h-11 px-5 bg-[#f4f4f5] text-[#09090b] rounded-lg text-[10px] font-black uppercase tracking-widest hover:bg-white transition-all flex items-center gap-2.5 active:scale-95"
                         >
                             <FileSpreadsheet className="w-4 h-4" /> Exportar Excel
                         </button>
                         <button
                             onClick={exportarPDF}
-                            className="h-11 px-6 bg-transparent border border-[#0071E3] text-[#0071E3] rounded-[8px] text-[10px] font-black uppercase tracking-widest hover:bg-[#0071E3]/10 transition-all flex items-center gap-2.5 shadow-xl active:scale-95"
+                            className="h-11 px-5 bg-[#18181b] border border-[#3f3f46] text-[#e4e4e7] rounded-lg text-[10px] font-black uppercase tracking-widest hover:bg-[#27272a] transition-all flex items-center gap-2.5 active:scale-95"
                         >
                             <FileText className="w-4 h-4" /> Exportar PDF
                         </button>
                         <button
                             onClick={limpiarFiltros}
-                            className="h-11 px-6 bg-transparent border border-[#F5F5F7]/30 text-[#F5F5F7] rounded-[8px] text-[10px] font-black uppercase tracking-widest hover:bg-white/5 transition-all flex items-center gap-2.5 active:scale-95"
+                            className="h-11 px-5 bg-transparent border border-[#3f3f46] text-[#a1a1aa] rounded-lg text-[10px] font-black uppercase tracking-widest hover:bg-[#18181b] hover:text-white transition-all flex items-center gap-2.5 active:scale-95"
                         >
                             <Eraser className="w-4 h-4" /> Limpiar
                         </button>
@@ -861,13 +860,13 @@ export default function ConsultarMaterialesSolicitud() {
                 }
             />
 
-            <div className="max-w-[1600px] mx-auto w-full px-8 space-y-8 flex-1 flex flex-col">
+            <div className="max-w-[1600px] mx-auto w-full px-4 md:px-8 space-y-6 flex-1 flex flex-col">
                 {/* Filters Section */}
-                <div className="bg-[#121212] border border-[#333333] rounded-[8px] p-6 shadow-2xl">
+                <section className="bg-[#111112] border border-[#3f3f46] rounded-xl p-5 md:p-6">
                     <div className="flex items-center justify-between mb-6">
                         <div className="flex items-center gap-3">
-                            <Search className="w-4 h-4 text-[#0071E3]" />
-                            <h3 className="text-[10px] font-black text-white/90 uppercase tracking-[0.3em]">Filtros de Búsqueda</h3>
+                            <Search className="w-4 h-4 text-[#a1a1aa]" />
+                            <div><h2 className="text-base font-bold text-white">Filtros de búsqueda</h2><p className="mt-1 text-xs text-[#71717a]">Refine los registros por responsables, ubicación, estado o fecha.</p></div>
                         </div>
                         <span className="text-[9px] font-black text-[#86868B] uppercase tracking-widest bg-black/40 px-3 py-1 rounded-full border border-[#333333]">
                             {totalRecords.toLocaleString()} registros
@@ -889,7 +888,7 @@ export default function ConsultarMaterialesSolicitud() {
                             <label className="text-[9px] font-black text-[#86868B] uppercase tracking-widest whitespace-nowrap">Desde:</label>
                             <input
                                 type="date"
-                                className="bg-[#1D1D1F] border border-[#333333] rounded-[8px] h-8 px-4 text-[11px] text-white uppercase font-bold focus:border-[#0071E3]/50 outline-none transition-all w-48"
+                                className="bg-[#18181b] border border-[#3f3f46] rounded-lg h-9 px-4 text-[11px] text-white uppercase font-bold focus:border-[#a1a1aa] outline-none transition-all w-48"
                                 value={filters.fecha_inicio}
                                 onChange={(e) => handleFilterChange('fecha_inicio', e.target.value)}
                             />
@@ -898,16 +897,16 @@ export default function ConsultarMaterialesSolicitud() {
                             <label className="text-[9px] font-black text-[#86868B] uppercase tracking-widest whitespace-nowrap">Hasta:</label>
                             <input
                                 type="date"
-                                className="bg-[#1D1D1F] border border-[#333333] rounded-[8px] h-8 px-4 text-[11px] text-white uppercase font-bold focus:border-[#0071E3]/50 outline-none transition-all w-48"
+                                className="bg-[#18181b] border border-[#3f3f46] rounded-lg h-9 px-4 text-[11px] text-white uppercase font-bold focus:border-[#a1a1aa] outline-none transition-all w-48"
                                 value={filters.fecha_fin}
                                 onChange={(e) => handleFilterChange('fecha_fin', e.target.value)}
                             />
                         </div>
                     </div>
-                </div>
+                </section>
 
                 {/* Table Section */}
-                <div className="bg-[#121212] border border-[#333333] rounded-[8px] shadow-3xl overflow-hidden mb-16">
+                <div className="bg-[#111112] border border-[#3f3f46] rounded-xl overflow-hidden mb-10">
                     <div className="overflow-x-auto custom-scrollbar">
                         <div className="min-w-[1400px]">
                             {/* Header Row */}
@@ -933,7 +932,7 @@ export default function ConsultarMaterialesSolicitud() {
                             <div className="relative">
                                 {(isLoading || isFetching) && (
                                     <div className="absolute inset-0 flex items-center justify-center z-10 bg-black/40 backdrop-blur-[2px]">
-                                        <Loader2 className="w-8 h-8 animate-spin text-[#0071E3]" />
+                                        <Loader2 className="w-8 h-8 animate-spin text-[#d4d4d8]" />
                                     </div>
                                 )}
 
@@ -954,7 +953,7 @@ export default function ConsultarMaterialesSolicitud() {
                                                         index % 2 === 0 ? 'bg-[#121212]' : 'bg-black/20'
                                                     )}
                                                 >
-                                                    <div className="px-6 py-4 font-mono text-[11px] font-black text-[#0071E3] tracking-tighter">#{row.numero_solicitud}</div>
+                                                    <div className="px-6 py-4 font-mono text-[11px] font-black text-[#e4e4e7] tracking-tighter">#{row.numero_solicitud}</div>
                                                     <div className="px-6 py-4 text-[10px] font-bold text-[#86868B]">{formatDateOnly(row.fecha_solicitud)}</div>
                                                     <div className="px-6 py-4 text-[11px] italic text-[#F5F5F7] font-medium leading-relaxed truncate" title={row.descripcion_solicitud}>{row.descripcion_solicitud}</div>
                                                     <div className="px-6 py-4 text-[11px] font-black text-[#F5F5F7] uppercase tracking-tight" title={row.profesional_responsable}>{row.profesional_responsable}</div>
@@ -970,7 +969,7 @@ export default function ConsultarMaterialesSolicitud() {
                                                         </span>
                                                     </div>
                                                     <div className="px-6 py-4 flex items-center justify-center">
-                                                        <ChevronDown className={cn("w-4 h-4 text-[#86868B] transition-transform duration-300", isExpanded && "transform rotate-180 text-[#0071E3]")} />
+                                                        <ChevronDown className={cn("w-4 h-4 text-[#86868B] transition-transform duration-300", isExpanded && "transform rotate-180 text-white")} />
                                                     </div>
                                                 </div>
 
@@ -980,7 +979,7 @@ export default function ConsultarMaterialesSolicitud() {
                                                         <div className="flex flex-wrap items-center justify-between gap-4 mb-4">
                                                             <div className="flex flex-wrap items-center gap-6">
                                                                 <div className="flex items-center gap-2">
-                                                                    <Package className="w-4 h-4 text-[#0071E3]" />
+                                                                    <Package className="w-4 h-4 text-[#a1a1aa]" />
                                                                     <h4 className="text-[10px] font-black text-white/80 uppercase tracking-wider">Materiales Utilizados</h4>
                                                                 </div>
                                                                 <div className="text-[9px] font-black text-[#86868B] uppercase tracking-wider bg-[#1D1D1F] px-3 py-1 rounded-[6px] border border-[#333333]">
@@ -988,7 +987,7 @@ export default function ConsultarMaterialesSolicitud() {
                                                                 </div>
                                                             </div>
                                                             {materials.length > 0 && (
-                                                                <div className="flex items-center gap-2 text-xs font-bold text-[#0071E3] bg-[#0071E3]/10 px-3 py-1 rounded-[6px]">
+                                                                <div className="flex items-center gap-2 text-xs font-bold text-[#e4e4e7] bg-[#27272a] border border-[#3f3f46] px-3 py-1 rounded-md">
                                                                     <Banknote className="w-4 h-4" />
                                                                     <span>Costo Total: {formatearMoneda(materialsTotalCost)}</span>
                                                                 </div>
@@ -997,7 +996,7 @@ export default function ConsultarMaterialesSolicitud() {
 
                                                         {isLoadingMats ? (
                                                             <div className="flex items-center gap-3 py-4 text-[#86868B]">
-                                                                <Loader2 className="w-4 h-4 animate-spin text-[#0071E3]" />
+                                                                <Loader2 className="w-4 h-4 animate-spin text-[#d4d4d8]" />
                                                                 <span className="text-[10px] font-bold uppercase tracking-wider">Cargando desglose de materiales...</span>
                                                             </div>
                                                         ) : materials.length === 0 ? (
@@ -1020,7 +1019,7 @@ export default function ConsultarMaterialesSolicitud() {
                                                                     <tbody className="divide-y divide-[#333333]/20">
                                                                         {materials.map((m, idx) => (
                                                                             <tr key={idx} className="hover:bg-white/[0.01]">
-                                                                                <td className="px-6 py-2.5 font-mono text-[#0071E3] font-bold">{m.articulo}</td>
+                                                                                <td className="px-6 py-2.5 font-mono text-[#d4d4d8] font-bold">{m.articulo}</td>
                                                                                 <td className="px-6 py-2.5 font-bold uppercase text-white/90">{m.descripcion}</td>
                                                                                 <td className="px-6 py-2.5 text-center font-bold text-white">{m.cantidad_total}</td>
                                                                                 <td className="px-6 py-2.5 text-[#86868B] uppercase font-bold">{m.unidad}</td>
@@ -1058,30 +1057,18 @@ export default function ConsultarMaterialesSolicitud() {
                                 disabled={page === 0}
                                 className="h-10 px-6 bg-transparent border border-[#333333] text-[#F5F5F7] rounded-[8px] text-[10px] font-black uppercase tracking-widest hover:bg-white/5 transition-all flex items-center gap-2 disabled:opacity-30 disabled:cursor-not-allowed active:scale-95"
                             >
-                                <ChevronLeft className="w-4 h-4 text-[#0071E3]" /> Anterior
+                                <ChevronLeft className="w-4 h-4 text-[#a1a1aa]" /> Anterior
                             </button>
                             <button
                                 onClick={() => setPage(p => p + 1)}
                                 disabled={allRows.length < PAGE_SIZE || page >= totalPages - 1}
                                 className="h-10 px-6 bg-transparent border border-[#333333] text-[#F5F5F7] rounded-[8px] text-[10px] font-black uppercase tracking-widest hover:bg-white/5 transition-all flex items-center gap-2 disabled:opacity-30 disabled:cursor-not-allowed active:scale-95"
                             >
-                                Siguiente <ChevronRight className="w-4 h-4 text-[#0071E3]" />
+                                Siguiente <ChevronRight className="w-4 h-4 text-[#a1a1aa]" />
                             </button>
                         </div>
                     </div>
                 </div>
-            </div>
-            {/* Back Button */}
-            <div className="max-w-[1600px] mx-auto w-full px-8 flex justify-start">
-                <button
-                    onClick={() => navigate('/gestion-interna')}
-                    className="btn-ghost !px-8 !py-4"
-                >
-                    <div className="flex items-center gap-3">
-                        <ArrowLeft className="w-5 h-5" />
-                        <span className="text-[10px] font-black uppercase tracking-widest">Regresar a Gestión Interna</span>
-                    </div>
-                </button>
             </div>
         </div>
     );
