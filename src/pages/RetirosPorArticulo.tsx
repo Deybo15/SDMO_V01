@@ -1,6 +1,5 @@
 import React, { useState, useMemo } from 'react';
 import { supabase } from '../lib/supabase';
-import { useNavigate } from 'react-router-dom';
 import {
     Search,
     X,
@@ -8,8 +7,6 @@ import {
     Table,
     Inbox,
     Loader2,
-    ArrowLeft,
-    Download,
     History,
     FileSpreadsheet,
     Activity,
@@ -44,8 +41,6 @@ interface RetiroDetalle {
 }
 
 export default function RetirosPorArticulo() {
-    const navigate = useNavigate();
-
     // State
     const [loading, setLoading] = useState(false);
     const [selectedArticle, setSelectedArticle] = useState<Articulo | null>(null);
@@ -157,24 +152,15 @@ export default function RetirosPorArticulo() {
     };
 
     return (
-        <div className="min-h-screen bg-[#000000] text-[#F5F5F7] p-4 md:p-8 relative overflow-hidden">
-            <div className="max-w-7xl mx-auto space-y-8 relative z-10">
-                {/* Header */}
-                <div className="flex flex-col md:flex-row justify-between items-end gap-6 pb-2 border-b border-[#333333]">
-                    <div className="space-y-1">
-                        <PageHeader title="Retiros por Artículo" icon={ClipboardList} themeColor="blue" />
-                        <p className="text-[#86868B] text-sm font-medium tracking-wide">
-                            Consulta detallada de funcionarios y cantidades retiradas por artículo.
-                        </p>
-                    </div>
-                    <button
-                        onClick={() => navigate(-1)}
-                        className="px-6 py-2.5 bg-transparent border border-[#333333] rounded-[8px] text-xs font-black uppercase tracking-widest flex items-center gap-2 text-[#F5F5F7] hover:bg-white/5 transition-all"
-                    >
-                        <ArrowLeft className="w-4 h-4 text-[#0071E3]" />
-                        Regresar
-                    </button>
-                </div>
+        <div className="min-h-screen bg-black text-[#f4f4f5] relative overflow-hidden">
+            <PageHeader
+                title="Retiros por Artículo"
+                subtitle="Consulte quién retiró un artículo y las cantidades registradas."
+                icon={ClipboardList}
+                themeColor="neutral"
+                backRoute="/gestion-interna"
+            />
+            <div className="max-w-[1400px] mx-auto px-4 md:px-8 pb-12 space-y-6 relative z-10">
 
                 {/* Status Messages */}
                 {statusMessage && (
@@ -182,7 +168,7 @@ export default function RetirosPorArticulo() {
                         ${statusMessage.type === 'success' ? 'bg-emerald-500/10 border-emerald-500/20 text-emerald-100' :
                             statusMessage.type === 'error' ? 'bg-rose-500/10 border-rose-500/20 text-rose-100' :
                                 statusMessage.type === 'warning' ? 'bg-amber-500/10 border-amber-500/20 text-amber-100' :
-                                    'bg-[#0071E3]/10 border-[#0071E3]/20 text-blue-100'
+                                    'bg-[#18181b] border-[#3f3f46] text-[#e4e4e7]'
                         }`}>
                         <div className="p-2 rounded-[8px] bg-white/5 shrink-0">
                             {statusMessage.type === 'error' ? <AlertCircle className="w-5 h-5 text-rose-400" /> :
@@ -197,19 +183,22 @@ export default function RetirosPorArticulo() {
                 )}
 
                 {/* Filters */}
-                <div className="bg-[#121212] p-8 border border-[#333333] rounded-[8px] relative group">
+                <section className="bg-[#111112] p-5 md:p-8 border border-[#3f3f46] rounded-xl relative group">
+                    <div className="mb-6 border-b border-[#27272a] pb-5">
+                        <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-[#71717a]">Filtros de consulta</p>
+                        <h2 className="mt-2 text-lg font-bold text-white">Seleccione el artículo y el período</h2>
+                    </div>
                     <div className="grid grid-cols-1 md:grid-cols-12 gap-6 items-end">
                         {/* Article Selector */}
                         <div className="md:col-span-12 lg:col-span-5 relative">
                             <label className="block text-[10px] font-black text-[#86868B] uppercase tracking-[0.2em] mb-3 ml-1">Artículo</label>
                             {selectedArticle ? (
                                 <div className="flex items-center gap-4 p-4 bg-[#1D1D1F] border border-[#333333] rounded-[8px] group/selected relative overflow-hidden">
-                                    <div className="absolute top-0 left-0 w-1 h-full bg-[#0071E3]" />
                                     <div className="w-12 h-12 bg-black/40 rounded-[8px] overflow-hidden border border-[#333333] shrink-0">
                                         <img src={selectedArticle.imagen_url || ''} className="w-full h-full object-cover opacity-80" />
                                     </div>
                                     <div className="flex-1 min-w-0">
-                                        <span className="font-mono text-[10px] font-black text-[#0071E3] uppercase tracking-widest bg-[#0071E3]/5 px-2 py-0.5 rounded border border-[#0071E3]/10">
+                                        <span className="font-mono text-[10px] font-bold text-[#d4d4d8] uppercase tracking-widest bg-[#27272a] px-2 py-0.5 rounded border border-[#3f3f46]">
                                             {selectedArticle.codigo_articulo}
                                         </span>
                                         <p className="text-sm font-bold text-white truncate italic uppercase mt-1">{selectedArticle.nombre_articulo}</p>
@@ -217,7 +206,7 @@ export default function RetirosPorArticulo() {
                                     <div className="flex gap-2">
                                         <button
                                             onClick={() => setShowSearchModal(true)}
-                                            className="p-3 bg-white/5 hover:bg-white/10 text-[#0071E3] hover:text-white rounded-[8px] transition-all border border-[#333333]"
+                                            className="p-3 bg-white/5 hover:bg-white/10 text-[#a1a1aa] hover:text-white rounded-lg transition-all border border-[#3f3f46]"
                                         >
                                             <Search className="w-4 h-4" />
                                         </button>
@@ -232,13 +221,13 @@ export default function RetirosPorArticulo() {
                             ) : (
                                 <button
                                     onClick={() => setShowSearchModal(true)}
-                                    className="w-full bg-[#1D1D1F] border border-[#333333] rounded-[8px] px-6 py-4 text-left flex items-center justify-between group/trigger focus:border-[#0071E3]/50 transition-all shadow-inner"
+                                    className="w-full bg-[#18181b] border border-[#3f3f46] rounded-lg px-6 py-4 text-left flex items-center justify-between group/trigger hover:border-[#71717a] transition-all"
                                 >
                                     <div className="flex items-center gap-4">
-                                        <Search className="w-5 h-5 text-[#86868B] group-hover/trigger:text-[#0071E3] transition-colors" />
+                                        <Search className="w-5 h-5 text-[#71717a] group-hover/trigger:text-white transition-colors" />
                                         <span className="text-[#86868B] font-bold uppercase text-xs tracking-widest">Seleccionar artículo...</span>
                                     </div>
-                                    <span className="text-[10px] font-black text-[#0071E3] bg-[#0071E3]/5 px-3 py-1 rounded-[4px] border border-[#0071E3]/10 uppercase tracking-widest">
+                                    <span className="text-[10px] font-bold text-[#d4d4d8] bg-[#27272a] px-3 py-1 rounded border border-[#3f3f46] uppercase tracking-widest">
                                         Buscar
                                     </span>
                                 </button>
@@ -254,7 +243,7 @@ export default function RetirosPorArticulo() {
                                     type="date"
                                     value={dateFrom}
                                     onChange={(e) => setDateFrom(e.target.value)}
-                                    className="w-full bg-[#1D1D1F] border border-[#333333] rounded-[8px] pl-14 pr-4 py-4 text-white font-bold focus:outline-none focus:border-[#0071E3]/50 transition-all [color-scheme:dark]"
+                                    className="w-full bg-[#18181b] border border-[#3f3f46] rounded-lg pl-14 pr-4 py-4 text-white font-bold focus:outline-none focus:border-[#a1a1aa] transition-all [color-scheme:dark]"
                                 />
                             </div>
                         </div>
@@ -266,7 +255,7 @@ export default function RetirosPorArticulo() {
                                     type="date"
                                     value={dateTo}
                                     onChange={(e) => setDateTo(e.target.value)}
-                                    className="w-full bg-[#1D1D1F] border border-[#333333] rounded-[8px] pl-14 pr-4 py-4 text-white font-bold focus:outline-none focus:border-[#0071E3]/50 transition-all [color-scheme:dark]"
+                                    className="w-full bg-[#18181b] border border-[#3f3f46] rounded-lg pl-14 pr-4 py-4 text-white font-bold focus:outline-none focus:border-[#a1a1aa] transition-all [color-scheme:dark]"
                                 />
                             </div>
                         </div>
@@ -276,28 +265,28 @@ export default function RetirosPorArticulo() {
                             <button
                                 onClick={handleConsultar}
                                 disabled={loading}
-                                className="w-full h-[58px] bg-[#0071E3] hover:bg-[#0077ED] text-white rounded-[8px] shadow-lg shadow-[#0071E3]/20 transition-all flex items-center justify-center disabled:opacity-50 active:scale-95 group/search"
+                                className="w-full h-[58px] bg-[#f4f4f5] hover:bg-white text-[#09090b] rounded-lg transition-all flex items-center justify-center disabled:opacity-50 active:scale-95 group/search"
                             >
                                 {loading ? <Loader2 className="w-6 h-6 animate-spin" /> : <Activity className="w-6 h-6 group-hover/search:scale-110 transition-transform" />}
                             </button>
                         </div>
                     </div>
-                </div>
+                </section>
 
                 {/* Results Section */}
                 {!hasSearched ? (
-                    <div className="py-40 flex flex-col items-center justify-center text-center animate-in fade-in zoom-in duration-700">
-                        <div className="w-32 h-32 bg-[#121212] border border-[#333333] rounded-[8px] flex items-center justify-center shadow-2xl mb-10">
-                            <History className="w-16 h-16 text-[#333333]" />
+                    <div className="py-24 flex flex-col items-center justify-center text-center animate-in fade-in zoom-in duration-700">
+                        <div className="w-20 h-20 bg-[#111112] border border-[#3f3f46] rounded-xl flex items-center justify-center mb-6">
+                            <History className="w-9 h-9 text-[#52525b]" />
                         </div>
-                        <h3 className="text-3xl font-black text-[#F5F5F7] uppercase italic tracking-tighter">Esperando Consulta</h3>
-                        <p className="text-[#86868B] mt-3 max-w-sm mx-auto font-black uppercase text-[10px] tracking-widest">
+                        <h3 className="text-xl font-bold text-white">Esperando consulta</h3>
+                        <p className="text-[#71717a] mt-2 max-w-sm mx-auto text-sm">
                             Seleccione un artículo para ver el historial de retiros por funcionario.
                         </p>
                     </div>
                 ) : loading ? (
                     <div className="py-40 flex flex-col items-center justify-center space-y-6">
-                        <Loader2 className="w-16 h-16 animate-spin text-[#0071E3]" />
+                        <Loader2 className="w-12 h-12 animate-spin text-[#d4d4d8]" />
                         <p className="text-[10px] font-black uppercase tracking-[0.3em] text-[#86868B]">Cargando datos...</p>
                     </div>
                 ) : retiros.length === 0 ? (
@@ -310,12 +299,12 @@ export default function RetirosPorArticulo() {
                     <div className="space-y-6 animate-in fade-in duration-700">
                         <div className="flex items-center justify-between px-2">
                             <h3 className="text-xs font-black text-[#86868B] uppercase tracking-[0.3em] flex items-center gap-3">
-                                <Table className="w-5 h-5 text-[#0071E3]" />
+                                <Table className="w-5 h-5 text-[#a1a1aa]" />
                                 Detalle de Retiros
                             </h3>
                             <button
                                 onClick={handleExport}
-                                className="px-6 py-2.5 bg-transparent border border-[#333333] rounded-[8px] text-xs font-black uppercase tracking-widest flex items-center gap-2 hover:bg-[#0071E3]/5 text-[#0071E3] transition-all"
+                                className="px-6 py-2.5 bg-[#f4f4f5] border border-white rounded-lg text-xs font-black uppercase tracking-widest flex items-center gap-2 hover:bg-white text-[#09090b] transition-all"
                             >
                                 <FileSpreadsheet className="w-4 h-4" />
                                 Exportar Excel
@@ -340,11 +329,11 @@ export default function RetirosPorArticulo() {
                                                     {format(parseISO(r.fecha_salida), 'dd/MM/yyyy')}
                                                 </td>
                                                 <td className="p-6">
-                                                    <span className="font-mono text-sm font-black text-[#0071E3]/70 group-hover:text-[#0071E3]">#{r.id_salida}</span>
+                                                    <span className="font-mono text-sm font-black text-[#d4d4d8]">#{r.id_salida}</span>
                                                 </td>
                                                 <td className="p-6">
                                                     <div className="flex items-center gap-3">
-                                                        <div className="p-2 bg-black/40 rounded-full border border-[#333333] text-[#0071E3]">
+                                                        <div className="p-2 bg-black/40 rounded-full border border-[#3f3f46] text-[#a1a1aa]">
                                                             <User className="w-3 h-3" />
                                                         </div>
                                                         <span className="text-sm font-bold text-white uppercase italic">{r.retira_nombre}</span>
@@ -352,7 +341,7 @@ export default function RetirosPorArticulo() {
                                                 </td>
                                                 <td className="p-6 text-right">
                                                     <div className="flex flex-col items-end">
-                                                        <span className="text-xl font-black text-white group-hover:text-[#0071E3] transition-colors font-mono">{r.cantidad.toLocaleString()}</span>
+                                                        <span className="text-xl font-black text-white transition-colors font-mono">{r.cantidad.toLocaleString()}</span>
                                                         <span className="text-[9px] font-black text-[#86868B] uppercase tracking-widest">{selectedArticle?.unidad}</span>
                                                     </div>
                                                 </td>
@@ -376,7 +365,7 @@ export default function RetirosPorArticulo() {
                     setHasSearched(false);
                     setShowSearchModal(false);
                 }}
-                themeColor="blue"
+                themeColor="neutral"
                 title="BUSCADOR DE ARTÍCULOS"
             />
         </div>
