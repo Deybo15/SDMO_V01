@@ -539,6 +539,55 @@ export async function actualizarProyectoObra(id: string | number, proyectoData: 
       .single();
 
     if (error) throw error;
+    const { data: { user } } = await supabase.auth.getUser();
+    const modificadoPor = user?.email || 'Usuario SDMO';
+    const cambios = AUDITED_PROJECT_FIELDS
+      .filter((field) => Object.prototype.hasOwnProperty.call(proyectoData, field))
+      .map((field) => {
+        const anterior = (proyectoActual as any)?.[field];
+        const nuevo = (data as any)?.[field];
+        return {
+          field,
+          anterior,
+          nuevo
+        };
+      })
+      .filter(({ anterior, nuevo }) => toAuditValue(anterior) !== toAuditValue(nuevo));
+
+    if (cambios.length > 0) {
+      const { error: errHistorial } = await supabase
+        .from('historial_proyecto')
+        .insert(cambios.map(({ field, anterior, nuevo }) => ({
+          proyecto_id: id,
+          entidad: 'proyecto_obra',
+          campo_modificado: field,
+          valor_anterior: toAuditValue(anterior),
+          valor_nuevo: toAuditValue(nuevo),
+          modificado_por: modificadoPor
+        })));
+
+      if (errHistorial) {
+        console.error('Error registrando historial de proyecto:', errHistorial);
+      }
+
+      const cambioEstado = cambios.find(({ field }) => field === 'estado');
+      if (cambioEstado) {
+        const { error: errEstado } = await supabase
+          .from('historial_estado_proyecto')
+          .insert([{
+            proyecto_id: id,
+            estado_anterior: toAuditValue(cambioEstado.anterior),
+            estado_nuevo: toAuditValue(cambioEstado.nuevo),
+            motivo: 'Actualizacion desde ficha editable',
+            modificado_por: modificadoPor
+          }]);
+
+        if (errEstado) {
+          console.error('Error registrando historial de estado:', errEstado);
+        }
+      }
+    }
+
     return data;
   } catch (err) {
     console.error('Error actualizando proyecto de obra:', err);
@@ -595,55 +644,6 @@ export async function actualizarCodigoPresupuestario(
       .single();
 
     if (error) throw error;
-
-    const { data: { user } } = await supabase.auth.getUser();
-    const modificadoPor = user?.email || 'Usuario SDMO';
-    const cambios = AUDITED_PROJECT_FIELDS
-      .filter((field) => Object.prototype.hasOwnProperty.call(proyectoData, field))
-      .map((field) => {
-        const anterior = (proyectoActual as any)?.[field];
-        const nuevo = (data as any)?.[field];
-        return {
-          field,
-          anterior,
-          nuevo
-        };
-      })
-      .filter(({ anterior, nuevo }) => toAuditValue(anterior) !== toAuditValue(nuevo));
-
-    if (cambios.length > 0) {
-      const { error: errHistorial } = await supabase
-        .from('historial_proyecto')
-        .insert(cambios.map(({ field, anterior, nuevo }) => ({
-          proyecto_id: id,
-          entidad: 'proyecto_obra',
-          campo_modificado: field,
-          valor_anterior: toAuditValue(anterior),
-          valor_nuevo: toAuditValue(nuevo),
-          modificado_por: modificadoPor
-        })));
-
-      if (errHistorial) {
-        console.error('Error registrando historial de proyecto:', errHistorial);
-      }
-
-      const cambioEstado = cambios.find(({ field }) => field === 'estado');
-      if (cambioEstado) {
-        const { error: errEstado } = await supabase
-          .from('historial_estado_proyecto')
-          .insert([{
-            proyecto_id: id,
-            estado_anterior: toAuditValue(cambioEstado.anterior),
-            estado_nuevo: toAuditValue(cambioEstado.nuevo),
-            motivo: 'Actualizacion desde ficha editable',
-            modificado_por: modificadoPor
-          }]);
-
-        if (errEstado) {
-          console.error('Error registrando historial de estado:', errEstado);
-        }
-      }
-    }
 
     return data;
   } catch (err) {

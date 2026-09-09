@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useMemo } from 'react';
+import type { ProyectoObra } from '../../types/proyectosObra';
 import { Link, useNavigate } from 'react-router-dom';
 import {
   ResponsiveContainer, BarChart, Bar, XAxis, YAxis, Tooltip, Legend, CartesianGrid, LabelList,
@@ -297,7 +298,9 @@ export default function ProyectosObraDashboard() {
   }, [proyectosFiltrados, rawStats, next30Days, today]);
 
   const alertasOperativas = useMemo(() => {
-    const proyectosMap = new Map(proyectosFiltrados.map((p: any) => [p.id, p]));
+    const proyectosMap = new Map<ProyectoObra['id'], Pick<ProyectoObra, 'id' | 'nombre_proyecto'>>(
+      proyectosFiltrados.map((p: ProyectoObra) => [p.id, p] as const)
+    );
     const alertas: Array<{ id: string; proyectoId: string | number; proyecto: string; tipo: string; detalle: string; fecha: string; severidad: 'alta' | 'media' }> = [];
 
     (rawStats?.permisos || []).forEach((permiso: any) => {
