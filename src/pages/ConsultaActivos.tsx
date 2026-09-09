@@ -1,12 +1,9 @@
 import { useState, useEffect, useCallback } from 'react';
-import { useNavigate, useSearchParams } from 'react-router-dom';
+import { useSearchParams } from 'react-router-dom';
 import { supabase } from '../lib/supabase';
 import {
     Search,
-    ArrowLeft,
-    User,
     Package,
-    Calendar,
     Loader2,
     Info,
     HelpCircle,
@@ -31,7 +28,6 @@ interface ActivoDetalle {
 }
 
 export default function ConsultaActivos() {
-    const navigate = useNavigate();
     const [searchParams] = useSearchParams();
     const [loading, setLoading] = useState(false);
     const [searchTerm, setSearchTerm] = useState(searchParams.get('search') || '');
@@ -166,65 +162,69 @@ export default function ConsultaActivos() {
     }, [buscarActivos, searchTerm]);
 
     return (
-        <div className="min-h-screen bg-[#0f111a] text-white p-4 md:p-8">
+        <div className="min-h-screen bg-black text-white">
             <PageHeader
                 title="Consulta de Activos"
                 icon={SearchCode}
-                themeColor="blue"
+                themeColor="neutral"
+                subtitle="Localice activos y consulte su disponibilidad o asignación actual."
+                backRoute="/activos"
             />
 
-            <div className="max-w-7xl mx-auto space-y-8">
+            <div className="max-w-[1400px] mx-auto px-4 md:px-8 pb-12 space-y-6">
                 {/* Search Bar section */}
-                <div className="bg-[#1e2235]/50 backdrop-blur-xl border border-white/10 p-6 rounded-3xl shadow-2xl">
+                <section className="bg-[#111112] border border-[#3f3f46] p-5 md:p-6 rounded-xl">
+                    <div className="mb-5">
+                        <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-[#71717a]">Búsqueda de inventario</p>
+                        <h2 className="mt-2 text-lg font-bold text-white">¿Qué activo desea consultar?</h2>
+                        <p className="mt-1 text-sm text-[#a1a1aa]">Busque por nombre o por palabras incluidas en la descripción.</p>
+                    </div>
                     <div className="relative group">
-                        <Search className="absolute left-5 top-1/2 -translate-y-1/2 text-blue-400 group-focus-within:text-blue-300 w-6 h-6 transition-colors" />
+                        <Search className="absolute left-5 top-1/2 -translate-y-1/2 text-[#71717a] group-focus-within:text-white w-5 h-5 transition-colors" />
                         <input
                             type="text"
                             placeholder="Buscar por descripción (mín. 3 letras)... Ej: hidrolavadora, taladro, generador"
                             value={searchTerm}
                             onChange={(e) => setSearchTerm(e.target.value)}
-                            className="w-full bg-[#0f111a]/80 border border-white/10 rounded-2xl py-5 pl-14 pr-6 text-xl text-white focus:outline-none focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500 transition-all placeholder:text-gray-500 shadow-inner"
+                            className="w-full bg-[#18181b] border border-[#3f3f46] rounded-lg py-4 pl-14 pr-14 text-base text-white focus:outline-none focus:border-[#a1a1aa] transition-all placeholder:text-[#71717a]"
                             autoFocus
                         />
                         {loading && (
                             <div className="absolute right-5 top-1/2 -translate-y-1/2">
-                                <Loader2 className="w-6 h-6 text-blue-500 animate-spin" />
+                                <Loader2 className="w-5 h-5 text-[#d4d4d8] animate-spin" />
                             </div>
                         )}
                     </div>
                     {searchTerm.length > 0 && searchTerm.length < 3 && (
-                        <p className="mt-3 text-sm text-gray-500 flex items-center gap-2 px-2">
+                        <p className="mt-3 text-sm text-[#71717a] flex items-center gap-2 px-2">
                             <Info className="w-4 h-4" /> Escribe al menos 3 caracteres para buscar
                         </p>
                     )}
-                </div>
+                </section>
 
                 {/* Results Section */}
                 <div className="space-y-6">
                     {results.length > 0 ? (
                         <div className="grid grid-cols-1 gap-6">
                             {results.map((activo) => (
-                                <div
+                                <article
                                     key={activo.numero_activo}
-                                    className="bg-[#1e2235] border border-white/10 rounded-3xl overflow-hidden shadow-xl hover:border-white/20 transition-all group"
+                                    className="bg-[#111112] border border-[#3f3f46] rounded-xl overflow-hidden hover:border-[#71717a] transition-colors"
                                 >
                                     <div className="flex flex-col md:flex-row">
-                                        {/* Status Sidebar */}
-                                        <div className={`md:w-3 flex-shrink-0 ${activo.status === 'ASIGNADO' ? 'bg-orange-500' : 'bg-emerald-500'
-                                            }`} />
+                                        <div className="h-px md:h-auto md:w-px flex-shrink-0 bg-[#52525b]" />
 
                                         <div className="flex-1 p-6 md:p-8">
                                             <div className="flex flex-col lg:flex-row justify-between gap-6">
                                                 {/* Asset Info */}
                                                 <div className="flex-1 space-y-4">
                                                     <div className="flex items-center gap-4">
-                                                        <div className={`p-3 rounded-2xl ${activo.status === 'ASIGNADO' ? 'bg-orange-500/10 text-orange-400' : 'bg-emerald-500/10 text-emerald-400'
-                                                            }`}>
+                                                        <div className="p-3 rounded-lg border border-[#3f3f46] bg-[#18181b] text-[#d4d4d8]">
                                                             <Package className="w-8 h-8" />
                                                         </div>
                                                         <div>
                                                             <div className="flex items-center gap-2 mb-1">
-                                                                <span className="text-xs font-bold bg-white/5 border border-white/10 px-2 py-1 rounded text-blue-300 font-mono">
+                                                                <span className="text-xs font-bold bg-[#27272a] border border-[#3f3f46] px-2 py-1 rounded text-[#d4d4d8] font-mono">
                                                                     ID: #{activo.numero_activo}
                                                                 </span>
                                                                 {activo.marca_activo && (
@@ -233,32 +233,28 @@ export default function ConsultaActivos() {
                                                                     </span>
                                                                 )}
                                                             </div>
-                                                            <h2 className="text-2xl font-black text-white group-hover:text-blue-400 transition-colors tracking-tight">
+                                                            <h2 className="text-xl font-bold text-white tracking-tight">
                                                                 {activo.nombre_corto_activo}
                                                             </h2>
                                                         </div>
                                                     </div>
 
-                                                    <p className="text-gray-400 text-base leading-relaxed pl-16 line-clamp-2 md:line-clamp-none">
+                                                    <p className="text-[#a1a1aa] text-sm leading-relaxed pl-16 line-clamp-2 md:line-clamp-none">
                                                         {activo.descripcion_activo || 'Sin descripción adicional'}
                                                     </p>
                                                 </div>
 
                                                 {/* Responsibility Info */}
                                                 <div className="lg:w-96 flex-shrink-0">
-                                                    <div className={`h-full rounded-2xl p-6 flex flex-col justify-center gap-4 border ${activo.status === 'ASIGNADO'
-                                                        ? 'bg-orange-500/10 border-orange-500/20'
-                                                        : 'bg-emerald-500/10 border-emerald-500/20'
-                                                        }`}>
+                                                    <div className="h-full rounded-lg p-5 flex flex-col justify-center gap-4 border border-[#3f3f46] bg-[#18181b]">
                                                         <div className="flex items-center justify-between">
                                                             <div className="flex items-center gap-2">
                                                                 {activo.status === 'ASIGNADO' ? (
-                                                                    <AlertCircle className="w-5 h-5 text-orange-400" />
+                                                                    <AlertCircle className="w-5 h-5 text-[#a1a1aa]" />
                                                                 ) : (
-                                                                    <CheckCircle2 className="w-5 h-5 text-emerald-400" />
+                                                                    <CheckCircle2 className="w-5 h-5 text-[#a1a1aa]" />
                                                                 )}
-                                                                <span className={`text-sm font-black tracking-widest uppercase ${activo.status === 'ASIGNADO' ? 'text-orange-400' : 'text-emerald-400'
-                                                                    }`}>
+                                                                <span className="text-xs font-bold tracking-[0.16em] uppercase text-white">
                                                                     {activo.status}
                                                                 </span>
                                                             </div>
@@ -273,11 +269,11 @@ export default function ConsultaActivos() {
                                                         {activo.status === 'ASIGNADO' ? (
                                                             <div className="space-y-4">
                                                                 <div className="flex items-center gap-4">
-                                                                    <div className="w-12 h-12 rounded-full bg-orange-500/20 flex items-center justify-center border border-orange-500/30">
-                                                                        <UserCircle className="w-7 h-7 text-orange-400" />
+                                                                    <div className="w-12 h-12 rounded-lg bg-[#111112] flex items-center justify-center border border-[#3f3f46]">
+                                                                        <UserCircle className="w-7 h-7 text-[#a1a1aa]" />
                                                                     </div>
                                                                     <div className="flex-1 min-w-0">
-                                                                        <div className="text-xs text-orange-400/60 font-medium uppercase tracking-tight mb-0.5">Responsable Actual</div>
+                                                                        <div className="text-[10px] text-[#71717a] font-bold uppercase tracking-[0.14em] mb-1">Responsable actual</div>
                                                                         <div className="text-lg font-bold text-white truncate leading-tight">
                                                                             {activo.responsable}
                                                                         </div>
@@ -292,8 +288,8 @@ export default function ConsultaActivos() {
                                                             </div>
                                                         ) : (
                                                             <div className="flex flex-col items-center justify-center py-2 gap-2">
-                                                                <Package className="w-10 h-10 text-emerald-400/40" />
-                                                                <p className="text-emerald-400/80 font-bold text-lg">Disponible en Bodega</p>
+                                                                <Package className="w-9 h-9 text-[#71717a]" />
+                                                                <p className="text-white font-bold text-base">Disponible en bodega</p>
                                                             </div>
                                                         )}
                                                     </div>
@@ -301,13 +297,13 @@ export default function ConsultaActivos() {
                                             </div>
                                         </div>
                                     </div>
-                                </div>
+                                </article>
                             ))}
                         </div>
                     ) : searchTerm.length >= 3 && !loading ? (
                         <div className="py-20 text-center animate-in fade-in zoom-in duration-300">
-                            <div className="inline-flex items-center justify-center w-24 h-24 bg-[#1e2235] rounded-full mb-6 border border-white/10 shadow-xl">
-                                <HelpCircle className="w-12 h-12 text-gray-600" />
+                            <div className="inline-flex items-center justify-center w-20 h-20 bg-[#111112] rounded-xl mb-6 border border-[#3f3f46]">
+                                <HelpCircle className="w-9 h-9 text-[#52525b]" />
                             </div>
                             <h3 className="text-2xl font-bold text-white mb-2">No se encontraron activos</h3>
                             <p className="text-gray-500 max-w-sm mx-auto">
@@ -315,9 +311,12 @@ export default function ConsultaActivos() {
                             </p>
                         </div>
                     ) : searchTerm.length === 0 ? (
-                        <div className="py-20 text-center opacity-50">
-                            <Search className="w-16 h-16 text-gray-700 mx-auto mb-6" />
-                            <h3 className="text-xl font-medium text-gray-600">Comienza a escribir para buscar...</h3>
+                        <div className="py-24 text-center">
+                            <div className="w-20 h-20 bg-[#111112] border border-[#3f3f46] rounded-xl flex items-center justify-center mx-auto mb-6">
+                                <Search className="w-9 h-9 text-[#52525b]" />
+                            </div>
+                            <h3 className="text-xl font-bold text-white">Esperando búsqueda</h3>
+                            <p className="mt-2 text-sm text-[#71717a]">Escriba al menos tres caracteres para consultar el inventario.</p>
                         </div>
                     ) : null}
                 </div>
