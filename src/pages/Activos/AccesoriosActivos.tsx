@@ -1,11 +1,10 @@
 // AccesoriosActivos.tsx - v3.0 Style Guide Alignment & Drag-and-Drop
 import { useState, useEffect, useRef, useCallback } from 'react';
-import { useNavigate } from 'react-router-dom';
 import { supabase } from '../../lib/supabase';
 import {
-    ChevronLeft, Camera, Upload, Trash2, Wrench, Save,
+    Upload, Trash2, Wrench, Save,
     X, RefreshCw, Image as ImageIcon, Search, Loader2,
-    Package, Plus, MousePointer2
+    Plus
 } from 'lucide-react';
 import { PageHeader } from '../../components/ui/PageHeader';
 import { Toast, ToastType } from '../../components/ui/Toast';
@@ -27,7 +26,6 @@ interface Accesorio {
 }
 
 export default function AccesoriosActivos() {
-    const navigate = useNavigate();
     const [loading, setLoading] = useState(false);
     const [activos, setActivos] = useState<Activo[]>([]);
     const [accesorios, setAccesorios] = useState<Accesorio[]>([]);
@@ -293,20 +291,28 @@ export default function AccesoriosActivos() {
         <div className="min-h-screen bg-[#000000] text-[#F5F5F7]">
             <PageHeader
                 title="Gestión de Accesorios"
-                subtitle="Gabinete de Gestión Operativa"
+                subtitle="Registre y consulte los complementos asociados a cada activo."
                 icon={Wrench}
+                themeColor="neutral"
                 backRoute="/activos"
             />
 
-            <div className="max-w-7xl mx-auto px-8 pb-12 animate-fade-in-up">
-                <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+            <div className="max-w-[1400px] mx-auto px-4 md:px-8 pb-12 animate-fade-in-up">
+                <div className="grid grid-cols-1 lg:grid-cols-[minmax(320px,420px)_1fr] gap-6">
                     {/* Sección Formulario */}
-                    <div className="lg:col-span-1">
-                        <div className="bg-[#121212] rounded-[8px] border border-[#333333] shadow-2xl p-6 sticky top-24">
-                            <h2 className="text-[12px] font-black uppercase tracking-widest text-[#F5F5F7] mb-6 flex items-center gap-2">
-                                <Plus className="w-4 h-4 text-[#0071E3]" />
-                                Nuevo Accesorio
-                            </h2>
+                    <div>
+                        <div className="bg-[#111112] rounded-xl border border-[#3f3f46] p-5 md:p-6 lg:sticky lg:top-24">
+                            <div className="mb-6 pb-5 border-b border-[#27272a]">
+                                <div className="flex items-center gap-3">
+                                    <div className="w-10 h-10 rounded-lg border border-[#3f3f46] bg-[#18181b] flex items-center justify-center">
+                                        <Plus className="w-5 h-5 text-[#d4d4d8]" />
+                                    </div>
+                                    <div>
+                                        <h2 className="text-base font-bold text-white">Nuevo accesorio</h2>
+                                        <p className="mt-0.5 text-xs text-[#a1a1aa]">Complete los datos del complemento.</p>
+                                    </div>
+                                </div>
+                            </div>
 
                             <form onSubmit={handleSubmit} className="space-y-6">
                                 <div className="space-y-2">
@@ -318,7 +324,7 @@ export default function AccesoriosActivos() {
                                             required
                                             value={formData.activo_asociado}
                                             onChange={e => setFormData({ ...formData, activo_asociado: e.target.value })}
-                                            className="w-full bg-[#1D1D1F] border border-[#333333] rounded-[8px] pl-4 pr-12 py-3 text-[#F5F5F7] focus:border-[#0071E3] outline-none transition-all appearance-none text-sm"
+                                            className="w-full bg-[#18181b] border border-[#3f3f46] rounded-lg pl-4 pr-12 py-3 text-white focus:border-[#a1a1aa] outline-none transition-colors appearance-none text-sm"
                                         >
                                             <option value="">Seleccionar activo...</option>
                                             {activos.map(activo => (
@@ -330,7 +336,7 @@ export default function AccesoriosActivos() {
                                         <button
                                             type="button"
                                             onClick={() => { setSearchTerm(''); setShowSearchModal(true); }}
-                                            className="absolute right-2 top-1/2 -translate-y-1/2 p-2 text-[#86868B] hover:text-[#0071E3] rounded-lg transition-colors"
+                                            className="absolute right-2 top-1/2 -translate-y-1/2 p-2 text-[#71717a] hover:text-white rounded-lg transition-colors"
                                         >
                                             <Search className="w-4 h-4" />
                                         </button>
@@ -346,7 +352,7 @@ export default function AccesoriosActivos() {
                                         value={formData.descripcion_accesorio}
                                         onChange={e => setFormData({ ...formData, descripcion_accesorio: e.target.value })}
                                         placeholder="Ej: Cargador original"
-                                        className="w-full bg-[#1D1D1F] border border-[#333333] rounded-[8px] px-4 py-3 text-[#F5F5F7] focus:border-[#0071E3] outline-none transition-all placeholder-[#86868B]"
+                                        className="w-full bg-[#18181b] border border-[#3f3f46] rounded-lg px-4 py-3 text-white focus:border-[#a1a1aa] outline-none transition-colors placeholder:text-[#71717a]"
                                     />
                                 </div>
 
@@ -358,7 +364,7 @@ export default function AccesoriosActivos() {
                                         <input
                                             value={formData.marca_accesorio}
                                             onChange={e => setFormData({ ...formData, marca_accesorio: e.target.value })}
-                                            className="w-full bg-[#1D1D1F] border border-[#333333] rounded-[8px] px-4 py-3 text-[#F5F5F7] focus:border-[#0071E3] outline-none transition-all"
+                                            className="w-full bg-[#18181b] border border-[#3f3f46] rounded-lg px-4 py-3 text-white focus:border-[#a1a1aa] outline-none transition-colors"
                                         />
                                     </div>
                                     <div className="space-y-2">
@@ -368,7 +374,7 @@ export default function AccesoriosActivos() {
                                         <input
                                             value={formData.numero_serie_accesorio}
                                             onChange={e => setFormData({ ...formData, numero_serie_accesorio: e.target.value })}
-                                            className="w-full bg-[#1D1D1F] border border-[#333333] rounded-[8px] px-4 py-3 text-[#F5F5F7] focus:border-[#0071E3] outline-none transition-all"
+                                            className="w-full bg-[#18181b] border border-[#3f3f46] rounded-lg px-4 py-3 text-white focus:border-[#a1a1aa] outline-none transition-colors"
                                         />
                                     </div>
                                 </div>
@@ -379,7 +385,7 @@ export default function AccesoriosActivos() {
                                         <button
                                             type="button"
                                             onClick={() => startCamera()}
-                                            className="text-[#0071E3] hover:underline normal-case tracking-normal text-[11px]"
+                                            className="text-[#d4d4d8] hover:text-white normal-case tracking-normal text-[11px] underline underline-offset-4"
                                         >
                                             Usar Cámara
                                         </button>
@@ -392,8 +398,8 @@ export default function AccesoriosActivos() {
                                         className={cn(
                                             "relative border-2 border-dashed rounded-[8px] p-8 transition-all flex flex-col items-center justify-center gap-3",
                                             isDragging
-                                                ? "border-[#0071E3] bg-[#0071E3]/5"
-                                                : "border-[#424245] bg-[#1D1D1F] hover:border-[#333333]"
+                                                ? "border-white bg-white/5"
+                                                : "border-[#52525b] bg-[#18181b] hover:border-[#71717a]"
                                         )}
                                     >
                                         {previewUrl ? (
@@ -410,7 +416,7 @@ export default function AccesoriosActivos() {
                                         ) : (
                                             <>
                                                 <div className="w-12 h-12 rounded-full bg-[#121212] flex items-center justify-center border border-[#333333]">
-                                                    <Upload className={cn("w-6 h-6", isDragging ? "text-[#0071E3]" : "text-[#86868B]")} />
+                                                    <Upload className={cn("w-6 h-6", isDragging ? "text-white" : "text-[#86868B]")} />
                                                 </div>
                                                 <div className="text-center">
                                                     <p className="text-[12px] font-bold text-[#F5F5F7]">Arrastre una imagen aquí</p>
@@ -437,7 +443,7 @@ export default function AccesoriosActivos() {
                                             value={formData.filename_accesorio}
                                             onChange={e => setFormData({ ...formData, filename_accesorio: e.target.value })}
                                             placeholder="Ej. bateria_principal"
-                                            className="w-full bg-[#1D1D1F] border border-[#333333] rounded-[8px] px-4 py-3 text-[#F5F5F7] focus:border-[#0071E3] outline-none transition-all placeholder-[#86868B]"
+                                            className="w-full bg-[#18181b] border border-[#3f3f46] rounded-lg px-4 py-3 text-white focus:border-[#a1a1aa] outline-none transition-colors placeholder:text-[#71717a]"
                                         />
                                         <div className="px-4 py-2 bg-[#121212] border border-[#333333] rounded-[8px] text-[10px] text-[#86868B] font-mono text-center">
                                             _{formData.activo_asociado || '####'}.jpg
@@ -448,7 +454,7 @@ export default function AccesoriosActivos() {
                                 <button
                                     type="submit"
                                     disabled={loading}
-                                    className="w-full py-4 bg-[#0071E3] hover:bg-[#0071E3]/90 text-white font-black rounded-[8px] shadow-lg shadow-[#0071E3]/20 transition-all flex items-center justify-center gap-3 active:scale-[0.98] disabled:opacity-50 uppercase tracking-widest text-[11px]"
+                                    className="w-full py-4 bg-white hover:bg-[#e4e4e7] text-black font-black rounded-lg transition-all flex items-center justify-center gap-3 active:scale-[0.98] disabled:opacity-50 uppercase tracking-widest text-[11px]"
                                 >
                                     {loading ? <Loader2 className="animate-spin w-5 h-5" /> : <Save className="w-5 h-5" />}
                                     Guardar Accesorio
@@ -458,17 +464,22 @@ export default function AccesoriosActivos() {
                     </div>
 
                     {/* Sección Lista */}
-                    <div className="lg:col-span-2 space-y-6">
-                        <div className="bg-[#121212] rounded-[8px] border border-[#333333] shadow-2xl p-6">
-                            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-8">
-                                <h2 className="text-[12px] font-black uppercase tracking-widest text-[#F5F5F7] flex items-center gap-2">
-                                    <ImageIcon className="w-4 h-4 text-[#0071E3]" />
-                                    Accesorios Registrados
-                                </h2>
+                    <div className="space-y-6">
+                        <div className="bg-[#111112] rounded-xl border border-[#3f3f46] p-5 md:p-6">
+                            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6 pb-5 border-b border-[#27272a]">
+                                <div className="flex items-center gap-3">
+                                    <div className="w-10 h-10 rounded-lg border border-[#3f3f46] bg-[#18181b] flex items-center justify-center">
+                                        <ImageIcon className="w-5 h-5 text-[#d4d4d8]" />
+                                    </div>
+                                    <div>
+                                        <h2 className="text-base font-bold text-white">Accesorios registrados</h2>
+                                        <p className="mt-0.5 text-xs text-[#a1a1aa]">{accesorios.length} resultados disponibles</p>
+                                    </div>
+                                </div>
                                 <select
                                     value={filterActivo}
                                     onChange={e => setFilterActivo(e.target.value ? parseInt(e.target.value) : '')}
-                                    className="w-full sm:w-auto px-4 py-2 bg-[#1D1D1F] border border-[#333333] rounded-[8px] text-[#86868B] text-[10px] font-black uppercase tracking-widest outline-none transition-all focus:border-[#0071E3]"
+                                    className="w-full sm:w-auto px-4 py-2.5 bg-[#18181b] border border-[#3f3f46] rounded-lg text-[#d4d4d8] text-[10px] font-black uppercase tracking-widest outline-none transition-colors focus:border-[#a1a1aa]"
                                 >
                                     <option value="">Todos los activos</option>
                                     {activos.map(a => (
@@ -487,7 +498,7 @@ export default function AccesoriosActivos() {
                                     accesorios.map(accesorio => (
                                         <div
                                             key={accesorio.id_accesorio_activo}
-                                            className="flex flex-col sm:flex-row items-center sm:items-start gap-6 p-4 bg-[#1D1D1F]/30 rounded-[8px] border border-[#333333] hover:border-[#0071E3]/30 transition-all group"
+                                            className="flex flex-col sm:flex-row items-center sm:items-start gap-5 p-4 bg-[#18181b]/60 rounded-lg border border-[#3f3f46] hover:border-[#71717a] transition-colors group"
                                         >
                                             <div className="w-full sm:w-28 h-40 sm:h-28 bg-[#000000] rounded-[4px] border border-[#333333] overflow-hidden flex-shrink-0 relative group/img">
                                                 {accesorio.imagen_accesorio ? (
@@ -505,7 +516,7 @@ export default function AccesoriosActivos() {
                                                         <h3 className="font-black text-[#F5F5F7] text-[14px] uppercase tracking-wider truncate mb-1">
                                                             {accesorio.descripcion_accesorio}
                                                         </h3>
-                                                        <span className="inline-flex items-center px-2 py-0.5 rounded-[4px] bg-[#0071E3]/10 border border-[#0071E3]/20 text-[#0071E3] text-[10px] font-black tracking-widest uppercase">
+                                                        <span className="inline-flex items-center px-2 py-0.5 rounded bg-[#27272a] border border-[#3f3f46] text-[#d4d4d8] text-[10px] font-black tracking-widest uppercase">
                                                             Activo #{accesorio.activo_asociado}
                                                         </span>
                                                     </div>
@@ -540,9 +551,12 @@ export default function AccesoriosActivos() {
             {/* Modal de Búsqueda de Activos */}
             {showSearchModal && (
                 <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-md animate-in fade-in">
-                    <div className="w-full max-w-md bg-[#121212] border border-[#333333] rounded-[8px] shadow-2xl overflow-hidden flex flex-col max-h-[80vh]">
-                        <div className="p-4 border-b border-[#333333] flex justify-between items-center">
-                            <h3 className="text-[12px] font-black uppercase tracking-widest text-[#F5F5F7]">Buscar Activo</h3>
+                    <div className="w-full max-w-lg bg-[#111112] border border-[#3f3f46] rounded-xl shadow-2xl overflow-hidden flex flex-col max-h-[80vh]">
+                        <div className="p-5 border-b border-[#3f3f46] flex justify-between items-center">
+                            <div>
+                                <h3 className="text-base font-bold text-white">Buscar activo</h3>
+                                <p className="mt-1 text-xs text-[#a1a1aa]">Seleccione el activo al que pertenece el accesorio.</p>
+                            </div>
                             <button onClick={() => setShowSearchModal(false)} className="text-[#86868B] hover:text-[#F5F5F7] transition-colors">
                                 <X className="w-5 h-5" />
                             </button>
@@ -556,7 +570,7 @@ export default function AccesoriosActivos() {
                                     placeholder="Buscar por nombre o número..."
                                     value={searchTerm}
                                     onChange={(e) => setSearchTerm(e.target.value)}
-                                    className="w-full pl-10 pr-4 py-3 bg-[#1D1D1F] border border-[#333333] rounded-[8px] text-[#F5F5F7] focus:border-[#0071E3] outline-none transition-all text-sm placeholder-[#86868B]"
+                                    className="w-full pl-10 pr-4 py-3 bg-[#18181b] border border-[#3f3f46] rounded-lg text-white focus:border-[#a1a1aa] outline-none transition-colors text-sm placeholder:text-[#71717a]"
                                 />
                             </div>
                         </div>
@@ -571,12 +585,12 @@ export default function AccesoriosActivos() {
                                         setFormData({ ...formData, activo_asociado: activo.numero_activo });
                                         setShowSearchModal(false);
                                     }}
-                                    className="w-full text-left p-4 rounded-[8px] hover:bg-[#1D1D1F] transition-all flex flex-col gap-1 group"
+                                    className="w-full text-left p-4 rounded-lg border border-transparent hover:border-[#3f3f46] hover:bg-[#18181b] transition-colors flex flex-col gap-1 group"
                                 >
-                                    <span className="font-bold text-[#F5F5F7] group-hover:text-[#0071E3] transition-colors text-sm">
+                                    <span className="font-bold text-white text-sm">
                                         {activo.nombre_corto_activo}
                                     </span>
-                                    <span className="text-[10px] text-[#0071E3] font-black uppercase tracking-widest">
+                                    <span className="text-[10px] text-[#a1a1aa] font-black uppercase tracking-widest">
                                         #{activo.numero_activo}
                                     </span>
                                 </button>
