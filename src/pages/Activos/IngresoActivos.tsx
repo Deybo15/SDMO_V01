@@ -1,12 +1,10 @@
 import { useRef, useState, useEffect } from 'react';
 import { supabase } from '../../lib/supabase';
 import { Save, X, Upload, Package, DollarSign, FileText, QrCode, Hash, Tag, Image as ImageIcon, Camera, Trash2, Loader2, Plus } from 'lucide-react';
-import { useNavigate } from 'react-router-dom';
 import { PageHeader } from '../../components/ui/PageHeader';
 import { cn } from '../../lib/utils';
 
 export default function IngresoActivos() {
-    const navigate = useNavigate();
     const [loading, setLoading] = useState(false);
     const [uploadingImage, setUploadingImage] = useState(false);
     const [showCameraModal, setShowCameraModal] = useState(false);
@@ -205,29 +203,36 @@ export default function IngresoActivos() {
         <div className="min-h-screen bg-[#000000] text-[#F5F5F7]">
             <PageHeader
                 title="Ingreso de Activos"
-                subtitle="Gabinete de Gestión Operativa"
+                subtitle="Registre la identificación, características y evidencia del nuevo activo."
                 icon={Plus}
+                themeColor="neutral"
                 backRoute="/activos"
             />
 
-            <div className="max-w-7xl mx-auto px-8 pb-12 animate-fade-in-up">
+            <div className="max-w-[1400px] mx-auto px-4 md:px-8 pb-12 animate-fade-in-up">
 
-                <form onSubmit={handleSubmit} className="relative p-5 md:p-10 space-y-8 md:space-y-10">
-                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-x-16 gap-y-10">
+                <form onSubmit={handleSubmit} className="relative rounded-xl border border-[#3f3f46] bg-[#111112] p-5 md:p-8 lg:p-10 space-y-8 md:space-y-10">
+                    <div className="border-b border-[#27272a] pb-6">
+                        <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-[#71717a]">Nuevo registro</p>
+                        <h2 className="mt-2 text-xl font-bold text-white">Datos del activo</h2>
+                        <p className="mt-1 text-sm text-[#a1a1aa]">Complete los datos principales y agregue una fotografía cuando esté disponible.</p>
+                    </div>
+
+                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 lg:gap-8">
                         {/* Column 1: Información Básica */}
-                        <div className="space-y-6">
+                        <section className="space-y-6 rounded-xl border border-[#27272a] bg-[#0c0c0d] p-5 md:p-6">
                             <div className="flex items-center gap-3 pb-4 border-b border-[#333333]">
-                                <span className="p-2 rounded-lg bg-[#0071E3]/10 text-[#0071E3]">
+                                <span className="p-2 rounded-lg bg-[#18181b] text-[#d4d4d8] border border-[#3f3f46]">
                                     <Package className="w-5 h-5" />
                                 </span>
-                                <h3 className="text-lg font-black text-[#F5F5F7] uppercase tracking-widest text-[12px]">Información Básica</h3>
+                                <div><h3 className="text-base font-bold text-white">Información básica</h3><p className="mt-1 text-xs text-[#71717a]">Descripción y valor del bien</p></div>
                             </div>
 
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
                                 <div className="space-y-2">
-                                    <label className="text-[10px] font-black uppercase tracking-widest text-[#86868B] ml-1">Número de Activo <span className="text-[#0071E3]">*</span></label>
+                                    <label className="text-[10px] font-black uppercase tracking-widest text-[#a1a1aa] ml-1">Número de Activo <span className="text-white">*</span></label>
                                     <div className="relative group">
-                                        <Hash className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-[#86868B] group-focus-within:text-[#0071E3] transition-colors" />
+                                        <Hash className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-[#71717a] group-focus-within:text-white transition-colors" />
                                         <input
                                             required
                                             type="number"
@@ -235,36 +240,36 @@ export default function IngresoActivos() {
                                             value={formData.numero_activo}
                                             onChange={handleChange}
                                             placeholder="1001"
-                                            className="w-full bg-[#1D1D1F] border border-[#333333] rounded-[8px] pl-12 pr-4 py-3.5 text-[#F5F5F7] placeholder-[#86868B] focus:outline-none focus:border-[#0071E3] transition-all font-mono"
+                                            className="w-full bg-[#18181b] border border-[#3f3f46] rounded-lg pl-12 pr-4 py-3.5 text-white placeholder-[#71717a] focus:outline-none focus:border-[#a1a1aa] transition-all font-mono"
                                         />
                                     </div>
                                 </div>
                                 <div className="space-y-2">
                                     <label className="text-[10px] font-black uppercase tracking-widest text-[#86868B] ml-1">Valor Estimado</label>
                                     <div className="relative group">
-                                        <DollarSign className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-[#86868B] group-focus-within:text-[#0071E3] transition-colors" />
+                                        <DollarSign className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-[#71717a] group-focus-within:text-white transition-colors" />
                                         <input
                                             name="valor_activo"
                                             value={formData.valor_activo}
                                             onChange={handleChange}
                                             placeholder="500,000"
-                                            className="w-full bg-[#1D1D1F] border border-[#333333] rounded-[8px] pl-12 pr-4 py-3.5 text-[#F5F5F7] placeholder-[#86868B] focus:outline-none focus:border-[#0071E3] transition-all"
+                                            className="w-full bg-[#18181b] border border-[#3f3f46] rounded-lg pl-12 pr-4 py-3.5 text-white placeholder-[#71717a] focus:outline-none focus:border-[#a1a1aa] transition-all"
                                         />
                                     </div>
                                 </div>
                             </div>
 
                             <div className="space-y-2">
-                                <label className="text-[10px] font-black uppercase tracking-widest text-[#86868B] ml-1">Nombre Corto <span className="text-[#0071E3]">*</span></label>
+                                <label className="text-[10px] font-black uppercase tracking-widest text-[#a1a1aa] ml-1">Nombre Corto <span className="text-white">*</span></label>
                                 <div className="relative group">
-                                    <Tag className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-[#86868B] group-focus-within:text-[#0071E3] transition-colors" />
+                                    <Tag className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-[#71717a] group-focus-within:text-white transition-colors" />
                                     <input
                                         required
                                         name="nombre_corto_activo"
                                         value={formData.nombre_corto_activo}
                                         onChange={handleChange}
                                         placeholder="Ej: Laptop Dell Latitude"
-                                        className="w-full bg-[#1D1D1F] border border-[#333333] rounded-[8px] pl-12 pr-4 py-3.5 text-[#F5F5F7] placeholder-[#86868B] focus:outline-none focus:border-[#0071E3] transition-all"
+                                        className="w-full bg-[#18181b] border border-[#3f3f46] rounded-lg pl-12 pr-4 py-3.5 text-white placeholder-[#71717a] focus:outline-none focus:border-[#a1a1aa] transition-all"
                                     />
                                 </div>
                             </div>
@@ -272,13 +277,13 @@ export default function IngresoActivos() {
                             <div className="space-y-2">
                                 <label className="text-[10px] font-black uppercase tracking-widest text-[#86868B] ml-1">Marca</label>
                                 <div className="relative group">
-                                    <Package className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-[#86868B] group-focus-within:text-[#0071E3] transition-colors" />
+                                    <Package className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-[#71717a] group-focus-within:text-white transition-colors" />
                                     <input
                                         name="marca_activo"
                                         value={formData.marca_activo}
                                         onChange={handleChange}
                                         placeholder="Ej: Dell"
-                                        className="w-full bg-[#1D1D1F] border border-[#333333] rounded-[8px] pl-12 pr-4 py-3.5 text-[#F5F5F7] placeholder-[#86868B] focus:outline-none focus:border-[#0071E3] transition-all"
+                                        className="w-full bg-[#18181b] border border-[#3f3f46] rounded-lg pl-12 pr-4 py-3.5 text-white placeholder-[#71717a] focus:outline-none focus:border-[#a1a1aa] transition-all"
                                     />
                                 </div>
                             </div>
@@ -286,39 +291,39 @@ export default function IngresoActivos() {
                             <div className="space-y-2">
                                 <label className="text-[10px] font-black uppercase tracking-widest text-[#86868B] ml-1">Descripción Detallada</label>
                                 <div className="relative group">
-                                    <FileText className="absolute left-4 top-4 w-5 h-5 text-[#86868B] group-focus-within:text-[#0071E3] transition-colors" />
+                                    <FileText className="absolute left-4 top-4 w-5 h-5 text-[#71717a] group-focus-within:text-white transition-colors" />
                                     <textarea
                                         name="descripcion_activo"
                                         value={formData.descripcion_activo}
                                         onChange={handleChange}
                                         rows={4}
                                         placeholder="Características técnicas, estado, accesorios incluidos..."
-                                        className="w-full bg-[#1D1D1F] border border-[#333333] rounded-[8px] pl-12 pr-4 py-3.5 text-[#F5F5F7] placeholder-[#86868B] focus:outline-none focus:border-[#0071E3] transition-all resize-none"
+                                        className="w-full bg-[#18181b] border border-[#3f3f46] rounded-lg pl-12 pr-4 py-3.5 text-white placeholder-[#71717a] focus:outline-none focus:border-[#a1a1aa] transition-all resize-none"
                                     />
                                 </div>
                             </div>
-                        </div>
+                        </section>
 
                         {/* Column 2: Identificación y Control */}
-                        <div className="space-y-6">
+                        <section className="space-y-6 rounded-xl border border-[#27272a] bg-[#0c0c0d] p-5 md:p-6">
                             <div className="flex items-center gap-3 pb-4 border-b border-[#333333]">
-                                <span className="p-2 rounded-lg bg-[#0071E3]/10 text-[#0071E3]">
+                                <span className="p-2 rounded-lg bg-[#18181b] text-[#d4d4d8] border border-[#3f3f46]">
                                     <QrCode className="w-5 h-5" />
                                 </span>
-                                <h3 className="text-lg font-black text-[#F5F5F7] uppercase tracking-widest text-[12px]">Identificación y Control</h3>
+                                <div><h3 className="text-base font-bold text-white">Identificación y control</h3><p className="mt-1 text-xs text-[#71717a]">Placa, serie y evidencia fotográfica</p></div>
                             </div>
 
                             <div className="space-y-2">
-                                <label className="text-[10px] font-black uppercase tracking-widest text-[#86868B] ml-1">Código de Activo (Placa) <span className="text-[#0071E3]">*</span></label>
+                                <label className="text-[10px] font-black uppercase tracking-widest text-[#a1a1aa] ml-1">Código de Activo (Placa) <span className="text-white">*</span></label>
                                 <div className="relative group">
-                                    <QrCode className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-[#86868B] group-focus-within:text-[#0071E3] transition-colors" />
+                                    <QrCode className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-[#71717a] group-focus-within:text-white transition-colors" />
                                     <input
                                         required
                                         name="codigo_activo"
                                         value={formData.codigo_activo}
                                         onChange={handleChange}
                                         placeholder="Ej: MSJ-001-2024"
-                                        className="w-full bg-[#1D1D1F] border border-[#333333] rounded-[8px] pl-12 pr-4 py-3.5 text-[#F5F5F7] placeholder-[#86868B] focus:outline-none focus:border-[#0071E3] transition-all"
+                                        className="w-full bg-[#18181b] border border-[#3f3f46] rounded-lg pl-12 pr-4 py-3.5 text-white placeholder-[#71717a] focus:outline-none focus:border-[#a1a1aa] transition-all"
                                     />
                                 </div>
                             </div>
@@ -326,20 +331,20 @@ export default function IngresoActivos() {
                             <div className="space-y-2">
                                 <label className="text-[10px] font-black uppercase tracking-widest text-[#86868B] ml-1">Número de Serie</label>
                                 <div className="relative group">
-                                    <Hash className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-[#86868B] group-focus-within:text-[#0071E3] transition-colors" />
+                                    <Hash className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-[#71717a] group-focus-within:text-white transition-colors" />
                                     <input
                                         name="numero_serie_activo"
                                         value={formData.numero_serie_activo}
                                         onChange={handleChange}
                                         placeholder="Ej: 8H2J9K1"
-                                        className="w-full bg-[#1D1D1F] border border-[#333333] rounded-[8px] pl-12 pr-4 py-3.5 text-[#F5F5F7] placeholder-[#86868B] focus:outline-none focus:border-[#0071E3] transition-all"
+                                        className="w-full bg-[#18181b] border border-[#3f3f46] rounded-lg pl-12 pr-4 py-3.5 text-white placeholder-[#71717a] focus:outline-none focus:border-[#a1a1aa] transition-all"
                                     />
                                 </div>
                             </div>
 
                             <div className="space-y-4 pt-2">
                                 <label className="text-[10px] font-black uppercase tracking-widest text-[#86868B] flex items-center gap-2 ml-1">
-                                    <ImageIcon className="w-4 h-4 text-[#0071E3]" />
+                                    <ImageIcon className="w-4 h-4 text-[#a1a1aa]" />
                                     Fotografía del Activo
                                 </label>
 
@@ -351,10 +356,10 @@ export default function IngresoActivos() {
                                             type="button"
                                             onClick={startCamera}
                                             disabled={uploadingImage}
-                                            className="relative overflow-hidden flex flex-col items-center justify-center gap-3 p-6 border border-[#333333] bg-[#1D1D1F] rounded-[8px] hover:border-[#0071E3] transition-all group disabled:opacity-50"
+                                            className="relative overflow-hidden flex flex-col items-center justify-center gap-3 p-6 border border-[#3f3f46] bg-[#18181b] rounded-lg hover:border-[#71717a] hover:bg-[#202023] transition-all group disabled:opacity-50"
                                         >
-                                            <div className="w-12 h-12 bg-[#121212] rounded-full flex items-center justify-center group-hover:scale-110 group-hover:bg-[#0071E3] transition-all duration-300">
-                                                <Camera className="w-6 h-6 text-[#86868B] group-hover:text-white" />
+                                            <div className="w-12 h-12 bg-[#0c0c0d] border border-[#3f3f46] rounded-lg flex items-center justify-center group-hover:border-[#71717a] transition-all duration-300">
+                                                <Camera className="w-6 h-6 text-[#a1a1aa] group-hover:text-white" />
                                             </div>
                                             <span className="text-[10px] font-black uppercase tracking-widest text-[#86868B] group-hover:text-white">Tomar Foto</span>
                                         </button>
@@ -365,13 +370,13 @@ export default function IngresoActivos() {
                                             onDrop={handleDrop}
                                             onClick={() => fileInputRef.current?.click()}
                                             className={cn(
-                                                "drag-drop-zone flex flex-col items-center justify-center gap-3 p-6 group",
-                                                isDragging && "active"
+                                                "flex flex-col items-center justify-center gap-3 p-6 group cursor-pointer rounded-lg border-2 border-dashed bg-[#18181b] transition-all duration-300",
+                                                isDragging ? "border-[#a1a1aa] bg-[#27272a]" : "border-[#3f3f46] hover:border-[#71717a] hover:bg-[#202023]"
                                             )}
                                         >
                                             <div className={cn(
                                                 "w-12 h-12 bg-[#121212] rounded-full flex items-center justify-center group-hover:scale-110 transition-all duration-300",
-                                                isDragging ? "bg-[#0071E3]" : "group-hover:bg-[#0071E3]"
+                                                isDragging ? "bg-[#3f3f46]" : "group-hover:bg-[#27272a]"
                                             )}>
                                                 {uploadingImage ? (
                                                     <Loader2 className="w-6 h-6 animate-spin text-white" />
@@ -423,18 +428,18 @@ export default function IngresoActivos() {
                             <div className="space-y-2">
                                 <label className="text-[10px] font-black uppercase tracking-widest text-[#86868B] ml-1">Notas Adicionales</label>
                                 <div className="relative group">
-                                    <FileText className="absolute left-4 top-4 w-5 h-5 text-[#86868B] group-focus-within:text-[#0071E3] transition-colors" />
+                                    <FileText className="absolute left-4 top-4 w-5 h-5 text-[#71717a] group-focus-within:text-white transition-colors" />
                                     <textarea
                                         name="nota_activo"
                                         value={formData.nota_activo}
                                         onChange={handleChange}
                                         rows={2}
                                         placeholder="Observaciones importantes..."
-                                        className="w-full bg-[#1D1D1F] border border-[#333333] rounded-[8px] pl-12 pr-4 py-3.5 text-[#F5F5F7] placeholder-[#86868B] focus:outline-none focus:border-[#0071E3] transition-all resize-none"
+                                        className="w-full bg-[#18181b] border border-[#3f3f46] rounded-lg pl-12 pr-4 py-3.5 text-white placeholder-[#71717a] focus:outline-none focus:border-[#a1a1aa] transition-all resize-none"
                                     />
                                 </div>
                             </div>
-                        </div>
+                        </section>
                     </div>
 
                     <div className="pt-6 mt-6 md:pt-8 md:mt-8 border-t border-[#333333] flex flex-col sm:flex-row justify-end gap-3 md:gap-4">
@@ -459,7 +464,7 @@ export default function IngresoActivos() {
                         <button
                             type="submit"
                             disabled={loading}
-                            className="w-full sm:w-auto px-8 py-3.5 bg-[#0071E3] hover:bg-[#0071E3] text-white font-black uppercase text-[10px] tracking-widest rounded-[8px] shadow-lg shadow-[#0071E3]/20 transition-all flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed active:scale-95 order-1 sm:order-2"
+                            className="w-full sm:w-auto px-8 py-3.5 bg-[#f4f4f5] hover:bg-white text-[#09090b] font-black uppercase text-[10px] tracking-widest rounded-lg transition-all flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed active:scale-95 order-1 sm:order-2"
                         >
                             {loading ? (
                                 <Loader2 className="w-5 h-5 animate-spin" />
@@ -479,7 +484,7 @@ export default function IngresoActivos() {
                         {/* Camera Header */}
                         <div className="p-4 flex justify-between items-center z-10 bg-black/20 border-b border-[#333333]">
                             <h3 className="text-[#F5F5F7] font-black uppercase text-[10px] tracking-widest flex items-center gap-2">
-                                <Camera className="w-5 h-5 text-[#0071E3]" />
+                                <Camera className="w-5 h-5 text-[#d4d4d8]" />
                                 Cámara
                             </h3>
                             <button
@@ -507,9 +512,9 @@ export default function IngresoActivos() {
                                 className="group relative p-1 rounded-full cursor-pointer hover:scale-105 transition-transform"
                                 title="Tomar foto"
                             >
-                                <div className="absolute inset-0 bg-[#0071E3] rounded-full blur opacity-75 group-hover:opacity-100 transition-opacity" />
+                                <div className="absolute inset-0 bg-white/20 rounded-full blur opacity-75 group-hover:opacity-100 transition-opacity" />
                                 <div className="relative w-16 h-16 bg-[#F5F5F7] rounded-full border-4 border-[#121212] flex items-center justify-center">
-                                    <div className="w-12 h-12 bg-[#86868B] rounded-full group-hover:bg-[#0071E3] transition-colors" />
+                                    <div className="w-12 h-12 bg-[#71717a] rounded-full group-hover:bg-white transition-colors" />
                                 </div>
                             </button>
                         </div>
