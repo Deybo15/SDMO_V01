@@ -67,7 +67,7 @@ export default function SearchModal({ isOpen, onClose, title, options, onSelect 
     if (!isOpen) return null;
 
     return (
-        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 md:p-8 bg-black/85 backdrop-blur-md animate-in fade-in duration-200">
+        <div className="fixed inset-0 z-[2000] flex items-center justify-center p-4 md:p-8 bg-black/85 backdrop-blur-md animate-in fade-in duration-200">
             <div className="w-full max-w-xl bg-[#0b0b0c] border border-[#3f3f46] rounded-2xl shadow-2xl overflow-hidden animate-in zoom-in-95 duration-150">
                 <div className="px-6 py-5 border-b border-[#27272a] flex items-center justify-between gap-4">
                     <div>
