@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '../lib/supabase';
 import { useNavigate } from 'react-router-dom';
 import * as XLSX from 'xlsx';
+import HistorialMaterialesModal from '../components/HistorialMaterialesModal';
 import {
     Search,
     Eye,
@@ -107,6 +108,7 @@ export default function SeguimientoSolicitud() {
 
     // Modal State
     const [selectedSolicitud, setSelectedSolicitud] = useState<SolicitudSTI | null>(null);
+    const [materialesSolicitud, setMaterialesSolicitud] = useState<SolicitudSTI | null>(null);
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [modalLoading, setModalLoading] = useState(false);
 
@@ -445,7 +447,16 @@ export default function SeguimientoSolicitud() {
                             <tbody className="divide-y divide-[#333333]">
                                 {loading ? <TableSkeleton /> : solicitudes.map(sol => (
                                     <tr key={sol.numero_solicitud} className="hover:bg-[#151517] transition-colors group">
-                                        <td className="px-5 py-4 font-semibold text-white text-sm">#{sol.numero_solicitud}</td>
+                                        <td className="px-5 py-4">
+                                            <button
+                                                type="button"
+                                                onClick={() => setMaterialesSolicitud(sol)}
+                                                className="text-sm font-semibold text-white underline decoration-[#52525b] underline-offset-4 transition-colors hover:text-[#d4d4d8]"
+                                                title={`Ver materiales de la solicitud ${sol.numero_solicitud}`}
+                                            >
+                                                #{sol.numero_solicitud}
+                                            </button>
+                                        </td>
                                         <td className="px-5 py-4 text-xs font-medium text-[#a1a1aa]">{formatDateOnly(sol.fecha_solicitud)}</td>
                                         <td className="px-5 py-4 text-sm font-medium text-[#f4f4f5] relative cursor-default" onMouseEnter={e => setHoveredDescription({ id: sol.numero_solicitud, text: sol.descripcion_solicitud, x: e.clientX, y: e.clientY })} onMouseLeave={() => setHoveredDescription(null)}>
                                             <div className="truncate max-w-[300px]">
@@ -676,6 +687,18 @@ export default function SeguimientoSolicitud() {
                     </div>
                 </div>
             )}
+
+            <HistorialMaterialesModal
+                isOpen={Boolean(materialesSolicitud)}
+                onClose={() => setMaterialesSolicitud(null)}
+                numeroSolicitud={materialesSolicitud?.numero_solicitud || ''}
+                solicitud={materialesSolicitud ? {
+                    fecha: materialesSolicitud.fecha_solicitud,
+                    descripcion: materialesSolicitud.descripcion_solicitud,
+                    supervisor: materialesSolicitud.supervisor_alias,
+                    estado: materialesSolicitud.estado_actual || 'ACTIVA'
+                } : undefined}
+            />
 
             <style>{`.custom-scrollbar::-webkit-scrollbar { width: 8px; } .custom-scrollbar::-webkit-scrollbar-track { background: rgba(0,0,0,0.2); border-radius: 10px; } .custom-scrollbar::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.1); border-radius: 10px; border: 2px solid rgba(0,0,0,0.2); } .custom-scrollbar::-webkit-scrollbar-thumb:hover { background: rgba(255,255,255,0.2); } .custom-scrollbar-h::-webkit-scrollbar { height: 8px; } .custom-scrollbar-h::-webkit-scrollbar-track { background: rgba(0,0,0,0.2); border-radius: 10px; } .custom-scrollbar-h::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.1); border-radius: 10px; border: 2px solid rgba(0,0,0,0.2); } .custom-scrollbar-h::-webkit-scrollbar-thumb:hover { background: rgba(255,255,255,0.2); } .custom-date-input::-webkit-calendar-picker-indicator { filter: invert(1); cursor: pointer; opacity: 0.8; transition: opacity 0.2s; } .custom-date-input::-webkit-calendar-picker-indicator:hover { opacity: 1; }`}</style>
         </div>
