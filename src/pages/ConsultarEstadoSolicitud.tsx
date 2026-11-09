@@ -20,6 +20,7 @@ import {
 } from 'lucide-react';
 import { useQuery } from '@tanstack/react-query';
 import { PageHeader } from '../components/ui/PageHeader';
+import HistorialMaterialesModal from '../components/HistorialMaterialesModal';
 import { cn, formatDateOnly } from '../lib/utils';
 
 // Pagination size
@@ -218,6 +219,7 @@ interface SortConfig {
 
 export default function ConsultarEstadoSolicitud() {
     const navigate = useNavigate();
+    const [materialesSolicitud, setMaterialesSolicitud] = useState<SolicitudSTI | null>(null);
 
     // Data State
     const [filterOptions, setFilterOptions] = useState<FilterOptions>({
@@ -592,7 +594,16 @@ export default function ConsultarEstadoSolicitud() {
                                                 index % 2 === 0 ? 'bg-[#0d0d0e]' : 'bg-[#101011]'
                                             )}
                                         >
-                                            <div className="px-6 py-4 font-mono text-xs font-semibold text-white">#{row.numero_solicitud}</div>
+                                            <div className="px-6 py-4">
+                                                <button
+                                                    type="button"
+                                                    onClick={() => setMaterialesSolicitud(row)}
+                                                    className="font-mono text-xs font-semibold text-white underline decoration-[#52525b] underline-offset-4 transition-colors hover:text-[#d4d4d8]"
+                                                    title={`Ver materiales de la solicitud ${row.numero_solicitud}`}
+                                                >
+                                                    #{row.numero_solicitud}
+                                                </button>
+                                            </div>
                                             <div className="px-6 py-4 text-xs font-medium text-[#a1a1aa]">{formatDateOnly(row.fecha_solicitud)}</div>
                                             <div className="px-6 py-4 text-xs text-[#e4e4e7] font-medium leading-relaxed" title={row.descripcion_solicitud}>{row.descripcion_solicitud}</div>
                                             <div className="px-6 py-4 text-xs font-semibold text-[#f4f4f5]" title={row.profesional_responsable}>{row.profesional_responsable}</div>
@@ -642,6 +653,18 @@ export default function ConsultarEstadoSolicitud() {
                     </div>
                 </div>
             </div>
+
+            <HistorialMaterialesModal
+                isOpen={Boolean(materialesSolicitud)}
+                onClose={() => setMaterialesSolicitud(null)}
+                numeroSolicitud={materialesSolicitud?.numero_solicitud || ''}
+                solicitud={materialesSolicitud ? {
+                    fecha: materialesSolicitud.fecha_solicitud,
+                    descripcion: materialesSolicitud.descripcion_solicitud,
+                    supervisor: materialesSolicitud.supervisor_asignado || materialesSolicitud.profesional_responsable,
+                    estado: materialesSolicitud.estado_actual
+                } : undefined}
+            />
         </div>
     );
 }
