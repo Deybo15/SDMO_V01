@@ -60,6 +60,8 @@ const ProyectosObraDashboard = lazy(() => import('./pages/proyectos-obra/Proyect
 const ProyectoObraFormulario = lazy(() => import('./pages/proyectos-obra/ProyectoObraFormulario'));
 const ProyectoObraEditar = lazy(() => import('./pages/proyectos-obra/ProyectoObraEditar'));
 const ProyectosObraMapa = lazy(() => import('./pages/proyectos-obra/ProyectosObraMapa'));
+const ExpedienteSolicitud = lazy(() => import('./pages/ExpedienteSolicitud'));
+const ExpedienteSolicitudExterno = lazy(() => import('./pages/ExpedienteSolicitudExterno'));
 
 const PageLoader = () => (
     <div className="h-screen w-full flex items-center justify-center bg-slate-950">
@@ -136,8 +138,10 @@ function App() {
                         <Route path="/cliente-interno" element={<ClienteInterno />} />
                         <Route path="/cliente-interno/seguimiento" element={<SeguimientoSolicitud />} />
                         <Route path="/cliente-interno/consultar-estado" element={<ConsultarEstadoSolicitud />} />
+                        <Route path="/cliente-interno/expediente/:numeroSolicitud" element={<LazyPage><ExpedienteSolicitud /></LazyPage>} />
                         <Route path="/cliente-externo" element={<ClienteExterno />} />
                         <Route path="/cliente-externo/seguimiento" element={<SeguimientoSolicitudExterno />} />
+                        <Route path="/cliente-externo/expediente/:numeroSolicitud" element={<LazyPage><ExpedienteSolicitudExterno /></LazyPage>} />
                         <Route path="/otras-solicitudes" element={<OtrasSolicitudes />} />
                         <Route path="/gestion-interna" element={<GestionInterna />} />
                         <Route path="/gestion-cambios" element={<GestionCambios />} />

@@ -1,9 +1,11 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import * as XLSX from 'xlsx';
 import {
     AlertCircle,
     Boxes,
     FileSpreadsheet,
+    FolderOpen,
     Loader2,
     Package,
     ReceiptText,
@@ -34,6 +36,7 @@ interface HistorialMaterialesModalProps {
     onClose: () => void;
     numeroSolicitud: string | number;
     solicitud?: SolicitudResumen;
+    expedientePath?: string;
 }
 
 const formatCurrency = (value: number) => new Intl.NumberFormat('es-CR', {
@@ -46,8 +49,11 @@ export default function HistorialMaterialesModal({
     isOpen,
     onClose,
     numeroSolicitud,
-    solicitud
+    solicitud,
+    expedientePath
 }: HistorialMaterialesModalProps) {
+    const navigate = useNavigate();
+    const expedienteDestino = expedientePath || `/cliente-interno/expediente/${numeroSolicitud}`;
     const [loading, setLoading] = useState(false);
     const [materiales, setMateriales] = useState<MaterialResumen[]>([]);
     const [error, setError] = useState<string | null>(null);
@@ -200,7 +206,18 @@ export default function HistorialMaterialesModal({
                             <p className="mt-1 text-sm text-[#a1a1aa]">Consumo consolidado de todas las salidas vinculadas a esta orden.</p>
                         </div>
                     </div>
-                    <div className="flex items-center gap-2 self-end sm:self-auto">
+                    <div className="flex flex-wrap items-center justify-end gap-2 self-end sm:self-auto">
+                        <button
+                            type="button"
+                            onClick={() => {
+                                onClose();
+                                navigate(expedienteDestino);
+                            }}
+                            className="inline-flex h-11 items-center justify-center gap-2 rounded-lg border border-[#52525b] px-4 text-sm font-semibold text-white transition-colors hover:bg-[#18181b]"
+                        >
+                            <FolderOpen className="h-4 w-4" />
+                            Ver expediente
+                        </button>
                         <button
                             type="button"
                             onClick={exportarExcel}

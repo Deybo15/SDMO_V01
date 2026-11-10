@@ -33,9 +33,11 @@ import {
     Search,
     Filter,
     ChevronRight,
-    ArrowRight
+    ArrowRight,
+    FolderOpen
 } from 'lucide-react';
 import { PageHeader } from '../components/ui/PageHeader';
+import HistorialMaterialesModal from '../components/HistorialMaterialesModal';
 
 // Helper para limpiar nombres de archivos
 const sanitizeFileName = (name: string) => {
@@ -106,6 +108,7 @@ export default function SeguimientoSolicitudExterno() {
     const [showModalSeguimiento, setShowModalSeguimiento] = useState(false);
     const [showModalRegistro, setShowModalRegistro] = useState(false);
     const [showModalImagen, setShowModalImagen] = useState<{ url: string, title: string } | null>(null);
+    const [materialesSolicitud, setMaterialesSolicitud] = useState<Solicitud | null>(null);
 
     // Selected Item State
     const [selectedSolicitud, setSelectedSolicitud] = useState<Solicitud | null>(null);
@@ -733,7 +736,14 @@ export default function SeguimientoSolicitudExterno() {
                                         filteredSolicitudes.map((sol) => (
                                             <tr key={sol.numero_solicitud} className="hover:bg-white/[0.035] transition-colors group">
                                                 <td className="px-6 py-6">
-                                                    <span className="text-base font-semibold text-white tracking-tight">#{sol.numero_solicitud}</span>
+                                                    <button
+                                                        type="button"
+                                                        onClick={() => setMaterialesSolicitud(sol)}
+                                                        className="text-base font-semibold text-white tracking-tight underline decoration-[#52525b] underline-offset-4 hover:decoration-white"
+                                                        title={`Ver materiales de la solicitud ${sol.numero_solicitud}`}
+                                                    >
+                                                        #{sol.numero_solicitud}
+                                                    </button>
                                                 </td>
                                                 <td className="px-6 py-6">
                                                     <div className="flex items-center gap-2 text-sm font-medium text-[#a1a1aa]">
@@ -765,6 +775,14 @@ export default function SeguimientoSolicitudExterno() {
                                                 </td>
                                                 <td className="px-6 py-6 text-right">
                                                     <div className="flex items-center justify-end gap-2">
+                                                        <button
+                                                            type="button"
+                                                            onClick={() => navigate(`/cliente-externo/expediente/${sol.numero_solicitud}`)}
+                                                            className="p-2.5 bg-[#18181b] border border-[#3f3f46] text-[#a1a1aa] hover:text-white hover:border-[#71717a] rounded-lg transition-colors"
+                                                            title="Ver expediente"
+                                                        >
+                                                            <FolderOpen className="w-5 h-5" />
+                                                        </button>
                                                         <button
                                                             onClick={() => abrirModalSeguimiento(sol.numero_solicitud)}
                                                             className="p-2.5 bg-[#18181b] border border-[#3f3f46] text-[#a1a1aa] hover:text-white hover:border-[#71717a] rounded-lg transition-colors"
@@ -1121,6 +1139,21 @@ export default function SeguimientoSolicitudExterno() {
                     </div>
                 </div>
             )}
+
+            <HistorialMaterialesModal
+                isOpen={Boolean(materialesSolicitud)}
+                onClose={() => setMaterialesSolicitud(null)}
+                numeroSolicitud={materialesSolicitud?.numero_solicitud || ''}
+                solicitud={materialesSolicitud ? {
+                    fecha: materialesSolicitud.fecha_solicitud,
+                    descripcion: materialesSolicitud.descripcion_solicitud,
+                    supervisor: materialesSolicitud.supervisor_alias,
+                    estado: materialesSolicitud.estado_actual || 'ACTIVA'
+                } : undefined}
+                expedientePath={materialesSolicitud
+                    ? `/cliente-externo/expediente/${materialesSolicitud.numero_solicitud}`
+                    : undefined}
+            />
 
             {/* Tooltip con más contraste para descripciones largas */}
             {hoveredDescription && (
