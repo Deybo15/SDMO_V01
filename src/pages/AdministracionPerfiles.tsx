@@ -33,7 +33,7 @@ export default function AdministracionPerfiles() {
                 if (active) {
                     setError(cause && typeof cause === 'object' && 'code' in cause && cause.code === '42501'
                         ? 'Se requiere permiso de Administrador.'
-                        : 'No se pudo cargar la lista de usuarios. Recarg� la p�gina para reintentar.');
+                        : 'No se pudo cargar la lista de usuarios. Recargá la página para reintentar.');
                 }
             }
         }
@@ -57,7 +57,7 @@ export default function AdministracionPerfiles() {
             setUsers(current => current?.map(item => item.user_id === user.user_id ? { ...item, profile } : item) ?? null);
             setNotice(`${user.email} tiene ahora el perfil ${profileLabels[profile]}.`);
         } catch {
-            setError('No se pudo confirmar el cambio. Recarg� la p�gina para comprobar el perfil actual.');
+            setError('No se pudo confirmar el cambio. Recargá la página para comprobar el perfil actual.');
         } finally {
             setSaving(null);
         }
@@ -67,11 +67,11 @@ export default function AdministracionPerfiles() {
 
     return (
         <div className="pb-12 text-[#F5F5F7]">
-            <PageHeader title="Administraci�n de perfiles" icon={ShieldCheck} themeColor="neutral" />
+            <PageHeader title="Administración de perfiles" icon={ShieldCheck} themeColor="neutral" />
             <section className="mx-auto w-full max-w-[1600px] space-y-5 px-4 md:px-8">
                 {error && <p role="alert" className="rounded-lg border border-rose-500/30 bg-rose-500/10 px-4 py-3 text-sm text-rose-300">{error}</p>}
                 {notice && <p role="status" className="rounded-lg border border-emerald-500/30 bg-emerald-500/10 px-4 py-3 text-sm text-emerald-300">{notice}</p>}
-                {!users && !error && <p role="status" className="text-sm text-[#a1a1aa]">Cargando usuarios autorizados.</p>}
+                {!users && !error && <p role="status" className="text-sm text-[#a1a1aa]">Cargando usuarios autorizados…</p>}
                 {visibleUsers && (
                     <>
                         <div className="rounded-xl border border-[#3f3f46] bg-[#111112] p-5 md:p-6">
@@ -104,7 +104,7 @@ export default function AdministracionPerfiles() {
                                                     </div>
                                                 </td>
                                                 <td className="p-3">
-                                                    {user.is_admin ? '-' : (
+                                                    {user.is_admin ? '—' : (
                                                         <div className="flex items-center gap-2">
                                                             <select aria-label={`Nuevo perfil de ${user.email}`} value={selectedProfile}
                                                                 disabled={saving !== null}
@@ -117,7 +117,7 @@ export default function AdministracionPerfiles() {
                                                                 disabled={saving !== null || selectedProfile === user.profile}
                                                                 onClick={() => void saveProfile(user, selectedProfile)}
                                                                 className="h-9 rounded-lg border border-transparent bg-[#f4f4f5] px-4 text-[10px] font-black uppercase tracking-widest text-[#09090b] transition-colors enabled:hover:bg-white disabled:cursor-not-allowed disabled:border-[#3f3f46] disabled:bg-[#18181b] disabled:text-[#a1a1aa]">
-                                                                {saving === user.user_id ? 'Guardando.' : 'Guardar'}
+                                                                {saving === user.user_id ? 'Guardando…' : 'Guardar'}
                                                             </button>
                                                         </div>
                                                     )}
@@ -137,4 +137,3 @@ export default function AdministracionPerfiles() {
         </div>
     );
 }
-

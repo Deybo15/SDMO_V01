@@ -29,10 +29,10 @@ interface InventoryStats {
 const modules = [
     {
         id: 'register',
-        title: 'Registrar nuevo art�culo',
+        title: 'Registrar nuevo artículo',
         icon: PlusCircle,
         path: '/articulos/registrar-nuevo',
-        description: 'Definir un nuevo producto en el cat�logo maestro',
+        description: 'Definir un nuevo producto en el catálogo maestro',
         group: 'quick'
     },
     {
@@ -40,15 +40,15 @@ const modules = [
         title: 'Consultar inventario',
         icon: ClipboardList,
         path: '/articulos/consultar-inventario',
-        description: 'Ver y gestionar el stock completo de art�culos',
+        description: 'Ver y gestionar el stock completo de artículos',
         group: 'inventory'
     },
     {
         id: 'scanner',
-        title: 'Esc�ner QR',
+        title: 'Escáner QR',
         icon: QrCode,
         path: '/articulos/escaner-qr',
-        description: 'Identificar productos mediante c�digos QR',
+        description: 'Identificar productos mediante códigos QR',
         group: 'quick'
     },
     {
@@ -56,15 +56,15 @@ const modules = [
         title: 'Ingresar imagen',
         icon: ImageIcon,
         path: '/articulos/gestion-imagenes',
-        description: 'Adjuntar y gestionar fotograf�as de productos',
+        description: 'Adjuntar y gestionar fotografías de productos',
         group: 'inventory'
     },
     {
         id: 'entry',
-        title: 'Ingresar art�culo',
+        title: 'Ingresar artículo',
         icon: ClipboardList,
         path: '/articulos/ingresar-articulo',
-        description: 'Registrar entradas de stock para art�culos existentes',
+        description: 'Registrar entradas de stock para artículos existentes',
         group: 'quick'
     },
     {
@@ -72,12 +72,12 @@ const modules = [
         title: 'Devoluciones',
         icon: RotateCcw,
         path: '/articulos/devoluciones',
-        description: 'Gestionar el retorno de art�culos prestados',
+        description: 'Gestionar el retorno de artículos prestados',
         group: 'movements'
     },
     {
         id: 'kardex',
-        title: 'K�rdex diario',
+        title: 'Kárdex diario',
         icon: LineChart,
         path: '/articulos/kardex-diario',
         description: 'Seguimiento detallado de movimientos diarios',
@@ -85,10 +85,10 @@ const modules = [
     },
     {
         id: 'history',
-        title: 'Historial de art�culo',
+        title: 'Historial de artículo',
         icon: History,
         path: '/articulos/historial-articulo',
-        description: 'Trazabilidad completa de cada art�culo',
+        description: 'Trazabilidad completa de cada artículo',
         group: 'movements'
     },
     {
@@ -96,7 +96,7 @@ const modules = [
         title: 'Generar etiqueta',
         icon: Tag,
         path: '/articulos/generar-etiqueta',
-        description: 'Crear etiquetas de identificaci�n para stock',
+        description: 'Crear etiquetas de identificación para stock',
         group: 'support'
     },
     {
@@ -160,7 +160,7 @@ export default function Articulos() {
                     movements: (entries.count || 0) + (outputs.count || 0)
                 });
             } catch (error) {
-                console.error('Error cargando indicadores de art�culos:', error);
+                console.error('Error cargando indicadores de artículos:', error);
                 setStats({ articles: 0, units: 0, movements: 0 });
             }
         };
@@ -207,8 +207,8 @@ export default function Articulos() {
                             <LayoutGrid className="h-7 w-7" />
                         </div>
                         <div>
-                            <h1 className="text-2xl font-black tracking-tight text-white md:text-[30px]">Gesti�n de art�culos</h1>
-                            <p className="text-sm text-[#a1a1aa]">Administraci�n y control del inventario de art�culos del SDMO</p>
+                            <h1 className="text-2xl font-black tracking-tight text-white md:text-[30px]">Gestión de artículos</h1>
+                            <p className="text-sm text-[#a1a1aa]">Administración y control del inventario de artículos del SDMO</p>
                         </div>
                     </div>
                     <button
@@ -217,13 +217,13 @@ export default function Articulos() {
                         className="inline-flex items-center justify-center gap-2 rounded-lg border border-[#71717a] bg-[#111112] px-5 py-3 text-sm font-semibold text-white transition-colors hover:bg-[#18181b]"
                     >
                         <ArrowLeft className="h-5 w-5" />
-                        Men� principal
+                        Menú principal
                     </button>
                 </header>
 
                 <section className="grid grid-cols-1 rounded-xl border border-[#3f3f46] bg-[#0d0d0e] md:grid-cols-3">
                     {[
-                        { label: 'Art�culos registrados', value: stats?.articles, icon: Package },
+                        { label: 'Artículos registrados', value: stats?.articles, icon: Package },
                         { label: 'Unidades en inventario', value: stats?.units, icon: Boxes },
                         { label: 'Movimientos de hoy', value: stats?.movements, icon: Activity }
                     ].map((metric, index) => (
@@ -232,7 +232,7 @@ export default function Articulos() {
                                 <metric.icon className="h-5 w-5" />
                             </span>
                             <div>
-                                <p className="text-2xl font-semibold tabular-nums text-white">{metric.value === undefined ? '-' : metric.value.toLocaleString('es-CR')}</p>
+                                <p className="text-2xl font-semibold tabular-nums text-white">{metric.value === undefined ? '—' : metric.value.toLocaleString('es-CR')}</p>
                                 <p className="mt-0.5 text-xs font-medium text-[#a1a1aa]">{metric.label}</p>
                             </div>
                         </div>
@@ -245,11 +245,10 @@ export default function Articulos() {
                 </section>
 
                 <section className="pb-8">
-                    <h2 className="mb-3 border-t border-[#27272a] pt-5 text-xs font-semibold uppercase tracking-[0.18em] text-[#a1a1aa]">Gesti�n y trazabilidad</h2>
+                    <h2 className="mb-3 border-t border-[#27272a] pt-5 text-xs font-semibold uppercase tracking-[0.18em] text-[#a1a1aa]">Gestión y trazabilidad</h2>
                     <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3">{secondaryModules.map((module) => renderModule(module, true))}</div>
                 </section>
             </div>
         </div>
     );
 }
-

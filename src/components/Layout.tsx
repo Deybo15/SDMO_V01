@@ -71,18 +71,18 @@ export default function Layout() {
     const navItems = [
         { icon: LayoutDashboard, label: 'Inicio', path: '/' },
         ...(canManageProfiles && profile === 'general'
-            ? [{ icon: ShieldCheck, label: 'Administraci�n de perfiles', path: '/administracion/perfiles' }]
+            ? [{ icon: ShieldCheck, label: 'Administración de perfiles', path: '/administracion/perfiles' }]
             : []),
         { icon: Layers, label: 'Proyectos de Obra', path: '/proyectos-obra' },
-        { icon: Package, label: 'Gesti�n de Art�culos', path: '/articulos' },
+        { icon: Package, label: 'Gestión de Artículos', path: '/articulos' },
         { icon: Users, label: 'Cliente Interno', path: '/cliente-interno' },
         { icon: Building2, label: 'Cliente Externo', path: '/cliente-externo' },
         { icon: ClipboardList, label: 'Otras Solicitudes', path: '/otras-solicitudes' },
-        { icon: Settings2, label: 'Gesti�n Interna', path: '/gestion-interna' },
-        { icon: RefreshCw, label: 'Gesti�n de Cambios', path: '/gestion-cambios' },
-        { icon: Calculator, label: 'Proyecci�n Compras', path: '/gestion-interna/proyeccion-compras' },
-        { icon: Wrench, label: 'Gesti�n de Activos', path: '/activos' },
-        { icon: History, label: 'Historial Auditor�a', path: '/gestion-interna/auditoria' },
+        { icon: Settings2, label: 'Gestión Interna', path: '/gestion-interna' },
+        { icon: RefreshCw, label: 'Gestión de Cambios', path: '/gestion-cambios' },
+        { icon: Calculator, label: 'Proyección Compras', path: '/gestion-interna/proyeccion-compras' },
+        { icon: Wrench, label: 'Gestión de Activos', path: '/activos' },
+        { icon: History, label: 'Historial Auditoría', path: '/gestion-interna/auditoria' },
     ].filter(item => !isBodega || isBodegaPath(item.path));
 
     // Mobile Menu State
@@ -94,14 +94,14 @@ export default function Layout() {
     }, [location.pathname]);
 
     if (profile === 'loading') {
-        return <p className="p-6 text-sm" role="status">Verificando perfil de acceso.</p>;
+        return <p className="p-6 text-sm" role="status">Verificando perfil de acceso…</p>;
     }
     if (profile === 'error') {
         return (
             <div className="space-y-4 p-6" role="alert">
                 <p>No se pudo verificar el perfil de acceso.</p>
                 <button type="button" onClick={() => window.location.reload()}>Reintentar</button>
-                <button type="button" onClick={handleLogout}>Cerrar sesi�n</button>
+                <button type="button" onClick={handleLogout}>Cerrar sesión</button>
             </div>
         );
     }
@@ -208,7 +208,7 @@ export default function Layout() {
                                     {userName || 'Cargando...'}
                                 </p>
                                 <p className="text-[9px] text-[#909096] truncate font-medium tracking-[0.1em] uppercase mt-1">
-                                    {userEmail || 'Iniciando sesi�n...'}
+                                    {userEmail || 'Iniciando sesión...'}
                                 </p>
                             </div>
                         </div>
@@ -221,7 +221,7 @@ export default function Layout() {
                             )}
                         >
                             <LogOut className="w-4 h-4 shrink-0" />
-                            <span className="whitespace-nowrap overflow-hidden">Cerrar Sesi�n</span>
+                            <span className="whitespace-nowrap overflow-hidden">Cerrar Sesión</span>
                         </button>
                     </div>
                 </div>
@@ -241,4 +241,3 @@ export default function Layout() {
         </div>
     );
 }
-

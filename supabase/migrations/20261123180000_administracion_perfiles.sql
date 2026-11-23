@@ -67,7 +67,7 @@ begin
     end if;
 
     if new_profile is null or new_profile not in ('general', 'bodega') then
-        raise invalid_parameter_value using message = 'Perfil inv�lido';
+        raise invalid_parameter_value using message = 'Perfil inválido';
     end if;
 
     perform 1 from auth.users u
@@ -98,4 +98,3 @@ grant execute on function public.sdmo_can_manage_profiles(), public.sdmo_list_us
 
 notify pgrst, 'reload schema';
 commit;
-

@@ -126,7 +126,7 @@ function App() {
                             <Route path="/otras-solicitudes/vestimenta" element={<Vestimenta />} />
                             <Route path="/otras-solicitudes/limpieza-aseo" element={<LimpiezaAseo />} />
 
-                            {/* Gesti�n de Activos - Mutations */}
+                            {/* Gestión de Activos - Mutations */}
                             <Route path="/activos/ingreso" element={<IngresoActivos />} />
                             <Route path="/activos/asignacion" element={<AsignacionActivos />} />
                             <Route path="/activos/accesorios" element={<AccesoriosActivos />} />
@@ -163,4 +163,3 @@ function App() {
 }
 
 export default App;
-

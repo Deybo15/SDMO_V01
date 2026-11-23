@@ -37,9 +37,9 @@ export default function CommandPalette({ bodega = false }: { bodega?: boolean })
         ...screen, id: screen.path, subtitle: 'Bodega', type: 'page',
     })) : [
         { id: 'p1', title: 'Dashboard de Mantenimiento', subtitle: 'Panel principal y KPIs', type: 'page', path: '/' },
-        { id: 'p2', title: 'Gesti�n de Art�culos', subtitle: 'Inventario y materiales', type: 'page', path: '/articulos' },
+        { id: 'p2', title: 'Gestión de Artículos', subtitle: 'Inventario y materiales', type: 'page', path: '/articulos' },
         { id: 'p3', title: 'Cliente Interno', subtitle: 'Solicitudes institucionales', type: 'page', path: '/cliente-interno' },
-        { id: 'p4', title: 'Gesti�n de Activos', subtitle: 'Inventario de activos fijos', type: 'page', path: '/activos' },
+        { id: 'p4', title: 'Gestión de Activos', subtitle: 'Inventario de activos fijos', type: 'page', path: '/activos' },
     ], [bodega]);
 
     // Toggle palette with Ctrl+K
@@ -82,21 +82,21 @@ export default function CommandPalette({ bodega = false }: { bodega?: boolean })
                     ...(solicitudes.data?.map(s => ({
                         id: s.numero_solicitud,
                         title: `Solicitud #${s.numero_solicitud}`,
-                        subtitle: s.descripcion || 'Sin descripci�n',
+                        subtitle: s.descripcion || 'Sin descripción',
                         type: 'solicitud' as const,
                         path: `/consultar-solicitudes?search=${s.numero_solicitud}`
                     })) || []),
                     ...(instalaciones.data?.map(i => ({
                         id: i.id,
                         title: i.nombre_ubicacion,
-                        subtitle: i.alias || 'Instalaci�n Municipal',
+                        subtitle: i.alias || 'Instalación Municipal',
                         type: 'instalacion' as const,
                         path: `/consultar-solicitudes?ubicacion=${i.id}`
                     })) || []),
                     ...(articulos.data?.map(a => ({
                         id: a.codigo_articulo,
                         title: a.nombre_articulo,
-                        subtitle: a.codigo_articulo || 'Sin c�digo',
+                        subtitle: a.codigo_articulo || 'Sin código',
                         type: 'articulo' as const,
                         path: `/articulos?search=${a.codigo_articulo}`
                     })) || []),
@@ -161,7 +161,7 @@ export default function CommandPalette({ bodega = false }: { bodega?: boolean })
                     <input
                         autoFocus
                         className="flex-1 bg-transparent border-none outline-none text-white text-lg placeholder:text-slate-500"
-                        placeholder="Buscar solicitudes, instalaciones, art�culos o navegar..."
+                        placeholder="Buscar solicitudes, instalaciones, artículos o navegar..."
                         value={query}
                         onChange={(e) => setQuery(e.target.value)}
                         onKeyDown={handleKeyDown}
@@ -235,7 +235,7 @@ export default function CommandPalette({ bodega = false }: { bodega?: boolean })
                 {/* Footer */}
                 <div className="px-5 py-3 border-t border-white/10 bg-slate-950/50 flex justify-between items-center text-[10px] font-bold text-slate-500 uppercase tracking-widest">
                     <div className="flex gap-4">
-                        <span className="flex items-center gap-1"><kbd className="px-1.5 py-0.5 rounded bg-slate-800 border border-slate-700"></kbd> Navegar</span>
+                        <span className="flex items-center gap-1"><kbd className="px-1.5 py-0.5 rounded bg-slate-800 border border-slate-700">↓↑</kbd> Navegar</span>
                         <span className="flex items-center gap-1"><kbd className="px-1.5 py-0.5 rounded bg-slate-800 border border-slate-700">Enter</kbd> Seleccionar</span>
                     </div>
                     <span>Ctrl + K para cerrar</span>
@@ -244,4 +244,3 @@ export default function CommandPalette({ bodega = false }: { bodega?: boolean })
         </div>
     );
 }
-

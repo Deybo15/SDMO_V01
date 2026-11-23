@@ -61,7 +61,7 @@ begin
         return;
     end if;
 
-    raise insufficient_privilege using message = 'Operaci�n fuera del perfil de Bodega';
+    raise insufficient_privilege using message = 'Operación fuera del perfil de Bodega';
 end;
 $$;
 revoke all on function sdmo_private.enforce_bodega_access() from public;
@@ -123,4 +123,3 @@ $$;
 notify pgrst, 'reload schema';
 notify pgrst, 'reload config';
 commit;
-
