@@ -3,6 +3,7 @@ import { Routes, Route } from 'react-router-dom';
 import Layout from './components/Layout';
 import MaintenanceDashboard from './pages/MaintenanceDashboard';
 import Articulos from './pages/Articulos';
+import AdministracionPerfiles from './pages/AdministracionPerfiles';
 import ConsultarInventario from './pages/ConsultarInventario';
 import EscanerQR from './pages/EscanerQR';
 import GestionImagenes from './pages/GestionImagenes';
@@ -102,6 +103,7 @@ function App() {
                         <Route path="/activos/consulta" element={<ConsultaActivos />} />
 
                         <Route element={<AuthorizedRoute />}>
+                            <Route path="/administracion/perfiles" element={<AdministracionPerfiles />} />
                             <Route path="/articulos/ingresar-articulo" element={<IngresarArticulo />} />
                             <Route path="/articulos/gestion-imagenes" element={<GestionImagenes />} />
                             <Route path="/articulos/devoluciones" element={<Devoluciones />} />
@@ -124,7 +126,7 @@ function App() {
                             <Route path="/otras-solicitudes/vestimenta" element={<Vestimenta />} />
                             <Route path="/otras-solicitudes/limpieza-aseo" element={<LimpiezaAseo />} />
 
-                            {/* Gestión de Activos - Mutations */}
+                            {/* Gesti�n de Activos - Mutations */}
                             <Route path="/activos/ingreso" element={<IngresoActivos />} />
                             <Route path="/activos/asignacion" element={<AsignacionActivos />} />
                             <Route path="/activos/accesorios" element={<AccesoriosActivos />} />
@@ -161,3 +163,4 @@ function App() {
 }
 
 export default App;
+

@@ -14,6 +14,7 @@ import {
 } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import { cn } from '../lib/utils';
+import { bodegaScreens } from '../context/BodegaContext';
 
 type SearchResult = {
     id: string | number;
@@ -23,7 +24,7 @@ type SearchResult = {
     path: string;
 };
 
-export default function CommandPalette() {
+export default function CommandPalette({ bodega = false }: { bodega?: boolean }) {
     const [isOpen, setIsOpen] = useState(false);
     const [query, setQuery] = useState('');
     const [results, setResults] = useState<SearchResult[]>([]);
@@ -32,12 +33,14 @@ export default function CommandPalette() {
     const navigate = useNavigate();
 
     // Pages for quick navigation
-    const pages = useMemo<SearchResult[]>(() => [
+    const pages = useMemo<SearchResult[]>(() => bodega ? bodegaScreens.map(screen => ({
+        ...screen, id: screen.path, subtitle: 'Bodega', type: 'page',
+    })) : [
         { id: 'p1', title: 'Dashboard de Mantenimiento', subtitle: 'Panel principal y KPIs', type: 'page', path: '/' },
-        { id: 'p2', title: 'Gestión de Artículos', subtitle: 'Inventario y materiales', type: 'page', path: '/articulos' },
+        { id: 'p2', title: 'Gesti�n de Art�culos', subtitle: 'Inventario y materiales', type: 'page', path: '/articulos' },
         { id: 'p3', title: 'Cliente Interno', subtitle: 'Solicitudes institucionales', type: 'page', path: '/cliente-interno' },
-        { id: 'p4', title: 'Gestión de Activos', subtitle: 'Inventario de activos fijos', type: 'page', path: '/activos' },
-    ], []);
+        { id: 'p4', title: 'Gesti�n de Activos', subtitle: 'Inventario de activos fijos', type: 'page', path: '/activos' },
+    ], [bodega]);
 
     // Toggle palette with Ctrl+K
     useEffect(() => {
@@ -55,8 +58,9 @@ export default function CommandPalette() {
 
     // Search logic
     useEffect(() => {
-        if (!query.trim()) {
+        if (bodega || !query.trim()) {
             setResults(pages.filter(p => p.title.toLowerCase().includes(query.toLowerCase())));
+            setSelectedIndex(0);
             return;
         }
 
@@ -78,21 +82,21 @@ export default function CommandPalette() {
                     ...(solicitudes.data?.map(s => ({
                         id: s.numero_solicitud,
                         title: `Solicitud #${s.numero_solicitud}`,
-                        subtitle: s.descripcion || 'Sin descripción',
+                        subtitle: s.descripcion || 'Sin descripci�n',
                         type: 'solicitud' as const,
                         path: `/consultar-solicitudes?search=${s.numero_solicitud}`
                     })) || []),
                     ...(instalaciones.data?.map(i => ({
                         id: i.id,
                         title: i.nombre_ubicacion,
-                        subtitle: i.alias || 'Instalación Municipal',
+                        subtitle: i.alias || 'Instalaci�n Municipal',
                         type: 'instalacion' as const,
                         path: `/consultar-solicitudes?ubicacion=${i.id}`
                     })) || []),
                     ...(articulos.data?.map(a => ({
                         id: a.codigo_articulo,
                         title: a.nombre_articulo,
-                        subtitle: a.codigo_articulo || 'Sin código',
+                        subtitle: a.codigo_articulo || 'Sin c�digo',
                         type: 'articulo' as const,
                         path: `/articulos?search=${a.codigo_articulo}`
                     })) || []),
@@ -123,7 +127,7 @@ export default function CommandPalette() {
 
         const debounce = setTimeout(fetchResults, 300);
         return () => clearTimeout(debounce);
-    }, [pages, query]);
+    }, [bodega, pages, query]);
 
     const handleSelect = (result: SearchResult) => {
         navigate(result.path);
@@ -132,6 +136,7 @@ export default function CommandPalette() {
     };
 
     const handleKeyDown = (e: React.KeyboardEvent) => {
+        if (!results.length) return;
         if (e.key === 'ArrowDown') {
             e.preventDefault();
             setSelectedIndex(prev => (prev + 1) % results.length);
@@ -156,7 +161,7 @@ export default function CommandPalette() {
                     <input
                         autoFocus
                         className="flex-1 bg-transparent border-none outline-none text-white text-lg placeholder:text-slate-500"
-                        placeholder="Buscar solicitudes, instalaciones, artículos o navegar..."
+                        placeholder="Buscar solicitudes, instalaciones, art�culos o navegar..."
                         value={query}
                         onChange={(e) => setQuery(e.target.value)}
                         onKeyDown={handleKeyDown}
@@ -230,7 +235,7 @@ export default function CommandPalette() {
                 {/* Footer */}
                 <div className="px-5 py-3 border-t border-white/10 bg-slate-950/50 flex justify-between items-center text-[10px] font-bold text-slate-500 uppercase tracking-widest">
                     <div className="flex gap-4">
-                        <span className="flex items-center gap-1"><kbd className="px-1.5 py-0.5 rounded bg-slate-800 border border-slate-700">↓↑</kbd> Navegar</span>
+                        <span className="flex items-center gap-1"><kbd className="px-1.5 py-0.5 rounded bg-slate-800 border border-slate-700"></kbd> Navegar</span>
                         <span className="flex items-center gap-1"><kbd className="px-1.5 py-0.5 rounded bg-slate-800 border border-slate-700">Enter</kbd> Seleccionar</span>
                     </div>
                     <span>Ctrl + K para cerrar</span>
@@ -239,3 +244,4 @@ export default function CommandPalette() {
         </div>
     );
 }
+

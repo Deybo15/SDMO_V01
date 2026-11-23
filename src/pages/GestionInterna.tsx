@@ -1,4 +1,5 @@
 import { useNavigate } from 'react-router-dom';
+import { isBodegaPath, useBodegaProfile } from '../context/BodegaContext';
 import {
     ArrowLeft,
     ArrowRight,
@@ -14,26 +15,27 @@ const modules = [
         title: 'Informe de colaboradores',
         icon: Users,
         path: '/gestion-interna/colaboradores',
-        description: 'Gestión y visualización detallada del personal y sus roles'
+        description: 'Gesti�n y visualizaci�n detallada del personal y sus roles'
     },
     {
         id: 'withdrawals',
-        title: 'Retiros por artículo',
+        title: 'Retiros por art�culo',
         icon: Search,
         path: '/gestion-interna/retiros-articulo',
-        description: 'Consultar qué funcionarios han retirado un artículo específico'
+        description: 'Consultar qu� funcionarios han retirado un art�culo espec�fico'
     },
     {
         id: 'materials',
         title: 'Materiales por solicitud',
         icon: ClipboardList,
         path: '/gestion-interna/materiales-solicitud',
-        description: 'Consultar materiales utilizados por número de solicitud y sus costos'
+        description: 'Consultar materiales utilizados por n�mero de solicitud y sus costos'
     }
 ] as const;
 
 export default function GestionInterna() {
     const navigate = useNavigate();
+    const isBodega = useBodegaProfile();
 
     const renderModule = (module: (typeof modules)[number]) => {
         const Icon = module.icon;
@@ -65,8 +67,8 @@ export default function GestionInterna() {
                             <Settings2 className="h-7 w-7" />
                         </div>
                         <div>
-                            <h1 className="text-2xl font-black tracking-tight text-white md:text-[30px]">Gestión Interna</h1>
-                            <p className="text-sm text-[#a1a1aa]">Administración, consultas y reportes internos del SDMO</p>
+                            <h1 className="text-2xl font-black tracking-tight text-white md:text-[30px]">Gesti�n Interna</h1>
+                            <p className="text-sm text-[#a1a1aa]">Administraci�n, consultas y reportes internos del SDMO</p>
                         </div>
                     </div>
                     <button
@@ -75,7 +77,7 @@ export default function GestionInterna() {
                         className="inline-flex items-center justify-center gap-2 rounded-lg border border-[#71717a] bg-[#111112] px-5 py-3 text-sm font-semibold text-white transition-colors hover:bg-[#18181b]"
                     >
                         <ArrowLeft className="h-5 w-5" />
-                        Menú principal
+                        Men� principal
                     </button>
                 </header>
 
@@ -84,9 +86,12 @@ export default function GestionInterna() {
                         Consultas e informes
                         <span className="h-px flex-1 bg-[#27272a]" />
                     </h2>
-                    <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">{modules.map(renderModule)}</div>
+                    <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
+                        {modules.filter(module => !isBodega || isBodegaPath(module.path)).map(renderModule)}
+                    </div>
                 </section>
             </div>
         </div>
     );
 }
+

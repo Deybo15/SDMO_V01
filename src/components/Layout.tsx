@@ -1,13 +1,38 @@
 import React, { useState, useEffect } from 'react';
-import { Link, useLocation, useNavigate, Outlet } from 'react-router-dom';
-import { LayoutDashboard, Package, Users, Building2, ClipboardList, Settings2, Wrench, LogOut, UserCircle2, Menu, X, Calculator, History, RefreshCw, Layers } from 'lucide-react';
+import { Link, useLocation, useNavigate, Outlet, Navigate } from 'react-router-dom';
+import { LayoutDashboard, Package, Users, Building2, ClipboardList, Settings2, Wrench, LogOut, UserCircle2, Menu, X, Calculator, History, RefreshCw, Layers, ShieldCheck } from 'lucide-react';
 import { cn } from '../lib/utils';
 import { supabase } from '../lib/supabase';
 import CommandPalette from './CommandPalette';
+import { BodegaContext, bodegaHome, isBodegaPath } from '../context/BodegaContext';
 
 export default function Layout() {
     const location = useLocation();
     const navigate = useNavigate();
+    const [profile, setProfile] = useState<'loading' | 'general' | 'bodega' | 'error'>('loading');
+    const [canManageProfiles, setCanManageProfiles] = useState(false);
+
+    useEffect(() => {
+        let active = true;
+        const loadProfile = async () => {
+            try {
+                const { data, error } = await supabase.rpc('sdmo_access_profile', undefined, { get: true });
+                if (active) {
+                    setProfile(error ? 'error' : data === 'bodega' ? 'bodega' : 'general');
+                }
+                if (!error && data === 'general') {
+                    const permission = await supabase.rpc('sdmo_can_manage_profiles', undefined, { get: true });
+                    if (active) setCanManageProfiles(permission.data === true && !permission.error);
+                }
+            } catch {
+                if (active) setProfile(current => current === 'loading' ? 'error' : current);
+            }
+        };
+        void loadProfile();
+        return () => { active = false; };
+    }, []);
+
+    const isBodega = profile === 'bodega';
 
     const [userEmail, setUserEmail] = useState<string | null>(null);
     const [userName, setUserName] = useState<string | null>(null);
@@ -45,17 +70,20 @@ export default function Layout() {
 
     const navItems = [
         { icon: LayoutDashboard, label: 'Inicio', path: '/' },
+        ...(canManageProfiles && profile === 'general'
+            ? [{ icon: ShieldCheck, label: 'Administraci�n de perfiles', path: '/administracion/perfiles' }]
+            : []),
         { icon: Layers, label: 'Proyectos de Obra', path: '/proyectos-obra' },
-        { icon: Package, label: 'Gestión de Artículos', path: '/articulos' },
+        { icon: Package, label: 'Gesti�n de Art�culos', path: '/articulos' },
         { icon: Users, label: 'Cliente Interno', path: '/cliente-interno' },
         { icon: Building2, label: 'Cliente Externo', path: '/cliente-externo' },
         { icon: ClipboardList, label: 'Otras Solicitudes', path: '/otras-solicitudes' },
-        { icon: Settings2, label: 'Gestión Interna', path: '/gestion-interna' },
-        { icon: RefreshCw, label: 'Gestión de Cambios', path: '/gestion-cambios' },
-        { icon: Calculator, label: 'Proyección Compras', path: '/gestion-interna/proyeccion-compras' },
-        { icon: Wrench, label: 'Gestión de Activos', path: '/activos' },
-        { icon: History, label: 'Historial Auditoría', path: '/gestion-interna/auditoria' },
-    ];
+        { icon: Settings2, label: 'Gesti�n Interna', path: '/gestion-interna' },
+        { icon: RefreshCw, label: 'Gesti�n de Cambios', path: '/gestion-cambios' },
+        { icon: Calculator, label: 'Proyecci�n Compras', path: '/gestion-interna/proyeccion-compras' },
+        { icon: Wrench, label: 'Gesti�n de Activos', path: '/activos' },
+        { icon: History, label: 'Historial Auditor�a', path: '/gestion-interna/auditoria' },
+    ].filter(item => !isBodega || isBodegaPath(item.path));
 
     // Mobile Menu State
     const [mobileMenuOpen, setMobileMenuOpen] = React.useState(false);
@@ -64,6 +92,22 @@ export default function Layout() {
     React.useEffect(() => {
         setMobileMenuOpen(false);
     }, [location.pathname]);
+
+    if (profile === 'loading') {
+        return <p className="p-6 text-sm" role="status">Verificando perfil de acceso.</p>;
+    }
+    if (profile === 'error') {
+        return (
+            <div className="space-y-4 p-6" role="alert">
+                <p>No se pudo verificar el perfil de acceso.</p>
+                <button type="button" onClick={() => window.location.reload()}>Reintentar</button>
+                <button type="button" onClick={handleLogout}>Cerrar sesi�n</button>
+            </div>
+        );
+    }
+    if (isBodega && !isBodegaPath(location.pathname)) {
+        return <Navigate to={bodegaHome} replace />;
+    }
 
     return (
         <div className="flex h-screen bg-[#000000] text-[#F5F5F7] overflow-hidden font-sans">
@@ -164,7 +208,7 @@ export default function Layout() {
                                     {userName || 'Cargando...'}
                                 </p>
                                 <p className="text-[9px] text-[#909096] truncate font-medium tracking-[0.1em] uppercase mt-1">
-                                    {userEmail || 'Iniciando sesión...'}
+                                    {userEmail || 'Iniciando sesi�n...'}
                                 </p>
                             </div>
                         </div>
@@ -177,7 +221,7 @@ export default function Layout() {
                             )}
                         >
                             <LogOut className="w-4 h-4 shrink-0" />
-                            <span className="whitespace-nowrap overflow-hidden">Cerrar Sesión</span>
+                            <span className="whitespace-nowrap overflow-hidden">Cerrar Sesi�n</span>
                         </button>
                     </div>
                 </div>
@@ -186,12 +230,15 @@ export default function Layout() {
             {/* Main Content */}
             <main className="flex-1 overflow-y-auto bg-[#000000] pt-16 md:pt-0">
                 <div className="p-0">
-                    <Outlet />
+                    <BodegaContext.Provider value={isBodega}>
+                        <Outlet />
+                    </BodegaContext.Provider>
                 </div>
             </main>
 
             {/* Global Features */}
-            <CommandPalette />
+            <CommandPalette bodega={isBodega} />
         </div>
     );
 }
+

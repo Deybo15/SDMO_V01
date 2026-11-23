@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { isBodegaPath, useBodegaProfile } from '../context/BodegaContext';
 import {
     Activity,
     ArrowLeft,
@@ -28,10 +29,10 @@ interface InventoryStats {
 const modules = [
     {
         id: 'register',
-        title: 'Registrar nuevo artículo',
+        title: 'Registrar nuevo art�culo',
         icon: PlusCircle,
         path: '/articulos/registrar-nuevo',
-        description: 'Definir un nuevo producto en el catálogo maestro',
+        description: 'Definir un nuevo producto en el cat�logo maestro',
         group: 'quick'
     },
     {
@@ -39,15 +40,15 @@ const modules = [
         title: 'Consultar inventario',
         icon: ClipboardList,
         path: '/articulos/consultar-inventario',
-        description: 'Ver y gestionar el stock completo de artículos',
+        description: 'Ver y gestionar el stock completo de art�culos',
         group: 'inventory'
     },
     {
         id: 'scanner',
-        title: 'Escáner QR',
+        title: 'Esc�ner QR',
         icon: QrCode,
         path: '/articulos/escaner-qr',
-        description: 'Identificar productos mediante códigos QR',
+        description: 'Identificar productos mediante c�digos QR',
         group: 'quick'
     },
     {
@@ -55,15 +56,15 @@ const modules = [
         title: 'Ingresar imagen',
         icon: ImageIcon,
         path: '/articulos/gestion-imagenes',
-        description: 'Adjuntar y gestionar fotografías de productos',
+        description: 'Adjuntar y gestionar fotograf�as de productos',
         group: 'inventory'
     },
     {
         id: 'entry',
-        title: 'Ingresar artículo',
+        title: 'Ingresar art�culo',
         icon: ClipboardList,
         path: '/articulos/ingresar-articulo',
-        description: 'Registrar entradas de stock para artículos existentes',
+        description: 'Registrar entradas de stock para art�culos existentes',
         group: 'quick'
     },
     {
@@ -71,12 +72,12 @@ const modules = [
         title: 'Devoluciones',
         icon: RotateCcw,
         path: '/articulos/devoluciones',
-        description: 'Gestionar el retorno de artículos prestados',
+        description: 'Gestionar el retorno de art�culos prestados',
         group: 'movements'
     },
     {
         id: 'kardex',
-        title: 'Kárdex diario',
+        title: 'K�rdex diario',
         icon: LineChart,
         path: '/articulos/kardex-diario',
         description: 'Seguimiento detallado de movimientos diarios',
@@ -84,10 +85,10 @@ const modules = [
     },
     {
         id: 'history',
-        title: 'Historial de artículo',
+        title: 'Historial de art�culo',
         icon: History,
         path: '/articulos/historial-articulo',
-        description: 'Trazabilidad completa de cada artículo',
+        description: 'Trazabilidad completa de cada art�culo',
         group: 'movements'
     },
     {
@@ -95,7 +96,7 @@ const modules = [
         title: 'Generar etiqueta',
         icon: Tag,
         path: '/articulos/generar-etiqueta',
-        description: 'Crear etiquetas de identificación para stock',
+        description: 'Crear etiquetas de identificaci�n para stock',
         group: 'support'
     },
     {
@@ -140,6 +141,7 @@ async function fetchInventorySummary() {
 
 export default function Articulos() {
     const navigate = useNavigate();
+    const isBodega = useBodegaProfile();
     const [stats, setStats] = useState<InventoryStats | null>(null);
 
     useEffect(() => {
@@ -158,7 +160,7 @@ export default function Articulos() {
                     movements: (entries.count || 0) + (outputs.count || 0)
                 });
             } catch (error) {
-                console.error('Error cargando indicadores de artículos:', error);
+                console.error('Error cargando indicadores de art�culos:', error);
                 setStats({ articles: 0, units: 0, movements: 0 });
             }
         };
@@ -166,11 +168,12 @@ export default function Articulos() {
         loadStats();
     }, []);
 
+    const visibleModules = modules.filter(module => !isBodega || isBodegaPath(module.path));
     const primaryModuleIds = ['inventory', 'entry', 'register', 'scanner'];
     const primaryModules = primaryModuleIds
-        .map((id) => modules.find((module) => module.id === id))
+        .map((id) => visibleModules.find((module) => module.id === id))
         .filter((module): module is (typeof modules)[number] => Boolean(module));
-    const secondaryModules = modules.filter((module) => !primaryModuleIds.includes(module.id));
+    const secondaryModules = visibleModules.filter((module) => !primaryModuleIds.includes(module.id));
 
     const renderModule = (module: (typeof modules)[number], compact = false) => {
         const Icon = module.icon;
@@ -204,8 +207,8 @@ export default function Articulos() {
                             <LayoutGrid className="h-7 w-7" />
                         </div>
                         <div>
-                            <h1 className="text-2xl font-black tracking-tight text-white md:text-[30px]">Gestión de artículos</h1>
-                            <p className="text-sm text-[#a1a1aa]">Administración y control del inventario de artículos del SDMO</p>
+                            <h1 className="text-2xl font-black tracking-tight text-white md:text-[30px]">Gesti�n de art�culos</h1>
+                            <p className="text-sm text-[#a1a1aa]">Administraci�n y control del inventario de art�culos del SDMO</p>
                         </div>
                     </div>
                     <button
@@ -214,13 +217,13 @@ export default function Articulos() {
                         className="inline-flex items-center justify-center gap-2 rounded-lg border border-[#71717a] bg-[#111112] px-5 py-3 text-sm font-semibold text-white transition-colors hover:bg-[#18181b]"
                     >
                         <ArrowLeft className="h-5 w-5" />
-                        Menú principal
+                        Men� principal
                     </button>
                 </header>
 
                 <section className="grid grid-cols-1 rounded-xl border border-[#3f3f46] bg-[#0d0d0e] md:grid-cols-3">
                     {[
-                        { label: 'Artículos registrados', value: stats?.articles, icon: Package },
+                        { label: 'Art�culos registrados', value: stats?.articles, icon: Package },
                         { label: 'Unidades en inventario', value: stats?.units, icon: Boxes },
                         { label: 'Movimientos de hoy', value: stats?.movements, icon: Activity }
                     ].map((metric, index) => (
@@ -229,7 +232,7 @@ export default function Articulos() {
                                 <metric.icon className="h-5 w-5" />
                             </span>
                             <div>
-                                <p className="text-2xl font-semibold tabular-nums text-white">{metric.value === undefined ? '—' : metric.value.toLocaleString('es-CR')}</p>
+                                <p className="text-2xl font-semibold tabular-nums text-white">{metric.value === undefined ? '-' : metric.value.toLocaleString('es-CR')}</p>
                                 <p className="mt-0.5 text-xs font-medium text-[#a1a1aa]">{metric.label}</p>
                             </div>
                         </div>
@@ -242,10 +245,11 @@ export default function Articulos() {
                 </section>
 
                 <section className="pb-8">
-                    <h2 className="mb-3 border-t border-[#27272a] pt-5 text-xs font-semibold uppercase tracking-[0.18em] text-[#a1a1aa]">Gestión y trazabilidad</h2>
+                    <h2 className="mb-3 border-t border-[#27272a] pt-5 text-xs font-semibold uppercase tracking-[0.18em] text-[#a1a1aa]">Gesti�n y trazabilidad</h2>
                     <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3">{secondaryModules.map((module) => renderModule(module, true))}</div>
                 </section>
             </div>
         </div>
     );
 }
+
