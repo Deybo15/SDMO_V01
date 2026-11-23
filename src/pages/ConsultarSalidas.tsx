@@ -82,8 +82,12 @@ type SortConfig = {
 
 interface ColaboradorDetalle {
     identificacion: string;
-    alias: string;
-    colaborador: string;
+    alias: string | null;
+    colaborador: string | null;
+}
+
+function nombreColaborador(colaborador: ColaboradorDetalle) {
+    return colaborador.alias?.trim() || colaborador.colaborador?.trim() || colaborador.identificacion;
 }
 
 export default function ConsultarSalidas() {
@@ -829,14 +833,20 @@ export default function ConsultarSalidas() {
                                                 key={colab.identificacion}
                                                 onClick={() => {
                                                     setColaboradorSeleccionado(colab);
-                                                    setColaboradorBusqueda(`${colab.alias} (${colab.colaborador})`);
+                                                    const alias = colab.alias?.trim();
+                                                    const nombre = colab.colaborador?.trim();
+                                                    setColaboradorBusqueda(alias && nombre && alias !== nombre
+                                                        ? `${alias} (${nombre})`
+                                                        : nombreColaborador(colab));
                                                     setColaboradorSugerencias([]);
                                                     handleBuscarPorColaborador(colab.identificacion);
                                                 }}
                                                 className="w-full p-4 flex flex-col items-start gap-1 hover:bg-[#27272a] border-b border-[#3f3f46] last:border-0 transition-colors"
                                             >
-                                                <span className="text-sm font-semibold text-white uppercase">{colab.alias}</span>
-                                                <span className="text-[10px] font-bold text-[#86868B] uppercase">{colab.colaborador}</span>
+                                                <span className="text-sm font-semibold text-white uppercase">{nombreColaborador(colab)}</span>
+                                                {colab.alias?.trim() && colab.colaborador?.trim() && colab.alias.trim() !== colab.colaborador.trim() && (
+                                                    <span className="text-[10px] font-bold text-[#86868B] uppercase">{colab.colaborador}</span>
+                                                )}
                                             </button>
                                         ))}
                                     </div>
@@ -849,7 +859,7 @@ export default function ConsultarSalidas() {
                                         <div className="w-8 h-8 rounded-full bg-[#27272a] flex items-center justify-center">
                                             <CheckCircle2 className="w-4 h-4 text-white" />
                                         </div>
-                                        <span className="text-xs font-semibold text-white uppercase">Filtrando por: {colaboradorSeleccionado.alias}</span>
+                                        <span className="text-xs font-semibold text-white uppercase">Filtrando por: {nombreColaborador(colaboradorSeleccionado)}</span>
                                     </div>
                                     <button
                                         onClick={() => {
@@ -982,7 +992,7 @@ export default function ConsultarSalidas() {
                                                 : activeTab === 'id_salida'
                                                     ? `Salida # ${idSalidaInput} Localizada`
                                                     : activeTab === 'colaborador'
-                                                        ? `${salidas.length} Salidas Localizadas para ${colaboradorSeleccionado?.alias || 'Colaborador'}`
+                                                        ? `${salidas.length} Salidas Localizadas para ${colaboradorSeleccionado ? nombreColaborador(colaboradorSeleccionado) : 'Colaborador'}`
                                                         : `${resumen.length} Movimientos Registrados • ${new Set(resumen.map(r => r.fecha)).size} Días`
                                             }
                                         </p>
