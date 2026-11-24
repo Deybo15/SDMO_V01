@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { supabase } from '../lib/supabase';
 import {
@@ -32,9 +32,10 @@ export default function ConsultaActivos() {
     const [loading, setLoading] = useState(false);
     const [searchTerm, setSearchTerm] = useState(searchParams.get('search') || '');
     const [results, setResults] = useState<ActivoDetalle[]>([]);
+    const searchRequestRef = useRef(0);
 
-    const buscarActivos = useCallback(async () => {
-        if (!searchTerm.trim() || searchTerm.length < 3) return;
+    const buscarActivos = useCallback(async (term: string, requestId: number) => {
+        if (term.length < 3) return;
 
         setLoading(true);
         try {
@@ -42,24 +43,26 @@ export default function ConsultaActivos() {
             const { data: activos, error: activosError } = await supabase
                 .from('activos_50')
                 .select('numero_activo, nombre_corto_activo, descripcion_activo, marca_activo')
-                .or(`nombre_corto_activo.ilike.%${searchTerm}%,descripcion_activo.ilike.%${searchTerm}%`)
+                .or(`nombre_corto_activo.ilike.%${term}%,descripcion_activo.ilike.%${term}%`)
                 .limit(50);
 
             if (activosError) throw activosError;
+            if (requestId !== searchRequestRef.current) return;
 
             if (!activos || activos.length === 0) {
                 setResults([]);
                 return;
             }
 
-            const detalleResultados: ActivoDetalle[] = [];
+            const numerosActivo = activos.map((activo) => activo.numero_activo);
 
-            // 2. Para cada activo, determinar su estado actual
-            for (const activo of activos) {
-                // Buscar última salida (asignación)
-                const { data: ultimaSalida, error: salidaError } = await supabase
+            // Consultar todos los movimientos de los resultados en dos solicitudes agrupadas.
+            // Antes se realizaban dos solicitudes secuenciales por cada activo encontrado.
+            const [salidasResult, entradasResult] = await Promise.all([
+                supabase
                     .from('dato_salida_activo_56')
                     .select(`
+                        numero_activo,
                         boleta_salida_activo,
                         salida_activo_55 (
                             fecha_salida_activo,
@@ -69,28 +72,42 @@ export default function ConsultaActivos() {
                             )
                         )
                     `)
-                    .eq('numero_activo', activo.numero_activo)
-                    .order('boleta_salida_activo', { ascending: false })
-                    .limit(1)
-                    .maybeSingle();
-
-                if (salidaError) console.error('Error buscando salida:', salidaError);
-
-                // Buscar última entrada (devolución)
-                const { data: ultimaEntrada, error: entradaError } = await supabase
+                    .in('numero_activo', numerosActivo)
+                    .order('boleta_salida_activo', { ascending: false }),
+                supabase
                     .from('dato_entrada_activo_54')
                     .select(`
+                        activo,
                         no_entrada_activo,
                         entrada_activo_52 (
                             fecha_entrada_activo
                         )
                     `)
-                    .eq('activo', activo.numero_activo)
+                    .in('activo', numerosActivo)
                     .order('no_entrada_activo', { ascending: false })
-                    .limit(1)
-                    .maybeSingle();
+            ]);
 
-                if (entradaError) console.error('Error buscando entrada:', entradaError);
+            if (salidasResult.error) throw salidasResult.error;
+            if (entradasResult.error) throw entradasResult.error;
+            if (requestId !== searchRequestRef.current) return;
+
+            const ultimaSalidaPorActivo = new Map<number, any>();
+            for (const salida of salidasResult.data || []) {
+                if (!ultimaSalidaPorActivo.has(salida.numero_activo)) {
+                    ultimaSalidaPorActivo.set(salida.numero_activo, salida);
+                }
+            }
+
+            const ultimaEntradaPorActivo = new Map<number, any>();
+            for (const entrada of entradasResult.data || []) {
+                if (!ultimaEntradaPorActivo.has(entrada.activo)) {
+                    ultimaEntradaPorActivo.set(entrada.activo, entrada);
+                }
+            }
+
+            const detalleResultados: ActivoDetalle[] = activos.map((activo) => {
+                const ultimaSalida = ultimaSalidaPorActivo.get(activo.numero_activo);
+                const ultimaEntrada = ultimaEntradaPorActivo.get(activo.numero_activo);
 
                 let status: 'ASIGNADO' | 'BODEGA' | 'DESCONOCIDO' = 'BODEGA';
                 let responsable = null;
@@ -130,33 +147,44 @@ export default function ConsultaActivos() {
                     }
                 }
 
-                detalleResultados.push({
+                return {
                     ...activo,
                     status,
                     responsable,
                     fecha_accion: fechaAccion,
                     boleta_id: boletaId
-                });
+                };
+            });
+
+            if (requestId === searchRequestRef.current) {
+                setResults(detalleResultados);
             }
 
-            setResults(detalleResultados);
-
         } catch (error: any) {
-            console.error('Error en búsqueda:', error);
+            if (requestId === searchRequestRef.current) {
+                console.error('Error en búsqueda:', error);
+            }
         } finally {
-            setLoading(false);
+            if (requestId === searchRequestRef.current) {
+                setLoading(false);
+            }
         }
-    }, [searchTerm]);
+    }, []);
 
     // Debounce search
     useEffect(() => {
+        const normalizedTerm = searchTerm.trim();
+        const requestId = ++searchRequestRef.current;
+
+        if (normalizedTerm.length < 3) {
+            setLoading(false);
+            if (normalizedTerm.length === 0) setResults([]);
+            return;
+        }
+
         const timer = setTimeout(() => {
-            if (searchTerm.length >= 3) {
-                buscarActivos();
-            } else if (searchTerm.length === 0) {
-                setResults([]);
-            }
-        }, 500);
+            buscarActivos(normalizedTerm, requestId);
+        }, 300);
 
         return () => clearTimeout(timer);
     }, [buscarActivos, searchTerm]);
