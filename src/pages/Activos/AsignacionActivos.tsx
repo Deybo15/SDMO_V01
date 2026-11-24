@@ -5,7 +5,7 @@ import {
     ArrowLeft, Save, Plus, Trash2, Calendar, User,
     FileText, ArrowDownCircle, ArrowUpCircle, Search,
     UserPlus, ChevronLeft, Shield, MousePointer2,
-    Package, Loader2, ChevronDown
+    Package, PackageOpen, Loader2, ChevronDown, CheckCircle2
 } from 'lucide-react';
 import { PageHeader } from '../../components/ui/PageHeader';
 import { cn } from '../../lib/utils';
@@ -312,43 +312,80 @@ export default function AsignacionActivos() {
                 title="Movimientos de Activos"
                 subtitle="Gabinete de Gestión Operativa"
                 icon={MousePointer2}
+                themeColor="neutral"
                 backRoute="/activos"
             />
 
-            <div className="max-w-7xl mx-auto px-8 pb-12 animate-fade-in-up">
-                <div className="flex gap-4 mb-8">
+            <div className="mx-auto max-w-7xl animate-fade-in-up px-4 pb-12 sm:px-6 lg:px-8">
+                <div className="mb-6 grid grid-cols-1 gap-1.5 rounded-2xl border border-[#2d2d31] bg-[#0d0d0f] p-1.5 shadow-[0_18px_50px_rgba(0,0,0,.22)] sm:grid-cols-2">
                     <button
                         onClick={() => setActiveTab('entrada')}
                         className={cn(
-                            "flex-1 py-4 px-6 rounded-2xl border transition-all flex items-center justify-center gap-3",
+                            "group flex min-h-[62px] items-center justify-center gap-3 rounded-xl border px-5 py-3 text-left transition-all",
                             activeTab === 'entrada'
-                                ? "border-[#0071E3] bg-[#0071E3]/10 text-[#0071E3] shadow-lg shadow-[#0071E3]/20"
-                                : "border-[#333333] bg-[#121212] text-[#86868B] hover:border-[#F5F5F7]/20"
+                                ? "border-[#52525b] bg-[#242427] text-white shadow-[0_8px_24px_rgba(0,0,0,.28)]"
+                                : "border-transparent bg-transparent text-[#71717a] hover:bg-[#171719] hover:text-[#d4d4d8]"
                         )}
                     >
-                        <ArrowDownCircle className="w-6 h-6" />
-                        <span className="font-black text-[12px] uppercase tracking-widest">Registrar Entrada (Ingreso)</span>
+                        <span className={cn(
+                            "flex h-9 w-9 items-center justify-center rounded-lg border transition-colors",
+                            activeTab === 'entrada' ? "border-[#63636b] bg-[#18181b]" : "border-[#303034] bg-[#121214]"
+                        )}>
+                            <ArrowDownCircle className="h-[18px] w-[18px]" />
+                        </span>
+                        <span>
+                            <span className="block text-[12px] font-bold uppercase tracking-[0.12em]">Registrar entrada</span>
+                            <span className="mt-0.5 block text-[11px] font-normal normal-case tracking-normal text-[#8c8c93]">Ingreso al inventario</span>
+                        </span>
                     </button>
                     <button
                         onClick={() => setActiveTab('salida')}
                         className={cn(
-                            "flex-1 py-4 px-6 rounded-2xl border transition-all flex items-center justify-center gap-3",
+                            "group flex min-h-[62px] items-center justify-center gap-3 rounded-xl border px-5 py-3 text-left transition-all",
                             activeTab === 'salida'
-                                ? "border-[#0071E3] bg-[#0071E3]/10 text-[#0071E3] shadow-lg shadow-[#0071E3]/20"
-                                : "border-[#333333] bg-[#121212] text-[#86868B] hover:border-[#F5F5F7]/20"
+                                ? "border-[#52525b] bg-[#242427] text-white shadow-[0_8px_24px_rgba(0,0,0,.28)]"
+                                : "border-transparent bg-transparent text-[#71717a] hover:bg-[#171719] hover:text-[#d4d4d8]"
                         )}
                     >
-                        <ArrowUpCircle className="w-6 h-6" />
-                        <span className="font-black text-[12px] uppercase tracking-widest">Registrar Salida (Asignación)</span>
+                        <span className={cn(
+                            "flex h-9 w-9 items-center justify-center rounded-lg border transition-colors",
+                            activeTab === 'salida' ? "border-[#63636b] bg-[#18181b]" : "border-[#303034] bg-[#121214]"
+                        )}>
+                            <ArrowUpCircle className="h-[18px] w-[18px]" />
+                        </span>
+                        <span>
+                            <span className="block text-[12px] font-bold uppercase tracking-[0.12em]">Registrar salida</span>
+                            <span className="mt-0.5 block text-[11px] font-normal normal-case tracking-normal text-[#8c8c93]">Asignación a un colaborador</span>
+                        </span>
                     </button>
                 </div>
 
-                <div className="bg-[#121212] rounded-3xl border border-[#333333] overflow-hidden shadow-2xl p-6 relative group">
-                    <div className="absolute top-0 right-0 w-64 h-64 bg-[#0071E3]/5 rounded-full blur-3xl -mr-32 -mt-32" />
-                    <div className="p-2 relative z-10">
+                <div className="relative overflow-visible rounded-2xl border border-[#34343a] bg-[linear-gradient(145deg,#121214_0%,#0e0e10_100%)] shadow-[0_28px_90px_rgba(0,0,0,.38)] [&_label]:!font-semibold [&_label]:!normal-case [&_label]:!tracking-normal [&_label]:!text-[#b0b0b6] [&_label_svg]:!text-[#d4d4d8]">
+                    <div className="relative p-5 sm:p-7 lg:p-9">
+                        <div className="mb-8 flex items-start justify-between gap-4 border-b border-[#2b2b30] pb-7">
+                            <div className="flex items-start gap-4">
+                                <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl border border-[#45454c] bg-[#19191c] text-[#f4f4f5] shadow-inner">
+                                    {activeTab === 'entrada' ? <ArrowDownCircle className="h-5 w-5" /> : <ArrowUpCircle className="h-5 w-5" />}
+                                </span>
+                                <div>
+                                    <h2 className="text-xl font-bold tracking-[-0.02em] text-white sm:text-2xl">
+                                        {activeTab === 'entrada' ? 'Registrar entrada de activo' : 'Registrar salida y asignación'}
+                                    </h2>
+                                    <p className="mt-1 text-sm text-[#a1a1aa]">
+                                        {activeTab === 'entrada'
+                                            ? 'Documente el ingreso de un activo al inventario institucional.'
+                                            : 'Asigne uno o varios activos al colaborador responsable.'}
+                                    </p>
+                                </div>
+                            </div>
+                            <span className="hidden items-center gap-2 rounded-full border border-[#39393f] bg-[#171719] px-3.5 py-2 text-[10px] font-semibold uppercase tracking-[0.14em] text-[#b4b4ba] sm:flex">
+                                <span className="h-1.5 w-1.5 rounded-full bg-[#a1a1aa]" />
+                                {activeTab === 'entrada' ? 'Movimiento de ingreso' : 'Movimiento de salida'}
+                            </span>
+                        </div>
                         {activeTab === 'entrada' ? (
                             <form onSubmit={confirmSubmitEntrada} className="space-y-8">
-                                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                <div className="grid grid-cols-1 gap-5 md:grid-cols-2">
                                     <div className="space-y-2">
                                         <label className="text-[10px] font-black uppercase tracking-widest text-[#86868B] flex items-center gap-2 ml-1">
                                             <Calendar className="w-4 h-4 text-[#0071E3]" />
@@ -359,7 +396,7 @@ export default function AsignacionActivos() {
                                             required
                                             value={entradaForm.fecha_entrada_activo}
                                             onChange={e => setEntradaForm({ ...entradaForm, fecha_entrada_activo: e.target.value })}
-                                            className="w-full bg-[#1D1D1F] border border-[#333333] rounded-[8px] px-4 py-3 text-[#F5F5F7] focus:border-[#0071E3] outline-none transition-all"
+                                            className="min-h-[50px] w-full rounded-xl border border-[#35353a] bg-[#19191c] px-4 py-3 text-[#f4f4f5] outline-none transition-all focus:border-[#777780] focus:ring-2 focus:ring-white/5"
                                         />
                                     </div>
                                     <div className="space-y-2">
@@ -373,8 +410,8 @@ export default function AsignacionActivos() {
                                             value={entradaForm.autoriza_entrada_activo}
                                             onChange={e => setEntradaForm({ ...entradaForm, autoriza_entrada_activo: e.target.value })}
                                             className={cn(
-                                                "w-full bg-[#1D1D1F] border rounded-[8px] px-4 py-3 text-[#F5F5F7] outline-none transition-all",
-                                                entradaForm.autoriza_entrada_activo ? "border-[#0071E3]/20 bg-[#0071E3]/5 opacity-80 cursor-not-allowed" : "border-[#333333] focus:border-[#0071E3]"
+                                                "min-h-[50px] w-full rounded-xl border bg-[#19191c] px-4 py-3 text-[#f4f4f5] outline-none transition-all focus:ring-2 focus:ring-white/5",
+                                                entradaForm.autoriza_entrada_activo ? "cursor-not-allowed border-[#3d3d43] bg-[#161619] text-[#c7c7cc]" : "border-[#35353a] focus:border-[#777780]"
                                             )}
                                         >
                                             <option value="">Seleccionar funcionario...</option>
@@ -385,22 +422,25 @@ export default function AsignacionActivos() {
                                             ))}
                                         </select>
                                         {entradaForm.autoriza_entrada_activo && (
-                                            <p className="text-[10px] text-[#0071E3]/70 font-black uppercase mt-1 ml-1 flex items-center gap-1 tracking-widest">
+                                            <p className="mt-1 ml-1 flex items-center gap-1 text-[11px] font-medium text-[#a1a1aa]">
                                                 <Shield className="w-3 h-3" /> Asignado automáticamente
                                             </p>
                                         )}
                                     </div>
                                 </div>
 
-                                <div className="space-y-4">
-                                    <div className="flex items-center gap-3 pb-4 border-b border-[#333333]">
-                                        <span className="p-2 rounded-lg bg-[#0071E3]/10 text-[#0071E3]">
+                                <div className="rounded-2xl border border-[#2f2f34] bg-[#0b0b0d]/60 p-4 sm:p-6">
+                                    <div className="mb-5 flex items-center gap-3 border-b border-[#2c2c31] pb-5">
+                                        <span className="rounded-lg border border-[#3f3f46] bg-[#18181b] p-2 text-[#d4d4d8]">
                                             <Package className="w-5 h-5" />
                                         </span>
-                                        <h3 className="text-lg font-black text-[#F5F5F7] uppercase tracking-widest text-[12px]">Activo a Ingresar</h3>
+                                        <div>
+                                            <h3 className="text-base font-bold text-[#F5F5F7]">Activo a ingresar</h3>
+                                            <p className="mt-0.5 text-xs text-[#8c8c93]">Busque y seleccione el activo que vuelve al inventario.</p>
+                                        </div>
                                     </div>
 
-                                    <div className="relative">
+                                    <div className="relative mb-4">
                                         <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
                                             <Search className="h-5 w-5 text-[#86868B]" />
                                         </div>
@@ -409,37 +449,41 @@ export default function AsignacionActivos() {
                                             placeholder="Buscar activo por número, nombre o serie..."
                                             value={searchTerm}
                                             onChange={e => setSearchTerm(e.target.value)}
-                                            className="w-full bg-[#1D1D1F] border border-[#333333] rounded-[8px] pl-10 pr-4 py-3 text-[#F5F5F7] focus:border-[#0071E3] outline-none transition-all placeholder-[#86868B]"
+                                            className="min-h-[52px] w-full rounded-xl border border-[#3a3a40] bg-[#19191c] pl-11 pr-4 text-[#f4f4f5] outline-none transition-all placeholder:text-[#74747c] focus:border-[#777780] focus:ring-2 focus:ring-white/5"
                                         />
                                         {searchTerm && filteredActivos.length > 0 && (
-                                            <div className="absolute z-10 w-full mt-1 bg-[#121212] border border-[#333333] rounded-[8px] shadow-2xl max-h-60 overflow-y-auto">
+                                            <div className="absolute z-20 mt-2 max-h-64 w-full overflow-y-auto rounded-xl border border-[#414148] bg-[#151518] p-1.5 shadow-[0_22px_60px_rgba(0,0,0,.55)]">
                                                 {filteredActivos.map(activo => (
                                                     <button
                                                         key={activo.numero_activo}
                                                         type="button"
                                                         onClick={() => handleAddActivoEntrada(activo)}
-                                                        className="w-full text-left px-4 py-3 hover:bg-[#1D1D1F] transition-colors border-b border-[#333333] last:border-0 flex justify-between items-center group"
+                                                        className="group flex w-full items-center justify-between rounded-lg px-3.5 py-3 text-left transition-colors hover:bg-[#242428]"
                                                     >
                                                         <div>
-                                                            <span className="font-black text-[#0071E3]">#{activo.numero_activo}</span>
+                                                            <span className="font-mono font-bold text-[#f4f4f5]">#{activo.numero_activo}</span>
                                                             <span className="text-[#F5F5F7] ml-2 font-medium">{activo.nombre_corto_activo}</span>
                                                             <span className="text-[#86868B] text-[10px] ml-2 font-black uppercase tracking-widest">({activo.marca_activo})</span>
                                                         </div>
-                                                        <Plus className="w-5 h-5 text-[#86868B] group-hover:text-[#0071E3]" />
+                                                        <Plus className="h-5 w-5 text-[#777780] group-hover:text-white" />
                                                     </button>
                                                 ))}
                                             </div>
                                         )}
                                     </div>
 
-                                    <div className="bg-[#000000]/30 rounded-2xl border border-[#333333] overflow-hidden">
+                                    <div className="overflow-x-auto rounded-xl border border-[#303036] bg-[#101012]">
                                         {entradaForm.activosSeleccionados.length === 0 ? (
-                                            <div className="p-8 text-center text-[#86868B] font-black uppercase text-[10px] tracking-widest">
-                                                No hay activo seleccionado.
+                                            <div className="flex min-h-[156px] flex-col items-center justify-center px-5 py-8 text-center">
+                                                <span className="mb-3 flex h-11 w-11 items-center justify-center rounded-xl border border-[#34343a] bg-[#171719] text-[#777780]">
+                                                    <PackageOpen className="h-5 w-5" />
+                                                </span>
+                                                <p className="text-sm font-semibold text-[#b4b4ba]">Ningún activo seleccionado</p>
+                                                <p className="mt-1 text-xs text-[#71717a]">Utilice el buscador para agregar el activo.</p>
                                             </div>
                                         ) : (
                                             <table className="w-full text-left">
-                                                <thead className="bg-[#000000]/50 text-[#86868B] text-[10px] font-black uppercase tracking-widest">
+                                                <thead className="bg-[#171719] text-[10px] font-bold uppercase tracking-[0.12em] text-[#8c8c93]">
                                                     <tr>
                                                         <th className="px-6 py-4">No. Activo</th>
                                                         <th className="px-6 py-4">Nombre</th>
@@ -450,7 +494,7 @@ export default function AsignacionActivos() {
                                                 <tbody className="divide-y divide-[#333333]">
                                                     {entradaForm.activosSeleccionados.map(activo => (
                                                         <tr key={activo.numero_activo} className="hover:bg-white/5 transition-colors">
-                                                            <td className="px-6 py-4 font-mono text-[#0071E3] font-bold">#{activo.numero_activo}</td>
+                                                            <td className="px-6 py-4 font-mono font-bold text-white">#{activo.numero_activo}</td>
                                                             <td className="px-6 py-4 text-[#F5F5F7] font-medium">{activo.nombre_corto_activo}</td>
                                                             <td className="px-6 py-4 text-[#86868B]">{activo.numero_serie_activo || '-'}</td>
                                                             <td className="px-6 py-4 text-right">
@@ -470,11 +514,14 @@ export default function AsignacionActivos() {
                                     </div>
                                 </div>
 
-                                <div className="flex justify-end pt-4 border-t border-[#333333]">
+                                <div className="flex flex-col-reverse items-stretch justify-between gap-4 border-t border-[#2c2c31] pt-6 sm:flex-row sm:items-center">
+                                    <p className="flex items-center gap-2 text-xs text-[#777780]">
+                                        <CheckCircle2 className="h-4 w-4" /> Revise los datos antes de guardar el movimiento.
+                                    </p>
                                     <button
                                         type="submit"
                                         disabled={loading}
-                                        className="px-8 py-3.5 bg-[#0071E3] hover:bg-[#0071E3] text-white font-black uppercase text-[10px] tracking-widest rounded-[8px] shadow-lg shadow-[#0071E3]/20 transition-all flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed active:scale-95"
+                                        className="flex min-h-12 items-center justify-center gap-2 rounded-lg border border-[#f4f4f5] bg-[#f4f4f5] px-8 py-3 text-[11px] font-bold uppercase tracking-[0.12em] text-[#09090b] transition-all hover:bg-white disabled:cursor-not-allowed disabled:opacity-50 active:scale-[0.98]"
                                     >
                                         {loading ? <Loader2 className="w-5 h-5 animate-spin" /> : <Save className="w-5 h-5" />}
                                         Guardar Entrada
@@ -483,7 +530,7 @@ export default function AsignacionActivos() {
                             </form>
                         ) : (
                             <form onSubmit={confirmSubmitSalida} className="space-y-8">
-                                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                <div className="grid grid-cols-1 gap-5 md:grid-cols-2">
                                     <div className="space-y-2">
                                         <label className="text-[10px] font-black uppercase tracking-widest text-[#86868B] flex items-center gap-2 ml-1">
                                             <Calendar className="w-4 h-4 text-[#0071E3]" />
@@ -494,7 +541,7 @@ export default function AsignacionActivos() {
                                             required
                                             value={salidaForm.fecha_salida_activo}
                                             onChange={e => setSalidaForm({ ...salidaForm, fecha_salida_activo: e.target.value })}
-                                            className="w-full bg-[#1D1D1F] border border-[#333333] rounded-[8px] px-4 py-3 text-[#F5F5F7] focus:border-[#0071E3] outline-none transition-all"
+                                            className="min-h-[50px] w-full rounded-xl border border-[#35353a] bg-[#19191c] px-4 py-3 text-[#f4f4f5] outline-none transition-all focus:border-[#777780] focus:ring-2 focus:ring-white/5"
                                         />
                                     </div>
 
@@ -509,13 +556,13 @@ export default function AsignacionActivos() {
                                                 readOnly
                                                 placeholder="Seleccionar colaborador..."
                                                 value={salidaForm.nombre_usuario_activo || ''}
-                                                className="w-full bg-[#1D1D1F] border border-[#333333] rounded-[8px] px-4 py-3 text-[#F5F5F7] focus:border-[#0071E3] outline-none transition-all cursor-default placeholder-[#86868B]"
+                                                className="min-h-[50px] w-full cursor-pointer rounded-xl border border-[#35353a] bg-[#19191c] px-4 py-3 text-[#f4f4f5] outline-none transition-all placeholder:text-[#74747c] hover:border-[#55555d] focus:border-[#777780] focus:ring-2 focus:ring-white/5"
                                                 onClick={() => setShowColaboradorModal(true)}
                                             />
                                             <button
                                                 type="button"
                                                 onClick={() => setShowColaboradorModal(true)}
-                                                className="px-4 py-3 bg-[#1D1D1F] border border-[#333333] hover:border-[#F5F5F7]/20 text-[#F5F5F7] rounded-[8px] transition-all"
+                                                className="flex min-h-[50px] min-w-[50px] items-center justify-center rounded-xl border border-[#35353a] bg-[#19191c] text-[#c7c7cc] transition-all hover:border-[#5b5b63] hover:bg-[#222225] hover:text-white"
                                             >
                                                 <Search className="w-5 h-5 text-[#86868B]" />
                                             </button>
@@ -533,8 +580,8 @@ export default function AsignacionActivos() {
                                             value={salidaForm.autoriza}
                                             onChange={e => setSalidaForm({ ...salidaForm, autoriza: e.target.value })}
                                             className={cn(
-                                                "w-full bg-[#1D1D1F] border rounded-[8px] px-4 py-3 text-[#F5F5F7] outline-none transition-all",
-                                                salidaForm.autoriza ? "border-[#0071E3]/20 bg-[#0071E3]/5 opacity-80 cursor-not-allowed" : "border-[#333333] focus:border-[#0071E3]"
+                                                "min-h-[50px] w-full rounded-xl border bg-[#19191c] px-4 py-3 text-[#f4f4f5] outline-none transition-all focus:ring-2 focus:ring-white/5",
+                                                salidaForm.autoriza ? "cursor-not-allowed border-[#3d3d43] bg-[#161619] text-[#c7c7cc]" : "border-[#35353a] focus:border-[#777780]"
                                             )}
                                         >
                                             <option value="">Seleccionar funcionario...</option>
@@ -545,7 +592,7 @@ export default function AsignacionActivos() {
                                             ))}
                                         </select>
                                         {salidaForm.autoriza && (
-                                            <p className="text-[10px] text-[#0071E3]/70 font-black uppercase mt-1 ml-1 flex items-center gap-1 tracking-widest">
+                                            <p className="mt-1 ml-1 flex items-center gap-1 text-[11px] font-medium text-[#a1a1aa]">
                                                 <Shield className="w-3 h-3" /> Asignado automáticamente
                                             </p>
                                         )}
@@ -561,20 +608,23 @@ export default function AsignacionActivos() {
                                             placeholder="Notas adicionales..."
                                             value={salidaForm.observaciones}
                                             onChange={e => setSalidaForm({ ...salidaForm, observaciones: e.target.value })}
-                                            className="w-full bg-[#1D1D1F] border border-[#333333] rounded-[8px] px-4 py-3 text-[#F5F5F7] focus:border-[#0071E3] outline-none transition-all placeholder-[#86868B]"
+                                            className="min-h-[50px] w-full rounded-xl border border-[#35353a] bg-[#19191c] px-4 py-3 text-[#f4f4f5] outline-none transition-all placeholder:text-[#74747c] focus:border-[#777780] focus:ring-2 focus:ring-white/5"
                                         />
                                     </div>
                                 </div>
 
-                                <div className="space-y-4">
-                                    <div className="flex items-center gap-3 pb-4 border-b border-[#333333]">
-                                        <span className="p-2 rounded-lg bg-[#0071E3]/10 text-[#0071E3]">
+                                <div className="rounded-2xl border border-[#2f2f34] bg-[#0b0b0d]/60 p-4 sm:p-6">
+                                    <div className="mb-5 flex items-center gap-3 border-b border-[#2c2c31] pb-5">
+                                        <span className="rounded-lg border border-[#3f3f46] bg-[#18181b] p-2 text-[#d4d4d8]">
                                             <Plus className="w-5 h-5" />
                                         </span>
-                                        <h3 className="text-lg font-black text-[#F5F5F7] uppercase tracking-widest text-[12px]">Activos a Asignar (Salida)</h3>
+                                        <div>
+                                            <h3 className="text-base font-bold text-[#F5F5F7]">Activos a asignar</h3>
+                                            <p className="mt-0.5 text-xs text-[#8c8c93]">Agregue uno o varios activos disponibles a esta salida.</p>
+                                        </div>
                                     </div>
 
-                                    <div className="relative">
+                                    <div className="relative mb-4">
                                         <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
                                             <Search className="h-5 w-5 text-[#86868B]" />
                                         </div>
@@ -583,37 +633,41 @@ export default function AsignacionActivos() {
                                             placeholder="Buscar activo por número, nombre o serie..."
                                             value={searchTerm}
                                             onChange={e => setSearchTerm(e.target.value)}
-                                            className="w-full bg-[#1D1D1F] border border-[#333333] rounded-[8px] pl-10 pr-4 py-3 text-[#F5F5F7] focus:border-[#0071E3] outline-none transition-all placeholder-[#86868B]"
+                                            className="min-h-[52px] w-full rounded-xl border border-[#3a3a40] bg-[#19191c] pl-11 pr-4 text-[#f4f4f5] outline-none transition-all placeholder:text-[#74747c] focus:border-[#777780] focus:ring-2 focus:ring-white/5"
                                         />
                                         {searchTerm && filteredActivos.length > 0 && (
-                                            <div className="absolute z-10 w-full mt-1 bg-[#121212] border border-[#333333] rounded-[8px] shadow-2xl max-h-60 overflow-y-auto">
+                                            <div className="absolute z-20 mt-2 max-h-64 w-full overflow-y-auto rounded-xl border border-[#414148] bg-[#151518] p-1.5 shadow-[0_22px_60px_rgba(0,0,0,.55)]">
                                                 {filteredActivos.map(activo => (
                                                     <button
                                                         key={activo.numero_activo}
                                                         type="button"
                                                         onClick={() => handleAddActivoSalida(activo)}
-                                                        className="w-full text-left px-4 py-3 hover:bg-[#1D1D1F] transition-colors border-b border-[#333333] last:border-0 flex justify-between items-center group"
+                                                        className="group flex w-full items-center justify-between rounded-lg px-3.5 py-3 text-left transition-colors hover:bg-[#242428]"
                                                     >
                                                         <div>
-                                                            <span className="font-black text-[#0071E3]">#{activo.numero_activo}</span>
+                                                            <span className="font-mono font-bold text-[#f4f4f5]">#{activo.numero_activo}</span>
                                                             <span className="text-[#F5F5F7] ml-2 font-medium">{activo.nombre_corto_activo}</span>
                                                             <span className="text-[#86868B] text-[10px] ml-2 font-black uppercase tracking-widest">({activo.marca_activo})</span>
                                                         </div>
-                                                        <Plus className="w-5 h-5 text-[#86868B] group-hover:text-[#0071E3]" />
+                                                        <Plus className="h-5 w-5 text-[#777780] group-hover:text-white" />
                                                     </button>
                                                 ))}
                                             </div>
                                         )}
                                     </div>
 
-                                    <div className="bg-[#000000]/30 rounded-2xl border border-[#333333] overflow-hidden">
+                                    <div className="overflow-x-auto rounded-xl border border-[#303036] bg-[#101012]">
                                         {salidaForm.activosSeleccionados.length === 0 ? (
-                                            <div className="p-8 text-center text-[#86868B] font-black uppercase text-[10px] tracking-widest">
-                                                No hay activos seleccionados para la salida.
+                                            <div className="flex min-h-[156px] flex-col items-center justify-center px-5 py-8 text-center">
+                                                <span className="mb-3 flex h-11 w-11 items-center justify-center rounded-xl border border-[#34343a] bg-[#171719] text-[#777780]">
+                                                    <PackageOpen className="h-5 w-5" />
+                                                </span>
+                                                <p className="text-sm font-semibold text-[#b4b4ba]">Ningún activo seleccionado</p>
+                                                <p className="mt-1 text-xs text-[#71717a]">Utilice el buscador para preparar la asignación.</p>
                                             </div>
                                         ) : (
                                             <table className="w-full text-left">
-                                                <thead className="bg-[#000000]/50 text-[#86868B] text-[10px] font-black uppercase tracking-widest">
+                                                <thead className="bg-[#171719] text-[10px] font-bold uppercase tracking-[0.12em] text-[#8c8c93]">
                                                     <tr>
                                                         <th className="px-6 py-4">No. Activo</th>
                                                         <th className="px-6 py-4">Nombre</th>
@@ -624,7 +678,7 @@ export default function AsignacionActivos() {
                                                 <tbody className="divide-y divide-[#333333]">
                                                     {salidaForm.activosSeleccionados.map(activo => (
                                                         <tr key={activo.numero_activo} className="hover:bg-white/5 transition-colors">
-                                                            <td className="px-6 py-4 font-mono text-[#0071E3] font-bold">#{activo.numero_activo}</td>
+                                                            <td className="px-6 py-4 font-mono font-bold text-white">#{activo.numero_activo}</td>
                                                             <td className="px-6 py-4 text-[#F5F5F7] font-medium">{activo.nombre_corto_activo}</td>
                                                             <td className="px-6 py-4 text-[#86868B]">{activo.numero_serie_activo || '-'}</td>
                                                             <td className="px-6 py-4 text-right">
@@ -644,11 +698,14 @@ export default function AsignacionActivos() {
                                     </div>
                                 </div>
 
-                                <div className="flex justify-end pt-4 border-t border-[#333333]">
+                                <div className="flex flex-col-reverse items-stretch justify-between gap-4 border-t border-[#2c2c31] pt-6 sm:flex-row sm:items-center">
+                                    <p className="flex items-center gap-2 text-xs text-[#777780]">
+                                        <CheckCircle2 className="h-4 w-4" /> Revise los datos antes de guardar el movimiento.
+                                    </p>
                                     <button
                                         type="submit"
                                         disabled={loading}
-                                        className="px-8 py-3.5 bg-[#0071E3] hover:bg-[#0071E3] text-white font-black uppercase text-[10px] tracking-widest rounded-[8px] shadow-lg shadow-[#0071E3]/20 transition-all flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed active:scale-95"
+                                        className="flex min-h-12 items-center justify-center gap-2 rounded-lg border border-[#f4f4f5] bg-[#f4f4f5] px-8 py-3 text-[11px] font-bold uppercase tracking-[0.12em] text-[#09090b] transition-all hover:bg-white disabled:cursor-not-allowed disabled:opacity-50 active:scale-[0.98]"
                                     >
                                         {loading ? <Loader2 className="w-5 h-5 animate-spin" /> : <Save className="w-5 h-5" />}
                                         Guardar Salida
