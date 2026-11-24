@@ -101,14 +101,16 @@ export default function IngresarSolicitud() {
                 const [areas, instalaciones, supervisores, profesionales, clientes] = await Promise.all([
                     supabase.from("area_mantenimiento_20").select("id_area_mantenimiento, descripcion_area"),
                     supabase.from("instalaciones_municipales_16").select("id_instalacion_municipal, instalacion_municipal"),
-                    supabase.from("colaboradores_06").select("identificacion, alias").eq("supervisor", true).eq("condicion_laboral", false),
-                    supabase.from("colaboradores_06").select("identificacion, alias, correo_colaborador").eq("autorizado", true),
+                    supabase.from("colaboradores_06").select("identificacion, alias, colaborador").eq("supervisor", true).eq("condicion_laboral", false),
+                    supabase.from("colaboradores_06").select("identificacion, alias, colaborador, correo_colaborador").eq("autorizado", true),
                     supabase.from("cliente_interno_15").select("id_cliente, nombre")
                 ]);
 
                 const mapData = (data: any[], idKey: string, labelKey: string) =>
-                    (data || []).map(item => ({ id: item[idKey], label: item[labelKey] }))
-                        .sort((a, b) => a.label.localeCompare(b.label));
+                    data.map(item => ({
+                        id: item[idKey],
+                        label: item[labelKey]?.trim() || item.colaborador?.trim() || String(item[idKey]),
+                    })).sort((a, b) => a.label.localeCompare(b.label, 'es'));
 
                 setCatalogs({
                     areas: mapData(areas.data || [], 'id_area_mantenimiento', 'descripcion_area'),
