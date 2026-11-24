@@ -167,7 +167,9 @@ export default function EquiposActivos() {
                                             {selectedEquipoValue ? (
                                                 (() => {
                                                     const eq = equipos.find(e => e.numero_activo.toString() === selectedEquipoValue);
-                                                    return eq ? `${eq.numero_activo} - ${eq.placa} - ${eq.descripcion_equipo}` : selectedEquipoValue;
+                                                    return eq
+                                                        ? [String(eq.numero_activo), eq.placa?.trim(), eq.descripcion_equipo?.trim()].filter(Boolean).join(' - ')
+                                                        : selectedEquipoValue;
                                                 })()
                                             ) : '-- Seleccione un activo --'}
                                         </span>
