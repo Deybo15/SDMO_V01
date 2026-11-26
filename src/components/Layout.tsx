@@ -94,7 +94,23 @@ export default function Layout() {
     }, [location.pathname]);
 
     if (profile === 'loading') {
-        return <p className="p-6 text-sm" role="status">Verificando perfil de acceso…</p>;
+        return (
+            <div className="grid min-h-screen min-h-[100dvh] place-items-center bg-black px-6 py-10 text-[#F5F5F7]">
+                <div className="flex w-full max-w-sm flex-col items-center rounded-xl border border-[#3f3f46] bg-[#111112] px-6 py-10 text-center" role="status" aria-atomic="true">
+                    <span aria-hidden="true" className="mb-6 text-[11px] font-bold tracking-[0.22em] text-[#a1a1aa]">SDMO</span>
+                    <div aria-hidden="true" className="mb-5 grid h-16 w-16 place-items-center rounded-xl border border-[#3f3f46] bg-[#18181b]">
+                        <svg className="access-hourglass h-9 w-9" viewBox="0 0 32 32" fill="none" focusable="false">
+                            <path d="M8 4h16M8 28h16M10 4v3c0 5 4 7 6 9-2 2-6 4-6 9v3m12-24v3c0 5-4 7-6 9 2 2 6 4 6 9v3" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+                            <path className="access-hourglass-sand-top" d="M12 8h8l-4 5z" fill="currentColor" />
+                            <path className="access-hourglass-stream" d="M16 16v7" stroke="currentColor" strokeWidth="1.2" strokeDasharray="1 2" strokeLinecap="round" />
+                            <path className="access-hourglass-sand-bottom" d="m12 25 4-4 4 4z" fill="currentColor" />
+                        </svg>
+                    </div>
+                    <p className="text-lg font-semibold">Verificando acceso…</p>
+                    <p className="mt-1 text-sm text-[#a1a1aa]">Estamos comprobando tu perfil para abrir la aplicación.</p>
+                </div>
+            </div>
+        );
     }
     if (profile === 'error') {
         return (

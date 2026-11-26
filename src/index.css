@@ -2,6 +2,46 @@
 @tailwind components;
 @tailwind utilities;
 
+@media (prefers-reduced-motion: no-preference) {
+    .access-hourglass {
+        animation: access-hourglass-turn 2.4s infinite;
+    }
+
+    .access-hourglass-sand-top {
+        transform-origin: 16px 13px;
+        animation: access-hourglass-drain 2.4s linear infinite;
+    }
+
+    .access-hourglass-sand-bottom {
+        transform-origin: 16px 25px;
+        animation: access-hourglass-fill 2.4s linear infinite;
+    }
+
+    .access-hourglass-stream {
+        animation: access-hourglass-flow 2.4s linear infinite;
+    }
+
+    @keyframes access-hourglass-turn {
+        0%, 78% { transform: rotate(0deg); }
+        100% { transform: rotate(180deg); }
+    }
+
+    @keyframes access-hourglass-drain {
+        0% { transform: scale(1); }
+        78%, 100% { transform: scale(0); }
+    }
+
+    @keyframes access-hourglass-fill {
+        0% { transform: scale(0); }
+        78%, 100% { transform: scale(1); }
+    }
+
+    @keyframes access-hourglass-flow {
+        0%, 76% { opacity: 1; }
+        78%, 100% { opacity: 0; }
+    }
+}
+
 @layer base {
     body {
         @apply bg-[#000000] text-[#F5F5F7];
