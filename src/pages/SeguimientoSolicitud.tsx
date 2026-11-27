@@ -3,6 +3,7 @@ import { supabase } from '../lib/supabase';
 import { useNavigate } from 'react-router-dom';
 import * as XLSX from 'xlsx';
 import HistorialMaterialesModal from '../components/HistorialMaterialesModal';
+import AsistenteSdmoDemo from '../components/AsistenteSdmoDemo';
 import {
     Search,
     Eye,
@@ -374,6 +375,7 @@ export default function SeguimientoSolicitud() {
                         </div>
                     </div>
                     <div className="flex flex-wrap gap-3">
+                        {import.meta.env.DEV || import.meta.env.VITE_SDMO_ASISTENTE_PRIVADO === 'true' ? <AsistenteSdmoDemo datosReales /> : null}
                         <button onClick={() => navigate('/cliente-interno')} className="inline-flex items-center justify-center gap-2 rounded-lg border border-[#71717a] bg-[#111112] px-5 py-3 text-sm font-semibold text-white transition-colors hover:bg-[#18181b]">
                             <ChevronLeft className="h-5 w-5" /> Regresar
                         </button>
